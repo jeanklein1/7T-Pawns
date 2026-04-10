@@ -173,13 +173,6 @@ namespace t7 {
             constexpr uint32_t PALMG_TOTAL_VERTICES = MAX_PALM_INSTANCES * PALMG_MAX_VERTS_PER_SLOT;   // 28800
             constexpr uint32_t PALMG_TOTAL_INDICES  = MAX_PALM_INSTANCES * PALMG_MAX_INDICES_PER_SLOT; // 144000
 
-            // Generative cacti — GPU mesh gen (slot-based addressing)
-            constexpr uint32_t MAX_CACTUS_INSTANCES = 20;
-            constexpr uint32_t CACTUSG_MAX_VERTS_PER_SLOT  = 1500;
-            constexpr uint32_t CACTUSG_MAX_INDICES_PER_SLOT = 8000;
-            constexpr uint32_t CACTUSG_TOTAL_VERTICES = MAX_CACTUS_INSTANCES * CACTUSG_MAX_VERTS_PER_SLOT;
-            constexpr uint32_t CACTUSG_TOTAL_INDICES  = MAX_CACTUS_INSTANCES * CACTUSG_MAX_INDICES_PER_SLOT;
-
             // GoL zone system — per-zone automaton grids
             constexpr uint32_t MAX_GOL_ZONES = 8;
             constexpr uint32_t GOL_ZONE_GRID = 32;      // cells per zone side
@@ -671,34 +664,6 @@ namespace t7 {
         };
         static_assert(sizeof(GPUPalmGroundEntry) == 32, "GPUPalmGroundEntry must be 32 bytes");
 
-        // ─── Cactus GPU structs ──────────────────────────────────────────
-        struct alignas(16) GPUCactusMeshParams {
-            float center_x, center_z;
-            float height, radius, taper;
-            float ribs, rib_depth;
-            float lean, lean_dir;
-            float cap_round;
-            float arm_count;
-            float arm_height, arm_length, arm_radius;
-            float arm_curve;
-            float body_r, body_g, body_b;
-            float rib_r, rib_g, rib_b;
-            uint32_t trunk_segs, arm_segs;
-            uint32_t is_active;
-            uint32_t seed;
-            float _pad0, _pad1, _pad2, _pad3, _pad4, _pad5;
-        };
-        static_assert(sizeof(GPUCactusMeshParams) == 128, "GPUCactusMeshParams must be 128 bytes");
-
-        struct alignas(16) GPUCactusGroundEntry {
-            float center_x;
-            float center_z;
-            float ground_y;
-            uint32_t is_active;
-            float _pad0, _pad1, _pad2, _pad3;
-        };
-        static_assert(sizeof(GPUCactusGroundEntry) == 32, "GPUCactusGroundEntry must be 32 bytes");
-
         // GoL zone config — per-zone parameters for compute + fragment shader
         struct alignas(16) GPUGoLZoneConfig {
             float origin[2];
@@ -1061,11 +1026,6 @@ namespace t7 {
             wgpu::Buffer palmMeshParamsBuffer_;
             uint32_t palmIndexCount_ = 0;
 
-            wgpu::Buffer cactusVertexBuffer_, cactusIndexBuffer_;
-            wgpu::Buffer cactusGroundBuffer_;
-            wgpu::Buffer cactusMeshParamsBuffer_;
-            uint32_t cactusIndexCount_ = 0;
-
             wgpu::Buffer pyramidVertexBuffer_, pyramidIndexBuffer_;
             wgpu::Buffer pyramidGroundBuffer_;  // per-pyramid ground Y correction
             wgpu::Buffer pyramidInstancesBuffer_;  // GPU-side pyramid array for heightfield baking
@@ -1080,12 +1040,10 @@ namespace t7 {
             wgpu::BindGroupLayout archMeshGenLayout_;    // bindings 193-195
             wgpu::BindGroupLayout columnMeshGenLayout_;  // bindings 196-198
             wgpu::BindGroupLayout palmMeshGenLayout_;    // bindings 180-182
-            wgpu::BindGroupLayout cactusMeshGenLayout_;  // bindings 183-185
             wgpu::BindGroup pyramidMeshGenBindGroup_;
             wgpu::BindGroup archMeshGenBindGroup_;
             wgpu::BindGroup columnMeshGenBindGroup_;
             wgpu::BindGroup palmMeshGenBindGroup_;
-            wgpu::BindGroup cactusMeshGenBindGroup_;
 
             // GoL zone system buffers
             wgpu::Buffer zoneConfigBuffer_;        // GPUGoLZoneArray storage (read_write)
@@ -1975,7 +1933,7 @@ namespace t7 {
                 pawnBuffer_ = makeBuffer("Pawn State", sizeof(GPUPawnState),
                     wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::CopySrc);
                 cameraBuffer_ = makeBuffer("Camera State", sizeof(GPUCameraState), SU);
-                sphereBuffer_ = makeBuffer("Sphere State", sizeof(GPUSphereState), SU | wgpu::BufferUsage::Uniform);
+                sphereBuffer_ = makeBuffer("Sphere State", sizeof(GPUSphereState), SU);
                 ribbonBuffer_ = makeBuffer("Ribbon State", sizeof(GPURibbonState), SU | wgpu::BufferUsage::Uniform);
                 ringTransformsBuffer_ = makeBuffer("Ring Transforms",
                     sizeof(GPURibbonRingTransform) * Dim::RIBBON_MAX_RINGS,
@@ -2658,7 +2616,7 @@ namespace t7 {
 
                     entries[6].binding = 300;
                     entries[6].visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
-                    entries[6].buffer.type = wgpu::BufferBindingType::Uniform;
+                    entries[6].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
 
                     entries[7].binding = 320;
                     entries[7].visibility = wgpu::ShaderStage::Fragment;
