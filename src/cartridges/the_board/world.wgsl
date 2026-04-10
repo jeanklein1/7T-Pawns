@@ -3727,7 +3727,7 @@ struct PortalArray {
 @group(0) @binding(220) var<storage, read> render_terrain: TerrainState;
 @group(0) @binding(260) var<storage, read> render_pawn: PawnState;
 @group(0) @binding(280) var<storage, read> render_camera: CameraState;
-@group(0) @binding(300) var<storage, read> render_sphere: SphereState;
+@group(0) @binding(300) var<uniform> render_sphere: SphereState;
 
 // --- Ribbon (Group 0: render, binding 360)
 @group(0) @binding(360) var<uniform> render_ribbon: RibbonState;
