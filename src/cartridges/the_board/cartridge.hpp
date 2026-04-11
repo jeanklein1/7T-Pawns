@@ -815,6 +815,66 @@ namespace t7 {
                 "smooth", "tinted", "contrast"
             };
 
+            // ─── Orbiting Sphere Entity ──────────────────────────────────────
+            //
+            // Tier-driven orbiting sphere. One active at a time (like ribbon).
+            // Deterministic world locations on coarse grid, proximity-activated.
+
+            struct SphereTierProfile {
+                float radius_mean, radius_sigma;
+                float orbit_radius_mean, orbit_radius_sigma;
+                float orbit_height_mean, orbit_height_sigma;
+                float orbit_speed_mean, orbit_speed_sigma;
+                float influence_radius_mean, influence_radius_sigma;
+                float weight;
+            };
+
+            static constexpr uint32_t SPHERE_TIER_COUNT = 3;
+            static constexpr SphereTierProfile SPHERE_TIERS[SPHERE_TIER_COUNT] = {
+                // Sentinel — tight fast local
+                {  1.5f, 0.3f,    12.0f, 3.0f,   6.0f, 2.0f,   1.4f, 0.3f,   8.0f, 2.0f,   0.40f },
+                // Wanderer — mid-range moderate
+                {  2.5f, 0.5f,    25.0f, 5.0f,   10.0f, 3.0f,  0.8f, 0.2f,   14.0f, 3.0f,  0.35f },
+                // Colossus — vast slow planetary
+                {  5.0f, 1.0f,    50.0f, 10.0f,  18.0f, 5.0f,  0.3f, 0.08f,  25.0f, 5.0f,  0.25f },
+            };
+
+            static constexpr const char* SPHERE_TIER_NAMES[] = {
+                "Sentinel", "Wanderer", "Colossus"
+            };
+
+            struct SphereSpawnConfig {
+                static constexpr float CELL_SIZE = 250.0f;
+                static constexpr float SPAWN_CHANCE = 0.40f;
+                static constexpr float RENDER_DIST = 200.0f;
+                static constexpr float HOLD_DIST = 300.0f;
+            };
+
+            struct SphereProp {
+                static constexpr uint32_t SPAWN_ROLL = 1200u;
+                static constexpr uint32_t TIER = 1201u;
+                static constexpr uint32_t ANCHOR_X = 1202u;
+                static constexpr uint32_t ANCHOR_Z = 1203u;
+                static constexpr uint32_t RADIUS = 1210u;
+                static constexpr uint32_t ORBIT_RADIUS = 1211u;
+                static constexpr uint32_t ORBIT_HEIGHT = 1212u;
+                static constexpr uint32_t ORBIT_SPEED = 1213u;
+                static constexpr uint32_t INFLUENCE_RADIUS = 1214u;
+                static constexpr uint32_t COLOR_R = 1220u;
+                static constexpr uint32_t COLOR_G = 1221u;
+                static constexpr uint32_t COLOR_B = 1222u;
+            };
+
+            // Sphere base colors — seed selects, polyphony coupling modulates from here
+            static constexpr float SPHERE_COLOR_PALETTE[][3] = {
+                { 0.90f, 0.75f, 0.40f },   // warm gold
+                { 0.45f, 0.65f, 0.85f },   // sky blue
+                { 0.80f, 0.40f, 0.55f },   // rose
+                { 0.50f, 0.80f, 0.55f },   // sage
+                { 0.85f, 0.55f, 0.30f },   // amber
+            };
+            static constexpr uint32_t SPHERE_PALETTE_COUNT = 5;
+
             // ── Convenience aliases ──────────────────────────────────────────
             static constexpr float RIBBON_CELL_SIZE = RibbonSpawnConfig::CELL_SIZE;
             static constexpr float RIBBON_SPAWN_CHANCE = RibbonSpawnConfig::SPAWN_CHANCE;
@@ -3290,7 +3350,7 @@ namespace t7 {
             //  │ 950 – 993 │ Palm      │ PalmProp                           │
             //  │1000 –1033 │ Cactus    │ CactusProp                         │
             //  │1100 –1122 │ Blade     │ BladeProp                          │
-            //  │1200+      │ (free)    │ next entity family starts here     │
+            //  │1200 –1222 │ Sphere    │ SphereProp                         │
             //  └───────────┴───────────┴────────────────────────────────────┘
             //
             // SEED SOURCE: lattice_node_seed (band 250) — GoL zones
@@ -4117,6 +4177,12 @@ namespace t7 {
             GPURibbonState currentRibbon_{};
             bool ribbonActive_ = false;
 
+            // ─── Sphere Lifecycle ──────────────────────────────────────────
+            // Spatial grid activation, parameter generation, per-entity state.
+            int32_t sphereCellX_ = INT32_MAX;
+            int32_t sphereCellZ_ = INT32_MAX;
+            bool sphereActive_ = false;
+
             // ─── Mood 9 Ribbon Anchor ─────────────────────────────────────
             // Seed-derived position centered on the finite world.
             // Adjust moodRibbonOffset_ to manually shift the anchor XZ.
@@ -4385,6 +4451,114 @@ namespace t7 {
                     << "  twist:    amp=" << r.twist_amp << "  cycles=" << r.twist_cycles << "  speed=" << r.twist_speed
                     << "  (ratio=" << t_ratio << ")\n"
                     << "  color=(" << r.color[0] << ", " << r.color[1] << ", " << r.color[2] << ")\n";
+            }
+
+            // ─── Sphere Spawn/Evict Logic (mirrors ribbon pattern) ────────────────
+            void update_sphere_proximity(wgpu::Queue& queue) {
+                float px = pawnReadback_x_, pz = pawnReadback_z_;
+                float cell = SphereSpawnConfig::CELL_SIZE;
+
+                if (sphereActive_) {
+                    // Eviction check
+                    float ax = (sphereCellX_ + 0.5f) * cell;
+                    float az = (sphereCellZ_ + 0.5f) * cell;
+                    float dx = px - ax, dz = pz - az;
+                    if (std::sqrt(dx*dx + dz*dz) > SphereSpawnConfig::HOLD_DIST) {
+                        sphereActive_ = false;
+                        GPUSphereState empty{};
+                        queue.WriteBuffer(gpuState_.sphere_buffer(), 0, &empty, sizeof(empty));
+                        return;
+                    }
+                    return;
+                }
+
+                // Scan nearby cells for closest spawnable sphere
+                int32_t cx0 = (int32_t)std::floor((px - SphereSpawnConfig::RENDER_DIST) / cell);
+                int32_t cx1 = (int32_t)std::floor((px + SphereSpawnConfig::RENDER_DIST) / cell);
+                int32_t cz0 = (int32_t)std::floor((pz - SphereSpawnConfig::RENDER_DIST) / cell);
+                int32_t cz1 = (int32_t)std::floor((pz + SphereSpawnConfig::RENDER_DIST) / cell);
+
+                float best_dist_sq = SphereSpawnConfig::RENDER_DIST * SphereSpawnConfig::RENDER_DIST;
+                bool found = false;
+                int32_t best_cx, best_cz;
+                uint32_t best_seed;
+
+                for (int32_t cz = cz0; cz <= cz1; cz++) {
+                    for (int32_t cx = cx0; cx <= cx1; cx++) {
+                        uint32_t seed = tile_seed(activeSeed_, cx, cz);
+                        if (cpu_hash_f(seed, SphereProp::SPAWN_ROLL) >= SphereSpawnConfig::SPAWN_CHANCE)
+                            continue;
+                        float ax = (cx + 0.5f) * cell + (cpu_hash_f(seed, SphereProp::ANCHOR_X) - 0.5f) * cell * 0.3f;
+                        float az = (cz + 0.5f) * cell + (cpu_hash_f(seed, SphereProp::ANCHOR_Z) - 0.5f) * cell * 0.3f;
+                        float ddx = px - ax, ddz = pz - az;
+                        float d2 = ddx*ddx + ddz*ddz;
+                        if (d2 < best_dist_sq) {
+                            best_dist_sq = d2;
+                            found = true;
+                            best_cx = cx; best_cz = cz;
+                            best_seed = seed;
+                        }
+                    }
+                }
+
+                if (found) {
+                    sphereCellX_ = best_cx;
+                    sphereCellZ_ = best_cz;
+                    spawn_sphere(best_seed, queue);
+                }
+            }
+
+            void spawn_sphere(uint32_t seed, wgpu::Queue& queue) {
+                // Tier selection
+                float tier_roll = cpu_hash_f(seed, SphereProp::TIER);
+                uint32_t tier = SPHERE_TIER_COUNT - 1;
+                float cumul = 0.0f;
+                for (uint32_t t = 0; t < SPHERE_TIER_COUNT; t++) {
+                    cumul += SPHERE_TIERS[t].weight;
+                    if (tier_roll < cumul) { tier = t; break; }
+                }
+                const auto& tp = SPHERE_TIERS[tier];
+
+                float cell = SphereSpawnConfig::CELL_SIZE;
+                float ax = (sphereCellX_ + 0.5f) * cell
+                         + (cpu_hash_f(seed, SphereProp::ANCHOR_X) - 0.5f) * cell * 0.3f;
+                float az = (sphereCellZ_ + 0.5f) * cell
+                         + (cpu_hash_f(seed, SphereProp::ANCHOR_Z) - 0.5f) * cell * 0.3f;
+
+                GPUSphereState s{};
+                s.anchor[0] = ax; s.anchor[1] = 0.0f; s.anchor[2] = az;
+                s.radius = std::max(0.5f, cpu_sample_gaussian(seed, SphereProp::RADIUS, tp.radius_mean, tp.radius_sigma));
+                s.orbit_radius = std::max(5.0f, cpu_sample_gaussian(seed, SphereProp::ORBIT_RADIUS, tp.orbit_radius_mean, tp.orbit_radius_sigma));
+                s.orbit_height = std::max(3.0f, cpu_sample_gaussian(seed, SphereProp::ORBIT_HEIGHT, tp.orbit_height_mean, tp.orbit_height_sigma));
+                s.orbit_speed = std::max(0.05f, cpu_sample_gaussian(seed, SphereProp::ORBIT_SPEED, tp.orbit_speed_mean, tp.orbit_speed_sigma));
+                s.influence_radius = std::max(3.0f, cpu_sample_gaussian(seed, SphereProp::INFLUENCE_RADIUS, tp.influence_radius_mean, tp.influence_radius_sigma));
+
+                // Color from palette
+                uint32_t pal_idx = (uint32_t)(cpu_hash_f(seed, SphereProp::COLOR_R) * SPHERE_PALETTE_COUNT);
+                if (pal_idx >= SPHERE_PALETTE_COUNT) pal_idx = SPHERE_PALETTE_COUNT - 1;
+                float var = (cpu_hash_f(seed, SphereProp::COLOR_G) - 0.5f) * 0.1f;
+                s.base_color[0] = SPHERE_COLOR_PALETTE[pal_idx][0] + var;
+                s.base_color[1] = SPHERE_COLOR_PALETTE[pal_idx][1] + var * 0.8f;
+                s.base_color[2] = SPHERE_COLOR_PALETTE[pal_idx][2] + var * 0.6f;
+                s.color[0] = s.base_color[0];
+                s.color[1] = s.base_color[1];
+                s.color[2] = s.base_color[2];
+
+                // Start at t=0 — GPU will evolve from here
+                s.t = 0.0f;
+                s.pos[0] = ax + s.orbit_radius;
+                s.pos[1] = s.orbit_height;
+                s.pos[2] = az;
+                s.orientation[3] = 1.0f; // identity quaternion
+
+                queue.WriteBuffer(gpuState_.sphere_buffer(), 0, &s, sizeof(s));
+                sphereActive_ = true;
+
+                std::cout << "[Sphere] " << SPHERE_TIER_NAMES[tier]
+                    << " at (" << ax << "," << az << ")"
+                    << " r=" << s.radius << " orbit=" << s.orbit_radius
+                    << " h=" << s.orbit_height << " spd=" << s.orbit_speed
+                    << " inf=" << s.influence_radius << "\n";
             }
 
             // ═══ END INLINED: modules/spawn_engine.inl ═════════════════════════
@@ -8345,6 +8519,13 @@ namespace t7 {
                 // Ribbon
                 ribbonActive_ = false;
 
+                // Sphere
+                sphereActive_ = false;
+                sphereCellX_ = INT32_MAX;
+                sphereCellZ_ = INT32_MAX;
+                GPUSphereState emptySphere{};
+                gpuState_.upload_sphere(queue, emptySphere);
+
                 // Gallery / paintings — clear all exhibition + slots, keep staging intact
                 for (uint32_t i = 0; i < MAX_GALLERIES; i++) {
                     galleryCenters_[i] = GalleryCenter{};
@@ -9146,6 +9327,7 @@ namespace t7 {
                 stream_patches(encoder, queue);
                 if (!finiteMode_) {
                     update_ribbon_spawning(pawnReadback_x_, pawnReadback_z_, currentSeconds_, queue);
+                    update_sphere_proximity(queue);
                 }
                 else if (ribbonActive_) {
                     // Mood-spawned ribbon in finite mode — update time only
