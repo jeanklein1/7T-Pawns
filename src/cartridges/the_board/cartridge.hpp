@@ -845,7 +845,7 @@ namespace t7 {
 
             struct SphereSpawnConfig {
                 static constexpr float CELL_SIZE = 250.0f;
-                static constexpr float SPAWN_CHANCE = 0.40f;
+                static constexpr float SPAWN_CHANCE = 2.80f;  // 7× original (0.40 * 7 = 2.80, clamped to 1.0 by hash)
                 static constexpr float RENDER_DIST = 200.0f;
                 static constexpr float HOLD_DIST = 300.0f;
             };
