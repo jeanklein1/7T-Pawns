@@ -1339,6 +1339,10 @@ namespace t7 {
                 queue.WriteBuffer(ribbonBuffer_, 0, &ribbon, sizeof(GPURibbonState));
             }
 
+            void upload_sphere(wgpu::Queue& queue, const GPUSphereState& sphere) {
+                queue.WriteBuffer(sphereBuffer_, 0, &sphere, sizeof(GPUSphereState));
+            }
+
             void upload_pier_slot(wgpu::Queue& queue, uint32_t slot, const GPUPierInstance& pier) {
                 queue.WriteBuffer(pierBuffer_,
                     slot * sizeof(GPUPierInstance),
@@ -1910,6 +1914,7 @@ namespace t7 {
 
             static constexpr uint32_t ribbon_vertex_count() { return Dim::RIBBON_VERTEX_COUNT; }
             wgpu::Buffer ribbon_buffer() const { return ribbonBuffer_; }
+            wgpu::Buffer sphere_buffer() const { return sphereBuffer_; }
             wgpu::Buffer pawn_buffer() const { return pawnBuffer_; }
             wgpu::Buffer pawn_readback_staging() const { return pawnReadbackStaging_; }
             static constexpr size_t pawn_state_size() { return sizeof(GPUPawnState); }
