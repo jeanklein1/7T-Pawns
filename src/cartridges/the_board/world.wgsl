@@ -4514,7 +4514,7 @@ fn update_sphere() {
         );
     }
 
-    if (coupling_active(COUPLING_SPHERE_TO_TERRAIN_TINT)) {
+    if (coupling_active(COUPLING_SPHERE_TO_TERRAIN_TINT) && sphere_state.orbit_radius > 0.0) {
         terrain_state.tint = coupling_sphere_to_terrain_tint(sphere_state.pos);
     } else {
         terrain_state.tint = vec3(1.0);
