@@ -619,11 +619,15 @@ struct SphereState {
     radius: f32,
     orientation: vec4<f32>,
     influence_radius: f32,
-    t: f32,                    // curve parameter (advances when not frozen)
-    _pad1: f32,
-    _pad2: f32,
-    color: vec3<f32>,          // current appearance (driven by polyphony via PGA motor)
-    _pad3: f32,
+    t: f32,
+    orbit_radius: f32,
+    orbit_speed: f32,
+    color: vec3<f32>,
+    orbit_height: f32,
+    anchor: vec3<f32>,
+    color_mode: f32,
+    base_color: vec3<f32>,
+    _pad0: f32,
 }
 
 // --- [STATE:ribbon] RibbonState
@@ -1355,15 +1359,9 @@ const FPV_EYE_HEIGHT: f32 = PAWN_HEIGHT + 0.2;  // Camera at eye level
 const FPV_MIN_ELEVATION: f32 = -1.4;             // Look down ~80°
 const FPV_MAX_ELEVATION: f32 = 1.5;              // Look up ~86°
 
-// --- Sphere constants
+// --- Sphere constants (radius, orbit, influence now live in SphereState)
 
-const SPHERE_RADIUS: f32 = 2.5;
-const SPHERE_BASE_COLOR: vec3<f32> = vec3(0.95, 0.75, 0.4);
 const SPHERE_COLOR_RELEASE_RATE: f32 = 2.0;
-const SPHERE_INFLUENCE_RADIUS: f32 = 12.0;
-const CURVE_ORBIT_RADIUS: f32 = 25.0;
-const CURVE_ORBIT_HEIGHT: f32 = 8.0;
-const CURVE_ORBIT_SPEED: f32 = 0.8;
 const SPHERE_MIN_TERRAIN_CLEARANCE: f32 = 5.0;
 
 // (legacy proximity field constants removed — binding 21 reserved)
@@ -1591,7 +1589,7 @@ fn coupling_signal_polyphony_to_sphere_color(polyphony: f32, current: vec3<f32>,
     // --- HYBRID APPROACH
     if (intensity < 0.01) {
         // Silent: smooth return to base color using existing release rate
-        return current + (SPHERE_BASE_COLOR - current) * (1.0 - exp(-SPHERE_COLOR_RELEASE_RATE * dt));
+        return current + (sphere_state.base_color - current) * (1.0 - exp(-SPHERE_COLOR_RELEASE_RATE * dt));
     }
     
     // Active: PGA spiral (rotation scales with intensity, no idle drift)
@@ -2249,8 +2247,8 @@ fn coupling_velocity_to_pawn_heading(velocity: vec2<f32>, current_heading: f32, 
 // --- [COUPLING:sphere→terrain:tint]
 fn coupling_sphere_to_terrain_tint(sphere_pos: vec3<f32>) -> vec3<f32> {
     // Normalize position to [-1, 1] based on orbit radius
-    let nx = sphere_pos.x / CURVE_ORBIT_RADIUS;
-    let nz = sphere_pos.z / CURVE_ORBIT_RADIUS;
+    let nx = sphere_pos.x / sphere_state.orbit_radius;
+    let nz = sphere_pos.z / sphere_state.orbit_radius;
     
     // Map sphere position to RGB offsets within variance bounds
     let offset = vec3(
@@ -2340,36 +2338,35 @@ fn dynamics_sphere_motor_orbit(t: f32) -> SphereState {
 
     // 1. DEFINITION
     //    Axis: The vertical line through the origin (Line Y)
-    //    Speed: The orbital speed constant
-    let orbit_axis = LINE_Y.d; 
-    let angle = t * CURVE_ORBIT_SPEED;
-    
+    //    Speed: From per-entity state
+    let angle = t * sphere_state.orbit_speed;
+
     // 2. THE MOTOR (The Spell)
     //    Create a rotor that spins around the Y axis.
-    let m_orbit = rotor(orbit_axis, angle); 
-    
+    let m_orbit = rotor(LINE_Y.d, angle);
+
     // 3. LIFT (The Input)
-    //    Define the starting position as a standard point.
-    //    (Start at Radius on X, Height on Y)
-    let start_pos_vec = vec3(CURVE_ORBIT_RADIUS, CURVE_ORBIT_HEIGHT, 0.0);
-    let p_start = point_from_vec3(start_pos_vec);
-    
+    //    Offset from anchor — orbit_radius on X, flat plane.
+    //    Height is added after; terrain coupling adjusts it.
+    let offset = vec3(sphere_state.orbit_radius, 0.0, 0.0);
+    let p_start = point_from_vec3(offset);
+
     // 4. MOTIVATE (The Transformation)
-    //    Apply the motor to the point via sandwich product.
+    //    Apply the rotor to the offset point.
     let p_moved = sw_motor_point(m_orbit, p_start);
-    
+    let local_pos = point_to_vec3(p_moved);
+
     // 5. DROP (The Output)
-    //    Convert back to vec3 for the humble renderer.
-    s.pos = point_to_vec3(p_moved);
-    
+    //    Anchor translation + base orbit height.
+    s.pos = sphere_state.anchor + vec3(local_pos.x, sphere_state.orbit_height, local_pos.z);
+
     // Bonus: PGA gives us the orientation for free!
-    // The sphere rotates to face its path.
-    s.orientation = m_orbit.p0; 
-    
-    s.radius = SPHERE_RADIUS;
-    s.influence_radius = SPHERE_INFLUENCE_RADIUS;
+    s.orientation = m_orbit.p0;
+
+    s.radius = sphere_state.radius;
+    s.influence_radius = sphere_state.influence_radius;
     s.t = t;
-    
+
     return s;
 }
 
@@ -2384,7 +2381,7 @@ fn compose_sphere_from_orbit_pga(t: f32) -> SphereState {
     
     // 2. Apply terrain coupling (Height adjustment)
     //    This is an "effect" applied after the ideal motion
-    let base_height = s.pos.y;  // Should be CURVE_ORBIT_HEIGHT from motor
+    let base_height = s.pos.y;  // orbit_height from motor, adjusted by terrain
     let adjusted_height = coupling_terrain_to_sphere_orbit_height(
         vec2(s.pos.x, s.pos.z),
         base_height

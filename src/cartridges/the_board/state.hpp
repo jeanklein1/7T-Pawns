@@ -452,16 +452,20 @@ namespace t7 {
         };
 
         struct alignas(16) GPUSphereState {
-            float pos[3];
-            float radius;
-            float orientation[4];      // quaternion (x, y, z, w)
-            float influence_radius;
-            float t;                   // curve parameter (advances when not frozen)
-            float _pad1;
-            float _pad2;
-            float color[3];            // current appearance (driven by polyphony)
-            float _pad3;
-        };
+            float pos[3];              //  0: world position (computed by GPU)
+            float radius;              // 12: body radius
+            float orientation[4];      // 16: quaternion
+            float influence_radius;    // 32: zone/terrain influence range
+            float t;                   // 36: curve parameter
+            float orbit_radius;        // 40: distance from anchor
+            float orbit_speed;         // 44: angular velocity
+            float color[3];            // 48: current appearance (coupling-driven)
+            float orbit_height;        // 60: base altitude above terrain
+            float anchor[3];           // 64: orbit center (world XZ, Y=0)
+            float color_mode;          // 76: (reserved — future color tier)
+            float base_color[3];       // 80: seed-derived rest color
+            float _pad0;               // 92
+        };                             // 96 total
 
         struct alignas(16) GPURibbonState {
             float anchor[3];                                                    // 0
@@ -973,7 +977,7 @@ namespace t7 {
         static_assert(sizeof(GPUTerrainState) == 32, "GPUTerrainState must be 32 bytes");
         static_assert(sizeof(GPUPawnState) == 48, "GPUPawnState must be 48 bytes");
         static_assert(sizeof(GPUCameraState) == 32, "GPUCameraState must be 32 bytes");
-        static_assert(sizeof(GPUSphereState) == 64, "GPUSphereState must be 64 bytes");
+        static_assert(sizeof(GPUSphereState) == 96, "GPUSphereState must be 96 bytes");
         static_assert(sizeof(GPURibbonState) == 96, "GPURibbonState must be 96 bytes");
         static_assert(sizeof(GPUVPMatrix) == 128, "GPUVPMatrix must be 128 bytes");
         static_assert(sizeof(GPUDirectionalLight) == 48, "GPUDirectionalLight must be 48 bytes");
@@ -4455,12 +4459,20 @@ namespace t7 {
                 sphere.orientation[3] = 1.0f;
                 sphere.influence_radius = Idle::SPHERE_INFLUENCE_RADIUS;
                 sphere.t = 0.0f;
-                sphere._pad1 = 0.0f;
-                sphere._pad2 = 0.0f;
+                sphere.orbit_radius = Idle::SPHERE_ORBIT_RADIUS;
+                sphere.orbit_speed = Idle::SPHERE_ORBIT_SPEED;
                 sphere.color[0] = 0.95f;
                 sphere.color[1] = 0.75f;
                 sphere.color[2] = 0.4f;
-                sphere._pad3 = 0.0f;
+                sphere.orbit_height = Idle::SPHERE_HOVER_HEIGHT;
+                sphere.anchor[0] = 0.0f;
+                sphere.anchor[1] = 0.0f;
+                sphere.anchor[2] = 0.0f;
+                sphere.color_mode = 0.0f;
+                sphere.base_color[0] = 0.95f;
+                sphere.base_color[1] = 0.75f;
+                sphere.base_color[2] = 0.4f;
+                sphere._pad0 = 0.0f;
                 queue.WriteBuffer(sphereBuffer_, 0, &sphere, sizeof(sphere));
 
                 // Default state — overwritten by spawner
