@@ -630,10 +630,6 @@ namespace t7 {
                 static constexpr float POSITION_JITTER = 0.35f;
             };
 
-            static constexpr float RIBBON_BASE_TIER_WEIGHTS[RIBBON_TIER_COUNT] = {
-                0.45f, 0.30f, 0.25f
-            };
-
             // ── Color Modes ──────────────────────────────────────────────────
             struct RibbonColorMode {
                 static constexpr uint32_t SMOOTH = 0;  // terrain-derived monochrome
@@ -725,6 +721,9 @@ namespace t7 {
 
             // ── Tier Profile (mean+sigma, matches GoLTierProfile pattern) ────
             static constexpr uint32_t RIBBON_TIER_COUNT = 3;
+            static constexpr float RIBBON_BASE_TIER_WEIGHTS[RIBBON_TIER_COUNT] = {
+                0.45f, 0.30f, 0.25f
+            };
 
             struct RibbonTierProfile {
                 // ─── Geometry ────────────────────────────────────────────
