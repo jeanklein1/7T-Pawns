@@ -3392,7 +3392,7 @@ namespace t7 {
             //  │1200+      │ (free)    │ next entity family starts here     │
             //  └───────────┴───────────┴────────────────────────────────────┘
             //
-            // SEED SOURCE: floater_cell_seed (independent salt 0xBEEF42)
+            // SEED SOURCE: tile_seed(activeSeed_, gx, gz)
             //  ┌───────────┬───────────┬────────────────────────────────────┐
             //  │ Range     │ Family    │ Struct                             │
             //  ├───────────┼───────────┼────────────────────────────────────┤
@@ -4789,7 +4789,7 @@ namespace t7 {
             //  floating entities now use the patch-based dispatch pipeline.)
 
             // ─── Property Index Registry ─────────────────────────────────
-            // Seed source: floater_cell_seed (independent from tile_seed)
+            // Seed source: tile_seed(activeSeed_, gx, gz)
             struct FloatingEntityProp {
                 static constexpr uint32_t SPAWN_ROLL = 100u;
                 static constexpr uint32_t ANCHOR_X = 101u;
