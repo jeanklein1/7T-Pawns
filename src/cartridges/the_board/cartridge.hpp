@@ -826,10 +826,6 @@ namespace t7 {
                 "smooth", "tinted", "contrast"
             };
 
-            // ── Convenience aliases ──────────────────────────────────────────
-            static constexpr float RIBBON_CELL_SIZE = RibbonSpawnConfig::CELL_SIZE;
-            static constexpr float RIBBON_SPAWN_CHANCE = RibbonSpawnConfig::SPAWN_CHANCE;
-            static constexpr float RIBBON_RENDER_DIST = RibbonSpawnConfig::RENDER_DIST;
             static constexpr float PAWN_HEIGHT_UNITS = 1.5f;     // matches WGSL PAWN_HEIGHT
 
             // ─── Generative Catenary Arches ──────────────────────────────────
@@ -3654,7 +3650,45 @@ namespace t7 {
                 uint32_t geometry_type, motion_type;
             };
 
-            // ─── Entity Selection Queue ──────────────────────────────��──────
+            // ─── Ribbon Selection / Placement ────────────────────────────
+
+            struct RibbonSelection {
+                uint32_t seed;
+                int32_t  trigger_gx, trigger_gz;
+                uint32_t slot;
+                uint32_t tier_idx;
+                // Geometry (from generate_flying_ribbon)
+                uint32_t cube_count;
+                float cube_size;
+                float height;
+                float orientation;
+                float lateral_amp, lateral_cycles, lateral_speed;
+                float vertical_amp, vertical_cycles, vertical_speed;
+                float twist_amp, twist_cycles, twist_speed;
+                // Color
+                uint32_t color_mode;
+                float color[3];
+                // Footprint
+                float footprint_r;
+            };
+
+            struct RibbonPlacement {
+                uint32_t slot;
+                int32_t  trigger_gx, trigger_gz;
+                int32_t  host_gx, host_gz;
+                uint32_t tier_idx;
+                float cx, cz, rotation;
+                // Geometry (copied from selection)
+                uint32_t cube_count;
+                float cube_size, height, orientation;
+                float lateral_amp, lateral_cycles, lateral_speed;
+                float vertical_amp, vertical_cycles, vertical_speed;
+                float twist_amp, twist_cycles, twist_speed;
+                uint32_t color_mode;
+                float color[3];
+            };
+
+            // ─── Entity Selection Queue ─────────────────────────────────────
             //
             // Lightweight tagged entry holding one family's selection.
             // Produced by select_entities_for_patch, consumed by
@@ -3673,6 +3707,7 @@ namespace t7 {
                     CactusSelection  cactus;
                     BladeClusterSelection blade;
                     FloatingSelection floating;
+                    RibbonSelection ribbon;
                 };
                 EntityQueueEntry() : family(0), gx(0), gz(0) { std::memset(&column, 0, sizeof(column)); }
             };
@@ -3697,6 +3732,7 @@ namespace t7 {
                     CactusPlacement  cactus;
                     BladeClusterPlacement blade;
                     FloatingPlacement floating;
+                    RibbonPlacement ribbon;
                 };
                 PlacementEntry() : family(0), gx(0), gz(0) { std::memset(&arch, 0, sizeof(arch)); }
             };
@@ -4248,15 +4284,16 @@ namespace t7 {
 
 
 
-            // ─── Ribbon Lifecycle ─────────────────────────────────────────────
-            // Spatial grid activation, parameter generation, spine/tangent
-            // CPU mirrors, diagnostics. Independent of spawn_engine shared
-            // infrastructure today — will integrate as entity interaction matures.
+            // ─── Ribbon Lifecycle (patch-based dispatch pipeline) ────────────
 
-            int32_t ribbonCellX_ = INT32_MAX;
-            int32_t ribbonCellZ_ = INT32_MAX;
-            GPURibbonState currentRibbon_{};
-            bool ribbonActive_ = false;
+            struct ActiveRibbon {
+                int32_t patch_gx = 0, patch_gz = 0;
+                int32_t host_gx = 0, host_gz = 0;
+                float anchor_x = 0.0f, anchor_z = 0.0f;  // for distance checks (finite mode)
+                bool active = false;
+            };
+            ActiveRibbon activeRibbons_[1]{};    // single slot
+            uint32_t activeRibbonCount_ = 0;
 
             // ─── Mood 9 Ribbon Anchor ─────────────────────────────────────
             // Seed-derived position centered on the finite world.
@@ -4350,72 +4387,6 @@ namespace t7 {
             }
 
             // Check a 3×3 neighborhood of ribbon cells around the pawn.
-            // Activate the closest ribbon within render distance.
-            void update_ribbon_spawning(float pawnX, float pawnZ, float time, wgpu::Queue& queue) {
-                // Hysteresis: if a ribbon is already active, keep it until pawn
-                // exceeds HOLD_DIST from its anchor. Prevents cell-boundary flip-flop.
-                if (ribbonActive_) {
-                    float dx = currentRibbon_.anchor[0] - pawnX;
-                    float dz = currentRibbon_.anchor[2] - pawnZ;
-                    float dist_sq = dx * dx + dz * dz;
-                    float hold_sq = RibbonSpawnConfig::HOLD_DIST * RibbonSpawnConfig::HOLD_DIST;
-
-                    if (dist_sq < hold_sq) {
-                        // Still in range — just update time
-                        gpuState_.upload_ribbon_time(queue, time);
-
-                        return;
-                    }
-                    // Out of hold range — deactivate and search for new
-                    uint32_t zero = 0u;
-                    queue.WriteBuffer(gpuState_.ribbon_buffer(),
-                        offsetof(GPURibbonState, is_visible), &zero, sizeof(uint32_t));
-                    ribbonActive_ = false;
-                }
-
-                // Search for new ribbon (sky objects — not capped by terrain radius)
-                float best_dist_sq = RIBBON_RENDER_DIST * RIBBON_RENDER_DIST;
-                bool found = false;
-                GPURibbonState best{};
-                uint32_t best_tier = 0;
-
-                for (int32_t dz = -1; dz <= 1; dz++) {
-                    for (int32_t dx = -1; dx <= 1; dx++) {
-                        int32_t cx = (int32_t)std::floor(pawnX / RIBBON_CELL_SIZE) + dx;
-                        int32_t cz = (int32_t)std::floor(pawnZ / RIBBON_CELL_SIZE) + dz;
-                        uint32_t seed = ribbon_cell_seed(activeSeed_, cx, cz);
-
-                        if (cpu_hash_f(seed, RibbonProp::SPAWN_ROLL) > RIBBON_SPAWN_CHANCE) continue;
-
-                        float ax = (float)cx * RIBBON_CELL_SIZE + cpu_hash_f(seed, RibbonProp::ANCHOR_X) * RIBBON_CELL_SIZE;
-                        float az = (float)cz * RIBBON_CELL_SIZE + cpu_hash_f(seed, RibbonProp::ANCHOR_Z) * RIBBON_CELL_SIZE;
-
-                        float ddx = ax - pawnX;
-                        float ddz = az - pawnZ;
-                        float dist_sq = ddx * ddx + ddz * ddz;
-                        if (dist_sq >= best_dist_sq) continue;
-
-                        best_dist_sq = dist_sq;
-                        found = true;
-
-                        best.anchor[0] = ax;
-                        best.anchor[1] = 0.0f;
-                        best.anchor[2] = az;
-                        best.time = time;
-
-                        float terrain_est = estimate_terrain_height(ax, az);
-                        best_tier = generate_flying_ribbon(best, seed, terrain_est);
-                    }
-                }
-
-                if (found) {
-                    currentRibbon_ = best;
-                    gpuState_.upload_ribbon(queue, best);
-                    ribbonActive_ = true;
-                    print_ribbon_diagnostic("Spawned", best, best_tier);
-                }
-            }
-
             // Estimate terrain height from tile cache (rough CPU-side approximation).
             float estimate_terrain_height(float wx, float wz) const {
                 int32_t tx = (int32_t)std::floor(wx / PATCH_EXTENT);
@@ -4837,6 +4808,182 @@ namespace t7 {
             uint32_t activeFloaterCount_ = 0;
 
             // ═══ Floating Entity System End ═══════════════════════════════
+
+            // ═══ Ribbon Dispatch Pipeline ═══════════════════════════════════
+            //
+            // Single-instance ribbon through the 3-phase dispatch pipeline.
+            // GPU buffer is singleton (upload_ribbon, not slot-indexed).
+
+            // ─── select_ribbon_for_patch ──────────────────────────────────
+            bool select_ribbon_for_patch(int32_t gx, int32_t gz, RibbonSelection& sel) {
+                auto gate = run_spawn_preamble(gx, gz,
+                    activeRibbons_, 1u,
+                    RibbonProp::SPAWN_ROLL, RibbonConfig::SPAWN_CHANCE,
+                    RibbonConfig::MOOD_MULTIPLIER,
+                    PopFamily::RIBBON, "ribn");
+                if (!gate.ok) return false;
+
+                // Tier selection with theme bias
+                float tier_weights[RIBBON_TIER_COUNT];
+                for (uint32_t t = 0; t < RIBBON_TIER_COUNT; t++)
+                    tier_weights[t] = RIBBON_BASE_TIER_WEIGHTS[t];
+                for (uint32_t t = 0; t < RIBBON_TIER_COUNT; t++)
+                    tier_weights[t] *= THEMES[gate.theme_idx].tier_wt_ribbon[t];
+                uint32_t tier_idx = select_tier_biased(gate.seed, RibbonProp::TIER,
+                    tier_weights, RIBBON_TIER_COUNT, PopFamily::RIBBON);
+
+                sel.seed = gate.seed;
+                sel.trigger_gx = gx;
+                sel.trigger_gz = gz;
+                sel.slot = gate.slot;
+                sel.tier_idx = tier_idx;
+
+                // Terrain estimate from patch center
+                float terrain_est = estimate_terrain_height(
+                    (gx + 0.5f) * PATCH_EXTENT, (gz + 0.5f) * PATCH_EXTENT);
+
+                // --- Extract geometry from generate_flying_ribbon logic ---
+                const auto& tp = RIBBON_TIERS[tier_idx];
+
+                float count_f = std::max(20.0f,
+                    cpu_sample_gaussian(gate.seed, RibbonProp::CUBE_COUNT, tp.cube_count_mean, tp.cube_count_sigma));
+                sel.cube_count = std::min((uint32_t)count_f, Dim::RIBBON_MAX_RINGS);
+                sel.cube_size = std::max(0.5f,
+                    cpu_sample_gaussian(gate.seed, RibbonProp::CUBE_SIZE, tp.cube_size_mean, tp.cube_size_sigma));
+
+                sel.height = terrain_est + std::max(20.0f,
+                    cpu_sample_gaussian(gate.seed, RibbonProp::HEIGHT, tp.height_mean, tp.height_sigma));
+
+                sel.orientation = cpu_hash_f(gate.seed, RibbonProp::ORIENTATION) * 6.2831853f;
+
+                sel.lateral_amp = std::max(0.1f, cpu_sample_gaussian(gate.seed, RibbonProp::LATERAL_AMP, tp.lateral_amp_mean, tp.lateral_amp_sigma));
+                sel.lateral_cycles = std::max(0.1f, cpu_sample_gaussian(gate.seed, RibbonProp::LATERAL_CYCLES, tp.lateral_cycles_mean, tp.lateral_cycles_sigma));
+                sel.lateral_speed = std::max(0.005f, cpu_sample_gaussian(gate.seed, RibbonProp::LATERAL_SPEED, tp.lateral_speed_mean, tp.lateral_speed_sigma));
+
+                sel.vertical_amp = std::max(0.1f, cpu_sample_gaussian(gate.seed, RibbonProp::VERTICAL_AMP, tp.vertical_amp_mean, tp.vertical_amp_sigma));
+                sel.vertical_cycles = sel.lateral_cycles;
+                sel.vertical_speed = sel.lateral_speed;
+
+                sel.twist_amp = std::max(0.0f, cpu_sample_gaussian(gate.seed, RibbonProp::TWIST_AMP, tp.twist_amp_mean, tp.twist_amp_sigma));
+                sel.twist_cycles = sel.lateral_cycles;
+                sel.twist_speed = sel.lateral_speed;
+
+                // Color mode — weighted selection
+                float color_roll = cpu_hash_f(gate.seed, RibbonProp::COLOR_ROLL);
+                sel.color_mode = RibbonColorMode::COUNT - 1;
+                float ccum = 0.0f;
+                for (uint32_t c = 0; c < RibbonColorMode::COUNT; c++) {
+                    ccum += RibbonColorMode::WEIGHTS[c];
+                    if (color_roll < ccum) { sel.color_mode = c; break; }
+                }
+
+                // Color — depends on mode
+                if (sel.color_mode == RibbonColorMode::SMOOTH) {
+                    uint32_t pal_idx = (uint32_t)(cpu_hash_f(gate.seed, RibbonProp::PALETTE_IDX) * RIBBON_SMOOTH_PALETTE_COUNT);
+                    if (pal_idx >= RIBBON_SMOOTH_PALETTE_COUNT) pal_idx = RIBBON_SMOOTH_PALETTE_COUNT - 1;
+                    float var = cpu_hash_f(gate.seed, RibbonProp::COLOR_R) * 0.10f - 0.05f;
+                    sel.color[0] = RIBBON_SMOOTH_PALETTE[pal_idx][0] + var;
+                    sel.color[1] = RIBBON_SMOOTH_PALETTE[pal_idx][1] + var * 0.8f;
+                    sel.color[2] = RIBBON_SMOOTH_PALETTE[pal_idx][2] + var * 0.6f;
+                }
+                else if (sel.color_mode == RibbonColorMode::TINTED) {
+                    sel.color[0] = cpu_hash_f(gate.seed, RibbonProp::COLOR_R) * 0.45f + 0.40f;
+                    sel.color[1] = cpu_hash_f(gate.seed, RibbonProp::COLOR_G) * 0.40f + 0.35f;
+                    sel.color[2] = cpu_hash_f(gate.seed, RibbonProp::COLOR_B) * 0.45f + 0.35f;
+                }
+                else {
+                    float hue = cpu_hash_f(gate.seed, RibbonProp::COLOR_R);
+                    sel.color[0] = 0.20f + hue * 0.35f;
+                    sel.color[1] = 0.18f + (1.0f - hue) * 0.30f;
+                    sel.color[2] = 0.22f + cpu_hash_f(gate.seed, RibbonProp::COLOR_B) * 0.25f;
+                }
+
+                sel.footprint_r = 5.0f;
+                return true;
+            }
+
+            // ─── place_ribbon_from_selection ──────────────────────────────
+            bool place_ribbon_from_selection(const RibbonSelection& sel, RibbonPlacement& plan) {
+                auto pos = negotiate_position(sel.seed,
+                    sel.trigger_gx, sel.trigger_gz,
+                    RibbonProp::ANCHOR_X, RibbonProp::ANCHOR_Z,
+                    RibbonConfig::POSITION_JITTER,
+                    RibbonProp::ORIENTATION,
+                    sel.footprint_r, PopFamily::RIBBON, sel.tier_idx);
+                if (!pos.ok) return false;
+
+                plan = RibbonPlacement{};
+                plan.slot = sel.slot;
+                plan.trigger_gx = sel.trigger_gx;
+                plan.trigger_gz = sel.trigger_gz;
+                plan.host_gx = pos.host_gx;
+                plan.host_gz = pos.host_gz;
+                plan.tier_idx = sel.tier_idx;
+                plan.cx = pos.cx;
+                plan.cz = pos.cz;
+                plan.rotation = pos.rotation;
+
+                plan.cube_count = sel.cube_count;
+                plan.cube_size = sel.cube_size;
+                plan.height = sel.height;
+                plan.orientation = sel.orientation;
+                plan.lateral_amp = sel.lateral_amp;
+                plan.lateral_cycles = sel.lateral_cycles;
+                plan.lateral_speed = sel.lateral_speed;
+                plan.vertical_amp = sel.vertical_amp;
+                plan.vertical_cycles = sel.vertical_cycles;
+                plan.vertical_speed = sel.vertical_speed;
+                plan.twist_amp = sel.twist_amp;
+                plan.twist_cycles = sel.twist_cycles;
+                plan.twist_speed = sel.twist_speed;
+                plan.color_mode = sel.color_mode;
+                std::memcpy(plan.color, sel.color, sizeof(plan.color));
+
+                record_placement_bookkeeping(PopFamily::RIBBON, plan.tier_idx);
+                return true;
+            }
+
+            // ─── commit_ribbon ───────────────────────────────────────────
+            void commit_ribbon(const RibbonPlacement& plan,
+                int32_t trigger_gx, int32_t trigger_gz, wgpu::Queue& queue)
+            {
+                GPURibbonState r{};
+                r.anchor[0] = plan.cx;
+                r.anchor[1] = 0.0f;
+                r.anchor[2] = plan.cz;
+                r.time = currentSeconds_;
+                r.cube_count = plan.cube_count;
+                r.cube_size = plan.cube_size;
+                r.height = plan.height;
+                r.orientation = plan.orientation;
+                r.lateral_amp = plan.lateral_amp;
+                r.lateral_cycles = plan.lateral_cycles;
+                r.lateral_speed = plan.lateral_speed;
+                r.vertical_amp = plan.vertical_amp;
+                r.vertical_cycles = plan.vertical_cycles;
+                r.vertical_speed = plan.vertical_speed;
+                r.twist_amp = plan.twist_amp;
+                r.twist_cycles = plan.twist_cycles;
+                r.twist_speed = plan.twist_speed;
+                r.color_mode = plan.color_mode;
+                r.color[0] = plan.color[0];
+                r.color[1] = plan.color[1];
+                r.color[2] = plan.color[2];
+                r.is_visible = 1u;
+
+                gpuState_.upload_ribbon(queue, r);
+
+                activeRibbons_[0].patch_gx = trigger_gx;
+                activeRibbons_[0].patch_gz = trigger_gz;
+                activeRibbons_[0].host_gx = plan.host_gx;
+                activeRibbons_[0].host_gz = plan.host_gz;
+                activeRibbons_[0].anchor_x = plan.cx;
+                activeRibbons_[0].anchor_z = plan.cz;
+                activeRibbons_[0].active = true;
+                activeRibbonCount_ = 1;
+            }
+
+            // ═══ Ribbon Dispatch Pipeline End ═══════════════════════════════
 
             // ── GoL Zones (modules/gol_zones.inl) ──
             // ═══ INLINED: modules/gol_zones.inl ═══════════════════════════════
@@ -6211,7 +6358,7 @@ namespace t7 {
                     gpuState_.sphere_index_buffer(),
                     gpuState_.sphere_index_count());
 
-                if (ribbonActive_) {
+                if (activeRibbons_[0].active) {
                     renderer_.draw_ribbon(pass,
                         gpuState_.photographer_render_entity_group(),
                         gpuState_.render_texture_group(),
@@ -7704,6 +7851,58 @@ namespace t7 {
                 // no-op
             }
 
+            // ── Ribbon dispatch wrappers ──
+
+            static bool dispatch_select_ribbon(Cartridge* self,
+                int32_t gx, int32_t gz, EntityQueueEntry& e) {
+                return self->select_ribbon_for_patch(gx, gz, e.ribbon);
+            }
+
+            static bool dispatch_place_ribbon(Cartridge* self,
+                EntityQueueEntry& e, PlacementEntry& pe) {
+                pe.family = e.family; pe.gx = e.gx; pe.gz = e.gz;
+                if (self->place_ribbon_from_selection(e.ribbon, pe.ribbon)) {
+                    return true;
+                } else {
+                    self->activeRibbons_[0].active = false;
+                    return false;
+                }
+            }
+
+            static void dispatch_commit_ribbon(Cartridge* self,
+                PlacementEntry& pe, wgpu::Queue& queue) {
+                auto* host = self->find_patch(pe.ribbon.host_gx, pe.ribbon.host_gz);
+                if (host) {
+                    self->commit_ribbon(pe.ribbon, pe.gx, pe.gz, queue);
+                    host->record_entity(PopFamily::RIBBON, pe.ribbon.slot);
+                } else {
+                    self->activeRibbons_[0].active = false;
+#ifdef DIAG_ENTITY_LIFECYCLE
+                    std::cout << "[DIAG:REJECT] ribn slot=0"
+                        << " host=(" << pe.ribbon.host_gx << "," << pe.ribbon.host_gz
+                        << ") -- no host patch\n";
+#endif
+                }
+            }
+
+            static void dispatch_evict_ribbon(Cartridge* self,
+                uint32_t slot, wgpu::Queue& queue) {
+                (void)slot;
+                GPURibbonState empty{};
+                self->gpuState_.upload_ribbon(queue, empty);
+                self->activeRibbons_[0].active = false;
+                self->activeRibbonCount_ = 0;
+            }
+
+            static bool dispatch_prepare_mesh_ribbon(Cartridge* self, wgpu::Queue& queue) {
+                (void)self; (void)queue;
+                return false;
+            }
+            static void dispatch_mesh_gen_ribbon(Cartridge* self, wgpu::ComputePassEncoder& pass) {
+                (void)self; (void)pass;
+                // no-op — GPU compute handles ribbon rendering
+            }
+
             // ── Dispatch table (order matches PopFamily enum) ──
 
             static constexpr FamilyDispatch FAMILY_DISPATCH[PopFamily::COUNT] = {
@@ -7731,6 +7930,9 @@ namespace t7 {
                 { dispatch_select_floating, dispatch_place_floating, dispatch_commit_floating,
                   dispatch_evict_floating, dispatch_prepare_mesh_floating, dispatch_mesh_gen_floating,
                   "float" },
+                { dispatch_select_ribbon, dispatch_place_ribbon, dispatch_commit_ribbon,
+                  dispatch_evict_ribbon, dispatch_prepare_mesh_ribbon, dispatch_mesh_gen_ribbon,
+                  "ribn" },
             };
 
             // ─── Population Themes ───────────────────────────────────────────
@@ -8814,7 +9016,12 @@ namespace t7 {
                 gpuState_.upload_zone_config(queue, emptyZones);
 
                 // Ribbon
-                ribbonActive_ = false;
+                {
+                    GPURibbonState empty{};
+                    gpuState_.upload_ribbon(queue, empty);
+                    activeRibbons_[0] = ActiveRibbon{};
+                    activeRibbonCount_ = 0;
+                }
 
                 // Floating entities — clear all slots
                 for (uint32_t i = 0; i < Dim::MAX_FLOATING_INSTANCES; i++) {
@@ -9333,11 +9540,11 @@ namespace t7 {
                         gpuState_.set_world_seed(activeSeed_);
                         apply_mood(pendingDestination_.mood, queue);
                         // Deactivate ribbon in finite mode (mood 5 spawns its own in apply_mood)
-                        if (finiteMode_ && ribbonActive_ && activeMood_ != 5) {
-                            uint32_t zero = 0u;
-                            queue.WriteBuffer(gpuState_.ribbon_buffer(),
-                                offsetof(GPURibbonState, is_visible), &zero, sizeof(uint32_t));
-                            ribbonActive_ = false;
+                        if (finiteMode_ && activeRibbons_[0].active && activeMood_ != 5) {
+                            GPURibbonState empty{};
+                            gpuState_.upload_ribbon(queue, empty);
+                            activeRibbons_[0] = ActiveRibbon{};
+                            activeRibbonCount_ = 0;
                         }
                         // Schedule guaranteed back-portal in finite worlds
                         backPortalPending_ = finiteMode_;
@@ -9633,11 +9840,8 @@ namespace t7 {
                 }
 #endif
 
-                if (!finiteMode_) {
-                    update_ribbon_spawning(pawnReadback_x_, pawnReadback_z_, currentSeconds_, queue);
-                }
-                else if (ribbonActive_) {
-                    // Mood-spawned ribbon in finite mode — update time only
+                // Ribbon time update (per-frame, like update_sphere for floating)
+                if (activeRibbons_[0].active) {
                     gpuState_.upload_ribbon_time(queue, currentSeconds_);
                 }
 

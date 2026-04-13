@@ -365,8 +365,10 @@ void apply_mood(uint32_t mood, wgpu::Queue& queue) {
         float terrain_est = cpu_terrain_base_at(ax, az);
         uint32_t rtier = generate_flying_ribbon(ribbon, rseed, terrain_est);
         gpuState_.upload_ribbon(queue, ribbon);
-        currentRibbon_ = ribbon;
-        ribbonActive_ = true;
+        activeRibbons_[0].anchor_x = ax;
+        activeRibbons_[0].anchor_z = az;
+        activeRibbons_[0].active = true;
+        activeRibbonCount_ = 1;
         print_ribbon_diagnostic("Mood 9", ribbon, rtier);
     }
 
