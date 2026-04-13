@@ -40,13 +40,13 @@ const PE = 50;
 const SPAWN_RADIUS = 7;
 const RENDER_RADIUS = 5;
 const EVICT_RADIUS = SPAWN_RADIUS + 2;
-const NF = 7;
+const NF = 8;
 const MAX_FP = 128;
 const BASE_WEIGHT = 10;
 
-const FN = ["Pyramid", "Arch", "Column", "Antenna", "Palm", "Cactus", "Blade"];
-const FK = ["p", "a", "c", "n", "palm", "cact", "blad"];
-const FCOL = ["#d4713b", "#4a90c4", "#6aaa5c", "#b07acc", "#2d8a4e", "#8ab050", "#90c870"];
+const FN = ["Pyramid", "Arch", "Column", "Antenna", "Palm", "Cactus", "Blade", "Floating"];
+const FK = ["p", "a", "c", "n", "palm", "cact", "blad", "float"];
+const FCOL = ["#d4713b", "#4a90c4", "#6aaa5c", "#b07acc", "#2d8a4e", "#8ab050", "#90c870", "#c0a0d0"];
 
 const TN = [
   ["Obelisk", "Temple", "Colossus"],
@@ -56,10 +56,11 @@ const TN = [
   ["Sapling", "Coastal", "Royal"],
   ["Finger", "Saguaro", "Candelabra"],
   ["Sprout", "Clump", "Thicket"],
+  ["SmCube", "MdCube", "LgCube", "Monolith", "Sentinel", "Anomaly"],
 ];
 const TS = [
   [.35, .6, 1], [.1, .55, .95], [.15, .3, .5], [.6, .45, .85],
-  [.2, .45, .75], [.15, .4, .7], [.3, .3, .3],
+  [.2, .45, .75], [.15, .4, .7], [.3, .3, .3], [.15, .35, .60, .40, .25, .20],
 ];
 
 const THN = ["Transition", "Monumental", "Colonnade", "Antenna", "Barren"];
@@ -67,60 +68,63 @@ const THC = ["rgba(180,180,170,.18)", "rgba(200,140,80,.22)", "rgba(100,160,200,
 const AC = ["#c49a6c", "#b8b090", "#a0b8a0", "#8ab0c8"];
 const AN = ["Mount", "Varied", "Basin", "Pool"];
 
-const SPAWN_PROP = [800, 600, 700, 900, 950, 1000, 1100];
-const TIER_PROP  = [804, 604, 703, 903, 954, 1004, 1104];
-const POS_X_PROP = [801, 601, 701, 901, 951, 1001, 1101];
-const POS_Z_PROP = [802, 602, 702, 902, 952, 1002, 1102];
-const ROT_PROP   = [803, 603, 355, 355, 953, 1003, 1103];
-const JITTER     = [.25, .35, .35, .35, .45, .35, .30];
-const MAX_SLOTS  = [8, 16, 16, 16, 24, 20, 32];
+const SPAWN_PROP = [800, 600, 700, 900, 950, 1000, 1100, 100];
+const TIER_PROP  = [804, 604, 703, 903, 954, 1004, 1104, 103];
+const POS_X_PROP = [801, 601, 701, 901, 951, 1001, 1101, 101];
+const POS_Z_PROP = [802, 602, 702, 902, 952, 1002, 1102, 102];
+const ROT_PROP   = [803, 603, 355, 355, 953, 1003, 1103, 126];
+const JITTER     = [.25, .35, .35, .35, .45, .35, .30, .40];
+const MAX_SLOTS  = [8, 16, 16, 16, 24, 20, 32, 32];
 
 const MOOD_COUNT = 6;
 const MOOD_NAMES = ["open_default", "open_sunset", "indoor_flat", "indoor_vault", "finite_outdoor", "finite_outdoor_ref"];
 const MOOD_MULT = [
-  [1,1,1,1,1,1,1], [1,1,1,1,1,1,1], [1,1,1,1,1,1,1],
-  [1,1,1,1,1,1,1], [1,1,1,1,1,1,1], [0,1,0,0,0,0,0],
+  [1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,0],
+  [1,1,1,1,1,1,1,0], [1,1,1,1,1,1,1,1], [0,1,0,0,0,0,0,0],
 ];
 
 const THEME_LATTICE_SPACING = 500;
 const THEME_SEED_BAND = 170;
-const TK = ["tp", "ta", "tc", "tn", "tpalm", "tcact", "tblad"];
+const TK = ["tp", "ta", "tc", "tn", "tpalm", "tcact", "tblad", "tfloat"];
 
 function initState() {
   return {
     seed: 42,
     mood: 0,
     aw: [1.8, 1.3, 1, 0],
-    sc: { p: .030, a: .030, c: .030, n: .025, palm: .200, cact: .100, blad: .025 },
+    sc: { p: .030, a: .030, c: .030, n: .025, palm: .200, cact: .100, blad: .025, float: .050 },
     tw: {
       p: [.5, .25, .25], a: [.5, .15, .15], c: [.05, .2, .18], n: [.1, .22, .13],
       palm: [.5, .35, .15], cact: [.5, .35, .15], blad: [.5, .35, .15],
+      float: [.35, .28, .18, .04, .02, .01],
     },
     sep: [
-      [15, 10,  5,  5,  5,  5, 0],
-      [10, 20, 10, 10,  8,  5, 0],
-      [ 5, 10,  8,  6,  5,  5, 0],
-      [ 5, 10,  6, 12,  5,  5, 0],
-      [ 5,  8,  5,  5,  8,  5, 0],
-      [ 5,  5,  5,  5,  5,  8, 0],
-      [ 0,  0,  0,  0,  0,  0, 0],
+      [15, 10,  5,  5,  5,  5, 0, 0],
+      [10, 20, 10, 10,  8,  5, 0, 0],
+      [ 5, 10,  8,  6,  5,  5, 0, 0],
+      [ 5, 10,  6, 12,  5,  5, 0, 0],
+      [ 5,  8,  5,  5,  8,  5, 0, 0],
+      [ 5,  5,  5,  5,  5,  8, 0, 0],
+      [ 0,  0,  0,  0,  0,  0, 0, 0],
+      [ 0,  0,  0,  0,  0,  0, 0, 20],
     ],
     mute: new Array(NF).fill(false),
     solo: -1,
     density: { spacing: 250, seedBand: 160, exponent: 0.6, min: 1.0, max: 1.0 },
     prox: {
-      radius:       [0, 0, 60, 0, 150, 120, 120],
-      maxBoost:     [1, 1,  2, 1,   3,   3,   3],
-      threshold:    [0, 0,  2, 0,   1,   1,   1],
-      gapReduction: [0, 0, .3, 0,  .6,  .6,  .6],
+      radius:       [0, 0, 60, 0, 150, 120, 120, 0],
+      maxBoost:     [1, 1,  2, 1,   3,   3,   3, 1],
+      threshold:    [0, 0,  2, 0,   1,   1,   1, 0],
+      gapReduction: [0, 0, .3, 0,  .6,  .6,  .6, 0],
       aff: [
-        [0, 0, 0,  0, 0,  0,  0 ],
-        [0, 0, 0,  0, 0,  0,  0 ],
-        [0, 0, .4, 0, 0,  0,  0 ],
-        [0, 0, 0,  0, 0,  0,  0 ],
-        [0, 0, 0,  0, .5, .3, .3],
-        [0, 0, 0,  0, .3, .5, .3],
-        [0, 0, 0,  0, .3, .3, .5],
+        [0, 0, 0,  0, 0,  0,  0,  0],
+        [0, 0, 0,  0, 0,  0,  0,  0],
+        [0, 0, .4, 0, 0,  0,  0,  0],
+        [0, 0, 0,  0, 0,  0,  0,  0],
+        [0, 0, 0,  0, .5, .3, .3, 0],
+        [0, 0, 0,  0, .3, .5, .3, 0],
+        [0, 0, 0,  0, .3, .3, .5, 0],
+        [0, 0, 0,  0, 0,  0,  0,  0],
       ],
     },
     globalDensity: 1.0,
@@ -128,40 +132,41 @@ function initState() {
       size: 16, typeStr: 0.0, scaleStr: 0.0,
       affCh: 0.0, repCh: 0.0, minObs: 1,
       crossAff: [
-        [0.5, 2.0, 1.5, 1.5, 1.0, 1.0, 1.0],
-        [0.8, 1.5, 2.0, 2.0, 1.0, 1.0, 1.0],
-        [0.3, 1.2, 1.8, 1.0, 1.0, 1.0, 1.0],
-        [0.3, 1.2, 1.0, 1.8, 1.0, 1.0, 1.0],
-        [0.3, 1.0, 1.0, 1.0, 1.5, 1.0, 1.0],
-        [1.0, 1.0, 1.0, 1.0, 1.0, 1.5, 1.0],
-        [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+        [0.5, 2.0, 1.5, 1.5, 1.0, 1.0, 1.0, 1.0],
+        [0.8, 1.5, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0],
+        [0.3, 1.2, 1.8, 1.0, 1.0, 1.0, 1.0, 1.0],
+        [0.3, 1.2, 1.0, 1.8, 1.0, 1.0, 1.0, 1.0],
+        [0.3, 1.0, 1.0, 1.0, 1.5, 1.0, 1.0, 1.0],
+        [1.0, 1.0, 1.0, 1.0, 1.0, 1.5, 1.0, 1.0],
+        [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+        [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
       ],
     },
     th: [
       // 0: TRANSITION
-      { sp: [.4, .3, .7, .3, .3, .3, .5],
+      { sp: [.4, .3, .7, .3, .3, .3, .5, .3],
         tp: [1, 1, 1], ta: [1, .3, 1], tc: [.1, .2, .3], tn: [.1, 2, .7],
-        tpalm: [1, 1, 1], tcact: [1, 1, 1], tblad: [1, 1, 1],
+        tpalm: [1, 1, 1], tcact: [1, 1, 1], tblad: [1, 1, 1], tfloat: [1, 1, 1, 1, 1, 1],
         spike: 150, sustain: 20, decay: 3, cooldown: 0, weight: .21 },
       // 1: MONUMENTAL
-      { sp: [1.5, 1, 1, .5, .2, .2, .5],
+      { sp: [1.5, 1, 1, .5, .2, .2, .5, .3],
         tp: [.2, .5, 3], ta: [2, .1, 3], tc: [.01, .01, 1], tn: [.5, 1.5, .5],
-        tpalm: [1, 1, 1], tcact: [1, 1, 1], tblad: [1, 1, 1],
+        tpalm: [1, 1, 1], tcact: [1, 1, 1], tblad: [1, 1, 1], tfloat: [1, 1, 1, 1, 1, 1],
         spike: 150, sustain: 10, decay: 10, cooldown: 8, weight: .30 },
       // 2: COLONNADE
-      { sp: [.3, 1, 4, .5, .3, .3, .5],
+      { sp: [.3, 1, 4, .5, .3, .3, .5, .3],
         tp: [1, 1, 1], ta: [3, .5, 1], tc: [.3, 3, 5], tn: [.2, .1, .1],
-        tpalm: [1, 1, 1], tcact: [1, 1, 1], tblad: [1, 1, 1],
+        tpalm: [1, 1, 1], tcact: [1, 1, 1], tblad: [1, 1, 1], tfloat: [1, 1, 1, 1, 1, 1],
         spike: 150, sustain: 15, decay: 6, cooldown: 6, weight: .31 },
       // 3: ANTENNA
-      { sp: [.5, .5, 1, 4, .5, .5, .5],
+      { sp: [.5, .5, 1, 4, .5, .5, .5, .3],
         tp: [1, .05, 2], ta: [1, .2, .8], tc: [.1, .3, .3], tn: [.5, 3.5, 1],
-        tpalm: [1, 1, 1], tcact: [1, 1, 1], tblad: [1, 1, 1],
+        tpalm: [1, 1, 1], tcact: [1, 1, 1], tblad: [1, 1, 1], tfloat: [1, 1, 1, 1, 1, 1],
         spike: 180, sustain: 10, decay: 5, cooldown: 5, weight: .18 },
       // 4: BARREN
-      { sp: [.4, .3, .5, .3, .2, .2, .1],
+      { sp: [.4, .3, .5, .3, .2, .2, .1, .3],
         tp: [2, .5, .2], ta: [1, 1, 1], tc: [.2, .5, .5], tn: [1, 1, 1],
-        tpalm: [1, 1, 1], tcact: [1, 1, 1], tblad: [1, 1, 1],
+        tpalm: [1, 1, 1], tcact: [1, 1, 1], tblad: [1, 1, 1], tfloat: [1, 1, 1, 1, 1, 1],
         spike: 100, sustain: 12, decay: 3, cooldown: 4, weight: .04 },
     ],
   };
@@ -610,7 +615,7 @@ const store = {
     try { localStorage.setItem(k, v); } catch {}
   },
 };
-const STORAGE_KEY = "7t:theme:v6";
+const STORAGE_KEY = "7t:theme:v7";
 const DEFAULTS_JSON = JSON.stringify(initState());
 // Simple hash of defaults — when code changes defaults, saved state is discarded
 const DEFAULTS_HASH = (() => { let h = 0; for (let i = 0; i < DEFAULTS_JSON.length; i++) h = (Math.imul(31, h) + DEFAULTS_JSON.charCodeAt(i)) | 0; return h; })();
@@ -748,9 +753,14 @@ export default function App() {
           ctx.lineTo(Math.cos(b) * r2 * .4, Math.sin(b) * r2 * .4);
         }
         ctx.closePath(); ctx.fill();
-      } else { // Blade — small dot
+      } else if (e.fam === 6) { // Blade — small dot
         ctx.fillStyle = cc; ctx.globalAlpha *= .7;
         ctx.beginPath(); ctx.arc(0, 0, sz2 * .3, 0, Math.PI * 2); ctx.fill();
+      } else { // Floating — diamond
+        ctx.fillStyle = cc; ctx.beginPath();
+        ctx.moveTo(0, -sz2 * .5); ctx.lineTo(sz2 * .5, 0);
+        ctx.lineTo(0, sz2 * .5); ctx.lineTo(-sz2 * .5, 0);
+        ctx.closePath(); ctx.fill();
       }
       ctx.restore();
     }

@@ -3221,7 +3221,7 @@ namespace t7 {
             static constexpr float CENSUS_DUMP_INTERVAL = 30.0f;
 
             static const char* family_short_name(uint32_t family) {
-                static const char* NAMES[] = { "pyr", "arch", "col", "ant", "palm", "cact", "blad" };
+                static const char* NAMES[] = { "pyr", "arch", "col", "ant", "palm", "cact", "blad", "float" };
                 return (family < PopFamily::COUNT) ? NAMES[family] : "???";
             }
 
@@ -3329,7 +3329,8 @@ namespace t7 {
                 static constexpr uint32_t PALM = 4;
                 static constexpr uint32_t CACTUS = 5;
                 static constexpr uint32_t BLADE = 6;
-                static constexpr uint32_t COUNT = 7;
+                static constexpr uint32_t FLOATING = 7;
+                static constexpr uint32_t COUNT = 8;
             };
 
             // ─── Spawn Configuration Summary ────────────────────────────────
@@ -3348,6 +3349,7 @@ namespace t7 {
             //  │ Palm     │  0.200   │ 1.0   1.0    1.0   1.0    1.0   0.0  │  0.45  │
             //  │ Cactus   │  0.100   │ 1.0   1.0    1.0   1.0    1.0   0.0  │  0.35  │
             //  │ Blade    │  0.025   │ 1.0   1.0    1.0   1.0    1.0   0.0  │  0.30  │
+            //  │ Floating │  0.050   │ 1.0   1.0    0.0   0.0    1.0   0.0  │  0.40  │
             //  └──────────┴──────────┴───────────────────────────────────────┴────────┘
             //
             // Spawn chance is flat — archetype/terrain no longer gates spawning.
@@ -3394,7 +3396,7 @@ namespace t7 {
             //  ┌───────────┬───────────┬────────────────────────────────────┐
             //  │ Range     │ Family    │ Struct                             │
             //  ├───────────┼───────────┼────────────────────────────────────┤
-            //  │ 100 – 121 │ Floater   │ FloatingEntityProp                 │
+            //  │ 100 – 126 │ Floater   │ FloatingEntityProp                 │
             //  └───────────┴───────────┴────────────────────────────────────┘
             //
             // SEED SOURCE: lattice_node_seed (band 250) — GoL zones
@@ -3428,21 +3430,22 @@ namespace t7 {
             // Precomputed participation masks enable zero-cost early-out for
             // families with no affinities defined.
 
-            //                              Pyr    Arch   Col    Ant    Palm   Cact   Blad
-            static constexpr float    PROXIMITY_RADIUS[PopFamily::COUNT] = { 0.0f,  0.0f, 60.0f,  0.0f,150.0f,120.0f,120.0f };
-            static constexpr float    PROXIMITY_MAX_BOOST[PopFamily::COUNT] = { 1.0f,  1.0f,  2.0f,  1.0f,  3.0f,  3.0f,  3.0f };
-            static constexpr uint32_t PROXIMITY_THRESHOLD[PopFamily::COUNT] = { 0,     0,     2,     0,     1,     1,     1 };
-            static constexpr float    PROXIMITY_GAP_REDUCTION[PopFamily::COUNT] = { 0.0f, 0.0f, 0.3f, 0.0f, 0.6f, 0.6f, 0.6f };
+            //                              Pyr    Arch   Col    Ant    Palm   Cact   Blad   Float
+            static constexpr float    PROXIMITY_RADIUS[PopFamily::COUNT] = { 0.0f,  0.0f, 60.0f,  0.0f,150.0f,120.0f,120.0f,  0.0f };
+            static constexpr float    PROXIMITY_MAX_BOOST[PopFamily::COUNT] = { 1.0f,  1.0f,  2.0f,  1.0f,  3.0f,  3.0f,  3.0f,  1.0f };
+            static constexpr uint32_t PROXIMITY_THRESHOLD[PopFamily::COUNT] = { 0,     0,     2,     0,     1,     1,     1,     0 };
+            static constexpr float    PROXIMITY_GAP_REDUCTION[PopFamily::COUNT] = { 0.0f, 0.0f, 0.3f, 0.0f, 0.6f, 0.6f, 0.6f, 0.0f };
 
             static constexpr float PROXIMITY_AFFINITY[PopFamily::COUNT][PopFamily::COUNT] = {
-                //          near: Pyr   Arch  Col   Ant   Palm  Cact  Blad
-                /* Pyr  */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
-                /* Arch */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
-                /* Col  */ { 0.0f, 0.0f, 0.4f, 0.0f, 0.0f, 0.0f, 0.0f },
-                /* Ant  */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
-                /* Palm */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.5f, 0.3f, 0.3f },
-                /* Cact */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.3f, 0.5f, 0.3f },
-                /* Blad */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.3f, 0.3f, 0.5f },
+                //           near: Pyr   Arch  Col   Ant   Palm  Cact  Blad  Float
+                /* Pyr   */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+                /* Arch  */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+                /* Col   */ { 0.0f, 0.0f, 0.4f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+                /* Ant   */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+                /* Palm  */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.5f, 0.3f, 0.3f, 0.0f },
+                /* Cact  */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.3f, 0.5f, 0.3f, 0.0f },
+                /* Blad  */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.3f, 0.3f, 0.5f, 0.0f },
+                /* Float */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
             };
 
             // Precomputed: does this family have any non-zero affinity?
@@ -3608,7 +3611,37 @@ namespace t7 {
 
             };
 
-            // ─── Entity Selection Queue ─────────────────────────────────────
+            // ─── Floating Entity Selection / Placement ──────────────────────
+
+            struct FloatingSelection {
+                uint32_t seed;
+                int32_t  trigger_gx, trigger_gz;
+                uint32_t slot;
+                uint32_t tier_idx;
+                float body_radius, orbit_radius, orbit_height, orbit_speed;
+                float influence_radius, spin_speed, bob_amplitude, bob_period;
+                float spin_tilt_x, spin_tilt_z;
+                float base_color[3];
+                float aspect_y, aspect_z, face_variance;
+                uint32_t geometry_type, motion_type;
+                float footprint_r;  // body_radius + orbit_radius (orbit envelope)
+            };
+
+            struct FloatingPlacement {
+                uint32_t slot;
+                int32_t  trigger_gx, trigger_gz;
+                int32_t  host_gx, host_gz;
+                uint32_t tier_idx;
+                float cx, cz, rotation;
+                float body_radius, orbit_radius, orbit_height, orbit_speed;
+                float influence_radius, spin_speed, bob_amplitude, bob_period;
+                float spin_tilt_x, spin_tilt_z;
+                float base_color[3];
+                float aspect_y, aspect_z, face_variance;
+                uint32_t geometry_type, motion_type;
+            };
+
+            // ─── Entity Selection Queue ──────────────────────────────��──────
             //
             // Lightweight tagged entry holding one family's selection.
             // Produced by select_entities_for_patch, consumed by
@@ -3626,6 +3659,7 @@ namespace t7 {
                     PalmSelection    palm;
                     CactusSelection  cactus;
                     BladeClusterSelection blade;
+                    FloatingSelection floating;
                 };
                 EntityQueueEntry() : family(0), gx(0), gz(0) { std::memset(&column, 0, sizeof(column)); }
             };
@@ -3649,6 +3683,7 @@ namespace t7 {
                     PalmPlacement    palm;
                     CactusPlacement  cactus;
                     BladeClusterPlacement blade;
+                    FloatingPlacement floating;
                 };
                 PlacementEntry() : family(0), gx(0), gz(0) { std::memset(&arch, 0, sizeof(arch)); }
             };
@@ -4529,43 +4564,229 @@ namespace t7 {
                 /* 5: Anomaly   */ {  1.2f, 0.2f,   8.0f, 2.0f,   4.0f,  1.5f, 2.0f, 0.5f,  6.0f, 1.5f,  0.0f, 0.0f,  0.0f, 0.0f,  0.0f, 0.0f,  0.0f,  1.0f,0.0f,  1.0f,0.0f,  0.0f,0.0f,   0, 0, 0.01f },
             };
 
+            static constexpr float FLOATING_BASE_TIER_WEIGHTS[FLOATER_TIER_COUNT] = {
+                0.35f, 0.28f, 0.18f, 0.04f, 0.02f, 0.01f
+            };
+
             static constexpr const char* FLOATER_TIER_NAMES[] = {
                 "SmallCube", "MedCube", "LargeCube", "Monolith", "Sentinel", "Anomaly"
             };
 
-            // ─── Spawn Configuration ─────────────────────────────────────
-            struct FloatingEntitySpawnConfig {
-                static constexpr float CELL_SIZE = 100.0f;      // dense grid for cluster packing
-                static constexpr float SPAWN_CHANCE = 0.95f;    // base chance (modulated by density field)
-                static constexpr float RENDER_DIST = 200.0f;
-                static constexpr float HOLD_DIST = 300.0f;
+            // ─── Spawn Configuration (patch-based pipeline) ─────────────
+            struct FloatingConfig {
+                static constexpr float SPAWN_CHANCE = 0.050f;
+                static constexpr float MOOD_MULTIPLIER[MOOD_COUNT] = { 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f };
+                static constexpr float POSITION_JITTER = 0.4f;
             };
 
-            // ─── Density Lattice ─────────────────────────────────────────
-            // Coarse spatial noise: hot zones get dense cube swarms,
-            // cold zones are empty. Creates organic clustering.
-            static constexpr float FLOATER_DENSITY_SPACING = 400.0f;
-            static constexpr uint32_t FLOATER_DENSITY_BAND = 180u;
-            static constexpr float FLOATER_DENSITY_EXPONENT = 2.5f;  // concentrate clusters
+            // ─── select_floating_for_patch ─────────────────��──────────────
+            //
+            // Phase 1: identity + geometry. Spawn preamble, tier selection,
+            // all Gaussian parameter sampling. Position-independent.
 
-            float evaluate_floater_density(float wx, float wz) const {
-                float lx = wx / FLOATER_DENSITY_SPACING;
-                float lz = wz / FLOATER_DENSITY_SPACING;
-                int32_t bx = (int32_t)std::floor(lx);
-                int32_t bz = (int32_t)std::floor(lz);
-                float fx = lx - bx, fz = lz - bz;
-                float wx_ = fx * fx * (3.0f - 2.0f * fx);
-                float wz_ = fz * fz * (3.0f - 2.0f * fz);
-                float density = 0.0f;
-                for (int dz = 0; dz <= 1; dz++) for (int dx = 0; dx <= 1; dx++) {
-                    uint32_t ns = cpu_lattice_node_seed(activeSeed_, bx + dx, bz + dz, FLOATER_DENSITY_BAND);
-                    float raw = cpu_hash_f(ns, 350u);
-                    float shaped = std::pow(raw, FLOATER_DENSITY_EXPONENT);
-                    float w = ((dx == 1) ? wx_ : (1.0f - wx_)) * ((dz == 1) ? wz_ : (1.0f - wz_));
-                    density += shaped * w;
-                }
-                return density;
+            bool select_floating_for_patch(int32_t gx, int32_t gz, FloatingSelection& sel) {
+                auto gate = run_spawn_preamble(gx, gz,
+                    activeFloaters_, Dim::MAX_FLOATING_INSTANCES,
+                    FloatingEntityProp::SPAWN_ROLL, FloatingConfig::SPAWN_CHANCE,
+                    FloatingConfig::MOOD_MULTIPLIER,
+                    PopFamily::FLOATING, "float");
+                if (!gate.ok) return false;
+
+                // Tier selection with theme bias
+                float tier_weights[FLOATER_TIER_COUNT];
+                for (uint32_t t = 0; t < FLOATER_TIER_COUNT; t++)
+                    tier_weights[t] = FLOATING_BASE_TIER_WEIGHTS[t];
+                for (uint32_t t = 0; t < FLOATER_TIER_COUNT; t++)
+                    tier_weights[t] *= THEMES[gate.theme_idx].tier_wt_floating[t];
+                uint32_t tier_idx = select_tier_biased(gate.seed, FloatingEntityProp::TIER,
+                    tier_weights, FLOATER_TIER_COUNT, PopFamily::FLOATING);
+
+                const auto& tp = FLOATER_TIERS[tier_idx];
+
+                sel.seed = gate.seed;
+                sel.trigger_gx = gx;
+                sel.trigger_gz = gz;
+                sel.slot = gate.slot;
+                sel.tier_idx = tier_idx;
+
+                // Geometry — exact copies from spawn_floating_entity
+                sel.body_radius = std::max(0.5f, cpu_sample_gaussian(gate.seed,
+                    FloatingEntityProp::BODY_RADIUS, tp.body_radius_mean, tp.body_radius_sigma));
+                sel.orbit_radius = std::max(0.0f, cpu_sample_gaussian(gate.seed,
+                    FloatingEntityProp::ORBIT_RADIUS, tp.orbit_radius_mean, tp.orbit_radius_sigma));
+                sel.orbit_height = std::max(3.0f, cpu_sample_gaussian(gate.seed,
+                    FloatingEntityProp::ORBIT_HEIGHT, tp.orbit_height_mean, tp.orbit_height_sigma));
+                sel.orbit_speed = std::max(0.05f, cpu_sample_gaussian(gate.seed,
+                    FloatingEntityProp::ORBIT_SPEED, tp.orbit_speed_mean, tp.orbit_speed_sigma));
+                sel.influence_radius = std::max(3.0f, cpu_sample_gaussian(gate.seed,
+                    FloatingEntityProp::INFLUENCE_RADIUS, tp.influence_radius_mean, tp.influence_radius_sigma));
+
+                // Hover-bob params
+                sel.spin_speed = std::max(0.0f, cpu_sample_gaussian(gate.seed,
+                    FloatingEntityProp::SPIN_SPEED, tp.spin_speed_mean, tp.spin_speed_sigma));
+                sel.bob_amplitude = std::max(0.0f, cpu_sample_gaussian(gate.seed,
+                    FloatingEntityProp::BOB_AMPLITUDE, tp.bob_amplitude_mean, tp.bob_amplitude_sigma));
+                sel.bob_period = std::max(0.5f, cpu_sample_gaussian(gate.seed,
+                    FloatingEntityProp::BOB_PERIOD, tp.bob_period_mean, tp.bob_period_sigma));
+                sel.spin_tilt_x = (cpu_hash_f(gate.seed, FloatingEntityProp::SPIN_TILT_X) - 0.5f) * 2.0f * tp.spin_tilt_sigma;
+                sel.spin_tilt_z = (cpu_hash_f(gate.seed, FloatingEntityProp::SPIN_TILT_Z) - 0.5f) * 2.0f * tp.spin_tilt_sigma;
+
+                // Color: continuous median from independent seed hashes per channel
+                sel.base_color[0] = cpu_hash_f(gate.seed, FloatingEntityProp::COLOR_R) * 0.55f + 0.35f;   // [0.35, 0.90]
+                sel.base_color[1] = cpu_hash_f(gate.seed, FloatingEntityProp::COLOR_G) * 0.50f + 0.30f;   // [0.30, 0.80]
+                sel.base_color[2] = cpu_hash_f(gate.seed, FloatingEntityProp::COLOR_B) * 0.60f + 0.20f;   // [0.20, 0.80]
+
+                // Shape
+                sel.aspect_y = std::max(0.2f, cpu_sample_gaussian(gate.seed,
+                    FloatingEntityProp::ASPECT_Y, tp.aspect_y_mean, tp.aspect_y_sigma));
+                sel.aspect_z = std::max(0.1f, cpu_sample_gaussian(gate.seed,
+                    FloatingEntityProp::ASPECT_Z, tp.aspect_z_mean, tp.aspect_z_sigma));
+                sel.face_variance = std::max(0.0f, cpu_sample_gaussian(gate.seed,
+                    FloatingEntityProp::FACE_VARIANCE, tp.face_variance_mean, tp.face_variance_sigma));
+
+                // Identity
+                sel.geometry_type = tp.geometry_type;
+                sel.motion_type = tp.motion_type;
+
+                // Footprint = orbit envelope bounding circle
+                sel.footprint_r = sel.body_radius + sel.orbit_radius;
+
+                return true;
             }
+
+            // ─── place_floating_from_selection ────────────────────────────
+            //
+            // Phase 2: spatial negotiation. Jittered position within patch,
+            // separation + footprint check, host patch determination.
+
+            bool place_floating_from_selection(const FloatingSelection& sel, FloatingPlacement& plan) {
+                auto pos = negotiate_position(sel.seed,
+                    sel.trigger_gx, sel.trigger_gz,
+                    FloatingEntityProp::ANCHOR_X, FloatingEntityProp::ANCHOR_Z,
+                    FloatingConfig::POSITION_JITTER,
+                    FloatingEntityProp::ROTATION,
+                    sel.footprint_r, PopFamily::FLOATING, sel.tier_idx);
+                if (!pos.ok) return false;
+
+                plan = FloatingPlacement{};
+                plan.slot = sel.slot;
+                plan.trigger_gx = sel.trigger_gx;
+                plan.trigger_gz = sel.trigger_gz;
+                plan.host_gx = pos.host_gx;
+                plan.host_gz = pos.host_gz;
+                plan.tier_idx = sel.tier_idx;
+                plan.cx = pos.cx;
+                plan.cz = pos.cz;
+                plan.rotation = pos.rotation;
+
+                // Copy all geometry from selection
+                plan.body_radius = sel.body_radius;
+                plan.orbit_radius = sel.orbit_radius;
+                plan.orbit_height = sel.orbit_height;
+                plan.orbit_speed = sel.orbit_speed;
+                plan.influence_radius = sel.influence_radius;
+                plan.spin_speed = sel.spin_speed;
+                plan.bob_amplitude = sel.bob_amplitude;
+                plan.bob_period = sel.bob_period;
+                plan.spin_tilt_x = sel.spin_tilt_x;
+                plan.spin_tilt_z = sel.spin_tilt_z;
+                std::memcpy(plan.base_color, sel.base_color, sizeof(plan.base_color));
+                plan.aspect_y = sel.aspect_y;
+                plan.aspect_z = sel.aspect_z;
+                plan.face_variance = sel.face_variance;
+                plan.geometry_type = sel.geometry_type;
+                plan.motion_type = sel.motion_type;
+
+                record_placement_bookkeeping(PopFamily::FLOATING, plan.tier_idx);
+                return true;
+            }
+
+            // ─── commit_floating ──────────��──────────────────────────────
+            //
+            // Phase 3: GPU write. Builds GPUFloatingEntityState from placement
+            // and uploads to GPU buffer slot.
+
+            void commit_floating(const FloatingPlacement& plan,
+                int32_t trigger_gx, int32_t trigger_gz, wgpu::Queue& queue)
+            {
+                GPUFloatingEntityState fe{};
+
+                // Anchor = negotiated world position (orbit center / hover position)
+                fe.anchor[0] = plan.cx;
+                fe.anchor[1] = 0.0f;
+                fe.anchor[2] = plan.cz;
+
+                // Geometry
+                fe.body_radius = plan.body_radius;
+                fe.orbit_radius = plan.orbit_radius;
+                fe.orbit_height = plan.orbit_height;
+                fe.orbit_speed = plan.orbit_speed;
+                fe.influence_radius = plan.influence_radius;
+                fe.spin_speed = plan.spin_speed;
+                fe.bob_amplitude = plan.bob_amplitude;
+                fe.bob_period = plan.bob_period;
+                fe.spin_tilt_x = plan.spin_tilt_x;
+                fe.spin_tilt_z = plan.spin_tilt_z;
+
+                // Color
+                fe.base_color[0] = plan.base_color[0];
+                fe.base_color[1] = plan.base_color[1];
+                fe.base_color[2] = plan.base_color[2];
+                fe.color[0] = plan.base_color[0];
+                fe.color[1] = plan.base_color[1];
+                fe.color[2] = plan.base_color[2];
+
+                // Shape
+                fe.aspect_y = plan.aspect_y;
+                fe.aspect_z = plan.aspect_z;
+                fe.face_variance = plan.face_variance;
+
+                // Identity
+                fe.geometry_type = plan.geometry_type;
+                fe.motion_type = plan.motion_type;
+                fe.entity_seed = plan.slot;  // use slot as seed for VS face color hashing
+
+                // Initial state
+                fe.t = 0.0f;
+                fe.orientation[3] = 1.0f;  // identity quaternion
+                if (plan.motion_type == 0) {
+                    // Orbit: start at anchor + radius on X
+                    fe.pos[0] = plan.cx + fe.orbit_radius;
+                    fe.pos[1] = fe.orbit_height;
+                    fe.pos[2] = plan.cz;
+                } else {
+                    // Hover-bob: start at anchor
+                    fe.pos[0] = plan.cx;
+                    fe.pos[1] = fe.orbit_height;
+                    fe.pos[2] = plan.cz;
+                }
+
+                fe.is_active = 1;
+
+                gpuState_.upload_floating_entity_slot(queue, plan.slot, fe);
+
+                auto& af = activeFloaters_[plan.slot];
+                af.patch_gx = trigger_gx;
+                af.patch_gz = trigger_gz;
+                af.host_gx = plan.host_gx;
+                af.host_gz = plan.host_gz;
+                af.active = true;
+                activeFloaterCount_++;
+
+                std::cout << "[Floater] " << FLOATER_TIER_NAMES[plan.tier_idx]
+                    << " slot=" << plan.slot
+                    << " at (" << plan.cx << "," << plan.cz << ")"
+                    << " r=" << fe.body_radius
+                    << " y=" << fe.aspect_y << " z=" << fe.aspect_z
+                    << " h=" << fe.orbit_height
+                    << " fv=" << fe.face_variance
+                    << (plan.motion_type == 1 ? " HOVER-BOB" : " ORBIT")
+                    << " col=(" << fe.base_color[0] << "," << fe.base_color[1] << "," << fe.base_color[2] << ")"
+                    << "\n";
+            }
+
+            // (Old FloatingEntitySpawnConfig, density lattice, and proximity spawn removed —
+            //  floating entities now use the patch-based dispatch pipeline.)
 
             // ─── Property Index Registry ─────────────────────────────────
             // Seed source: floater_cell_seed (independent from tile_seed)
@@ -4590,197 +4811,17 @@ namespace t7 {
                 static constexpr uint32_t ASPECT_Y = 123u;
                 static constexpr uint32_t ASPECT_Z = 124u;
                 static constexpr uint32_t FACE_VARIANCE = 125u;
+                static constexpr uint32_t ROTATION = 126u;
             };
 
             // ─── CPU Tracking ────────────────────────────────────────────
             struct ActiveFloater {
-                int32_t cell_x = INT32_MAX, cell_z = INT32_MAX;
+                int32_t patch_gx = 0, patch_gz = 0;   // trigger patch (idempotency)
+                int32_t host_gx = 0, host_gz = 0;     // actual patch covering entity position (eviction)
                 bool active = false;
             };
             ActiveFloater activeFloaters_[Dim::MAX_FLOATING_INSTANCES]{};
             uint32_t activeFloaterCount_ = 0;
-
-            // ─── Cell Seed (independent from ribbon and tile seeds) ──────
-            static uint32_t floater_cell_seed(uint32_t master_seed, int32_t cx, int32_t cz) {
-                uint32_t h = master_seed ^ 0xBEEF42u;
-                h ^= (uint32_t)cx * 73856093u;
-                h ^= (uint32_t)cz * 19349663u;
-                h = (h ^ (h >> 16)) * 2654435769u;
-                h = (h ^ (h >> 16)) * 2654435769u;
-                return h;
-            }
-
-            // ─── Spawn ──────────────────────────────────────────────────
-            void spawn_floating_entity(uint32_t slot, uint32_t seed, float ax, float az,
-                int32_t cx, int32_t cz, wgpu::Queue& queue)
-            {
-                // Tier selection
-                float tier_roll = cpu_hash_f(seed, FloatingEntityProp::TIER);
-                uint32_t tier = FLOATER_TIER_COUNT - 1;
-                float cumul = 0.0f;
-                for (uint32_t t = 0; t < FLOATER_TIER_COUNT; t++) {
-                    cumul += FLOATER_TIERS[t].weight;
-                    if (tier_roll < cumul) { tier = t; break; }
-                }
-                const auto& tp = FLOATER_TIERS[tier];
-
-                GPUFloatingEntityState fe{};
-                fe.anchor[0] = ax;
-                fe.anchor[1] = 0.0f;
-                fe.anchor[2] = az;
-                fe.body_radius = std::max(0.5f, cpu_sample_gaussian(seed,
-                    FloatingEntityProp::BODY_RADIUS, tp.body_radius_mean, tp.body_radius_sigma));
-                fe.orbit_radius = std::max(0.0f, cpu_sample_gaussian(seed,
-                    FloatingEntityProp::ORBIT_RADIUS, tp.orbit_radius_mean, tp.orbit_radius_sigma));
-                fe.orbit_height = std::max(3.0f, cpu_sample_gaussian(seed,
-                    FloatingEntityProp::ORBIT_HEIGHT, tp.orbit_height_mean, tp.orbit_height_sigma));
-                fe.orbit_speed = std::max(0.05f, cpu_sample_gaussian(seed,
-                    FloatingEntityProp::ORBIT_SPEED, tp.orbit_speed_mean, tp.orbit_speed_sigma));
-                fe.influence_radius = std::max(3.0f, cpu_sample_gaussian(seed,
-                    FloatingEntityProp::INFLUENCE_RADIUS, tp.influence_radius_mean, tp.influence_radius_sigma));
-
-                // Hover-bob params
-                fe.spin_speed = std::max(0.0f, cpu_sample_gaussian(seed,
-                    FloatingEntityProp::SPIN_SPEED, tp.spin_speed_mean, tp.spin_speed_sigma));
-                fe.bob_amplitude = std::max(0.0f, cpu_sample_gaussian(seed,
-                    FloatingEntityProp::BOB_AMPLITUDE, tp.bob_amplitude_mean, tp.bob_amplitude_sigma));
-                fe.bob_period = std::max(0.5f, cpu_sample_gaussian(seed,
-                    FloatingEntityProp::BOB_PERIOD, tp.bob_period_mean, tp.bob_period_sigma));
-                fe.spin_tilt_x = (cpu_hash_f(seed, FloatingEntityProp::SPIN_TILT_X) - 0.5f) * 2.0f * tp.spin_tilt_sigma;
-                fe.spin_tilt_z = (cpu_hash_f(seed, FloatingEntityProp::SPIN_TILT_Z) - 0.5f) * 2.0f * tp.spin_tilt_sigma;
-
-                // Color: continuous median from independent seed hashes per channel
-                fe.base_color[0] = cpu_hash_f(seed, FloatingEntityProp::COLOR_R) * 0.55f + 0.35f;   // [0.35, 0.90]
-                fe.base_color[1] = cpu_hash_f(seed, FloatingEntityProp::COLOR_G) * 0.50f + 0.30f;   // [0.30, 0.80]
-                fe.base_color[2] = cpu_hash_f(seed, FloatingEntityProp::COLOR_B) * 0.60f + 0.20f;   // [0.20, 0.80]
-                fe.color[0] = fe.base_color[0];
-                fe.color[1] = fe.base_color[1];
-                fe.color[2] = fe.base_color[2];
-
-                // Identity
-                fe.geometry_type = tp.geometry_type;
-                fe.motion_type = tp.motion_type;
-                fe.entity_seed = seed;
-                fe.face_variance = std::max(0.0f, cpu_sample_gaussian(seed,
-                    FloatingEntityProp::FACE_VARIANCE, tp.face_variance_mean, tp.face_variance_sigma));
-                fe.aspect_y = std::max(0.2f, cpu_sample_gaussian(seed,
-                    FloatingEntityProp::ASPECT_Y, tp.aspect_y_mean, tp.aspect_y_sigma));
-                fe.aspect_z = std::max(0.1f, cpu_sample_gaussian(seed,
-                    FloatingEntityProp::ASPECT_Z, tp.aspect_z_mean, tp.aspect_z_sigma));
-
-                // Initial position (orbit: start at anchor + radius on X; hover: at anchor)
-                fe.t = 0.0f;
-                fe.orientation[3] = 1.0f;  // identity quaternion
-                if (tp.motion_type == 0) {
-                    fe.pos[0] = ax + fe.orbit_radius;
-                    fe.pos[1] = fe.orbit_height;
-                    fe.pos[2] = az;
-                }
-                else {
-                    fe.pos[0] = ax;
-                    fe.pos[1] = fe.orbit_height;
-                    fe.pos[2] = az;
-                }
-
-                fe.is_active = 1;
-
-                gpuState_.upload_floating_entity_slot(queue, slot, fe);
-
-                activeFloaters_[slot].cell_x = cx;
-                activeFloaters_[slot].cell_z = cz;
-                activeFloaters_[slot].active = true;
-                activeFloaterCount_++;
-
-                std::cout << "[Floater] " << FLOATER_TIER_NAMES[tier]
-                    << " slot=" << slot
-                    << " at (" << ax << "," << az << ")"
-                    << " r=" << fe.body_radius
-                    << " y=" << fe.aspect_y << " z=" << fe.aspect_z
-                    << " h=" << fe.orbit_height
-                    << " fv=" << fe.face_variance
-                    << (tp.motion_type == 1 ? " HOVER-BOB" : " ORBIT")
-                    << " col=(" << fe.base_color[0] << "," << fe.base_color[1] << "," << fe.base_color[2] << ")"
-                    << "\n";
-            }
-
-            // ─── Proximity Update ────────────────────────────────────────
-            void update_floating_entity_proximity(wgpu::Queue& queue) {
-                float px = pawnReadback_x_, pz = pawnReadback_z_;
-                float cell = FloatingEntitySpawnConfig::CELL_SIZE;
-                float hold_sq = FloatingEntitySpawnConfig::HOLD_DIST * FloatingEntitySpawnConfig::HOLD_DIST;
-                float render_sq = FloatingEntitySpawnConfig::RENDER_DIST * FloatingEntitySpawnConfig::RENDER_DIST;
-
-                // ── Eviction pass: remove entities beyond hold distance ──
-                for (uint32_t i = 0; i < Dim::MAX_FLOATING_INSTANCES; i++) {
-                    if (!activeFloaters_[i].active) continue;
-                    // Compute anchor position from cell (deterministic)
-                    uint32_t seed = floater_cell_seed(activeSeed_,
-                        activeFloaters_[i].cell_x, activeFloaters_[i].cell_z);
-                    float ax = (activeFloaters_[i].cell_x + 0.5f) * cell
-                        + (cpu_hash_f(seed, FloatingEntityProp::ANCHOR_X) - 0.5f) * cell * 0.3f;
-                    float az = (activeFloaters_[i].cell_z + 0.5f) * cell
-                        + (cpu_hash_f(seed, FloatingEntityProp::ANCHOR_Z) - 0.5f) * cell * 0.3f;
-                    float dx = px - ax, dz = pz - az;
-                    if (dx * dx + dz * dz > hold_sq) {
-                        // Evict: zero the GPU slot
-                        GPUFloatingEntityState empty{};
-                        gpuState_.upload_floating_entity_slot(queue, i, empty);
-                        activeFloaters_[i].active = false;
-                        activeFloaterCount_--;
-                        std::cout << "[Floater] Evicted slot=" << i << "\n";
-                    }
-                }
-
-                // ── Spawn pass: scan nearby cells, density-modulated ──
-                int32_t pcx = (int32_t)std::floor(px / cell);
-                int32_t pcz = (int32_t)std::floor(pz / cell);
-                int32_t scan = (int32_t)std::ceil(FloatingEntitySpawnConfig::RENDER_DIST / cell);
-
-                for (int32_t dz = -scan; dz <= scan; dz++) {
-                    for (int32_t dx = -scan; dx <= scan; dx++) {
-                        int32_t cx = pcx + dx;
-                        int32_t cz = pcz + dz;
-                        uint32_t seed = floater_cell_seed(activeSeed_, cx, cz);
-
-                        // Density-modulated spawn gate:
-                        // effective_chance = base_chance × density_field
-                        float anchor_wx = (cx + 0.5f) * cell;
-                        float anchor_wz = (cz + 0.5f) * cell;
-                        float density = evaluate_floater_density(anchor_wx, anchor_wz);
-                        float effective_chance = FloatingEntitySpawnConfig::SPAWN_CHANCE * density;
-                        if (cpu_hash_f(seed, FloatingEntityProp::SPAWN_ROLL) >= effective_chance) continue;
-
-                        // Idempotency: already have this cell?
-                        bool exists = false;
-                        for (uint32_t i = 0; i < Dim::MAX_FLOATING_INSTANCES; i++) {
-                            if (activeFloaters_[i].active &&
-                                activeFloaters_[i].cell_x == cx &&
-                                activeFloaters_[i].cell_z == cz) {
-                                exists = true;
-                                break;
-                            }
-                        }
-                        if (exists) continue;
-
-                        // Distance check
-                        float ax = (cx + 0.5f) * cell
-                            + (cpu_hash_f(seed, FloatingEntityProp::ANCHOR_X) - 0.5f) * cell * 0.3f;
-                        float az = (cz + 0.5f) * cell
-                            + (cpu_hash_f(seed, FloatingEntityProp::ANCHOR_Z) - 0.5f) * cell * 0.3f;
-                        float ddx = px - ax, ddz = pz - az;
-                        if (ddx * ddx + ddz * ddz >= render_sq) continue;
-
-                        // Find free slot
-                        uint32_t slot = UINT32_MAX;
-                        for (uint32_t i = 0; i < Dim::MAX_FLOATING_INSTANCES; i++) {
-                            if (!activeFloaters_[i].active) { slot = i; break; }
-                        }
-                        if (slot == UINT32_MAX) continue;  // all slots full
-
-                        spawn_floating_entity(slot, seed, ax, az, cx, cz, queue);
-                    }
-                }
-            }
 
             // ═══ Floating Entity System End ═══════════════════════════════
 
@@ -6801,7 +6842,7 @@ namespace t7 {
                     uint32_t family;   // PopFamily index
                     uint32_t slot;     // index into Active* array
                 };
-                static constexpr uint32_t MAX_ENTITY_REFS = 6;
+                static constexpr uint32_t MAX_ENTITY_REFS = 10;
                 EntityRef entity_refs[MAX_ENTITY_REFS]{};
                 uint32_t entity_ref_count = 0;
 
@@ -7596,6 +7637,60 @@ namespace t7 {
                 self->renderer_.dispatch_blade_mesh_gen(pass, self->gpuState_.blade_mesh_gen_group());
             }
 
+            // ── Floating dispatch wrappers ──
+
+            static bool dispatch_select_floating(Cartridge* self,
+                int32_t gx, int32_t gz, EntityQueueEntry& e) {
+                return self->select_floating_for_patch(gx, gz, e.floating);
+            }
+
+            static bool dispatch_place_floating(Cartridge* self,
+                EntityQueueEntry& e, PlacementEntry& pe) {
+                pe.family = e.family; pe.gx = e.gx; pe.gz = e.gz;
+                if (self->place_floating_from_selection(e.floating, pe.floating)) {
+                    return true;
+                } else {
+                    self->activeFloaters_[e.floating.slot].active = false;
+                    return false;
+                }
+            }
+
+            static void dispatch_commit_floating(Cartridge* self,
+                PlacementEntry& pe, wgpu::Queue& queue) {
+                auto* host = self->find_patch(pe.floating.host_gx, pe.floating.host_gz);
+                if (host) {
+                    self->commit_floating(pe.floating, pe.gx, pe.gz, queue);
+                    host->record_entity(PopFamily::FLOATING, pe.floating.slot);
+                } else {
+                    self->activeFloaters_[pe.floating.slot].active = false;
+#ifdef DIAG_ENTITY_LIFECYCLE
+                    std::cout << "[DIAG:REJECT] float slot=" << pe.floating.slot
+                        << " host=(" << pe.floating.host_gx << "," << pe.floating.host_gz
+                        << ") -- no host patch\n";
+#endif
+                }
+            }
+
+            static void dispatch_evict_floating(Cartridge* self,
+                uint32_t slot, wgpu::Queue& queue) {
+                self->activeFloaters_[slot].active = false;
+                self->activeFloaterCount_--;
+                GPUFloatingEntityState empty{};
+                self->gpuState_.upload_floating_entity_slot(queue, slot, empty);
+#ifdef DIAG_ENTITY_LIFECYCLE
+                std::cout << "[DIAG:EVICT]   float slot=" << slot << "\n";
+#endif
+            }
+
+            static bool dispatch_prepare_mesh_floating(Cartridge* self, wgpu::Queue& queue) {
+                (void)self; (void)queue;
+                return false;  // no CPU mesh gen — GPU compute handles update_sphere
+            }
+            static void dispatch_mesh_gen_floating(Cartridge* self, wgpu::ComputePassEncoder& pass) {
+                (void)self; (void)pass;
+                // no-op
+            }
+
             // ── Dispatch table (order matches PopFamily enum) ──
 
             static constexpr FamilyDispatch FAMILY_DISPATCH[PopFamily::COUNT] = {
@@ -7620,6 +7715,9 @@ namespace t7 {
                 { dispatch_select_blade, dispatch_place_blade, dispatch_commit_blade,
                   dispatch_evict_blade, dispatch_prepare_mesh_blade, dispatch_mesh_gen_blade,
                   "blad" },
+                { dispatch_select_floating, dispatch_place_floating, dispatch_commit_floating,
+                  dispatch_evict_floating, dispatch_prepare_mesh_floating, dispatch_mesh_gen_floating,
+                  "float" },
             };
 
             // ─── Population Themes ───────────────────────────────────────────
@@ -7674,6 +7772,7 @@ namespace t7 {
                 float tier_wt_palm[3];                         // multiplier on palm tier base weights (Sapling, Coastal, Royal)
                 float tier_wt_cactus[3];                       // multiplier on cactus tier base weights (Finger, Saguaro, Candelabra)
                 float tier_wt_blade[3];                        // multiplier on blade tier base weights (Sprout, Clump, Thicket)
+                float tier_wt_floating[6];                     // multiplier on floating tier base weights (SmCube..Anomaly)
                 float density_mult;                            // multiplier on entity_density
 
                 // Envelope parameters (replace lattice weight for theme selection)
@@ -7700,7 +7799,7 @@ namespace t7 {
 
             static constexpr PopulationTheme THEMES[THEME_COUNT] = {
                 // ── 0: TRANSITION — sparse connective tissue ─────────────────
-                {   { 0.4f, 0.3f, 0.7f, 0.3f, 0.3f, 0.3f, 0.5f },              // spawn_weight [pyr, arch, col, ant, palm, cact, blade]
+                {   { 0.4f, 0.3f, 0.7f, 0.3f, 0.3f, 0.3f, 0.5f, 0.3f },        // spawn_weight [pyr, arch, col, ant, palm, cact, blade, float]
                     { 1.0f, 1.0f, 1.0f },                                       // tier_pyr
                     { 1.0f, 0.3f, 1.0f },                                       // tier_arch
                     { 0.1f, 0.2f, 0.3f },                                       // tier_col
@@ -7708,12 +7807,13 @@ namespace t7 {
                     { 1.0f, 1.0f, 1.0f },                                       // tier_palm
                     { 1.0f, 1.0f, 1.0f },                                       // tier_cactus
                     { 1.0f, 1.0f, 1.0f },                                       // tier_blade
+                    { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f },                    // tier_floating (neutral)
                     1.0f,                                                         // density
                     150.0f, 20u, 3u, 0u,                                          // spike, sustain, decay, cooldown
                     0.21f                                                         // weight
                 },
                 // ── 1: MONUMENTAL — big pyramids, varied arches, heavy columns
-                {   { 1.5f, 1.0f, 1.0f, 0.5f, 0.2f, 0.2f, 0.5f },
+                {   { 1.5f, 1.0f, 1.0f, 0.5f, 0.2f, 0.2f, 0.5f, 0.3f },
                     { 0.2f, 0.5f, 3.0f },
                     { 2.0f, 0.1f, 3.0f },
                     { 0.01f, 0.01f, 1.0f },
@@ -7721,12 +7821,13 @@ namespace t7 {
                     { 1.0f, 1.0f, 1.0f },
                     { 1.0f, 1.0f, 1.0f },
                     { 1.0f, 1.0f, 1.0f },
+                    { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f },
                     1.0f,
                     150.0f, 10u, 10u, 8u,
                     0.30f
                 },
                 // ── 2: COLONNADE — dense columns, moderate arches ────────────
-                {   { 0.3f, 1.0f, 4.0f, 0.5f, 0.3f, 0.3f, 0.5f },
+                {   { 0.3f, 1.0f, 4.0f, 0.5f, 0.3f, 0.3f, 0.5f, 0.3f },
                     { 1.0f, 1.0f, 1.0f },
                     { 3.0f, 0.5f, 1.0f },
                     { 0.3f, 3.0f, 5.0f },
@@ -7734,12 +7835,13 @@ namespace t7 {
                     { 1.0f, 1.0f, 1.0f },
                     { 1.0f, 1.0f, 1.0f },
                     { 1.0f, 1.0f, 1.0f },
+                    { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f },
                     1.0f,
                     150.0f, 15u, 6u, 6u,
                     0.31f
                 },
                 // ── 3: ANTENNA — antenna-dominant corridor ───────────────────
-                {   { 0.5f, 0.5f, 1.0f, 4.0f, 0.5f, 0.5f, 0.5f },
+                {   { 0.5f, 0.5f, 1.0f, 4.0f, 0.5f, 0.5f, 0.5f, 0.3f },
                     { 1.0f, 0.05f, 2.0f },
                     { 1.0f, 0.2f, 0.8f },
                     { 0.1f, 0.3f, 0.3f },
@@ -7747,12 +7849,13 @@ namespace t7 {
                     { 1.0f, 1.0f, 1.0f },
                     { 1.0f, 1.0f, 1.0f },
                     { 1.0f, 1.0f, 1.0f },
+                    { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f },
                     1.0f,
                     180.0f, 10u, 5u, 5u,
                     0.18f
                 },
                 // ── 4: BARREN — near-empty ───────────────────────────────────
-                {   { 0.4f, 0.3f, 0.5f, 0.3f, 0.2f, 0.2f, 0.1f },
+                {   { 0.4f, 0.3f, 0.5f, 0.3f, 0.2f, 0.2f, 0.1f, 0.3f },
                     { 2.0f, 0.5f, 0.2f },
                     { 1.0f, 1.0f, 1.0f },
                     { 0.2f, 0.5f, 0.5f },
@@ -7760,6 +7863,7 @@ namespace t7 {
                     { 1.0f, 1.0f, 1.0f },
                     { 1.0f, 1.0f, 1.0f },
                     { 1.0f, 1.0f, 1.0f },
+                    { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f },
                     1.0f,
                     100.0f, 12u, 3u, 4u,
                     0.04f
@@ -8011,13 +8115,15 @@ namespace t7 {
             //  └──────────────────────┴──────────────┴──────────────┴──────────────────────┘
 
             static constexpr float POP_CROSS_AFFINITY[PopFamily::COUNT][PopFamily::COUNT] = {
-                //          target:  Pyramid  Arch    Column  Antenna  Palm    Cactus
-                /* Pyramid */     {  0.5f,    2.0f,   1.5f,   1.5f,   1.0f,   1.0f },
-                /* Arch    */     {  0.8f,    1.5f,   2.0f,   2.0f,   1.0f,   1.0f },
-                /* Column  */     {  0.3f,    1.2f,   1.8f,   1.0f,   1.0f,   1.0f },
-                /* Antenna */     {  0.3f,    1.2f,   1.0f,   1.8f,   1.0f,   1.0f },
-                /* Palm    */     {  0.3f,    1.0f,   1.0f,   1.0f,   1.5f,   1.0f },
-                /* Cactus  */     {  1.0f,    1.0f,   1.0f,   1.0f,   1.0f,   1.5f },
+                //          target:  Pyramid  Arch    Column  Antenna  Palm    Cactus  Blade   Float
+                /* Pyramid */     {  0.5f,    2.0f,   1.5f,   1.5f,   1.0f,   1.0f,   1.0f,   1.0f },
+                /* Arch    */     {  0.8f,    1.5f,   2.0f,   2.0f,   1.0f,   1.0f,   1.0f,   1.0f },
+                /* Column  */     {  0.3f,    1.2f,   1.8f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f },
+                /* Antenna */     {  0.3f,    1.2f,   1.0f,   1.8f,   1.0f,   1.0f,   1.0f,   1.0f },
+                /* Palm    */     {  0.3f,    1.0f,   1.0f,   1.0f,   1.5f,   1.0f,   1.0f,   1.0f },
+                /* Cactus  */     {  1.0f,    1.0f,   1.0f,   1.0f,   1.0f,   1.5f,   1.0f,   1.0f },
+                /* Blade   */     {  1.0f,    1.0f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f },
+                /* Float   */     {  1.0f,    1.0f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f },
             };
 
             // ── Per-Tier Scale Character ──────────────────────────────────────
@@ -8056,6 +8162,7 @@ namespace t7 {
             static constexpr float TIER_SCALE_ANTENNA[] = { 0.60f, 0.45f, 0.85f };
             static constexpr float TIER_SCALE_PALM[] = { 0.20f, 0.45f, 0.75f };
             static constexpr float TIER_SCALE_CACTUS[] = { 0.15f, 0.40f, 0.70f };
+            static constexpr float TIER_SCALE_FLOATING[] = { 0.15f, 0.35f, 0.60f, 0.40f, 0.25f, 0.20f };
 
             // Accessor: look up scale character by family + tier index.
             static float tier_scale_character(uint32_t family, uint32_t tier_idx) {
@@ -8065,7 +8172,8 @@ namespace t7 {
                 case PopFamily::COLUMN:  return (tier_idx < 3) ? TIER_SCALE_COLUMN[tier_idx] : 0.5f;
                 case PopFamily::ANTENNA: return (tier_idx < 3) ? TIER_SCALE_ANTENNA[tier_idx] : 0.5f;
                 case PopFamily::PALM:    return (tier_idx < 3) ? TIER_SCALE_PALM[tier_idx] : 0.5f;
-                case PopFamily::CACTUS:  return (tier_idx < 3) ? TIER_SCALE_CACTUS[tier_idx] : 0.5f;
+                case PopFamily::CACTUS:   return (tier_idx < 3) ? TIER_SCALE_CACTUS[tier_idx] : 0.5f;
+                case PopFamily::FLOATING: return (tier_idx < 6) ? TIER_SCALE_FLOATING[tier_idx] : 0.5f;
                 default: return 0.5f;
                 }
             }
@@ -8234,13 +8342,15 @@ namespace t7 {
             // governs aesthetic spacing.
 
             static constexpr float MIN_SEPARATION[PopFamily::COUNT][PopFamily::COUNT] = {
-                //               near:  Pyramid  Arch    Column  Antenna  Palm    Cactus
-                /* placing Pyramid */ {  15.0f,  10.0f,   5.0f,   5.0f,   5.0f,   5.0f },
-                /* placing Arch    */ {  10.0f,  20.0f,  10.0f,  10.0f,   8.0f,   5.0f },
-                /* placing Column  */ {   5.0f,  10.0f,   8.0f,   6.0f,   5.0f,   5.0f },
-                /* placing Antenna */ {   5.0f,  10.0f,   6.0f,  12.0f,   5.0f,   5.0f },
-                /* placing Palm    */ {   5.0f,   8.0f,   5.0f,   5.0f,   8.0f,   5.0f },
-                /* placing Cactus  */ {   5.0f,   5.0f,   5.0f,   5.0f,   5.0f,   8.0f },
+                //                near:  Pyr    Arch   Col    Ant    Palm   Cact   Blad   Float
+                /* placing Pyramid  */ { 15.0f, 10.0f,  5.0f,  5.0f,  5.0f,  5.0f,  0.0f,  0.0f },
+                /* placing Arch     */ { 10.0f, 20.0f, 10.0f, 10.0f,  8.0f,  5.0f,  0.0f,  0.0f },
+                /* placing Column   */ {  5.0f, 10.0f,  8.0f,  6.0f,  5.0f,  5.0f,  0.0f,  0.0f },
+                /* placing Antenna  */ {  5.0f, 10.0f,  6.0f, 12.0f,  5.0f,  5.0f,  0.0f,  0.0f },
+                /* placing Palm     */ {  5.0f,  8.0f,  5.0f,  5.0f,  8.0f,  5.0f,  0.0f,  0.0f },
+                /* placing Cactus   */ {  5.0f,  5.0f,  5.0f,  5.0f,  5.0f,  8.0f,  0.0f,  0.0f },
+                /* placing Blade    */ {  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f },
+                /* placing Floating */ {  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f, 20.0f },
             };
 
             // --- Tile State (what we remember about each generated tile) ----------
@@ -8253,7 +8363,7 @@ namespace t7 {
                 float amp_momentum = 0.0f;   // signed amplitude excess, carried by terrain tokens
                 float entity_density = 1.0f; // spatial density multiplier for entity spawning
                 // Theme: evaluated from theme lattice at tile generation time
-                float theme_spawn[PopFamily::COUNT] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }; // blended per-family spawn multiplier
+                float theme_spawn[PopFamily::COUNT] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }; // blended per-family spawn multiplier
                 uint32_t theme_idx = 0;      // dominant theme index (for tier bias)
             };
 
@@ -9502,7 +9612,6 @@ namespace t7 {
 
                 if (!finiteMode_) {
                     update_ribbon_spawning(pawnReadback_x_, pawnReadback_z_, currentSeconds_, queue);
-                    update_floating_entity_proximity(queue);
                 }
                 else if (ribbonActive_) {
                     // Mood-spawned ribbon in finite mode — update time only
