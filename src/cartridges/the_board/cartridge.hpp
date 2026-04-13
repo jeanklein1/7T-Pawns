@@ -620,11 +620,18 @@ namespace t7 {
 //   RibbonTierProfile — mean+sigma for all wave/geometry parameters
 
 // ── Spawn Configuration ──────────────────────────────────────────
-            struct RibbonSpawnConfig {
-                static constexpr float CELL_SIZE = 87.5f;     // halved from 175 — 4× encounter density
-                static constexpr float SPAWN_CHANCE = 0.50f;
-                static constexpr float RENDER_DIST = 145.0f;  // scaled with cell size
-                static constexpr float HOLD_DIST = 218.0f;    // scaled with cell size
+            // (Old RibbonSpawnConfig removed — ribbon spawning now uses patch-based pipeline.
+            //  RibbonConfig above replaces it.)
+
+            // ─── Spawn Configuration (patch-based pipeline) ─────────────
+            struct RibbonConfig {
+                static constexpr float SPAWN_CHANCE = 0.100f;
+                static constexpr float MOOD_MULTIPLIER[MOOD_COUNT] = { 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f };
+                static constexpr float POSITION_JITTER = 0.35f;
+            };
+
+            static constexpr float RIBBON_BASE_TIER_WEIGHTS[RIBBON_TIER_COUNT] = {
+                0.45f, 0.30f, 0.25f
             };
 
             // ── Color Modes ──────────────────────────────────────────────────
@@ -816,10 +823,6 @@ namespace t7 {
                 "smooth", "tinted", "contrast"
             };
 
-            // ── Convenience aliases ──────────────────────────────────────────
-            static constexpr float RIBBON_CELL_SIZE = RibbonSpawnConfig::CELL_SIZE;
-            static constexpr float RIBBON_SPAWN_CHANCE = RibbonSpawnConfig::SPAWN_CHANCE;
-            static constexpr float RIBBON_RENDER_DIST = RibbonSpawnConfig::RENDER_DIST;
             static constexpr float PAWN_HEIGHT_UNITS = 1.5f;     // matches WGSL PAWN_HEIGHT
 
             // ─── Generative Catenary Arches ──────────────────────────────────
@@ -3221,7 +3224,7 @@ namespace t7 {
             static constexpr float CENSUS_DUMP_INTERVAL = 30.0f;
 
             static const char* family_short_name(uint32_t family) {
-                static const char* NAMES[] = { "pyr", "arch", "col", "ant", "palm", "cact", "blad", "float" };
+                static const char* NAMES[] = { "pyr", "arch", "col", "ant", "palm", "cact", "blad", "float", "ribn" };
                 return (family < PopFamily::COUNT) ? NAMES[family] : "???";
             }
 
@@ -3330,7 +3333,8 @@ namespace t7 {
                 static constexpr uint32_t CACTUS = 5;
                 static constexpr uint32_t BLADE = 6;
                 static constexpr uint32_t FLOATING = 7;
-                static constexpr uint32_t COUNT = 8;
+                static constexpr uint32_t RIBBON = 8;
+                static constexpr uint32_t COUNT = 9;
             };
 
             // ─── Spawn Configuration Summary ────────────────────────────────
@@ -3350,6 +3354,7 @@ namespace t7 {
             //  │ Cactus   │  0.100   │ 1.0   1.0    1.0   1.0    1.0   0.0  │  0.35  │
             //  │ Blade    │  0.025   │ 1.0   1.0    1.0   1.0    1.0   0.0  │  0.30  │
             //  │ Floating │  0.050   │ 1.0   1.0    0.0   0.0    1.0   0.0  │  0.40  │
+            //  │ Ribbon   │  0.100   │ 1.0   1.0    0.0   0.0    1.0   0.0  │  0.35  │
             //  └──────────┴──────────┴───────────────────────────────────────┴────────┘
             //
             // Spawn chance is flat — archetype/terrain no longer gates spawning.
@@ -3430,22 +3435,23 @@ namespace t7 {
             // Precomputed participation masks enable zero-cost early-out for
             // families with no affinities defined.
 
-            //                              Pyr    Arch   Col    Ant    Palm   Cact   Blad   Float
-            static constexpr float    PROXIMITY_RADIUS[PopFamily::COUNT] = { 0.0f,  0.0f, 60.0f,  0.0f,150.0f,120.0f,120.0f,  0.0f };
-            static constexpr float    PROXIMITY_MAX_BOOST[PopFamily::COUNT] = { 1.0f,  1.0f,  2.0f,  1.0f,  3.0f,  3.0f,  3.0f,  1.0f };
-            static constexpr uint32_t PROXIMITY_THRESHOLD[PopFamily::COUNT] = { 0,     0,     2,     0,     1,     1,     1,     0 };
-            static constexpr float    PROXIMITY_GAP_REDUCTION[PopFamily::COUNT] = { 0.0f, 0.0f, 0.3f, 0.0f, 0.6f, 0.6f, 0.6f, 0.0f };
+            //                              Pyr    Arch   Col    Ant    Palm   Cact   Blad   Float  Ribn
+            static constexpr float    PROXIMITY_RADIUS[PopFamily::COUNT] = { 0.0f,  0.0f, 60.0f,  0.0f,150.0f,120.0f,120.0f,  0.0f,  0.0f };
+            static constexpr float    PROXIMITY_MAX_BOOST[PopFamily::COUNT] = { 1.0f,  1.0f,  2.0f,  1.0f,  3.0f,  3.0f,  3.0f,  1.0f,  1.0f };
+            static constexpr uint32_t PROXIMITY_THRESHOLD[PopFamily::COUNT] = { 0,     0,     2,     0,     1,     1,     1,     0,     0 };
+            static constexpr float    PROXIMITY_GAP_REDUCTION[PopFamily::COUNT] = { 0.0f, 0.0f, 0.3f, 0.0f, 0.6f, 0.6f, 0.6f, 0.0f, 0.0f };
 
             static constexpr float PROXIMITY_AFFINITY[PopFamily::COUNT][PopFamily::COUNT] = {
-                //           near: Pyr   Arch  Col   Ant   Palm  Cact  Blad  Float
-                /* Pyr   */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
-                /* Arch  */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
-                /* Col   */ { 0.0f, 0.0f, 0.4f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
-                /* Ant   */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
-                /* Palm  */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.5f, 0.3f, 0.3f, 0.0f },
-                /* Cact  */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.3f, 0.5f, 0.3f, 0.0f },
-                /* Blad  */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.3f, 0.3f, 0.5f, 0.0f },
-                /* Float */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+                //           near: Pyr   Arch  Col   Ant   Palm  Cact  Blad  Float Ribn
+                /* Pyr   */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+                /* Arch  */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+                /* Col   */ { 0.0f, 0.0f, 0.4f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+                /* Ant   */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+                /* Palm  */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.5f, 0.3f, 0.3f, 0.0f, 0.0f },
+                /* Cact  */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.3f, 0.5f, 0.3f, 0.0f, 0.0f },
+                /* Blad  */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.3f, 0.3f, 0.5f, 0.0f, 0.0f },
+                /* Float */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+                /* Ribn  */ { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
             };
 
             // Precomputed: does this family have any non-zero affinity?
@@ -3641,7 +3647,26 @@ namespace t7 {
                 uint32_t geometry_type, motion_type;
             };
 
-            // ─── Entity Selection Queue ──────────────────────────────��──────
+            // ─── Ribbon Selection / Placement ────────────────────────────
+
+            struct RibbonSelection {
+                uint32_t seed;
+                int32_t  trigger_gx, trigger_gz;
+                uint32_t slot;
+                uint32_t tier_idx;
+                GPURibbonState ribbon;  // fully populated by generate_flying_ribbon
+                float footprint_r;      // cube_size (anchor-only)
+            };
+
+            struct RibbonPlacement {
+                uint32_t slot;
+                int32_t  trigger_gx, trigger_gz;
+                int32_t  host_gx, host_gz;
+                float cx, cz;
+                GPURibbonState ribbon;  // copy from selection, anchor updated to final position
+            };
+
+            // ─── Entity Selection Queue ─────────────────────────────────────
             //
             // Lightweight tagged entry holding one family's selection.
             // Produced by select_entities_for_patch, consumed by
@@ -3660,6 +3685,7 @@ namespace t7 {
                     CactusSelection  cactus;
                     BladeClusterSelection blade;
                     FloatingSelection floating;
+                    RibbonSelection ribbon;
                 };
                 EntityQueueEntry() : family(0), gx(0), gz(0) { std::memset(&column, 0, sizeof(column)); }
             };
@@ -3684,6 +3710,7 @@ namespace t7 {
                     CactusPlacement  cactus;
                     BladeClusterPlacement blade;
                     FloatingPlacement floating;
+                    RibbonPlacement ribbon;
                 };
                 PlacementEntry() : family(0), gx(0), gz(0) { std::memset(&arch, 0, sizeof(arch)); }
             };
@@ -4240,10 +4267,17 @@ namespace t7 {
             // CPU mirrors, diagnostics. Independent of spawn_engine shared
             // infrastructure today — will integrate as entity interaction matures.
 
-            int32_t ribbonCellX_ = INT32_MAX;
-            int32_t ribbonCellZ_ = INT32_MAX;
             GPURibbonState currentRibbon_{};
             bool ribbonActive_ = false;
+
+            // ─── Patch-based ribbon tracking ──────────────────────────────
+            struct ActiveRibbon {
+                int32_t patch_gx = 0, patch_gz = 0;
+                int32_t host_gx = 0, host_gz = 0;
+                bool active = false;
+            };
+            ActiveRibbon activeRibbons_[1]{};    // singleton for now (GPU is single-instance)
+            uint32_t activeRibbonCount_ = 0;
 
             // ─── Mood 9 Ribbon Anchor ─────────────────────────────────────
             // Seed-derived position centered on the finite world.
@@ -4337,71 +4371,7 @@ namespace t7 {
             }
 
             // Check a 3×3 neighborhood of ribbon cells around the pawn.
-            // Activate the closest ribbon within render distance.
-            void update_ribbon_spawning(float pawnX, float pawnZ, float time, wgpu::Queue& queue) {
-                // Hysteresis: if a ribbon is already active, keep it until pawn
-                // exceeds HOLD_DIST from its anchor. Prevents cell-boundary flip-flop.
-                if (ribbonActive_) {
-                    float dx = currentRibbon_.anchor[0] - pawnX;
-                    float dz = currentRibbon_.anchor[2] - pawnZ;
-                    float dist_sq = dx * dx + dz * dz;
-                    float hold_sq = RibbonSpawnConfig::HOLD_DIST * RibbonSpawnConfig::HOLD_DIST;
-
-                    if (dist_sq < hold_sq) {
-                        // Still in range — just update time
-                        gpuState_.upload_ribbon_time(queue, time);
-
-                        return;
-                    }
-                    // Out of hold range — deactivate and search for new
-                    uint32_t zero = 0u;
-                    queue.WriteBuffer(gpuState_.ribbon_buffer(),
-                        offsetof(GPURibbonState, is_visible), &zero, sizeof(uint32_t));
-                    ribbonActive_ = false;
-                }
-
-                // Search for new ribbon (sky objects — not capped by terrain radius)
-                float best_dist_sq = RIBBON_RENDER_DIST * RIBBON_RENDER_DIST;
-                bool found = false;
-                GPURibbonState best{};
-                uint32_t best_tier = 0;
-
-                for (int32_t dz = -1; dz <= 1; dz++) {
-                    for (int32_t dx = -1; dx <= 1; dx++) {
-                        int32_t cx = (int32_t)std::floor(pawnX / RIBBON_CELL_SIZE) + dx;
-                        int32_t cz = (int32_t)std::floor(pawnZ / RIBBON_CELL_SIZE) + dz;
-                        uint32_t seed = ribbon_cell_seed(activeSeed_, cx, cz);
-
-                        if (cpu_hash_f(seed, RibbonProp::SPAWN_ROLL) > RIBBON_SPAWN_CHANCE) continue;
-
-                        float ax = (float)cx * RIBBON_CELL_SIZE + cpu_hash_f(seed, RibbonProp::ANCHOR_X) * RIBBON_CELL_SIZE;
-                        float az = (float)cz * RIBBON_CELL_SIZE + cpu_hash_f(seed, RibbonProp::ANCHOR_Z) * RIBBON_CELL_SIZE;
-
-                        float ddx = ax - pawnX;
-                        float ddz = az - pawnZ;
-                        float dist_sq = ddx * ddx + ddz * ddz;
-                        if (dist_sq >= best_dist_sq) continue;
-
-                        best_dist_sq = dist_sq;
-                        found = true;
-
-                        best.anchor[0] = ax;
-                        best.anchor[1] = 0.0f;
-                        best.anchor[2] = az;
-                        best.time = time;
-
-                        float terrain_est = estimate_terrain_height(ax, az);
-                        best_tier = generate_flying_ribbon(best, seed, terrain_est);
-                    }
-                }
-
-                if (found) {
-                    currentRibbon_ = best;
-                    gpuState_.upload_ribbon(queue, best);
-                    ribbonActive_ = true;
-                    print_ribbon_diagnostic("Spawned", best, best_tier);
-                }
-            }
+            // (Old update_ribbon_spawning removed — ribbon spawning now uses patch-based dispatch pipeline.)
 
             // Estimate terrain height from tile cache (rough CPU-side approximation).
             float estimate_terrain_height(float wx, float wz) const {
@@ -4824,6 +4794,110 @@ namespace t7 {
             uint32_t activeFloaterCount_ = 0;
 
             // ═══ Floating Entity System End ═══════════════════════════════
+
+            // ═══ Ribbon Dispatch Pipeline ═══════════════════════════════════
+            //
+            // Ribbon spawning through the 3-phase dispatch pipeline.
+            // GPU is still singleton (1 ribbon) — multi-instance is a follow-up.
+
+            // ─── select_ribbon_for_patch ──────────────────────────────────
+            bool select_ribbon_for_patch(int32_t gx, int32_t gz, RibbonSelection& sel) {
+                auto gate = run_spawn_preamble(gx, gz,
+                    activeRibbons_, 1u,
+                    RibbonProp::SPAWN_ROLL, RibbonConfig::SPAWN_CHANCE,
+                    RibbonConfig::MOOD_MULTIPLIER,
+                    PopFamily::RIBBON, "ribn");
+                if (!gate.ok) return false;
+
+                // Tier selection with theme bias
+                float tier_weights[RIBBON_TIER_COUNT];
+                for (uint32_t t = 0; t < RIBBON_TIER_COUNT; t++)
+                    tier_weights[t] = RIBBON_BASE_TIER_WEIGHTS[t];
+                for (uint32_t t = 0; t < RIBBON_TIER_COUNT; t++)
+                    tier_weights[t] *= THEMES[gate.theme_idx].tier_wt_ribbon[t];
+                uint32_t tier_idx = select_tier_biased(gate.seed, RibbonProp::TIER,
+                    tier_weights, RIBBON_TIER_COUNT, PopFamily::RIBBON);
+
+                sel.seed = gate.seed;
+                sel.trigger_gx = gx;
+                sel.trigger_gz = gz;
+                sel.slot = gate.slot;
+                sel.tier_idx = tier_idx;
+
+                // Generate full ribbon parameters (terrain_est=0 — updated in commit)
+                sel.ribbon = GPURibbonState{};
+                generate_flying_ribbon(sel.ribbon, gate.seed, 0.0f);
+
+                // Footprint = anchor-only (ribbon body is airborne)
+                sel.footprint_r = sel.ribbon.cube_size;
+
+                return true;
+            }
+
+            // ─── place_ribbon_from_selection ──────────────────────────────
+            bool place_ribbon_from_selection(const RibbonSelection& sel, RibbonPlacement& plan) {
+                auto pos = negotiate_position(sel.seed,
+                    sel.trigger_gx, sel.trigger_gz,
+                    RibbonProp::ANCHOR_X, RibbonProp::ANCHOR_Z,
+                    RibbonConfig::POSITION_JITTER,
+                    RibbonProp::ORIENTATION,
+                    sel.footprint_r, PopFamily::RIBBON, sel.tier_idx);
+                if (!pos.ok) return false;
+
+                plan = RibbonPlacement{};
+                plan.slot = sel.slot;
+                plan.trigger_gx = sel.trigger_gx;
+                plan.trigger_gz = sel.trigger_gz;
+                plan.host_gx = pos.host_gx;
+                plan.host_gz = pos.host_gz;
+                plan.cx = pos.cx;
+                plan.cz = pos.cz;
+                plan.ribbon = sel.ribbon;
+
+                record_placement_bookkeeping(PopFamily::RIBBON, sel.tier_idx);
+                return true;
+            }
+
+            // ─── commit_ribbon ───────────────────────────────────────────
+            void commit_ribbon(const RibbonPlacement& plan,
+                int32_t trigger_gx, int32_t trigger_gz, wgpu::Queue& queue)
+            {
+                GPURibbonState ribbon = plan.ribbon;
+
+                // Set anchor to negotiated world position
+                ribbon.anchor[0] = plan.cx;
+                ribbon.anchor[1] = 0.0f;
+                ribbon.anchor[2] = plan.cz;
+
+                // Re-estimate terrain height at actual anchor position
+                float terrain_est = cpu_terrain_base_at(plan.cx, plan.cz);
+                float height_above = ribbon.height - 0.0f;  // original was relative to terrain_est=0
+                ribbon.height = terrain_est + std::max(20.0f, height_above);
+
+                // Set time to current
+                ribbon.time = currentSeconds_;
+
+                gpuState_.upload_ribbon(queue, ribbon);
+                currentRibbon_ = ribbon;
+                ribbonActive_ = true;
+
+                auto& ar = activeRibbons_[plan.slot];
+                ar.patch_gx = trigger_gx;
+                ar.patch_gz = trigger_gz;
+                ar.host_gx = plan.host_gx;
+                ar.host_gz = plan.host_gz;
+                ar.active = true;
+                activeRibbonCount_++;
+
+                std::cout << "[Ribbon] tier=" << plan.ribbon.cube_count
+                    << " slot=" << plan.slot
+                    << " at (" << plan.cx << "," << plan.cz << ")"
+                    << " h=" << ribbon.height
+                    << " rings=" << ribbon.cube_count
+                    << "\n";
+            }
+
+            // ═══ Ribbon Dispatch Pipeline End ═══════════════════════════════
 
             // ── GoL Zones (modules/gol_zones.inl) ──
             // ═══ INLINED: modules/gol_zones.inl ═══════════════════════════════
@@ -7691,6 +7765,63 @@ namespace t7 {
                 // no-op
             }
 
+            // ── Ribbon dispatch wrappers ──
+
+            static bool dispatch_select_ribbon(Cartridge* self,
+                int32_t gx, int32_t gz, EntityQueueEntry& e) {
+                return self->select_ribbon_for_patch(gx, gz, e.ribbon);
+            }
+
+            static bool dispatch_place_ribbon(Cartridge* self,
+                EntityQueueEntry& e, PlacementEntry& pe) {
+                pe.family = e.family; pe.gx = e.gx; pe.gz = e.gz;
+                if (self->place_ribbon_from_selection(e.ribbon, pe.ribbon)) {
+                    return true;
+                } else {
+                    self->activeRibbons_[e.ribbon.slot].active = false;
+                    return false;
+                }
+            }
+
+            static void dispatch_commit_ribbon(Cartridge* self,
+                PlacementEntry& pe, wgpu::Queue& queue) {
+                auto* host = self->find_patch(pe.ribbon.host_gx, pe.ribbon.host_gz);
+                if (host) {
+                    self->commit_ribbon(pe.ribbon, pe.gx, pe.gz, queue);
+                    host->record_entity(PopFamily::RIBBON, pe.ribbon.slot);
+                } else {
+                    self->activeRibbons_[pe.ribbon.slot].active = false;
+#ifdef DIAG_ENTITY_LIFECYCLE
+                    std::cout << "[DIAG:REJECT] ribn slot=" << pe.ribbon.slot
+                        << " host=(" << pe.ribbon.host_gx << "," << pe.ribbon.host_gz
+                        << ") -- no host patch\n";
+#endif
+                }
+            }
+
+            static void dispatch_evict_ribbon(Cartridge* self,
+                uint32_t slot, wgpu::Queue& queue) {
+                self->activeRibbons_[slot].active = false;
+                self->activeRibbonCount_--;
+                // Clear GPU visibility
+                uint32_t zero = 0u;
+                queue.WriteBuffer(self->gpuState_.ribbon_buffer(),
+                    offsetof(GPURibbonState, is_visible), &zero, sizeof(uint32_t));
+                self->ribbonActive_ = false;
+#ifdef DIAG_ENTITY_LIFECYCLE
+                std::cout << "[DIAG:EVICT]   ribn slot=" << slot << "\n";
+#endif
+            }
+
+            static bool dispatch_prepare_mesh_ribbon(Cartridge* self, wgpu::Queue& queue) {
+                (void)self; (void)queue;
+                return false;  // no CPU mesh gen — GPU compute handles ring transforms
+            }
+            static void dispatch_mesh_gen_ribbon(Cartridge* self, wgpu::ComputePassEncoder& pass) {
+                (void)self; (void)pass;
+                // no-op
+            }
+
             // ── Dispatch table (order matches PopFamily enum) ──
 
             static constexpr FamilyDispatch FAMILY_DISPATCH[PopFamily::COUNT] = {
@@ -7718,6 +7849,9 @@ namespace t7 {
                 { dispatch_select_floating, dispatch_place_floating, dispatch_commit_floating,
                   dispatch_evict_floating, dispatch_prepare_mesh_floating, dispatch_mesh_gen_floating,
                   "float" },
+                { dispatch_select_ribbon, dispatch_place_ribbon, dispatch_commit_ribbon,
+                  dispatch_evict_ribbon, dispatch_prepare_mesh_ribbon, dispatch_mesh_gen_ribbon,
+                  "ribn" },
             };
 
             // ─── Population Themes ───────────────────────────────────────────
@@ -7773,6 +7907,7 @@ namespace t7 {
                 float tier_wt_cactus[3];                       // multiplier on cactus tier base weights (Finger, Saguaro, Candelabra)
                 float tier_wt_blade[3];                        // multiplier on blade tier base weights (Sprout, Clump, Thicket)
                 float tier_wt_floating[6];                     // multiplier on floating tier base weights (SmCube..Anomaly)
+                float tier_wt_ribbon[3];                       // multiplier on ribbon tier base weights (Serpentine, Helix, Streamer)
                 float density_mult;                            // multiplier on entity_density
 
                 // Envelope parameters (replace lattice weight for theme selection)
@@ -7799,7 +7934,7 @@ namespace t7 {
 
             static constexpr PopulationTheme THEMES[THEME_COUNT] = {
                 // ── 0: TRANSITION — sparse connective tissue ─────────────────
-                {   { 0.4f, 0.3f, 0.7f, 0.3f, 0.3f, 0.3f, 0.5f, 0.3f },        // spawn_weight [pyr, arch, col, ant, palm, cact, blade, float]
+                {   { 0.4f, 0.3f, 0.7f, 0.3f, 0.3f, 0.3f, 0.5f, 0.3f, 0.3f },   // spawn_weight [pyr..float, ribn]
                     { 1.0f, 1.0f, 1.0f },                                       // tier_pyr
                     { 1.0f, 0.3f, 1.0f },                                       // tier_arch
                     { 0.1f, 0.2f, 0.3f },                                       // tier_col
@@ -7808,12 +7943,13 @@ namespace t7 {
                     { 1.0f, 1.0f, 1.0f },                                       // tier_cactus
                     { 1.0f, 1.0f, 1.0f },                                       // tier_blade
                     { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f },                    // tier_floating (neutral)
+                    { 1.0f, 1.0f, 1.0f },                                       // tier_ribbon (neutral)
                     1.0f,                                                         // density
                     150.0f, 20u, 3u, 0u,                                          // spike, sustain, decay, cooldown
                     0.21f                                                         // weight
                 },
                 // ── 1: MONUMENTAL — big pyramids, varied arches, heavy columns
-                {   { 1.5f, 1.0f, 1.0f, 0.5f, 0.2f, 0.2f, 0.5f, 0.3f },
+                {   { 1.5f, 1.0f, 1.0f, 0.5f, 0.2f, 0.2f, 0.5f, 0.3f, 0.3f },
                     { 0.2f, 0.5f, 3.0f },
                     { 2.0f, 0.1f, 3.0f },
                     { 0.01f, 0.01f, 1.0f },
@@ -7822,12 +7958,13 @@ namespace t7 {
                     { 1.0f, 1.0f, 1.0f },
                     { 1.0f, 1.0f, 1.0f },
                     { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f },
+                    { 1.0f, 1.0f, 1.0f },
                     1.0f,
                     150.0f, 10u, 10u, 8u,
                     0.30f
                 },
                 // ── 2: COLONNADE — dense columns, moderate arches ────────────
-                {   { 0.3f, 1.0f, 4.0f, 0.5f, 0.3f, 0.3f, 0.5f, 0.3f },
+                {   { 0.3f, 1.0f, 4.0f, 0.5f, 0.3f, 0.3f, 0.5f, 0.3f, 0.3f },
                     { 1.0f, 1.0f, 1.0f },
                     { 3.0f, 0.5f, 1.0f },
                     { 0.3f, 3.0f, 5.0f },
@@ -7836,12 +7973,13 @@ namespace t7 {
                     { 1.0f, 1.0f, 1.0f },
                     { 1.0f, 1.0f, 1.0f },
                     { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f },
+                    { 1.0f, 1.0f, 1.0f },
                     1.0f,
                     150.0f, 15u, 6u, 6u,
                     0.31f
                 },
                 // ── 3: ANTENNA — antenna-dominant corridor ───────────────────
-                {   { 0.5f, 0.5f, 1.0f, 4.0f, 0.5f, 0.5f, 0.5f, 0.3f },
+                {   { 0.5f, 0.5f, 1.0f, 4.0f, 0.5f, 0.5f, 0.5f, 0.3f, 0.3f },
                     { 1.0f, 0.05f, 2.0f },
                     { 1.0f, 0.2f, 0.8f },
                     { 0.1f, 0.3f, 0.3f },
@@ -7850,12 +7988,13 @@ namespace t7 {
                     { 1.0f, 1.0f, 1.0f },
                     { 1.0f, 1.0f, 1.0f },
                     { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f },
+                    { 1.0f, 1.0f, 1.0f },
                     1.0f,
                     180.0f, 10u, 5u, 5u,
                     0.18f
                 },
                 // ── 4: BARREN — near-empty ───────────────────────────────────
-                {   { 0.4f, 0.3f, 0.5f, 0.3f, 0.2f, 0.2f, 0.1f, 0.3f },
+                {   { 0.4f, 0.3f, 0.5f, 0.3f, 0.2f, 0.2f, 0.1f, 0.3f, 0.3f },
                     { 2.0f, 0.5f, 0.2f },
                     { 1.0f, 1.0f, 1.0f },
                     { 0.2f, 0.5f, 0.5f },
@@ -7864,6 +8003,7 @@ namespace t7 {
                     { 1.0f, 1.0f, 1.0f },
                     { 1.0f, 1.0f, 1.0f },
                     { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f },
+                    { 1.0f, 1.0f, 1.0f },
                     1.0f,
                     100.0f, 12u, 3u, 4u,
                     0.04f
@@ -8115,15 +8255,16 @@ namespace t7 {
             //  └──────────────────────┴──────────────┴──────────────┴──────────────────────┘
 
             static constexpr float POP_CROSS_AFFINITY[PopFamily::COUNT][PopFamily::COUNT] = {
-                //          target:  Pyramid  Arch    Column  Antenna  Palm    Cactus  Blade   Float
-                /* Pyramid */     {  0.5f,    2.0f,   1.5f,   1.5f,   1.0f,   1.0f,   1.0f,   1.0f },
-                /* Arch    */     {  0.8f,    1.5f,   2.0f,   2.0f,   1.0f,   1.0f,   1.0f,   1.0f },
-                /* Column  */     {  0.3f,    1.2f,   1.8f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f },
-                /* Antenna */     {  0.3f,    1.2f,   1.0f,   1.8f,   1.0f,   1.0f,   1.0f,   1.0f },
-                /* Palm    */     {  0.3f,    1.0f,   1.0f,   1.0f,   1.5f,   1.0f,   1.0f,   1.0f },
-                /* Cactus  */     {  1.0f,    1.0f,   1.0f,   1.0f,   1.0f,   1.5f,   1.0f,   1.0f },
-                /* Blade   */     {  1.0f,    1.0f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f },
-                /* Float   */     {  1.0f,    1.0f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f },
+                //          target:  Pyramid  Arch    Column  Antenna  Palm    Cactus  Blade   Float   Ribn
+                /* Pyramid */     {  0.5f,    2.0f,   1.5f,   1.5f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f },
+                /* Arch    */     {  0.8f,    1.5f,   2.0f,   2.0f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f },
+                /* Column  */     {  0.3f,    1.2f,   1.8f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f },
+                /* Antenna */     {  0.3f,    1.2f,   1.0f,   1.8f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f },
+                /* Palm    */     {  0.3f,    1.0f,   1.0f,   1.0f,   1.5f,   1.0f,   1.0f,   1.0f,   1.0f },
+                /* Cactus  */     {  1.0f,    1.0f,   1.0f,   1.0f,   1.0f,   1.5f,   1.0f,   1.0f,   1.0f },
+                /* Blade   */     {  1.0f,    1.0f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f },
+                /* Float   */     {  1.0f,    1.0f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f },
+                /* Ribn    */     {  1.0f,    1.0f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f,   1.0f },
             };
 
             // ── Per-Tier Scale Character ──────────────────────────────────────
@@ -8163,6 +8304,7 @@ namespace t7 {
             static constexpr float TIER_SCALE_PALM[] = { 0.20f, 0.45f, 0.75f };
             static constexpr float TIER_SCALE_CACTUS[] = { 0.15f, 0.40f, 0.70f };
             static constexpr float TIER_SCALE_FLOATING[] = { 0.15f, 0.35f, 0.60f, 0.40f, 0.25f, 0.20f };
+            static constexpr float TIER_SCALE_RIBBON[] = { 0.70f, 0.40f, 0.55f };
 
             // Accessor: look up scale character by family + tier index.
             static float tier_scale_character(uint32_t family, uint32_t tier_idx) {
@@ -8174,6 +8316,7 @@ namespace t7 {
                 case PopFamily::PALM:    return (tier_idx < 3) ? TIER_SCALE_PALM[tier_idx] : 0.5f;
                 case PopFamily::CACTUS:   return (tier_idx < 3) ? TIER_SCALE_CACTUS[tier_idx] : 0.5f;
                 case PopFamily::FLOATING: return (tier_idx < 6) ? TIER_SCALE_FLOATING[tier_idx] : 0.5f;
+                case PopFamily::RIBBON:   return (tier_idx < 3) ? TIER_SCALE_RIBBON[tier_idx] : 0.5f;
                 default: return 0.5f;
                 }
             }
@@ -8342,15 +8485,16 @@ namespace t7 {
             // governs aesthetic spacing.
 
             static constexpr float MIN_SEPARATION[PopFamily::COUNT][PopFamily::COUNT] = {
-                //                near:  Pyr    Arch   Col    Ant    Palm   Cact   Blad   Float
-                /* placing Pyramid  */ { 15.0f, 10.0f,  5.0f,  5.0f,  5.0f,  5.0f,  0.0f,  0.0f },
-                /* placing Arch     */ { 10.0f, 20.0f, 10.0f, 10.0f,  8.0f,  5.0f,  0.0f,  0.0f },
-                /* placing Column   */ {  5.0f, 10.0f,  8.0f,  6.0f,  5.0f,  5.0f,  0.0f,  0.0f },
-                /* placing Antenna  */ {  5.0f, 10.0f,  6.0f, 12.0f,  5.0f,  5.0f,  0.0f,  0.0f },
-                /* placing Palm     */ {  5.0f,  8.0f,  5.0f,  5.0f,  8.0f,  5.0f,  0.0f,  0.0f },
-                /* placing Cactus   */ {  5.0f,  5.0f,  5.0f,  5.0f,  5.0f,  8.0f,  0.0f,  0.0f },
-                /* placing Blade    */ {  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f },
-                /* placing Floating */ {  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f, 20.0f },
+                //                near:  Pyr    Arch   Col    Ant    Palm   Cact   Blad   Float  Ribn
+                /* placing Pyramid  */ { 15.0f, 10.0f,  5.0f,  5.0f,  5.0f,  5.0f,  0.0f,  0.0f,  0.0f },
+                /* placing Arch     */ { 10.0f, 20.0f, 10.0f, 10.0f,  8.0f,  5.0f,  0.0f,  0.0f,  0.0f },
+                /* placing Column   */ {  5.0f, 10.0f,  8.0f,  6.0f,  5.0f,  5.0f,  0.0f,  0.0f,  0.0f },
+                /* placing Antenna  */ {  5.0f, 10.0f,  6.0f, 12.0f,  5.0f,  5.0f,  0.0f,  0.0f,  0.0f },
+                /* placing Palm     */ {  5.0f,  8.0f,  5.0f,  5.0f,  8.0f,  5.0f,  0.0f,  0.0f,  0.0f },
+                /* placing Cactus   */ {  5.0f,  5.0f,  5.0f,  5.0f,  5.0f,  8.0f,  0.0f,  0.0f,  0.0f },
+                /* placing Blade    */ {  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f },
+                /* placing Floating */ {  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f, 20.0f,  0.0f },
+                /* placing Ribbon   */ {  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f },
             };
 
             // --- Tile State (what we remember about each generated tile) ----------
@@ -8363,7 +8507,7 @@ namespace t7 {
                 float amp_momentum = 0.0f;   // signed amplitude excess, carried by terrain tokens
                 float entity_density = 1.0f; // spatial density multiplier for entity spawning
                 // Theme: evaluated from theme lattice at tile generation time
-                float theme_spawn[PopFamily::COUNT] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }; // blended per-family spawn multiplier
+                float theme_spawn[PopFamily::COUNT] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }; // blended per-family spawn multiplier
                 uint32_t theme_idx = 0;      // dominant theme index (for tier bias)
             };
 
@@ -9610,11 +9754,9 @@ namespace t7 {
                 }
 #endif
 
-                if (!finiteMode_) {
-                    update_ribbon_spawning(pawnReadback_x_, pawnReadback_z_, currentSeconds_, queue);
-                }
-                else if (ribbonActive_) {
-                    // Mood-spawned ribbon in finite mode — update time only
+                // Ribbon time update (spawning handled by dispatch pipeline in open mode,
+                // mood 5 spawning in finite mode)
+                if (ribbonActive_) {
                     gpuState_.upload_ribbon_time(queue, currentSeconds_);
                 }
 
