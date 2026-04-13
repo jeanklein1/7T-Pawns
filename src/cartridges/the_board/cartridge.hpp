@@ -8935,6 +8935,10 @@ namespace t7 {
 
                 // Ribbon
                 ribbonActive_ = false;
+                for (uint32_t i = 0; i < 1u; i++) {
+                    activeRibbons_[i] = ActiveRibbon{};
+                }
+                activeRibbonCount_ = 0;
 
                 // Floating entities — clear all slots
                 for (uint32_t i = 0; i < Dim::MAX_FLOATING_INSTANCES; i++) {
@@ -9752,6 +9756,31 @@ namespace t7 {
                     lastCensusDump_ = currentSeconds_;
                 }
 #endif
+
+                // Ribbon distance-based eviction (open mode only — finite mode ribbons
+                // are mood-controlled and don't use patch-based lifecycle)
+                if (!finiteMode_ && ribbonActive_ && activeRibbons_[0].active) {
+                    float dx = currentRibbon_.anchor[0] - pawnReadback_x_;
+                    float dz = currentRibbon_.anchor[2] - pawnReadback_z_;
+                    float dist_sq = dx * dx + dz * dz;
+                    constexpr float RIBBON_HOLD_DIST = 200.0f;
+                    if (dist_sq > RIBBON_HOLD_DIST * RIBBON_HOLD_DIST) {
+                        // Unregister from host patch BEFORE eviction clears the slot
+                        int32_t hgx = activeRibbons_[0].host_gx;
+                        int32_t hgz = activeRibbons_[0].host_gz;
+                        auto* host = find_patch(hgx, hgz);
+                        if (host) {
+                            for (uint32_t i = 0; i < host->entity_ref_count; i++) {
+                                if (host->entity_refs[i].family == PopFamily::RIBBON &&
+                                    host->entity_refs[i].slot == 0) {
+                                    host->entity_refs[i] = host->entity_refs[--host->entity_ref_count];
+                                    break;
+                                }
+                            }
+                        }
+                        dispatch_evict_ribbon(this, 0, queue);
+                    }
+                }
 
                 // Ribbon time update (spawning handled by dispatch pipeline in open mode,
                 // mood 5 spawning in finite mode)
