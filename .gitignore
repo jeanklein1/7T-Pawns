@@ -370,6 +370,7 @@ FodyWeavers.xsd
 .idea/
 
 # CMake build output (already covered by [Oo]ut/ above, but be explicit)
+build/
 out/build/
 
 # Backup archives - don't track zip files in git

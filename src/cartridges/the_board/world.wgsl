@@ -6,53 +6,74 @@
 //
 // All constants that shape terrain, color, and cell behavior.
 // Change a number, recompile, see the result. No logic edits needed.
+// Section references (§N.M) are stable; search by section number.
 //
-// ── Color Palettes ────────────────────────────────────────────────
-//   PALETTE_CENTER[4]             Sand/salmon/green/grey RGB          ~line 1133
-//   PALETTE_LIGHT[4]              Light variant per palette           ~line 1139
-//   PALETTE_VARIANCE[4]           Per-cell noise amplitude            ~line 1145
-//   PALETTE_WEIGHT[4]             Selection probability               ~line 1151
-//   COLOR_PAWN                    Pawn entity color                   ~line 1348
+// ── Color Palettes (§2.2) ─────────────────────────────────────────
+//   PALETTE_CENTER[4]             Sand/salmon/green/grey RGB
+//   PALETTE_LIGHT[4]              Light variant per palette
+//   PALETTE_VARIANCE[4]           Per-cell noise amplitude
+//   PALETTE_WEIGHT[4]             Selection probability
+//   COLOR_PAWN                    Pawn entity color
 //
-// ── Spatial Field Lattices ────────────────────────────────────────
-//   PALETTE_LATTICE_SPACING       300 wu — palette blob size          ~line 1159
-//   MODE_LATTICE_SPACING          120 wu — smooth/discrete clusters   ~line 1160
-//   MODE_DISCRETE_THRESHOLD       0.70 — gate for checkerboard        ~line 1161
-//   MODE_BIAS_EXPONENT            5.0 — quintic: ~83% smooth          ~line 1162
-//   TRANSITION_LATTICE_SPACING    200 wu — blend/scatter zones        ~line 1163
-//   SPARSE_BASE_SPACING           160 wu — isolated cell regions      ~line 1164
-//   SPARSE_CLUSTER_SPACING        40 wu — small dense patches         ~line 1165
-//   CHESS_LATTICE_SPACING         55 wu — B&W alternation zones       ~line 809
-//   DISCRETE_COLOR_LATTICE_SPACING  80 wu — colored cell blobs        ~line 894
-//   DISCRETE_MONO_LATTICE_SPACING   250 wu — B&W tendency zones       ~line 895
+// ── Spatial Field Lattices (§2.2) ─────────────────────────────────
+//   PALETTE_LATTICE_SPACING       300 wu — palette blob size
+//   MODE_LATTICE_SPACING          120 wu — smooth/discrete clusters
+//   MODE_DISCRETE_THRESHOLD       0.70 — gate for checkerboard
+//   MODE_BIAS_EXPONENT            5.0 — quintic: ~83% smooth
+//   TRANSITION_LATTICE_SPACING    200 wu — blend/scatter zones
+//   SPARSE_BASE_SPACING           160 wu — isolated cell regions
+//   SPARSE_CLUSTER_SPACING        40 wu — small dense patches
+//   CHESS_LATTICE_SPACING         55 wu — B&W alternation zones
+//   DISCRETE_COLOR_LATTICE_SPACING  80 wu — colored cell blobs
+//   DISCRETE_MONO_LATTICE_SPACING   250 wu — B&W tendency zones
 //
-// ── Terrain-Mode Coupling ─────────────────────────────────────────
-//   COUPLING_LATTICE_SPACING      250 wu — where coupling is active   ~line 1168
-//   COUPLING_STRENGTH_EXPONENT    3.0 — cubic: ~50% coupled           ~line 1169
-//   MODE_COUPLING_MAGNITUDE       0.25 — max mode shift               ~line 1170
-//   ARCHETYPE_MODE_CHARACTER[4]   Per-archetype coupling direction     ~line 1171
+// ── Terrain-Mode Coupling (§2.2) ──────────────────────────────────
+//   COUPLING_LATTICE_SPACING      250 wu — where coupling is active
+//   COUPLING_STRENGTH_EXPONENT    3.0 — cubic: ~50% coupled
+//   MODE_COUPLING_MAGNITUDE       0.25 — max mode shift
+//   ARCHETYPE_MODE_CHARACTER[4]   Per-archetype coupling direction
 //
-// ── Terrain Waves ─────────────────────────────────────────────────
-//   WAVE_THRESHOLD[6]             Per-band activity gate              ~line 233
-//   ACTIVITY_LATTICE_SPACING      400 wu — activity envelope          ~line 224
+// ── Terrain Waves (§1.6) ──────────────────────────────────────────
+//   WAVE_THRESHOLD[6]             Per-band activity gate
+//   ACTIVITY_LATTICE_SPACING      400 wu — activity envelope
 //
-// ── GoL Zones ─────────────────────────────────────────────────────
-//   GOL_TIERS[7]                  Tier params (density, tick, spring)  ~line 1272
-//   PULSE_TIERS[3]                Pulse algorithm params               ~line 1326
-//   GOL_ZONE_SPAWN_CHANCE         0.15 — fraction of discrete zones    ~line 1238
-//   GOL_ZONE_HEIGHT_CHANCE        0.30 — fraction with extrusion       ~line 1239
-//   GOL_COLOR_WEIGHTS             Color mode probabilities             ~line 3902
+// ── GoL Zones (§2.2, §7.0b) ──────────────────────────────────────
+//   GOL_TIERS[7]                  Tier params (density, tick, spring)
+//   PULSE_TIERS[3]                Pulse algorithm params
+//   GOL_ZONE_SPAWN_CHANCE         0.15 — fraction of discrete zones
+//   GOL_ZONE_HEIGHT_CHANCE        0.30 — fraction with extrusion
+//   GOL_COLOR_WEIGHTS             Color mode probabilities
 //
-// ── Pawn ──────────────────────────────────────────────────────────
-//   PAWN_HEIGHT / PAWN_RADIUS     Physical dimensions                  ~line 1170
-//   PAWN_STEP_HEIGHT              Max terrain step                     ~line 1175
+// ── Pawn (§2.2) ──────────────────────────────────────────────────
+//   PAWN_HEIGHT / PAWN_RADIUS     Physical dimensions
+//   PAWN_STEP_HEIGHT              Max terrain step
 //
-// ── Radial Pulses ─────────────────────────────────────────────────
-//   PULSE_SPEED / MAX_AGE / DAMPING  Ring dynamics                    ~line 1895
+// ── Radial Pulses (§3.5) ─────────────────────────────────────────
+//   PULSE_SPEED / MAX_AGE / DAMPING  Ring dynamics
 //
 // For CPU-side tuning surfaces (moods, entity tiers, spawn chances,
 // terrain tokens), see the companion directory in cartridge.hpp.
 // ═══════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════
+// SECTION MAP
+// ═══════════════════════════════════════════════════════════════════════
+//
+// §1    FOUNDATIONS         PGA algebra, trajectories, utilities, terrain height
+// §2    STATE               Structs, constants, muting control
+// §3    COUPLINGS           Signal/input/terrain/entity cross-wiring
+// §4    DYNAMICS            PGA motor integration (pawn, camera)
+// §5    COMPOSITION         0D update split across compute entry points
+// §6    RENDERING           Lighting, terrain VS/FS, entity VS/FS, ribbon, shadows
+// §7    COMPUTE             Bindings, entry points, GoL zones, pawn aura
+// §8    GALLERY             Photographer, terrain paintings, wall paintings
+// §9    ENTITY MESH GEN     GPU-sovereign geometry: pyramids, arches, columns
+//
+// Subsystem-specific bindings live with their consumers (§7, §8, §9).
+// Global bindings (signal, config, VP, render mirrors, lights) are in §7.0.
+
+// §1 FOUNDATIONS
+// §1.1 PROJECTIVE GEOMETRIC ALGEBRA
 
 struct Motor {
     p0: vec4<f32>,  // [s, e23, e31, e12]     — scalar + rotation bivectors
@@ -162,7 +183,7 @@ fn trajectory_release(t: Trajectory, goal: f32, dt: f32, rate: f32) -> Trajector
 }
 
 
-// §1.4 COORDINATE SYSTEMS
+// §1.3 COORDINATE SYSTEMS
 
 // (legacy chart constants removed — CHART_EXTENT, CHART_HEIGHT_RESOLUTION, CHART_SURFACE_COLOR_RESOLUTION)
 
@@ -182,7 +203,7 @@ const PATCH_MESH_STRIDE: u32 = PATCH_MESH_N + 1u;
 // (legacy CELL_GRID_SIZE, MAX_CELL_GRID_SIZE, proximity_field_index removed)
 
 
-// §1.5 UTILITIES
+// §1.4 UTILITIES
 
 // (hsv_to_rgb and rgb_to_hsv removed — unused color space conversions)
 
@@ -204,7 +225,7 @@ fn quat_rotate(q: vec4<f32>, v: vec3<f32>) -> vec3<f32> {
     return 2.0 * dot(u, v) * u + (s * s - dot(u, u)) * v + 2.0 * s * cross(u, v);
 }
 
-// §1.6 DETERMINISTIC RANDOMNESS
+// §1.5 DETERMINISTIC RANDOMNESS
 
 // (legacy cell-based random functions removed: hash_cell_id, random_float,
 //  random_float_range, random_vec3, random_vec3_range — replaced by hash_property system)
@@ -233,7 +254,7 @@ fn sample_gaussian(seed: u32, property: u32, mean: f32, sigma: f32) -> f32 {
 }
 
 
-// §1.7 TERRAIN HEIGHT FUNCTION
+// §1.6 TERRAIN HEIGHT FUNCTION
 // Stateless terrain height evaluation. Given (world_xz, master_seed, time),
 struct TerrainBand {
     spacing: f32,        // lattice spacing (world units between nodes)
@@ -591,18 +612,40 @@ struct CameraState {
     pan_y: f32,
 }
 
-// --- [STATE:sphere] SphereState
+// --- [STATE:floating_entity] FloatingEntityState
+// Replaces SphereState. Supports spheres, monoliths, future geometry.
+// Motion type (orbit vs hover-bob) and geometry type are per-instance.
 
-struct SphereState {
-    pos: vec3<f32>,
-    radius: f32,
-    orientation: vec4<f32>,
-    influence_radius: f32,
-    t: f32,                    // curve parameter (advances when not frozen)
-    _pad1: f32,
-    _pad2: f32,
-    color: vec3<f32>,          // current appearance (driven by polyphony via PGA motor)
-    _pad3: f32,
+struct FloatingEntityState {
+    pos: vec3<f32>,            //   0: world position (computed by GPU)
+    body_radius: f32,          //  12: bounding/visual radius
+    orientation: vec4<f32>,    //  16: quaternion
+    influence_radius: f32,     //  32: zone/terrain influence range
+    t: f32,                    //  36: curve parameter
+    orbit_radius: f32,         //  40: distance from anchor (orbit mode)
+    orbit_speed: f32,          //  44: angular velocity (orbit mode)
+    color: vec3<f32>,          //  48: current appearance (coupling-driven)
+    orbit_height: f32,         //  60: base altitude above terrain
+    anchor: vec3<f32>,         //  64: world anchor point
+    face_variance: f32,        //  76: per-face color spread (monolith)
+    base_color: vec3<f32>,     //  80: seed-derived rest color
+    geometry_type: u32,        //  92: 0=sphere, 1=monolith
+    motion_type: u32,          //  96: 0=orbit, 1=hover-bob
+    spin_speed: f32,           // 100: Y-axis rotation rate (hover-bob)
+    bob_amplitude: f32,        // 104: vertical oscillation amplitude
+    bob_period: f32,           // 108: vertical oscillation period
+    spin_tilt_x: f32,          // 112: axis tilt X
+    spin_tilt_z: f32,          // 116: axis tilt Z
+    entity_seed: u32,          // 120: seed for VS face color hashing
+    is_active: u32,            // 124: 0=inactive, 1=active
+    aspect_y: f32,             // 128: Y-axis scale (1.0=cube, >1=tall, <1=flat)
+    aspect_z: f32,             // 132: Z-axis scale (1.0=cube, <1=thin slab)
+    _future_2: f32,            // 136: reserved
+    _future_3: f32,            // 140: reserved
+}                              // 144 total
+
+struct FloatingEntityArray {
+    entities: array<FloatingEntityState, 32>,
 }
 
 // --- [STATE:ribbon] RibbonState
@@ -901,7 +944,7 @@ fn terrain_coupling_at(world_xz: vec2<f32>) -> vec2<f32> {
 }
 
 // --- Chess board field: strict two-color alternation
-const CHESS_LATTICE_SPACING: f32 = 55.0;  // very small zones
+// (CHESS_LATTICE_SPACING defined in Color Field Spatial Config block below)
 
 fn chess_tendency_at_node(node: vec2<i32>) -> f32 {
     let seed = color_lattice_seed(node, 12u);
@@ -987,8 +1030,7 @@ fn palette_color(weights: vec4<f32>, complexity: f32, cell_seed: u32) -> vec3<f3
 }
 
 // --- Discrete cell color system
-const DISCRETE_COLOR_LATTICE_SPACING: f32 = 80.0;   // medium blobs
-const DISCRETE_MONO_LATTICE_SPACING: f32 = 250.0;    // large B&W zones
+// (DISCRETE_*_LATTICE_SPACING defined in Color Field Spatial Config block)
 
 // Per-node: roll RGB mean and variance for a discrete color region.
 // Returns vec4(r_mean, g_mean, b_mean, variance).
@@ -1264,6 +1306,9 @@ const TRANSITION_LATTICE_SPACING: f32 = 200.0;   // large blend/scatter zones
 const SPARSE_BASE_SPACING: f32 = 160.0;          // broad sparse tendency regions
 const SPARSE_CLUSTER_SPACING: f32 = 40.0;         // small dense patches within sparse
 const SPARSE_BASE_EXPONENT: f32 = 3.0;           // cubic — moderately rare singles
+const CHESS_LATTICE_SPACING: f32 = 55.0;          // very small B&W alternation zones
+const DISCRETE_COLOR_LATTICE_SPACING: f32 = 80.0; // medium colored cell blobs
+const DISCRETE_MONO_LATTICE_SPACING: f32 = 250.0; // large B&W tendency zones
 
 // ── Terrain-Mode Coupling ─────────────────────────────────────────
 //
@@ -1332,15 +1377,11 @@ const FPV_EYE_HEIGHT: f32 = PAWN_HEIGHT + 0.2;  // Camera at eye level
 const FPV_MIN_ELEVATION: f32 = -1.4;             // Look down ~80°
 const FPV_MAX_ELEVATION: f32 = 1.5;              // Look up ~86°
 
-// --- Sphere constants
+// --- Floating entity constants
+// Per-entity parameters (radius, orbit_radius, orbit_height, orbit_speed,
+// influence_radius, base_color) now live in FloatingEntityState fields.
 
-const SPHERE_RADIUS: f32 = 2.5;
-const SPHERE_BASE_COLOR: vec3<f32> = vec3(0.95, 0.75, 0.4);
 const SPHERE_COLOR_RELEASE_RATE: f32 = 2.0;
-const SPHERE_INFLUENCE_RADIUS: f32 = 12.0;
-const CURVE_ORBIT_RADIUS: f32 = 25.0;
-const CURVE_ORBIT_HEIGHT: f32 = 8.0;
-const CURVE_ORBIT_SPEED: f32 = 0.8;
 const SPHERE_MIN_TERRAIN_CLEARANCE: f32 = 5.0;
 
 // (legacy proximity field constants removed — binding 21 reserved)
@@ -1562,13 +1603,13 @@ fn coupling_signal_polyphony_to_terrain_amplitude(polyphony: f32, traj: Trajecto
 // §3.2 signal → entities
 
 // --- [COUPLING:signal.polyphony→sphere:color]
-fn coupling_signal_polyphony_to_sphere_color(polyphony: f32, current: vec3<f32>, dt: f32) -> vec3<f32> {
+fn coupling_signal_polyphony_to_sphere_color(polyphony: f32, current: vec3<f32>, base_color: vec3<f32>, dt: f32) -> vec3<f32> {
     let intensity = saturate(polyphony / 8.0);
     
     // --- HYBRID APPROACH
     if (intensity < 0.01) {
         // Silent: smooth return to base color using existing release rate
-        return current + (SPHERE_BASE_COLOR - current) * (1.0 - exp(-SPHERE_COLOR_RELEASE_RATE * dt));
+        return current + (base_color - current) * (1.0 - exp(-SPHERE_COLOR_RELEASE_RATE * dt));
     }
     
     // Active: PGA spiral (rotation scales with intensity, no idle drift)
@@ -2224,10 +2265,11 @@ fn coupling_velocity_to_pawn_heading(velocity: vec2<f32>, current_heading: f32, 
 // §3.6 entities → terrain
 
 // --- [COUPLING:sphere→terrain:tint]
-fn coupling_sphere_to_terrain_tint(sphere_pos: vec3<f32>) -> vec3<f32> {
+fn coupling_sphere_to_terrain_tint(sphere_pos: vec3<f32>, orbit_radius: f32) -> vec3<f32> {
     // Normalize position to [-1, 1] based on orbit radius
-    let nx = sphere_pos.x / CURVE_ORBIT_RADIUS;
-    let nz = sphere_pos.z / CURVE_ORBIT_RADIUS;
+    let r = max(orbit_radius, 1.0);  // guard against zero
+    let nx = sphere_pos.x / r;
+    let nz = sphere_pos.z / r;
     
     // Map sphere position to RGB offsets within variance bounds
     let offset = vec3(
@@ -2272,7 +2314,8 @@ fn dynamics_terrain_gradient_max(amplitude_scale: f32) -> f32 {
     return max_grad * amplitude_scale * HEIGHT_MAX_AMPLITUDE * 1.5;
 }
 
-// §4.2 PGA DYNAMICS
+// §4 DYNAMICS
+// §4.1 PGA MOTOR INTEGRATION
 // These functions use Projective Geometric Algebra for elegant transformations.
 fn pga_color_motor(current_rgb: vec3<f32>, hue_speed: f32, sat_push: f32, val_climb: f32, dt: f32) -> vec3<f32> {
     // 1. CONVERT COLOR TO POINT
@@ -2311,39 +2354,40 @@ fn pga_color_motor(current_rgb: vec3<f32>, hue_speed: f32, sat_push: f32, val_cl
 }
 
 // --- [DYNAMICS:PGA] Sphere Orbit
-fn dynamics_sphere_motor_orbit(t: f32) -> SphereState {
-    var s: SphereState;
+fn dynamics_sphere_motor_orbit(t: f32, fe: FloatingEntityState) -> FloatingEntityState {
+    var s: FloatingEntityState;
 
     // 1. DEFINITION
     //    Axis: The vertical line through the origin (Line Y)
-    //    Speed: The orbital speed constant
+    //    Speed: From per-entity state
     let orbit_axis = LINE_Y.d; 
-    let angle = t * CURVE_ORBIT_SPEED;
+    let angle = t * fe.orbit_speed;
     
     // 2. THE MOTOR (The Spell)
     //    Create a rotor that spins around the Y axis.
     let m_orbit = rotor(orbit_axis, angle); 
     
     // 3. LIFT (The Input)
-    //    Define the starting position as a standard point.
-    //    (Start at Radius on X, Height on Y)
-    let start_pos_vec = vec3(CURVE_ORBIT_RADIUS, CURVE_ORBIT_HEIGHT, 0.0);
-    let p_start = point_from_vec3(start_pos_vec);
+    //    Offset from anchor — orbit_radius on X, flat plane.
+    //    Height is added after; terrain coupling adjusts it.
+    let offset = vec3(fe.orbit_radius, 0.0, 0.0);
+    let p_start = point_from_vec3(offset);
     
     // 4. MOTIVATE (The Transformation)
-    //    Apply the motor to the point via sandwich product.
+    //    Apply the rotor to the offset point.
     let p_moved = sw_motor_point(m_orbit, p_start);
+    let local_pos = point_to_vec3(p_moved);
     
     // 5. DROP (The Output)
-    //    Convert back to vec3 for the humble renderer.
-    s.pos = point_to_vec3(p_moved);
+    //    Anchor translation + base orbit height.
+    s.pos = fe.anchor + vec3(local_pos.x, fe.orbit_height, local_pos.z);
     
     // Bonus: PGA gives us the orientation for free!
     // The sphere rotates to face its path.
     s.orientation = m_orbit.p0; 
     
-    s.radius = SPHERE_RADIUS;
-    s.influence_radius = SPHERE_INFLUENCE_RADIUS;
+    s.body_radius = fe.body_radius;
+    s.influence_radius = fe.influence_radius;
     s.t = t;
     
     return s;
@@ -2354,13 +2398,13 @@ fn dynamics_sphere_motor_orbit(t: f32) -> SphereState {
 // §5 COMPOSITION
 
 // Execution orchestration - where couplings and dynamics are applied.
-fn compose_sphere_from_orbit_pga(t: f32) -> SphereState {
+fn compose_sphere_from_orbit_pga(t: f32, fe: FloatingEntityState) -> FloatingEntityState {
     // 1. Get the pure PGA orbit (circular motion via Motor)
-    var s = dynamics_sphere_motor_orbit(t);
+    var s = dynamics_sphere_motor_orbit(t, fe);
     
     // 2. Apply terrain coupling (Height adjustment)
     //    This is an "effect" applied after the ideal motion
-    let base_height = s.pos.y;  // Should be CURVE_ORBIT_HEIGHT from motor
+    let base_height = s.pos.y;  // orbit_height from motor + anchor
     let adjusted_height = coupling_terrain_to_sphere_orbit_height(
         vec2(s.pos.x, s.pos.z),
         base_height
@@ -2393,7 +2437,7 @@ fn compose_camera_position_from_orbit(aim_point: vec3<f32>, cam: CameraState) ->
     return look_at + offset;
 }
 
-// §5.1 0D COMPOSITION — Now split into 4 entry points (§7.0):
+// §5.1 0D COMPOSITION — Now split into 4 entry points (§7.1):
 //   update_terrain_config, update_pawn, update_camera, update_sphere
 struct VPMatrix {
     m: mat4x4<f32>,
@@ -2444,7 +2488,7 @@ fn build_view_projection_matrix(
 }
 
 
-// §6.0 LIGHTING SYSTEM
+// §6.1 LIGHTING SYSTEM
 // Directional light (sun/moon) with shadow map + N point lights (lamp posts).
 struct DirectionalLight {
     direction: vec3<f32>,     // normalized, points FROM light toward scene
@@ -2734,7 +2778,7 @@ fn shade_lit(world_pos: vec3<f32>, normal: vec3<f32>, base_color: vec3<f32>) -> 
 }
 
 
-// §6.1b PATCH TERRAIN RENDERING
+// §6.2 PATCH TERRAIN RENDERING
 // Instanced rendering of streaming terrain patches. Each instance is one
 struct PatchTerrainVarying {
     @builtin(position) clip_pos: vec4<f32>,
@@ -2869,7 +2913,7 @@ fn patch_terrain_fs(in: PatchTerrainVarying) -> @location(0) vec4<f32> {
                             }
 
                             // Sphere force field: tint zone cells near sphere (render context)
-                            let sphere_ff = 1.0 - zone_sphere_ff(in.world_pos.xz, render_sphere.pos);
+                            let sphere_ff = 1.0 - zone_sphere_ff(in.world_pos.xz, render_floating.entities[0].pos);
                             if (sphere_ff > 0.01) {
                                 base_color = mix(base_color, ZONE_SPHERE_TINT, sphere_ff * ZONE_SPHERE_TINT_STRENGTH * color_val);
                             }
@@ -3108,15 +3152,17 @@ fn pawn_vs(@builtin(vertex_index) vid: u32) -> EntityVarying {
 }
 
 @vertex
-fn sphere_vs(in: MeshVertexInput) -> EntityVarying {
-    // Scale by radius and translate
-    let world_pos = in.pos * render_sphere.radius + render_sphere.pos;
+fn sphere_vs(@builtin(instance_index) inst: u32, in: MeshVertexInput) -> EntityVarying {
+    let fe = render_floating.entities[inst];
+    // Skip non-sphere geometry (degenerate triangle for rasterizer discard)
+    let r = select(0.0, fe.body_radius, fe.geometry_type == 0u && fe.is_active != 0u);
+    let world_pos = in.pos * r + fe.pos;
 
     var out: EntityVarying;
     out.clip_pos = render_vp.m * vec4(world_pos, 1.0);
     out.world_pos = world_pos;
-    out.normal = in.normal;  // Unit sphere normals stay correct after uniform scale
-    out.entity_color = render_sphere.color;
+    out.normal = in.normal;
+    out.entity_color = fe.color;
     return out;
 }
 
@@ -3125,8 +3171,43 @@ fn entity_fs(in: EntityVarying) -> @location(0) vec4<f32> {
     return vec4(shade_lit(in.world_pos, normalize(in.normal), in.entity_color), 1.0);
 }
 
+// --- Monolith vertex shader (imperfect cube, per-face color from seed)
+@vertex
+fn monolith_vs(@builtin(instance_index) inst: u32, in: MeshVertexInput) -> EntityVarying {
+    let fe = render_floating.entities[inst];
+    // Skip non-monolith geometry
+    let r = select(0.0, fe.body_radius, fe.geometry_type == 1u && fe.is_active != 0u);
 
-// §6.3.1 SHADOW PASS VERTEX SHADERS
+    // Apply orientation quaternion (monoliths spin)
+    let scaled = in.pos * vec3(r, r * fe.aspect_y, r * fe.aspect_z);
+    let rotated = quat_rotate(fe.orientation, scaled);
+    let world_pos = rotated + fe.pos;
+    let world_normal = quat_rotate(fe.orientation, in.normal);
+
+    // Per-face color: derive face index from dominant normal axis
+    let abs_n = abs(in.normal);
+    var face_idx = 0u;
+    if (abs_n.y > abs_n.x && abs_n.y > abs_n.z) {
+        face_idx = select(2u, 3u, in.normal.y > 0.0);
+    } else if (abs_n.z > abs_n.x) {
+        face_idx = select(4u, 5u, in.normal.z > 0.0);
+    } else {
+        face_idx = select(0u, 1u, in.normal.x > 0.0);
+    }
+    let face_hash = hash_property(fe.entity_seed, 500u + face_idx);
+    let face_delta = (face_hash - 0.5) * 2.0 * fe.face_variance;
+    let face_color = clamp(fe.color + vec3(face_delta, face_delta * 0.7, face_delta * 0.5), vec3(0.0), vec3(1.0));
+
+    var out: EntityVarying;
+    out.clip_pos = render_vp.m * vec4(world_pos, 1.0);
+    out.world_pos = world_pos;
+    out.normal = world_normal;
+    out.entity_color = face_color;
+    return out;
+}
+
+
+// §6.4 SHADOW PASS VERTEX SHADERS
 // Depth-only rendering from the light's point of view.
 struct ShadowVarying {
     @builtin(position) clip_pos: vec4<f32>,
@@ -3203,8 +3284,24 @@ fn shadow_pawn_vs(@builtin(vertex_index) vid: u32) -> ShadowVarying {
 
 // Shadow: Sphere (same as sphere_vs, light VP)
 @vertex
-fn shadow_sphere_vs(in: MeshVertexInput) -> ShadowVarying {
-    let world_pos = in.pos * render_sphere.radius + render_sphere.pos;
+fn shadow_sphere_vs(@builtin(instance_index) inst: u32, in: MeshVertexInput) -> ShadowVarying {
+    let fe = render_floating.entities[inst];
+    let r = select(0.0, fe.body_radius, fe.geometry_type == 0u && fe.is_active != 0u);
+    let world_pos = in.pos * r + fe.pos;
+
+    var out: ShadowVarying;
+    out.clip_pos = render_vp.light_vp * vec4(world_pos, 1.0);
+    return out;
+}
+
+// Shadow: Monolith (quaternion rotation, light VP)
+@vertex
+fn shadow_monolith_vs(@builtin(instance_index) inst: u32, in: MeshVertexInput) -> ShadowVarying {
+    let fe = render_floating.entities[inst];
+    let r = select(0.0, fe.body_radius, fe.geometry_type == 1u && fe.is_active != 0u);
+    let scaled = in.pos * vec3(r, r * fe.aspect_y, r * fe.aspect_z);
+    let rotated = quat_rotate(fe.orientation, scaled);
+    let world_pos = rotated + fe.pos;
 
     var out: ShadowVarying;
     out.clip_pos = render_vp.light_vp * vec4(world_pos, 1.0);
@@ -3327,7 +3424,7 @@ fn shadow_shell_vs(in: ShellVertexInput) -> ShadowVarying {
     return out;
 }
 
-// §6.3.3 SKY RIBBON ENTITY
+// §6.5 SKY RIBBON ENTITY
 // A continuous square-section tube animated by wave superposition.
 fn ribbon_spine_at(t: f32, ribbon: RibbonState) -> vec3<f32> {
     let total_length = f32(ribbon.cube_count) * ribbon.cube_size;
@@ -3646,7 +3743,30 @@ fn shadow_ribbon_vs(@builtin(vertex_index) vid: u32) -> ShadowVarying {
     return out;
 }
 
-// §7.1 BINDINGS
+// §6.6 FADE OVERLAY
+// Fullscreen triangle for transition fade. Drawn last with alpha blending.
+// Reads fade_alpha and fade_color from DesignConfig.
+
+struct FadeVarying {
+    @builtin(position) pos: vec4<f32>,
+}
+
+@vertex
+fn fade_overlay_vs(@builtin(vertex_index) vid: u32) -> FadeVarying {
+    // Fullscreen triangle from vertex ID (covers clip space)
+    let x = f32(i32(vid & 1u)) * 4.0 - 1.0;
+    let y = f32(i32(vid >> 1u)) * 4.0 - 1.0;
+    var out: FadeVarying;
+    out.pos = vec4(x, y, 0.0, 1.0);
+    return out;
+}
+
+@fragment
+fn fade_overlay_fs(in: FadeVarying) -> @location(0) vec4<f32> {
+    return vec4(config.fade_color, config.fade_alpha);
+}
+
+// §7.0 GLOBAL BINDINGS
 
 // --- Compute bindings (Group 0: buffers, 20-slot system ranges)
 @group(0) @binding(0)   var<uniform>             signal: FrameSignal;
@@ -3672,7 +3792,7 @@ struct PortalArray {
 @group(0) @binding(62)  var<uniform> portal_array: PortalArray;
 
 @group(0) @binding(80)  var<storage, read_write> camera_state: CameraState;
-@group(0) @binding(100) var<storage, read_write> sphere_state: SphereState;
+@group(0) @binding(100) var<storage, read_write> floating_entities: FloatingEntityArray;
 @group(0) @binding(101) var<storage, read_write> trajectories: array<Trajectory, 16>;
 @group(0) @binding(120) var<uniform>             ribbon_state: RibbonState;
 
@@ -3682,14 +3802,33 @@ struct PortalArray {
 @group(0) @binding(220) var<storage, read> render_terrain: TerrainState;
 @group(0) @binding(260) var<storage, read> render_pawn: PawnState;
 @group(0) @binding(280) var<storage, read> render_camera: CameraState;
-@group(0) @binding(300) var<storage, read> render_sphere: SphereState;
+@group(0) @binding(300) var<uniform> render_floating: FloatingEntityArray;
 
 // --- Ribbon (Group 0: render, binding 360)
-@group(0) @binding(360) var<storage, read> render_ribbon: RibbonState;
+@group(0) @binding(360) var<uniform> render_ribbon: RibbonState;
 @group(0) @binding(361) var<storage, read> render_ring_xforms: array<RibbonRingTransform, 400>;
 @group(0) @binding(380) var<storage, read> render_arch_ground: array<ArchGroundEntry, 16>;
 @group(0) @binding(381) var<storage, read> render_column_ground: array<ColumnGroundEntry, 32>;
 @group(0) @binding(382) var<storage, read> render_pyramid_ground: array<PyramidGroundEntry, 8>;
+@group(0) @binding(383) var<uniform> render_palm_ground: array<PalmGroundEntry, 24>;
+
+struct CactusGroundEntry {
+    center_x: f32,   // 1
+    center_z: f32,   // 2
+    ground_y: f32,   // 3
+    is_active: u32,  // 4
+    _pad0: f32, _pad1: f32, _pad2: f32, _pad3: f32,  // 5-8 = 32 bytes
+}
+@group(0) @binding(384) var<uniform> render_cactus_ground: array<CactusGroundEntry, 20>;
+
+struct BladeClusterGroundEntry {
+    center_x: f32,
+    center_z: f32,
+    ground_y: f32,
+    is_active: u32,
+    _pad0: f32, _pad1: f32, _pad2: f32, _pad3: f32,
+}
+@group(0) @binding(385) var<uniform> render_blade_ground: array<BladeClusterGroundEntry, 32>;
 
 // --- Ribbon compute (Group 0: binding 121, separate pipeline layout)
 // Written by compute_ribbon_rings, read by ribbon VS via render_ring_xforms.
@@ -3707,6 +3846,8 @@ struct PortalArray {
 @group(1) @binding(25) var shadow_map: texture_depth_2d;           // sun shadows (outdoor) / spot atlas lights 0-1 (indoor)
 @group(1) @binding(26) var shadow_sampler: sampler_comparison;
 @group(1) @binding(27) var spot_shadow_map: texture_depth_2d;     // spot atlas lights 2-3 (indoor)
+
+// §7.0a PATCH GENERATION BINDINGS
 
 // --- Shared mesh vertex struct (used by zone extrusion mesh gen)
 // (legacy cell mesh gen bindings 40-45 removed — reserved for future use)
@@ -3735,6 +3876,8 @@ struct CellMeshVertex {
 @group(0) @binding(340) var<storage, read> patch_instances: array<PatchInstance>;
 @group(1) @binding(28) var patch_heightfield_array_read: texture_2d_array<f32>;
 @group(1) @binding(29) var patch_cell_color_array_read: texture_2d_array<f32>;
+
+// §7.0b GOL ZONE DEFINITIONS
 
 // --- GoL zone system (Group 0: bindings 160-162, dedicated layout)
 struct GoLZoneConfig {
@@ -3918,6 +4061,8 @@ struct GoLZoneArray {
     zones: array<GoLZoneConfig, 8>,
 }
 
+// §7.0c PAWN AURA HELPERS
+
 // --- Pawn Aura: persistent terrain influence via toroidal spring grid
 const PAWN_AURA_N: i32 = 64;
 const PAWN_AURA_EMPTY: i32 = 0x7FFFFFFF;
@@ -3977,6 +4122,8 @@ struct PawnAuraCell {
     _pad0: f32,
     _pad1: f32,
 }
+
+// §7.0d SYSTEM BINDINGS
 
 @group(0) @binding(160) var<storage, read_write> zone_config: GoLZoneArray;
 @group(0) @binding(161) var<storage, read_write> zone_life: array<f32>;
@@ -4197,7 +4344,7 @@ const ZONE_MESH_MAX_VERTICES: u32 = 50000u;
 const ZONE_MESH_MAX_INDICES: u32 = 75000u;
 
 
-// §7.2 ENTRY POINTS
+// §7.1 COMPUTE ENTRY POINTS
 // Execution order (critical for correctness):
 @compute @workgroup_size(1)
 fn update_terrain_config() {
@@ -4425,26 +4572,68 @@ fn update_sphere() {
 
     let dt = signal.dt;
 
-    if (!sphere_frozen()) {
-        var sphere = sphere_state;
-        sphere.t = sphere.t + signal.dt;
+    // Update all active floating entity slots
+    for (var slot = 0u; slot < 32u; slot++) {
+        var fe = floating_entities.entities[slot];
+        if (fe.is_active == 0u) { continue; }
 
-        let sphere_updated = compose_sphere_from_orbit_pga(sphere.t);
-        sphere.pos = sphere_updated.pos;
-        sphere.orientation = sphere_updated.orientation;
-        sphere_state = sphere;
+        if (!sphere_frozen()) {
+            fe.t = fe.t + dt;
+
+            if (fe.motion_type == 0u) {
+                // Orbit: PGA motor around anchor
+                let updated = compose_sphere_from_orbit_pga(fe.t, fe);
+                fe.pos = updated.pos;
+                fe.orientation = updated.orientation;
+            } else {
+                // Hover-bob: orbit_height = clearance above local terrain
+                let bob_y = sin(fe.t * 6.283185 / max(fe.bob_period, 0.1)) * fe.bob_amplitude;
+                let base_xz = vec2(fe.anchor.x, fe.anchor.z);
+                let ground = ground_formed(base_xz) + terrain_wave_overlay(base_xz);
+                fe.pos = vec3(fe.anchor.x, ground + fe.orbit_height + bob_y, fe.anchor.z);
+                // Spin around tilted Y axis
+                let spin_angle = fe.t * fe.spin_speed;
+                let axis = normalize(vec3(fe.spin_tilt_x, 1.0, fe.spin_tilt_z));
+                let half_a = spin_angle * 0.5;
+                fe.orientation = vec4(axis * sin(half_a), cos(half_a));
+            }
+
+            floating_entities.entities[slot] = fe;
+        }
+
+        if (signal_active() && coupling_active(COUPLING_POLYPHONY_TO_SPHERE_COLOR)) {
+            floating_entities.entities[slot].color = coupling_signal_polyphony_to_sphere_color(
+                signal.stats[0],
+                floating_entities.entities[slot].color,
+                floating_entities.entities[slot].base_color,
+                dt
+            );
+        }
     }
 
-    if (signal_active() && coupling_active(COUPLING_POLYPHONY_TO_SPHERE_COLOR)) {
-        sphere_state.color = coupling_signal_polyphony_to_sphere_color(
-            signal.stats[0],
-            sphere_state.color,
-            dt
-        );
-    }
-
+    // Terrain tint from nearest active entity to pawn
     if (coupling_active(COUPLING_SPHERE_TO_TERRAIN_TINT)) {
-        terrain_state.tint = coupling_sphere_to_terrain_tint(sphere_state.pos);
+        var best_dist_sq = 999999.0;
+        var best_slot = 0u;
+        var found = false;
+        for (var slot = 0u; slot < 32u; slot++) {
+            let fe = floating_entities.entities[slot];
+            if (fe.is_active == 0u || fe.orbit_radius <= 0.0) { continue; }
+            let dx = fe.pos.x - pawn_state.pos.x;
+            let dz = fe.pos.z - pawn_state.pos.z;
+            let d2 = dx * dx + dz * dz;
+            if (d2 < best_dist_sq) {
+                best_dist_sq = d2;
+                best_slot = slot;
+                found = true;
+            }
+        }
+        if (found) {
+            let fe = floating_entities.entities[best_slot];
+            terrain_state.tint = coupling_sphere_to_terrain_tint(fe.pos, fe.orbit_radius);
+        } else {
+            terrain_state.tint = vec3(1.0);
+        }
     } else {
         terrain_state.tint = vec3(1.0);
     }
@@ -4825,7 +5014,7 @@ fn generate_patch_cells(@builtin(global_invocation_id) id: vec3<u32>) {
 }
 
 
-// §7.3 GOL ZONE COMPUTE — Zone-local Game of Life
+// §7.2 GOL ZONE COMPUTE — Zone-local Game of Life
 // Two compute passes per frame (when zones are active):
 const GOL_ZONE_STRIDE: u32 = 7168u;     // floats per zone (7 slots × 1024 cells)
 const GOL_CELL_VISUAL: u32 = 0u;        // slot 0: height spring visual [0,1]
@@ -4959,7 +5148,7 @@ fn zone_gol_evolve(@builtin(global_invocation_id) gid: vec3<u32>) {
 }
 
 
-// §7.4 GOL ZONE MESH GENERATION — Cell extrusion geometry
+// §7.3 GOL ZONE MESH GENERATION — Cell extrusion geometry
 
 
 
@@ -5172,7 +5361,7 @@ fn zone_extrusion_fs(in: ZoneExtrusionVarying) -> @location(0) vec4<f32> {
     }
 
     // Sphere force field tint on extrusion blocks (render context)
-    let sphere_ff = 1.0 - zone_sphere_ff(in.world_pos.xz, render_sphere.pos);
+    let sphere_ff = 1.0 - zone_sphere_ff(in.world_pos.xz, render_floating.entities[0].pos);
     if (sphere_ff > 0.01) {
         block_color = mix(block_color, ZONE_SPHERE_TINT, sphere_ff * ZONE_SPHERE_TINT_STRENGTH);
     }
@@ -5215,6 +5404,156 @@ fn shadow_zone_extrusion_vs(
     var out: ShadowVarying;
     out.clip_pos = render_vp.light_vp * vec4(world_pos, 1.0);
     return out;
+}
+
+
+// §7.4 PAWN AURA — Persistent terrain influence via toroidal spring grid
+// Single dispatch over 64×64 toroidal grid. Each thread:
+const AURA_BEAT_PERIOD: f32 = 2.0;
+
+@compute @workgroup_size(8, 8, 1)
+fn compute_pawn_aura(@builtin(global_invocation_id) gid: vec3<u32>) {
+    let sx = i32(gid.x);
+    let sz = i32(gid.y);
+    let N = PAWN_AURA_N;
+    if (sx >= N || sz >= N) { return; }
+
+    let slot_idx = u32(sz * N + sx);
+    var cell = pawn_aura_cells[slot_idx];
+
+    let pawn_xz = pawn_state.pos.xz;
+    let cs = pawn_aura_cfg.cell_size;
+    let radius = pawn_aura_cfg.influence_radius;
+    let dt = pawn_aura_cfg.dt;
+    let t_beats = pawn_aura_cfg.t_beats;
+
+    // Which world cell near the pawn maps to this slot via toroidal hash?
+    let pgx = i32(floor(pawn_xz.x / cs));
+    let pgz = i32(floor(pawn_xz.y / cs));
+
+    // Nearest cell to pawn satisfying gx ≡ sx (mod N), gz ≡ sz (mod N)
+    let gx = sx + N * i32(round(f32(pgx - sx) / f32(N)));
+    let gz = sz + N * i32(round(f32(pgz - sz) / f32(N)));
+
+    let cell_center = (vec2(f32(gx), f32(gz)) + 0.5) * cs;
+    let dist = distance(cell_center, pawn_xz);
+    let stimulus = smoothstep(radius, 0.0, dist);
+
+    let is_occupied = (cell.cell_gx != PAWN_AURA_EMPTY);
+    let matches = (cell.cell_gx == gx && cell.cell_gz == gz);
+
+    if (stimulus > 0.001) {
+        // Cell is within pawn influence
+        if (!is_occupied || matches || cell.intensity < 0.05) {
+            // Allocate new or update existing
+            if (!matches) {
+                cell.cell_gx = gx;
+                cell.cell_gz = gz;
+                cell.velocity = 0.0;
+                cell.color_osc = 0.0;
+                cell.color_osc_vel = 0.0;
+                if (!is_occupied) { cell.intensity = 0.0; }
+
+                // Compute contextual color delta based on delta_mode
+                if (pawn_aura_cfg.delta_mode == AURA_DELTA_RANDOM) {
+                    let h = u32(gx) * 374761393u + u32(gz) * 668265263u;
+                    let mag = pawn_aura_cfg.delta_magnitude;
+                    cell.delta_r = (f32((h) & 0xFFFFu) / 32767.5 - 1.0) * mag;
+                    cell.delta_g = (f32((h >> 8u) & 0xFFFFu) / 32767.5 - 1.0) * mag;
+                    cell.delta_b = (f32((h >> 16u) & 0xFFFFu) / 32767.5 - 1.0) * mag;
+                } else {
+                    let terrain_color = gol_composite_cell_color(cell_center);
+                    let tint = vec3(pawn_aura_cfg.tint_r, pawn_aura_cfg.tint_g, pawn_aura_cfg.tint_b);
+                    cell.delta_r = tint.r - terrain_color.r;
+                    cell.delta_g = tint.g - terrain_color.g;
+                    cell.delta_b = tint.b - terrain_color.b;
+                }
+            }
+
+            // Attack spring: critically damped toward stimulus
+            let goal = stimulus;
+            let d = cell.intensity - goal;
+            let stiff = pawn_aura_cfg.attack_stiffness;
+            let damp = pawn_aura_cfg.attack_damping;
+            let spring_f = -stiff * d;
+            let damp_f = -damp * sqrt(stiff) * cell.velocity;
+            cell.velocity += (spring_f + damp_f) * dt;
+            cell.intensity += cell.velocity * dt;
+            cell.intensity = clamp(cell.intensity, 0.0, 1.0);
+
+            // Directional height bias: updates every frame as pawn turns.
+            // Center = peak (1.0). Forward = gentle ramp down. Behind = steep drop.
+            // This makes the pawn the highest point with a leading ramp.
+            if (dist > 0.5) {
+                let to_cell = (cell_center - pawn_xz) / dist;
+                let heading = pawn_state.heading;
+                let forward = vec2(sin(heading), cos(heading));
+                let facing = dot(to_cell, forward);  // -1=behind, +1=in front
+                // Forward cells: gentle ramp (0.6–0.85). Behind: steeper (0.2–0.5).
+                let forward_factor = clamp(facing * 0.15 + 0.7, 0.2, 0.85);
+                // Distance falloff: closer to center = closer to 1.0
+                let dist_falloff = 1.0 - smoothstep(0.0, radius, dist);
+                cell.height_delta = mix(forward_factor, 1.0, dist_falloff * dist_falloff);
+            } else {
+                // At pawn center: peak height exactly 1.0
+                cell.height_delta = 1.0;
+            }
+
+            // Color oscillation spring: target cycles between 0 and 1 every AURA_BEAT_PERIOD beats.
+            // Per-cell phase offset for sparkle.
+            let cell_hash = u32(cell.cell_gx) * 73856093u + u32(cell.cell_gz) * 19349663u;
+            let cell_phase = f32(cell_hash & 0xFFFFu) / 65535.0 * 0.3;  // small phase scatter
+            let osc_phase = (t_beats + cell_phase) / AURA_BEAT_PERIOD;
+            let osc_target = sin(osc_phase * 2.0 * PI) * 0.5 + 0.5;
+
+            // Spring toward oscillation target (shares stiffness with attack spring)
+            let osc_d = cell.color_osc - osc_target;
+            let osc_spring = -stiff * 0.5 * osc_d;  // softer than attack spring
+            let osc_damp = -damp * sqrt(stiff * 0.5) * cell.color_osc_vel;
+            cell.color_osc_vel += (osc_spring + osc_damp) * dt;
+            cell.color_osc += cell.color_osc_vel * dt;
+            cell.color_osc = clamp(cell.color_osc, 0.0, 1.0);
+
+        }
+    } else if (is_occupied) {
+        // Outside influence — release toward zero
+        let decay = 1.0 - exp(-pawn_aura_cfg.release_rate * dt);
+        cell.intensity *= (1.0 - decay);
+        cell.color_osc *= (1.0 - decay);  // oscillation fades with trail
+        cell.velocity = 0.0;
+        cell.color_osc_vel = 0.0;
+
+        // Clear dead entries
+        if (cell.intensity < 0.001) {
+            cell.cell_gx = PAWN_AURA_EMPTY;
+            cell.cell_gz = PAWN_AURA_EMPTY;
+            cell.intensity = 0.0;
+            cell.velocity = 0.0;
+            cell.delta_r = 0.0;
+            cell.delta_g = 0.0;
+            cell.delta_b = 0.0;
+            cell.height_delta = 0.0;
+            cell.color_osc = 0.0;
+            cell.color_osc_vel = 0.0;
+        }
+    }
+
+    pawn_aura_cells[slot_idx] = cell;
+
+    // Write to texture:
+    //   R = height blend (0 when height disabled via height_scale=0)
+    //   GBA = pre-multiplied color delta (modulated by oscillation)
+    if (cell.intensity > 0.001) {
+        let color_blend = cell.intensity * pawn_aura_cfg.tint_strength * cell.color_osc;
+        let height_blend = select(cell.intensity * cell.height_delta, 0.0, pawn_aura_cfg.height_scale < 0.01);
+        textureStore(pawn_aura_tex_write, vec2<i32>(gid.xy),
+            vec4(height_blend,
+                 cell.delta_r * color_blend,
+                 cell.delta_g * color_blend,
+                 cell.delta_b * color_blend));
+    } else {
+        textureStore(pawn_aura_tex_write, vec2<i32>(gid.xy), vec4(0.0));
+    }
 }
 
 
@@ -5276,6 +5615,16 @@ struct PyramidGroundEntry {
     rotation: f32,
 };
 @group(0) @binding(149) var<storage, read_write> pyramid_ground: array<PyramidGroundEntry, 8>;
+
+struct PalmGroundEntry {
+    center_x: f32,
+    center_z: f32,
+    ground_y: f32,
+    is_active: u32,
+    _pad0: f32, _pad1: f32, _pad2: f32, _pad3: f32,
+}
+@group(0) @binding(150) var<storage, read_write> palm_ground: array<PalmGroundEntry, 24>;
+@group(0) @binding(151) var<storage, read_write> cactus_ground: array<CactusGroundEntry, 20>;
 
 // --- Terrain Height Sampling
 fn sample_terrain_y_at(world_xz: vec2<f32>, patch_count: u32) -> f32 {
@@ -5880,180 +6229,6 @@ fn shadow_wall_painting_vs(@builtin(vertex_index) vid: u32) -> ShadowVarying {
 }
 
 
-// §7.6 PAWN AURA — Persistent terrain influence via toroidal spring grid
-// Single dispatch over 64×64 toroidal grid. Each thread:
-const AURA_BEAT_PERIOD: f32 = 2.0;
-
-@compute @workgroup_size(8, 8, 1)
-fn compute_pawn_aura(@builtin(global_invocation_id) gid: vec3<u32>) {
-    let sx = i32(gid.x);
-    let sz = i32(gid.y);
-    let N = PAWN_AURA_N;
-    if (sx >= N || sz >= N) { return; }
-
-    let slot_idx = u32(sz * N + sx);
-    var cell = pawn_aura_cells[slot_idx];
-
-    let pawn_xz = pawn_state.pos.xz;
-    let cs = pawn_aura_cfg.cell_size;
-    let radius = pawn_aura_cfg.influence_radius;
-    let dt = pawn_aura_cfg.dt;
-    let t_beats = pawn_aura_cfg.t_beats;
-
-    // Which world cell near the pawn maps to this slot via toroidal hash?
-    let pgx = i32(floor(pawn_xz.x / cs));
-    let pgz = i32(floor(pawn_xz.y / cs));
-
-    // Nearest cell to pawn satisfying gx ≡ sx (mod N), gz ≡ sz (mod N)
-    let gx = sx + N * i32(round(f32(pgx - sx) / f32(N)));
-    let gz = sz + N * i32(round(f32(pgz - sz) / f32(N)));
-
-    let cell_center = (vec2(f32(gx), f32(gz)) + 0.5) * cs;
-    let dist = distance(cell_center, pawn_xz);
-    let stimulus = smoothstep(radius, 0.0, dist);
-
-    let is_occupied = (cell.cell_gx != PAWN_AURA_EMPTY);
-    let matches = (cell.cell_gx == gx && cell.cell_gz == gz);
-
-    if (stimulus > 0.001) {
-        // Cell is within pawn influence
-        if (!is_occupied || matches || cell.intensity < 0.05) {
-            // Allocate new or update existing
-            if (!matches) {
-                cell.cell_gx = gx;
-                cell.cell_gz = gz;
-                cell.velocity = 0.0;
-                cell.color_osc = 0.0;
-                cell.color_osc_vel = 0.0;
-                if (!is_occupied) { cell.intensity = 0.0; }
-
-                // Compute contextual color delta based on delta_mode
-                if (pawn_aura_cfg.delta_mode == AURA_DELTA_RANDOM) {
-                    let h = u32(gx) * 374761393u + u32(gz) * 668265263u;
-                    let mag = pawn_aura_cfg.delta_magnitude;
-                    cell.delta_r = (f32((h) & 0xFFFFu) / 32767.5 - 1.0) * mag;
-                    cell.delta_g = (f32((h >> 8u) & 0xFFFFu) / 32767.5 - 1.0) * mag;
-                    cell.delta_b = (f32((h >> 16u) & 0xFFFFu) / 32767.5 - 1.0) * mag;
-                } else {
-                    let terrain_color = gol_composite_cell_color(cell_center);
-                    let tint = vec3(pawn_aura_cfg.tint_r, pawn_aura_cfg.tint_g, pawn_aura_cfg.tint_b);
-                    cell.delta_r = tint.r - terrain_color.r;
-                    cell.delta_g = tint.g - terrain_color.g;
-                    cell.delta_b = tint.b - terrain_color.b;
-                }
-            }
-
-            // Attack spring: critically damped toward stimulus
-            let goal = stimulus;
-            let d = cell.intensity - goal;
-            let stiff = pawn_aura_cfg.attack_stiffness;
-            let damp = pawn_aura_cfg.attack_damping;
-            let spring_f = -stiff * d;
-            let damp_f = -damp * sqrt(stiff) * cell.velocity;
-            cell.velocity += (spring_f + damp_f) * dt;
-            cell.intensity += cell.velocity * dt;
-            cell.intensity = clamp(cell.intensity, 0.0, 1.0);
-
-            // Directional height bias: updates every frame as pawn turns.
-            // Center = peak (1.0). Forward = gentle ramp down. Behind = steep drop.
-            // This makes the pawn the highest point with a leading ramp.
-            if (dist > 0.5) {
-                let to_cell = (cell_center - pawn_xz) / dist;
-                let heading = pawn_state.heading;
-                let forward = vec2(sin(heading), cos(heading));
-                let facing = dot(to_cell, forward);  // -1=behind, +1=in front
-                // Forward cells: gentle ramp (0.6–0.85). Behind: steeper (0.2–0.5).
-                let forward_factor = clamp(facing * 0.15 + 0.7, 0.2, 0.85);
-                // Distance falloff: closer to center = closer to 1.0
-                let dist_falloff = 1.0 - smoothstep(0.0, radius, dist);
-                cell.height_delta = mix(forward_factor, 1.0, dist_falloff * dist_falloff);
-            } else {
-                // At pawn center: peak height exactly 1.0
-                cell.height_delta = 1.0;
-            }
-
-            // Color oscillation spring: target cycles between 0 and 1 every AURA_BEAT_PERIOD beats.
-            // Per-cell phase offset for sparkle.
-            let cell_hash = u32(cell.cell_gx) * 73856093u + u32(cell.cell_gz) * 19349663u;
-            let cell_phase = f32(cell_hash & 0xFFFFu) / 65535.0 * 0.3;  // small phase scatter
-            let osc_phase = (t_beats + cell_phase) / AURA_BEAT_PERIOD;
-            let osc_target = sin(osc_phase * 2.0 * PI) * 0.5 + 0.5;
-
-            // Spring toward oscillation target (shares stiffness with attack spring)
-            let osc_d = cell.color_osc - osc_target;
-            let osc_spring = -stiff * 0.5 * osc_d;  // softer than attack spring
-            let osc_damp = -damp * sqrt(stiff * 0.5) * cell.color_osc_vel;
-            cell.color_osc_vel += (osc_spring + osc_damp) * dt;
-            cell.color_osc += cell.color_osc_vel * dt;
-            cell.color_osc = clamp(cell.color_osc, 0.0, 1.0);
-
-        }
-    } else if (is_occupied) {
-        // Outside influence — release toward zero
-        let decay = 1.0 - exp(-pawn_aura_cfg.release_rate * dt);
-        cell.intensity *= (1.0 - decay);
-        cell.color_osc *= (1.0 - decay);  // oscillation fades with trail
-        cell.velocity = 0.0;
-        cell.color_osc_vel = 0.0;
-
-        // Clear dead entries
-        if (cell.intensity < 0.001) {
-            cell.cell_gx = PAWN_AURA_EMPTY;
-            cell.cell_gz = PAWN_AURA_EMPTY;
-            cell.intensity = 0.0;
-            cell.velocity = 0.0;
-            cell.delta_r = 0.0;
-            cell.delta_g = 0.0;
-            cell.delta_b = 0.0;
-            cell.height_delta = 0.0;
-            cell.color_osc = 0.0;
-            cell.color_osc_vel = 0.0;
-        }
-    }
-
-    pawn_aura_cells[slot_idx] = cell;
-
-    // Write to texture:
-    //   R = height blend (0 when height disabled via height_scale=0)
-    //   GBA = pre-multiplied color delta (modulated by oscillation)
-    if (cell.intensity > 0.001) {
-        let color_blend = cell.intensity * pawn_aura_cfg.tint_strength * cell.color_osc;
-        let height_blend = select(cell.intensity * cell.height_delta, 0.0, pawn_aura_cfg.height_scale < 0.01);
-        textureStore(pawn_aura_tex_write, vec2<i32>(gid.xy),
-            vec4(height_blend,
-                 cell.delta_r * color_blend,
-                 cell.delta_g * color_blend,
-                 cell.delta_b * color_blend));
-    } else {
-        textureStore(pawn_aura_tex_write, vec2<i32>(gid.xy), vec4(0.0));
-    }
-}
-
-
-// --- §7 FADE OVERLAY ---
-// Fullscreen triangle for transition fade. Drawn last with alpha blending.
-// Reads fade_alpha and fade_color from DesignConfig.
-
-struct FadeVarying {
-    @builtin(position) pos: vec4<f32>,
-}
-
-@vertex
-fn fade_overlay_vs(@builtin(vertex_index) vid: u32) -> FadeVarying {
-    // Fullscreen triangle from vertex ID (covers clip space)
-    let x = f32(i32(vid & 1u)) * 4.0 - 1.0;
-    let y = f32(i32(vid >> 1u)) * 4.0 - 1.0;
-    var out: FadeVarying;
-    out.pos = vec4(x, y, 0.0, 1.0);
-    return out;
-}
-
-@fragment
-fn fade_overlay_fs(in: FadeVarying) -> @location(0) vec4<f32> {
-    return vec4(config.fade_color, config.fade_alpha);
-}
-
-
 // ═══════════════════════════════════════════════════════════════════════
 // §9 GPU ENTITY MESH GENERATION
 // ═══════════════════════════════════════════════════════════════════════
@@ -6062,12 +6237,12 @@ fn fade_overlay_fs(in: FadeVarying) -> @location(0) vec4<f32> {
 // Each entity family writes into fixed per-slot regions of pre-allocated
 // VB/IB buffers. Inactive slots receive degenerate (zero-area) triangles.
 //
-// Phase 1: Pyramids. Phases 2-3 (arches, columns) follow same pattern.
+// Three families: pyramids (§9.0), arches (§9.1), columns (§9.2).
 //
 // Vertex format: matches ArchVertex (pos[3], normal[3], color[3], index:u32)
 // = 10 × f32 per vertex = 40 bytes. VB is accessed as array<f32>.
 
-// ── Constants ─────────────────────────────────────────────────────────
+// §9.0 PYRAMID MESH GENERATION
 
 const PMG_MAX_VERTS_PER_SLOT: u32  = 36u;   // truncated: 12 tris × 3 (sides + top + bottom)
 const PMG_MAX_INDICES_PER_SLOT: u32 = 36u;  // unindexed triangles (1:1 vert:idx)
@@ -6175,7 +6350,7 @@ fn pyramid_mesh_gen(@builtin(global_invocation_id) gid: vec3<u32>) {
     // ── Inactive: write degenerate indices ───────────────────────
     if (p.is_active == 0u) {
         for (var i = 0u; i < PMG_MAX_INDICES_PER_SLOT; i++) {
-            pmg_indices[slot_ib + i] = 0u;
+            pmg_indices[slot_ib + i] = slot_vb;
         }
         return;
     }
@@ -6245,7 +6420,7 @@ fn pyramid_mesh_gen(@builtin(global_invocation_id) gid: vec3<u32>) {
 
     // ── Zero remaining indices (pointed: 12→30, truncated: fills 30) ─
     for (var i = vi; i < PMG_MAX_INDICES_PER_SLOT; i++) {
-        pmg_indices[slot_ib + i] = 0u;
+        pmg_indices[slot_ib + i] = slot_vb;
     }
 }
 
@@ -6540,7 +6715,7 @@ fn arch_mesh_gen(@builtin(global_invocation_id) gid: vec3<u32>) {
         let chunk = AMG_MAX_INDICES_PER_SLOT / 4u;
         let start = slot_ib + sub_mesh * chunk;
         for (var i = 0u; i < chunk; i++) {
-            amg_indices[start + i] = 0u;
+            amg_indices[start + i] = slot_vb;
         }
         return;
     }
@@ -6590,7 +6765,7 @@ fn arch_mesh_gen(@builtin(global_invocation_id) gid: vec3<u32>) {
             // Total used = 2*shell_indices + 2*cap_indices.
             let total_used = 2u * shell_indices + 2u * cap_indices;
             for (var i = total_used; i < AMG_MAX_INDICES_PER_SLOT; i++) {
-                amg_indices[slot_ib + i] = 0u;
+                amg_indices[slot_ib + i] = slot_vb;
             }
         }
         case 3u: {
@@ -6695,7 +6870,7 @@ fn column_mesh_gen(@builtin(global_invocation_id) gid: vec3<u32>) {
     // ── Inactive: zero all indices ─────────────────────────────
     if (p.is_active == 0u) {
         for (var i = 0u; i < CMG_MAX_INDICES_PER_SLOT; i++) {
-            cmg_indices[slot_ib + i] = 0u;
+            cmg_indices[slot_ib + i] = slot_vb;
         }
         return;
     }
@@ -7110,9 +7285,880 @@ fn column_mesh_gen(@builtin(global_invocation_id) gid: vec3<u32>) {
     // ── Zero remaining indices ─────────────────────────────────
     let used = ii - slot_ib;
     for (var i = used; i < CMG_MAX_INDICES_PER_SLOT; i++) {
-        cmg_indices[slot_ib + i] = 0u;
+        cmg_indices[slot_ib + i] = slot_vb;
     }
 }
 
+
+// ─── §9.3 PALM MESH GENERATION (trunk + radial frond crown) ──────────────
+
+struct PalmMeshParams {
+    center_x: f32, center_z: f32,
+    height: f32,
+    base_r: f32, top_r: f32,
+    lean: f32, lean_dir: f32,
+    bark_rings: f32, bark_depth: f32,
+    frond_count: f32,
+    frond_len: f32, frond_width: f32,
+    frond_droop: f32, frond_arch: f32,
+    crown_spread: f32, crown_skirt: f32,
+    burial: f32,
+    trunk_r: f32, trunk_g: f32, trunk_b: f32,
+    frond_r: f32, frond_g: f32, frond_b: f32,
+    aged_r: f32, aged_g: f32, aged_b: f32,
+    trunk_segs: u32, frond_segs: u32,
+    is_active: u32,
+    _pad0: f32,
+    _pad1: f32,
+    _pad2: f32,
+}
+
+const PALMG_MAX_VERTS_PER_SLOT: u32 = 1200u;
+const PALMG_MAX_INDICES_PER_SLOT: u32 = 6000u;
+const PALMG_FLOATS_PER_VERTEX: u32 = 10u;
+const PALMG_MAX_SLOTS: u32 = 24u;
+const PALMG_TOTAL_INDICES: u32 = 144000u;
+
+@group(0) @binding(180) var<storage, read>       palmg_params: array<PalmMeshParams, 24>;
+@group(0) @binding(181) var<storage, read_write>  palmg_vertices: array<f32>;
+@group(0) @binding(182) var<storage, read_write>  palmg_indices: array<u32>;
+
+fn palmg_write_vertex(abs_idx: u32, px: f32, py: f32, pz: f32,
+                      nx: f32, ny: f32, nz: f32,
+                      cr: f32, cg: f32, cb: f32, entity_idx: u32) {
+    let base = abs_idx * PALMG_FLOATS_PER_VERTEX;
+    palmg_vertices[base + 0u] = px;
+    palmg_vertices[base + 1u] = py;
+    palmg_vertices[base + 2u] = pz;
+    palmg_vertices[base + 3u] = nx;
+    palmg_vertices[base + 4u] = ny;
+    palmg_vertices[base + 5u] = nz;
+    palmg_vertices[base + 6u] = cr;
+    palmg_vertices[base + 7u] = cg;
+    palmg_vertices[base + 8u] = cb;
+    palmg_vertices[base + 9u] = f32(entity_idx);
+}
+
+@compute @workgroup_size(1, 1, 1)
+fn palm_mesh_gen(@builtin(global_invocation_id) gid: vec3<u32>) {
+    let slot = gid.x;
+    if (slot >= PALMG_MAX_SLOTS) { return; }
+
+    let p = palmg_params[slot];
+    let vb_base = slot * PALMG_MAX_VERTS_PER_SLOT;
+    let ib_base = slot * PALMG_MAX_INDICES_PER_SLOT;
+
+    if (p.is_active == 0u) {
+        for (var i = 0u; i < PALMG_MAX_INDICES_PER_SLOT; i++) {
+            palmg_indices[ib_base + i] = vb_base;
+        }
+        return;
+    }
+
+    var vi = 0u;
+    var ii = 0u;
+
+    let cx = p.center_x;
+    let cz = p.center_z;
+    let burial = p.burial;
+    let lean_cos = cos(p.lean_dir);
+    let lean_sin = sin(p.lean_dir);
+
+    // ── TRUNK: surface of revolution with taper + bark rings + lean ──
+
+    let trunk_rings = min(u32(max(8.0, p.bark_rings)), 40u);
+    let trunk_segs = min(p.trunk_segs, 24u);
+
+    for (var ring = 0u; ring <= trunk_rings; ring++) {
+        let t = f32(ring) / f32(trunk_rings);
+
+        var r = p.base_r + (p.top_r - p.base_r) * t;
+        let ring_phase = t * p.bark_rings * 2.0 * PI;
+        r += sin(ring_phase) * p.bark_depth * (1.0 - t * 0.5);
+        r = max(0.01, r);
+
+        let lean_mag = p.lean * p.height * t * t;
+        let lean_x = lean_mag * lean_cos;
+        let lean_z = lean_mag * lean_sin;
+        let y = t * p.height - burial;
+
+        let shade = 0.85 + 0.15 * t;
+        let cr = p.trunk_r * shade;
+        let cg = p.trunk_g * shade;
+        let cb = p.trunk_b * shade;
+
+        for (var seg = 0u; seg < trunk_segs; seg++) {
+            let angle = f32(seg) / f32(trunk_segs) * 2.0 * PI;
+            let ca = cos(angle);
+            let sa = sin(angle);
+
+            palmg_write_vertex(vb_base + vi,
+                cx + lean_x + ca * r, y, cz + lean_z + sa * r,
+                ca, 0.0, sa,
+                cr, cg, cb, slot);
+            vi++;
+        }
+    }
+
+    // Trunk indices: quads between consecutive rings
+    for (var ring = 0u; ring < trunk_rings; ring++) {
+        for (var seg = 0u; seg < trunk_segs; seg++) {
+            let next_seg = (seg + 1u) % trunk_segs;
+            let row0 = ring * trunk_segs;
+            let row1 = (ring + 1u) * trunk_segs;
+
+            let v00 = vb_base + row0 + seg;
+            let v10 = vb_base + row1 + seg;
+            let v11 = vb_base + row1 + next_seg;
+            let v01 = vb_base + row0 + next_seg;
+
+            palmg_indices[ib_base + ii] = v00; ii++;
+            palmg_indices[ib_base + ii] = v10; ii++;
+            palmg_indices[ib_base + ii] = v11; ii++;
+            palmg_indices[ib_base + ii] = v00; ii++;
+            palmg_indices[ib_base + ii] = v11; ii++;
+            palmg_indices[ib_base + ii] = v01; ii++;
+        }
+    }
+
+    // ── CROWN CAP: triangle fan at trunk top ──
+
+    let top_lean_mag = p.lean * p.height;
+    let crown_lean_x = top_lean_mag * lean_cos;
+    let crown_lean_z = top_lean_mag * lean_sin;
+    let crown_y = p.height - burial;
+    let crown_r = p.top_r * 1.3;
+
+    let crown_cr = p.trunk_r * 0.6 + p.frond_r * 0.4;
+    let crown_cg = p.trunk_g * 0.6 + p.frond_g * 0.4;
+    let crown_cb = p.trunk_b * 0.6 + p.frond_b * 0.4;
+
+    let cap_tip_vi = vi;
+    palmg_write_vertex(vb_base + vi,
+        cx + crown_lean_x, crown_y + crown_r * 0.6, cz + crown_lean_z,
+        0.0, 1.0, 0.0,
+        crown_cr, crown_cg, crown_cb, slot);
+    vi++;
+
+    let cap_ring_vi = vi;
+    for (var seg = 0u; seg < trunk_segs; seg++) {
+        let angle = f32(seg) / f32(trunk_segs) * 2.0 * PI;
+        palmg_write_vertex(vb_base + vi,
+            cx + crown_lean_x + cos(angle) * crown_r,
+            crown_y,
+            cz + crown_lean_z + sin(angle) * crown_r,
+            0.0, 1.0, 0.0,
+            crown_cr, crown_cg, crown_cb, slot);
+        vi++;
+    }
+
+    for (var seg = 0u; seg < trunk_segs; seg++) {
+        let next_seg = (seg + 1u) % trunk_segs;
+        palmg_indices[ib_base + ii] = vb_base + cap_tip_vi; ii++;
+        palmg_indices[ib_base + ii] = vb_base + cap_ring_vi + seg; ii++;
+        palmg_indices[ib_base + ii] = vb_base + cap_ring_vi + next_seg; ii++;
+    }
+
+    // ── FRONDS: radial quad strips with golden-angle packing ──
+
+    let golden_angle = PI * (3.0 - sqrt(5.0));
+    let n_fronds = min(u32(max(3.0, p.frond_count)), 18u);
+    let frond_segs = min(p.frond_segs, 14u);
+    let crown_frond_y = crown_y + crown_r * 0.3;
+
+    for (var f = 0u; f < n_fronds; f++) {
+        let base_angle = f32(f) * golden_angle;
+        let rank = f32(f) / max(1.0, f32(n_fronds - 1u));
+
+        let elev_top = p.crown_spread * PI * 0.42;
+        let elev_bot = -p.crown_skirt * PI * 0.25;
+        let elevation = elev_bot + (elev_top - elev_bot) * rank;
+
+        let droop_scale = 0.25 + 0.75 * (1.0 - rank);
+        let len_scale = 0.6 + 0.4 * (1.0 - rank);
+
+        let cos_az = cos(base_angle);
+        let sin_az = sin(base_angle);
+        let cos_el = cos(elevation);
+        let sin_el = sin(elevation);
+        let fwd_x = cos_az * cos_el;
+        let fwd_y = sin_el;
+        let fwd_z = sin_az * cos_el;
+
+        // Right vector: cross(forward, up)
+        var right_x: f32; var right_y: f32; var right_z: f32;
+        if (sin_el > 0.95) {
+            right_x = -sin_az; right_y = 0.0; right_z = cos_az;
+        } else {
+            let rx = fwd_z; let rz = -fwd_x;
+            let rl = sqrt(rx * rx + rz * rz);
+            if (rl > 0.001) {
+                right_x = rx / rl; right_y = 0.0; right_z = rz / rl;
+            } else {
+                right_x = -sin_az; right_y = 0.0; right_z = cos_az;
+            }
+        }
+
+        let frond_len = p.frond_len * len_scale;
+        let frond_vi_start = vi;
+
+        for (var s = 0u; s <= frond_segs; s++) {
+            let t = f32(s) / f32(frond_segs);
+            let dist = t * frond_len;
+
+            let arch_up = p.frond_arch * frond_len * sin(t * PI * 0.4);
+            let droop_down = p.frond_droop * frond_len * t * t * t * droop_scale;
+            let dy = arch_up - droop_down;
+
+            let mx = cx + crown_lean_x + fwd_x * dist;
+            let my = crown_frond_y + fwd_y * dist + dy;
+            let mz = cz + crown_lean_z + fwd_z * dist;
+
+            let w = p.frond_width * (1.0 - t * 0.85) * (0.3 + 0.7 * min(1.0, t * 3.0));
+            let half_w = w * 0.5;
+            let px_off = right_x * half_w;
+            let py_off = right_y * half_w;
+            let pz_off = right_z * half_w;
+
+            // Color: blend young→aged by rank + tip aging
+            let aged_blend = rank;
+            let fr = p.aged_r + (p.frond_r - p.aged_r) * aged_blend;
+            let fg = p.aged_g + (p.frond_g - p.aged_g) * aged_blend;
+            let fb = p.aged_b + (p.frond_b - p.aged_b) * aged_blend;
+            let tip_age = min(1.0, t * t * (1.0 - rank * 0.7)) * 0.3;
+            let seg_r = fr + (p.aged_r - fr) * tip_age;
+            let seg_g = fg + (p.aged_g - fg) * tip_age;
+            let seg_b = fb + (p.aged_b - fb) * tip_age;
+            let seg_shade = 0.75 + 0.25 * t;
+            let frond_var = f32(f % 3u) * 0.03;
+
+            let ny_approx = 0.8;
+            let nx_approx = fwd_x * 0.2;
+            let nz_approx = fwd_z * 0.2;
+
+            // Left vertex
+            palmg_write_vertex(vb_base + vi,
+                mx + px_off, my + py_off, mz + pz_off,
+                nx_approx, ny_approx, nz_approx,
+                min(1.0, seg_r * seg_shade - frond_var * 0.5),
+                min(1.0, seg_g * seg_shade + frond_var),
+                min(1.0, seg_b * seg_shade - frond_var * 0.5),
+                slot);
+            vi++;
+
+            // Right vertex
+            palmg_write_vertex(vb_base + vi,
+                mx - px_off, my - py_off, mz - pz_off,
+                -nx_approx, ny_approx, -nz_approx,
+                min(1.0, seg_r * seg_shade - frond_var * 0.5),
+                min(1.0, seg_g * seg_shade + frond_var),
+                min(1.0, seg_b * seg_shade - frond_var * 0.5),
+                slot);
+            vi++;
+        }
+
+        // Quad strip indices for this frond
+        for (var s = 0u; s < frond_segs; s++) {
+            let base_v = vb_base + frond_vi_start + s * 2u;
+            let left0  = base_v;
+            let right0 = base_v + 1u;
+            let left1  = base_v + 2u;
+            let right1 = base_v + 3u;
+
+            palmg_indices[ib_base + ii] = left0;  ii++;
+            palmg_indices[ib_base + ii] = left1;  ii++;
+            palmg_indices[ib_base + ii] = right1; ii++;
+            palmg_indices[ib_base + ii] = left0;  ii++;
+            palmg_indices[ib_base + ii] = right1; ii++;
+            palmg_indices[ib_base + ii] = right0; ii++;
+        }
+    }
+
+    // Zero remaining indices (degenerate padding)
+    for (var i = ii; i < PALMG_MAX_INDICES_PER_SLOT; i++) {
+        palmg_indices[ib_base + i] = vb_base;
+    }
+}
+
+// ─── Palm vertex shaders ─────────────────────────────────────────────
+
+@vertex
+fn palm_vs(in: ArchVertexInput) -> EntityVarying {
+    let idx = u32(in.arch_index);
+    let ground_y = render_palm_ground[idx].ground_y;
+    var world_pos = in.pos + vec3(0.0, ground_y, 0.0);
+    world_pos.y += terrain_wave_overlay(world_pos.xz);
+    var out: EntityVarying;
+    out.clip_pos = render_vp.m * vec4(world_pos, 1.0);
+    out.world_pos = world_pos;
+    out.normal = in.normal;
+    out.entity_color = in.color;
+    return out;
+}
+
+@vertex
+fn shadow_palm_vs(in: ArchVertexInput) -> ShadowVarying {
+    let idx = u32(in.arch_index);
+    let ground_y = render_palm_ground[idx].ground_y;
+    var world_pos = in.pos + vec3(0.0, ground_y, 0.0);
+    world_pos.y += terrain_wave_overlay(world_pos.xz);
+    var out: ShadowVarying;
+    out.clip_pos = render_vp.light_vp * vec4(world_pos, 1.0);
+    return out;
+}
+
+// ─── §9.4 CACTUS MESH GENERATION (ribbed columnar trunk + forking arms) ──
+
+// 21 floats + 4 uint32_t + 7 pad floats = 32 fields × 4 = 128 bytes
+struct CactusMeshParams {
+    center_x: f32, center_z: f32,              // 1-2
+    height: f32, radius: f32, taper: f32,      // 3-5
+    ribs: f32, rib_depth: f32,                 // 6-7
+    lean: f32, lean_dir: f32,                  // 8-9
+    cap_round: f32,                            // 10
+    arm_count: f32,                            // 11
+    arm_height: f32, arm_length: f32, arm_radius: f32,  // 12-14
+    arm_curve: f32,                            // 15
+    body_r: f32, body_g: f32, body_b: f32,     // 16-18
+    rib_r: f32, rib_g: f32, rib_b: f32,        // 19-21
+    trunk_segs: u32, arm_segs: u32,            // 22-23
+    is_active: u32,                            // 24
+    seed: u32,                                 // 25
+    _pad0: f32, _pad1: f32, _pad2: f32, _pad3: f32, _pad4: f32, _pad5: f32, _pad6: f32,  // 26-32 = 128 bytes
+}
+
+const CACTUSG_MAX_VERTS_PER_SLOT: u32 = 1500u;
+const CACTUSG_MAX_INDICES_PER_SLOT: u32 = 7998u;
+const CACTUSG_FLOATS_PER_VERTEX: u32 = 10u;
+const CACTUSG_MAX_SLOTS: u32 = 20u;
+
+@group(0) @binding(183) var<storage, read>       cactusg_params: array<CactusMeshParams, 20>;
+@group(0) @binding(184) var<storage, read_write>  cactusg_vertices: array<f32>;
+@group(0) @binding(185) var<storage, read_write>  cactusg_indices: array<u32>;
+
+fn cactusg_write_vertex(abs_idx: u32, px: f32, py: f32, pz: f32,
+                        nx: f32, ny: f32, nz: f32,
+                        cr: f32, cg: f32, cb: f32, entity_idx: u32) {
+    let base = abs_idx * CACTUSG_FLOATS_PER_VERTEX;
+    cactusg_vertices[base + 0u] = px;
+    cactusg_vertices[base + 1u] = py;
+    cactusg_vertices[base + 2u] = pz;
+    cactusg_vertices[base + 3u] = nx;
+    cactusg_vertices[base + 4u] = ny;
+    cactusg_vertices[base + 5u] = nz;
+    cactusg_vertices[base + 6u] = cr;
+    cactusg_vertices[base + 7u] = cg;
+    cactusg_vertices[base + 8u] = cb;
+    cactusg_vertices[base + 9u] = f32(entity_idx);
+}
+
+fn cactus_hash(seed: u32, prop: u32) -> f32 {
+    var h = seed * 747796405u + prop * 2891336453u + 1u;
+    h = ((h >> 16u) ^ h) * 2654435769u;
+    h = ((h >> 16u) ^ h) * 2654435769u;
+    h = (h >> 16u) ^ h;
+    return f32(h) / 4294967295.0;
+}
+
+@compute @workgroup_size(1, 1, 1)
+fn cactus_mesh_gen(@builtin(global_invocation_id) gid: vec3<u32>) {
+    let slot = gid.x;
+    if (slot >= CACTUSG_MAX_SLOTS) { return; }
+
+    let p = cactusg_params[slot];
+    let vb_base = slot * CACTUSG_MAX_VERTS_PER_SLOT;
+    let ib_base = slot * CACTUSG_MAX_INDICES_PER_SLOT;
+
+    if (p.is_active == 0u) {
+        for (var i = 0u; i < CACTUSG_MAX_INDICES_PER_SLOT; i++) {
+            cactusg_indices[ib_base + i] = vb_base;
+        }
+        return;
+    }
+
+    var vi = 0u;
+    var ii = 0u;
+
+    let cx = p.center_x;
+    let cz = p.center_z;
+    let lean_cos = cos(p.lean_dir);
+    let lean_sin = sin(p.lean_dir);
+
+    let ribs = u32(max(4.0, p.ribs));
+    let around = min(max(ribs * 2u, 12u), 20u);
+    let trunk_steps = min(u32(p.trunk_segs), 20u);
+
+    // ── TRUNK: ribbed surface of revolution ──
+
+    for (var ring = 0u; ring <= trunk_steps; ring++) {
+        let t = f32(ring) / f32(trunk_steps);
+        let r_base = p.radius * (1.0 + (p.taper - 1.0) * t);
+
+        let cap_start = 1.0 - p.cap_round * 0.3;
+        let cap_t = max(0.0, (t - cap_start) / (p.cap_round * 0.3 + 0.001));
+        let cap_scale = select(1.0, cos(cap_t * PI * 0.5), cap_t > 0.0);
+
+        let lean_mag = p.lean * p.height * t * t;
+        let lx = lean_mag * lean_cos;
+        let lz = lean_mag * lean_sin;
+        let y = t * p.height;
+        let shade = 0.85 + 0.15 * t;
+
+        for (var seg = 0u; seg < around; seg++) {
+            let angle = f32(seg) / f32(around) * 2.0 * PI;
+            let rib_phase = angle * f32(ribs) / (2.0 * PI);
+            let rib_mod = 1.0 + cos(rib_phase * 2.0 * PI) * p.rib_depth;
+            let r = r_base * rib_mod * cap_scale;
+
+            let ca = cos(angle);
+            let sa = sin(angle);
+
+            let rib_frac = (cos(rib_phase * 2.0 * PI) + 1.0) * 0.5;
+            let cr = (p.body_r + (p.rib_r - p.body_r) * rib_frac * 0.6) * shade;
+            let cg = (p.body_g + (p.rib_g - p.body_g) * rib_frac * 0.6) * shade;
+            let cb = (p.body_b + (p.rib_b - p.body_b) * rib_frac * 0.6) * shade;
+
+            cactusg_write_vertex(vb_base + vi,
+                cx + lx + ca * r, y, cz + lz + sa * r,
+                ca, 0.0, sa, cr, cg, cb, slot);
+            vi++;
+        }
+    }
+
+    // Trunk indices
+    for (var ring = 0u; ring < trunk_steps; ring++) {
+        for (var seg = 0u; seg < around; seg++) {
+            let next_seg = (seg + 1u) % around;
+            let row0 = ring * around;
+            let row1 = (ring + 1u) * around;
+
+            cactusg_indices[ib_base + ii] = vb_base + row0 + seg; ii++;
+            cactusg_indices[ib_base + ii] = vb_base + row1 + seg; ii++;
+            cactusg_indices[ib_base + ii] = vb_base + row1 + next_seg; ii++;
+            cactusg_indices[ib_base + ii] = vb_base + row0 + seg; ii++;
+            cactusg_indices[ib_base + ii] = vb_base + row1 + next_seg; ii++;
+            cactusg_indices[ib_base + ii] = vb_base + row0 + next_seg; ii++;
+        }
+    }
+
+    // ── TRUNK CAP (stitched to top ring) ──
+
+    let top_ring_vi = trunk_steps * around;  // first vertex of trunk's last ring
+    let top_lean = p.lean * p.height;
+    let cap_cx = cx + top_lean * lean_cos;
+    let cap_cz = cz + top_lean * lean_sin;
+    let cap_y = p.height;
+    let cap_r = p.radius * p.taper * 0.6;
+    let cap_col_r = p.body_r * 0.6 + p.rib_r * 0.4;
+    let cap_col_g = p.body_g * 0.6 + p.rib_g * 0.4;
+    let cap_col_b = p.body_b * 0.6 + p.rib_b * 0.4;
+
+    // Single tip vertex above center
+    let cap_tip_vi = vi;
+    cactusg_write_vertex(vb_base + vi,
+        cap_cx, cap_y + cap_r * 0.6, cap_cz,
+        0.0, 1.0, 0.0,
+        cap_col_r, cap_col_g, cap_col_b, slot);
+    vi++;
+
+    // Fan from tip to trunk's existing top ring — no separate cap ring
+    for (var seg = 0u; seg < around; seg++) {
+        let next = (seg + 1u) % around;
+        cactusg_indices[ib_base + ii] = vb_base + cap_tip_vi; ii++;
+        cactusg_indices[ib_base + ii] = vb_base + top_ring_vi + seg; ii++;
+        cactusg_indices[ib_base + ii] = vb_base + top_ring_vi + next; ii++;
+    }
+
+    // ── ARMS: ribbed columns along upward-curving paths ──
+
+    let golden_angle = PI * (3.0 - sqrt(5.0));
+    let n_arms = u32(max(0.0, p.arm_count));
+    let arm_segs_u = min(u32(p.arm_segs), 12u);
+    let arm_ribs = max(4u, ribs - 2u);
+    let arm_around = min(max(arm_ribs * 2u, 8u), 12u);
+
+    for (var a = 0u; a < n_arms; a++) {
+        let arm_az = f32(a) * golden_angle + cactus_hash(p.seed, 1050u + a) * 0.5;
+        let fork_frac = p.arm_height + (cactus_hash(p.seed, 1060u + a) - 0.5) * 0.15;
+        let fork_y = p.height * fork_frac;
+        let arm_len = p.arm_length * (0.8 + cactus_hash(p.seed, 1070u + a) * 0.4);
+        let arm_r = p.arm_radius * (0.85 + cactus_hash(p.seed, 1080u + a) * 0.3);
+
+        let lean_at_fork = p.lean * p.height * fork_frac * fork_frac;
+        let fork_x = cx + cos(arm_az) * p.radius * p.taper * 0.9 + lean_at_fork * lean_cos * 0.3;
+        let fork_z = cz + sin(arm_az) * p.radius * p.taper * 0.9 + lean_at_fork * lean_sin * 0.3;
+
+        let out_x = cos(arm_az);
+        let out_z = sin(arm_az);
+
+        var apx = fork_x;
+        var apy = fork_y;
+        var apz = fork_z;
+        let seg_len = arm_len / f32(arm_segs_u);
+
+        let arm_vi_start = vi;
+
+        for (var s = 0u; s <= arm_segs_u; s++) {
+            let t = f32(s) / f32(arm_segs_u);
+            let blend = t * p.arm_curve;
+            let dx = out_x * (1.0 - blend);
+            let dy = blend;
+            let dz = out_z * (1.0 - blend);
+            let dl = sqrt(dx * dx + dy * dy + dz * dz);
+            let ndx = dx / max(dl, 0.001);
+            let ndy = dy / max(dl, 0.001);
+            let ndz = dz / max(dl, 0.001);
+
+            let seg_r = arm_r * (1.0 - t * 0.3);
+
+            var rx: f32; var rz: f32;
+            if (abs(ndy) > 0.95) {
+                rx = 1.0; rz = 0.0;
+            } else {
+                rx = ndz; rz = -ndx;
+                let rl = sqrt(rx * rx + rz * rz);
+                rx /= max(rl, 0.001);
+                rz /= max(rl, 0.001);
+            }
+            let fx = 0.0 - rz * ndy;
+            let fy = rz * ndx - rx * ndz;
+            let fz = rx * ndy;
+
+            let arm_shade = 0.85 + 0.15 * t;
+
+            for (var seg = 0u; seg < arm_around; seg++) {
+                let angle = f32(seg) / f32(arm_around) * 2.0 * PI;
+                let ca = cos(angle);
+                let sa = sin(angle);
+
+                let arm_rib_phase = angle * f32(arm_ribs) / (2.0 * PI);
+                let arm_rib_mod = 1.0 + cos(arm_rib_phase * 2.0 * PI) * p.rib_depth * 0.8;
+                let r = seg_r * arm_rib_mod;
+
+                let vx = apx + (rx * ca + fx * sa) * r;
+                let vy = apy + fy * sa * r;
+                let vz = apz + (rz * ca + fz * sa) * r;
+
+                let arm_rib_frac = (cos(arm_rib_phase * 2.0 * PI) + 1.0) * 0.5;
+                let cr = (p.body_r + (p.rib_r - p.body_r) * arm_rib_frac * 0.6) * arm_shade;
+                let cg = (p.body_g + (p.rib_g - p.body_g) * arm_rib_frac * 0.6) * arm_shade;
+                let cb = (p.body_b + (p.rib_b - p.body_b) * arm_rib_frac * 0.6) * arm_shade;
+
+                cactusg_write_vertex(vb_base + vi,
+                    vx, vy, vz, ca, 0.0, sa, cr, cg, cb, slot);
+                vi++;
+            }
+
+            if (s < arm_segs_u) {
+                apx += ndx * seg_len;
+                apy += ndy * seg_len;
+                apz += ndz * seg_len;
+            }
+        }
+
+        // Arm indices
+        for (var s = 0u; s < arm_segs_u; s++) {
+            for (var seg = 0u; seg < arm_around; seg++) {
+                let next_seg = (seg + 1u) % arm_around;
+                let row0 = arm_vi_start + s * arm_around;
+                let row1 = arm_vi_start + (s + 1u) * arm_around;
+
+                cactusg_indices[ib_base + ii] = vb_base + row0 + seg; ii++;
+                cactusg_indices[ib_base + ii] = vb_base + row1 + seg; ii++;
+                cactusg_indices[ib_base + ii] = vb_base + row1 + next_seg; ii++;
+                cactusg_indices[ib_base + ii] = vb_base + row0 + seg; ii++;
+                cactusg_indices[ib_base + ii] = vb_base + row1 + next_seg; ii++;
+                cactusg_indices[ib_base + ii] = vb_base + row0 + next_seg; ii++;
+            }
+        }
+
+        // Arm cap
+        let arm_cap_r = arm_r * 0.6;
+        let arm_cap_tip = vi;
+        cactusg_write_vertex(vb_base + vi,
+            apx, apy + arm_cap_r * 0.6, apz,
+            0.0, 1.0, 0.0,
+            cap_col_r, cap_col_g, cap_col_b, slot);
+        vi++;
+
+        let arm_cap_ring = vi;
+        let arm_cap_segs = min(arm_around, 8u);
+        for (var seg = 0u; seg < arm_cap_segs; seg++) {
+            let angle = f32(seg) / f32(arm_cap_segs) * 2.0 * PI;
+            cactusg_write_vertex(vb_base + vi,
+                apx + cos(angle) * arm_cap_r, apy, apz + sin(angle) * arm_cap_r,
+                0.0, 1.0, 0.0,
+                cap_col_r, cap_col_g, cap_col_b, slot);
+            vi++;
+        }
+
+        for (var seg = 0u; seg < arm_cap_segs; seg++) {
+            let next = (seg + 1u) % arm_cap_segs;
+            cactusg_indices[ib_base + ii] = vb_base + arm_cap_tip; ii++;
+            cactusg_indices[ib_base + ii] = vb_base + arm_cap_ring + seg; ii++;
+            cactusg_indices[ib_base + ii] = vb_base + arm_cap_ring + next; ii++;
+        }
+    }
+
+    // Zero remaining indices
+    for (var i = ii; i < CACTUSG_MAX_INDICES_PER_SLOT; i++) {
+        cactusg_indices[ib_base + i] = vb_base;
+    }
+}
+
+// ─── Cactus vertex shaders ──────────────────────────────────────────
+
+@vertex
+fn cactus_vs(in: ArchVertexInput) -> EntityVarying {
+    let idx = u32(in.arch_index);
+    let ground_y = render_cactus_ground[idx].ground_y;
+    var world_pos = in.pos + vec3(0.0, ground_y, 0.0);
+    world_pos.y += terrain_wave_overlay(world_pos.xz);
+    var out: EntityVarying;
+    out.clip_pos = render_vp.m * vec4(world_pos, 1.0);
+    out.world_pos = world_pos;
+    out.normal = in.normal;
+    out.entity_color = in.color;
+    return out;
+}
+
+@vertex
+fn shadow_cactus_vs(in: ArchVertexInput) -> ShadowVarying {
+    let idx = u32(in.arch_index);
+    let ground_y = render_cactus_ground[idx].ground_y;
+    var world_pos = in.pos + vec3(0.0, ground_y, 0.0);
+    world_pos.y += terrain_wave_overlay(world_pos.xz);
+    var out: ShadowVarying;
+    out.clip_pos = render_vp.light_vp * vec4(world_pos, 1.0);
+    return out;
+}
+
+// ─── §9.5 BLADE CLUSTER MESH GENERATION ─────────────────────────
+
+// 16 floats + 4 u32 = 20 fields × 4 = 80 bytes
+struct BladeClusterMeshParams {
+    center_x: f32, center_z: f32,                   // 1-2
+    blade_count: f32,                                // 3
+    blade_h: f32, blade_h_var: f32, blade_w: f32,   // 4-6
+    splay: f32, curve: f32, twist: f32, taper: f32, // 7-10
+    blade_r: f32, blade_g: f32, blade_b: f32,       // 11-13
+    aged_r: f32, aged_g: f32, aged_b: f32,          // 14-16
+    blade_segs: u32,                                 // 17
+    is_active: u32,                                  // 18
+    seed: u32,                                       // 19
+    _pad0: u32,                                      // 20 = 80 bytes
+}
+
+const BLADEG_MAX_VERTS_PER_SLOT: u32 = 500u;
+const BLADEG_MAX_INDICES_PER_SLOT: u32 = 1998u;
+const BLADEG_FLOATS_PER_VERTEX: u32 = 10u;
+const BLADEG_MAX_SLOTS: u32 = 32u;
+
+@group(0) @binding(186) var<storage, read>       bladeg_params: array<BladeClusterMeshParams, 32>;
+@group(0) @binding(187) var<storage, read_write>  bladeg_vertices: array<f32>;
+@group(0) @binding(188) var<storage, read_write>  bladeg_indices: array<u32>;
+
+fn bladeg_write_vertex(abs_idx: u32, px: f32, py: f32, pz: f32,
+                       nx: f32, ny: f32, nz: f32,
+                       cr: f32, cg: f32, cb: f32, entity_idx: u32) {
+    let base = abs_idx * BLADEG_FLOATS_PER_VERTEX;
+    bladeg_vertices[base + 0u] = px;
+    bladeg_vertices[base + 1u] = py;
+    bladeg_vertices[base + 2u] = pz;
+    bladeg_vertices[base + 3u] = nx;
+    bladeg_vertices[base + 4u] = ny;
+    bladeg_vertices[base + 5u] = nz;
+    bladeg_vertices[base + 6u] = cr;
+    bladeg_vertices[base + 7u] = cg;
+    bladeg_vertices[base + 8u] = cb;
+    bladeg_vertices[base + 9u] = f32(entity_idx);
+}
+
+fn blade_hash(seed: u32, prop: u32) -> f32 {
+    var h = seed * 747796405u + prop * 2891336453u + 1u;
+    h = ((h >> 16u) ^ h) * 2654435769u;
+    h = ((h >> 16u) ^ h) * 2654435769u;
+    h = (h >> 16u) ^ h;
+    return f32(h) / 4294967295.0;
+}
+
+@compute @workgroup_size(1)
+fn blade_cluster_mesh_gen(@builtin(global_invocation_id) gid: vec3<u32>) {
+    let slot = gid.x;
+    if (slot >= BLADEG_MAX_SLOTS) { return; }
+
+    let p = bladeg_params[slot];
+    let vb_base = slot * BLADEG_MAX_VERTS_PER_SLOT;
+    let ib_base = slot * BLADEG_MAX_INDICES_PER_SLOT;
+
+    if (p.is_active == 0u) {
+        for (var i = 0u; i < BLADEG_MAX_INDICES_PER_SLOT; i++) {
+            bladeg_indices[ib_base + i] = vb_base;  // NOT 0u!
+        }
+        return;
+    }
+
+    var vi = 0u;
+    var ii = 0u;
+
+    let cx = p.center_x;
+    let cz = p.center_z;
+    let n_blades = u32(max(2.0, p.blade_count));
+    let segs = max(3u, p.blade_segs);
+    let GA = PI * (3.0 - sqrt(5.0));
+
+    for (var b = 0u; b < n_blades; b++) {
+        let azimuth = f32(b) * GA;
+        let ca = cos(azimuth);
+        let sa = sin(azimuth);
+
+        // Per-blade height variation
+        let h_mult = 1.0 + (blade_hash(p.seed, 970u + b) - 0.5) * p.blade_h_var * 2.0;
+        let blade_h = p.blade_h * max(0.4, h_mult);
+
+        // Splay: outer blades splay more
+        let rank = f32(b) / max(1.0, f32(n_blades - 1u));
+        let splay_ang = p.splay * (0.6 + 0.4 * (1.0 - rank));
+        let splay_j = (blade_hash(p.seed, 980u + b) - 0.5) * 0.15;
+        let final_splay = splay_ang + splay_j;
+
+        let cos_s = cos(final_splay);
+        let sin_s = sin(final_splay);
+        let fwd_x = ca * sin_s;
+        let fwd_y = cos_s;
+        let fwd_z = sa * sin_s;
+
+        // Right vector (perpendicular for blade width)
+        var rx: f32; var ry: f32; var rz: f32;
+        if (cos_s > 0.95) {
+            rx = -sa; ry = 0.0; rz = ca;
+        } else {
+            // cross(fwd, up)
+            rx = fwd_z; ry = 0.0; rz = -fwd_x;
+            let rl = sqrt(rx * rx + rz * rz);
+            rx /= max(rl, 0.001);
+            rz /= max(rl, 0.001);
+        }
+
+        let twist_dir = select(-1.0, 1.0, b % 2u == 0u);
+        let twist_amt = p.twist * twist_dir;
+
+        // Base color for this blade
+        let age_blend = (1.0 - rank) * 0.5;
+        let base_r = p.blade_r + (p.aged_r - p.blade_r) * age_blend;
+        let base_g = p.blade_g + (p.aged_g - p.blade_g) * age_blend;
+        let base_b = p.blade_b + (p.aged_b - p.blade_b) * age_blend;
+
+        let blade_vi_start = vi;
+
+        // Two vertices per segment step (left + right of midrib)
+        for (var s = 0u; s <= segs; s++) {
+            let t = f32(s) / f32(segs);
+            let dist = t * blade_h;
+
+            // Curve: quadratic outward arc
+            let curve_off = p.curve * blade_h * t * t;
+
+            // Position along forward + curve
+            let px = fwd_x * dist + ca * curve_off;
+            let py = fwd_y * dist;
+            let pz = fwd_z * dist + sa * curve_off;
+
+            // Width: ramp in at root, taper to point
+            let base_frac = 0.3 + 0.7 * min(1.0, t * 4.0);
+            let tip_frac = 1.0 - pow(t, p.taper * 2.5 + 0.5);
+            let w = p.blade_w * base_frac * tip_frac;
+
+            // Twist
+            let tw_angle = twist_amt * t * PI;
+            let ct = cos(tw_angle);
+            let st_tw = sin(tw_angle);
+            let trx = rx * ct + fwd_x * st_tw;
+            let try_ = ry * ct + fwd_y * st_tw;
+            let trz = rz * ct + fwd_z * st_tw;
+
+            let half_w = w * 0.5;
+            let perp_x = trx * half_w;
+            let perp_y = try_ * half_w;
+            let perp_z = trz * half_w;
+
+            // Color: shade by height, age at tip
+            let shade = 0.7 + 0.3 * sin(t * PI * 0.8);
+            let tip_age = t * t * 0.3;
+            let cr = min(1.0, (base_r + (p.aged_r - base_r) * tip_age) * shade);
+            let cg = min(1.0, (base_g + (p.aged_g - base_g) * tip_age) * shade);
+            let cb = min(1.0, (base_b + (p.aged_b - base_b) * tip_age) * shade);
+
+            // Normal: blade face normal (cross of forward and right)
+            let nx = fwd_y * trz - fwd_z * try_;
+            let ny = fwd_z * trx - fwd_x * trz;
+            let nz = fwd_x * try_ - fwd_y * trx;
+            let nl = sqrt(nx * nx + ny * ny + nz * nz);
+            let nnx = nx / max(nl, 0.001);
+            let nny = ny / max(nl, 0.001);
+            let nnz = nz / max(nl, 0.001);
+
+            // Left vertex
+            bladeg_write_vertex(vb_base + vi,
+                cx + px + perp_x, py + perp_y, cz + pz + perp_z,
+                nnx, nny, nnz, cr, cg, cb, slot);
+            vi++;
+
+            // Right vertex
+            bladeg_write_vertex(vb_base + vi,
+                cx + px - perp_x, py - perp_y, cz + pz - perp_z,
+                -nnx, -nny, -nnz, cr, cg, cb, slot);
+            vi++;
+        }
+
+        // Index the quad strip: 2 tris per segment
+        let vps = 2u;  // verts per step (left + right)
+        for (var s = 0u; s < segs; s++) {
+            let i0 = blade_vi_start + s * vps;       // left  row s
+            let i1 = blade_vi_start + s * vps + 1u;  // right row s
+            let i2 = blade_vi_start + (s + 1u) * vps;      // left  row s+1
+            let i3 = blade_vi_start + (s + 1u) * vps + 1u; // right row s+1
+
+            bladeg_indices[ib_base + ii] = vb_base + i0; ii++;
+            bladeg_indices[ib_base + ii] = vb_base + i2; ii++;
+            bladeg_indices[ib_base + ii] = vb_base + i3; ii++;
+            bladeg_indices[ib_base + ii] = vb_base + i0; ii++;
+            bladeg_indices[ib_base + ii] = vb_base + i3; ii++;
+            bladeg_indices[ib_base + ii] = vb_base + i1; ii++;
+        }
+    }
+
+    // Fill remaining indices with vb_base (NOT 0u!)
+    for (var i = ii; i < BLADEG_MAX_INDICES_PER_SLOT; i++) {
+        bladeg_indices[ib_base + i] = vb_base;
+    }
+}
+
+// ─── Blade cluster vertex shaders ──────────────────────────────────
+
+@vertex
+fn blade_cluster_vs(in: ArchVertexInput) -> EntityVarying {
+    let idx = u32(in.arch_index);
+    let ground_y = render_blade_ground[idx].ground_y;
+    var world_pos = in.pos + vec3(0.0, ground_y, 0.0);
+    world_pos.y += terrain_wave_overlay(world_pos.xz);
+    var out: EntityVarying;
+    out.clip_pos = render_vp.m * vec4(world_pos, 1.0);
+    out.world_pos = world_pos;
+    out.normal = in.normal;
+    out.entity_color = in.color;
+    return out;
+}
+
+@vertex
+fn shadow_blade_cluster_vs(in: ArchVertexInput) -> ShadowVarying {
+    let idx = u32(in.arch_index);
+    let ground_y = render_blade_ground[idx].ground_y;
+    var world_pos = in.pos + vec3(0.0, ground_y, 0.0);
+    world_pos.y += terrain_wave_overlay(world_pos.xz);
+    var out: ShadowVarying;
+    out.clip_pos = render_vp.light_vp * vec4(world_pos, 1.0);
+    return out;
+}
 
 // END OF SCROLL

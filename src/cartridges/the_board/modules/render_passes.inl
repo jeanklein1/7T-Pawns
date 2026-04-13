@@ -41,15 +41,24 @@
                 }
                 gpuState_.upload_arch_origins(queue, archOrigins, Dim::MAX_ARCH_INSTANCES);
 
-                // --- Column ground entries ---
+                // --- Column + antenna ground entries (shared GPU buffer, split arrays) ---
                 GPUColumnGroundEntry columnOrigins[Dim::MAX_COLUMN_INSTANCES]{};
-                for (uint32_t i = 0; i < Dim::MAX_COLUMN_INSTANCES; i++) {
+                for (uint32_t i = 0; i < Dim::MAX_COLUMN_ONLY; i++) {
                     if (!activeColumns_[i].active) continue;
                     columnOrigins[i].center_x = activeColumns_[i].world_x;
                     columnOrigins[i].center_z = activeColumns_[i].world_z;
                     columnOrigins[i].is_active = 1;
                     columnOrigins[i].ground_y = activeColumns_[i].cached_ground_y;
                     columnOrigins[i].pier_correction = 0.0f;
+                }
+                for (uint32_t i = 0; i < Dim::MAX_ANTENNA_ONLY; i++) {
+                    if (!activeAntennas_[i].active) continue;
+                    uint32_t gpu_slot = i + Dim::ANTENNA_SLOT_OFFSET;
+                    columnOrigins[gpu_slot].center_x = activeAntennas_[i].world_x;
+                    columnOrigins[gpu_slot].center_z = activeAntennas_[i].world_z;
+                    columnOrigins[gpu_slot].is_active = 1;
+                    columnOrigins[gpu_slot].ground_y = activeAntennas_[i].cached_ground_y;
+                    columnOrigins[gpu_slot].pier_correction = 0.0f;
                 }
                 gpuState_.upload_column_origins(queue, columnOrigins, Dim::MAX_COLUMN_INSTANCES);
 
@@ -68,6 +77,39 @@
                     pyramidOrigins[i].ground_y = activePyramids_[i].cached_ground_y;
                 }
                 gpuState_.upload_pyramid_origins(queue, pyramidOrigins, Dim::MAX_PYRAMID_INSTANCES);
+
+                // --- Palm ground entries ---
+                GPUPalmGroundEntry palmOrigins[Dim::MAX_PALM_INSTANCES]{};
+                for (uint32_t i = 0; i < Dim::MAX_PALM_INSTANCES; i++) {
+                    if (!activePalms_[i].active) continue;
+                    palmOrigins[i].center_x = activePalms_[i].world_x;
+                    palmOrigins[i].center_z = activePalms_[i].world_z;
+                    palmOrigins[i].is_active = 1;
+                    palmOrigins[i].ground_y = activePalms_[i].cached_ground_y;
+                }
+                gpuState_.upload_palm_origins(queue, palmOrigins, Dim::MAX_PALM_INSTANCES);
+
+                // --- Cactus ground entries ---
+                GPUCactusGroundEntry cactusOrigins[Dim::MAX_CACTUS_INSTANCES]{};
+                for (uint32_t i = 0; i < Dim::MAX_CACTUS_INSTANCES; i++) {
+                    if (!activeCacti_[i].active) continue;
+                    cactusOrigins[i].center_x = activeCacti_[i].world_x;
+                    cactusOrigins[i].center_z = activeCacti_[i].world_z;
+                    cactusOrigins[i].is_active = 1;
+                    cactusOrigins[i].ground_y = activeCacti_[i].cached_ground_y;
+                }
+                gpuState_.upload_cactus_origins(queue, cactusOrigins, Dim::MAX_CACTUS_INSTANCES);
+
+                // --- Blade cluster ground entries ---
+                GPUBladeClusterGroundEntry bladeOrigins[Dim::MAX_BLADE_INSTANCES]{};
+                for (uint32_t i = 0; i < Dim::MAX_BLADE_INSTANCES; i++) {
+                    if (!activeBlades_[i].active) continue;
+                    bladeOrigins[i].center_x = activeBlades_[i].world_x;
+                    bladeOrigins[i].center_z = activeBlades_[i].world_z;
+                    bladeOrigins[i].is_active = 1;
+                    bladeOrigins[i].ground_y = activeBlades_[i].cached_ground_y;
+                }
+                gpuState_.upload_blade_origins(queue, bladeOrigins, Dim::MAX_BLADE_INSTANCES);
             }
 
             // --- Entity placement Y-correction: heightfield sample - pier correction ---
@@ -240,6 +282,15 @@
                     gpuState_.sphere_index_count()
                 );
 
+                renderer_.draw_shadow_monolith(
+                    pass,
+                    gpuState_.render_entity_group(),
+                    gpuState_.shadow_texture_group(),
+                    gpuState_.monolith_vertex_buffer(),
+                    gpuState_.monolith_index_buffer(),
+                    gpuState_.monolith_index_count()
+                );
+
                 if (ribbonActive_) {
                     renderer_.draw_shadow_ribbon(
                         pass,
@@ -265,6 +316,33 @@
                     gpuState_.column_vertex_buffer(),
                     gpuState_.column_index_buffer(),
                     gpuState_.column_index_count()
+                );
+
+                renderer_.draw_shadow_palm(
+                    pass,
+                    gpuState_.render_entity_group(),
+                    gpuState_.shadow_texture_group(),
+                    gpuState_.palm_vertex_buffer(),
+                    gpuState_.palm_index_buffer(),
+                    gpuState_.palm_index_count()
+                );
+
+                renderer_.draw_shadow_cactus(
+                    pass,
+                    gpuState_.render_entity_group(),
+                    gpuState_.shadow_texture_group(),
+                    gpuState_.cactus_vertex_buffer(),
+                    gpuState_.cactus_index_buffer(),
+                    gpuState_.cactus_index_count()
+                );
+
+                renderer_.draw_shadow_blade(
+                    pass,
+                    gpuState_.render_entity_group(),
+                    gpuState_.shadow_texture_group(),
+                    gpuState_.blade_vertex_buffer(),
+                    gpuState_.blade_index_buffer(),
+                    gpuState_.blade_index_count()
                 );
 
                 renderer_.draw_shadow_shell(
@@ -346,6 +424,15 @@
                     gpuState_.sphere_index_count()
                 );
 
+                renderer_.draw_monolith(
+                    pass,
+                    gpuState_.render_entity_group(),
+                    gpuState_.render_texture_group(),
+                    gpuState_.monolith_vertex_buffer(),
+                    gpuState_.monolith_index_buffer(),
+                    gpuState_.monolith_index_count()
+                );
+
                 renderer_.draw_arch(
                     pass,
                     gpuState_.render_entity_group(),
@@ -362,6 +449,33 @@
                     gpuState_.column_vertex_buffer(),
                     gpuState_.column_index_buffer(),
                     gpuState_.column_index_count()
+                );
+
+                renderer_.draw_palm(
+                    pass,
+                    gpuState_.render_entity_group(),
+                    gpuState_.render_texture_group(),
+                    gpuState_.palm_vertex_buffer(),
+                    gpuState_.palm_index_buffer(),
+                    gpuState_.palm_index_count()
+                );
+
+                renderer_.draw_cactus(
+                    pass,
+                    gpuState_.render_entity_group(),
+                    gpuState_.render_texture_group(),
+                    gpuState_.cactus_vertex_buffer(),
+                    gpuState_.cactus_index_buffer(),
+                    gpuState_.cactus_index_count()
+                );
+
+                renderer_.draw_blade(
+                    pass,
+                    gpuState_.render_entity_group(),
+                    gpuState_.render_texture_group(),
+                    gpuState_.blade_vertex_buffer(),
+                    gpuState_.blade_index_buffer(),
+                    gpuState_.blade_index_count()
                 );
 
                 renderer_.draw_shell(

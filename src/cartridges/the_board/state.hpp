@@ -129,7 +129,7 @@ namespace t7 {
 
             // Indoor shell (ceiling + walls for finite indoor scenes)
             constexpr uint32_t SHELL_MAX_VERTICES = 2048;
-            constexpr uint32_t SHELL_MAX_INDICES  = 8192;
+            constexpr uint32_t SHELL_MAX_INDICES = 8192;
 
             // Painting system: staging + exhibition
             constexpr uint32_t PAINTING_MAX_SLOTS = 32;       // max exhibited paintings
@@ -143,27 +143,55 @@ namespace t7 {
 
             // Generative catenary arches — GPU mesh gen (slot-based addressing)
             constexpr uint32_t MAX_ARCH_INSTANCES = 16;
-            constexpr uint32_t AMG_MAX_VERTS_PER_SLOT  = 2000;  // monumental worst case: 1470
+            constexpr uint32_t AMG_MAX_VERTS_PER_SLOT = 2000;  // monumental worst case: 1470
             constexpr uint32_t AMG_MAX_INDICES_PER_SLOT = 7500;  // monumental worst case: 7488 (must be divisible by 3!)
             constexpr uint32_t AMG_TOTAL_VERTICES = MAX_ARCH_INSTANCES * AMG_MAX_VERTS_PER_SLOT;   // 32000
-            constexpr uint32_t AMG_TOTAL_INDICES  = MAX_ARCH_INSTANCES * AMG_MAX_INDICES_PER_SLOT; // 120000
+            constexpr uint32_t AMG_TOTAL_INDICES = MAX_ARCH_INSTANCES * AMG_MAX_INDICES_PER_SLOT; // 120000
 
             // Generative columns — GPU mesh gen (slot-based addressing)
             constexpr uint32_t MAX_COLUMN_INSTANCES = 32;
-            constexpr uint32_t CMG_MAX_VERTS_PER_SLOT  = 1500;  // ornate worst case: 1249
+            constexpr uint32_t MAX_COLUMN_ONLY = 16;            // classical columns: slots 0-15
+            constexpr uint32_t MAX_ANTENNA_ONLY = 16;            // antennas: slots 16-31
+            constexpr uint32_t ANTENNA_SLOT_OFFSET = 16;         // GPU slot offset for antenna family
+            static_assert(MAX_COLUMN_ONLY + MAX_ANTENNA_ONLY == MAX_COLUMN_INSTANCES);
+            constexpr uint32_t CMG_MAX_VERTS_PER_SLOT = 1500;  // ornate worst case: 1249
             constexpr uint32_t CMG_MAX_INDICES_PER_SLOT = 6000;  // ornate worst case: 5880 (divisible by 3)
             constexpr uint32_t CMG_TOTAL_VERTICES = MAX_COLUMN_INSTANCES * CMG_MAX_VERTS_PER_SLOT;   // 48000
-            constexpr uint32_t CMG_TOTAL_INDICES  = MAX_COLUMN_INSTANCES * CMG_MAX_INDICES_PER_SLOT; // 192000
+            constexpr uint32_t CMG_TOTAL_INDICES = MAX_COLUMN_INSTANCES * CMG_MAX_INDICES_PER_SLOT; // 192000
 
             // Generative pyramids — GPU mesh gen (slot-based addressing)
             constexpr uint32_t MAX_PYRAMID_INSTANCES = 8;
-            constexpr uint32_t PMG_MAX_VERTS_PER_SLOT  = 36;   // truncated: 12 tris × 3 (sides + top + bottom)
+            constexpr uint32_t PMG_MAX_VERTS_PER_SLOT = 36;   // truncated: 12 tris × 3 (sides + top + bottom)
             constexpr uint32_t PMG_MAX_INDICES_PER_SLOT = 36;  // unindexed triangles (1:1 vert:idx)
             constexpr uint32_t PMG_TOTAL_VERTICES = MAX_PYRAMID_INSTANCES * PMG_MAX_VERTS_PER_SLOT;   // 288
-            constexpr uint32_t PMG_TOTAL_INDICES  = MAX_PYRAMID_INSTANCES * PMG_MAX_INDICES_PER_SLOT; // 288
+            constexpr uint32_t PMG_TOTAL_INDICES = MAX_PYRAMID_INSTANCES * PMG_MAX_INDICES_PER_SLOT; // 288
+
+            // Generative palms — GPU mesh gen (slot-based addressing)
+            constexpr uint32_t MAX_PALM_INSTANCES = 24;
+            constexpr uint32_t PALMG_MAX_VERTS_PER_SLOT = 1200;
+            constexpr uint32_t PALMG_MAX_INDICES_PER_SLOT = 6000;
+            constexpr uint32_t PALMG_TOTAL_VERTICES = MAX_PALM_INSTANCES * PALMG_MAX_VERTS_PER_SLOT;   // 28800
+            constexpr uint32_t PALMG_TOTAL_INDICES = MAX_PALM_INSTANCES * PALMG_MAX_INDICES_PER_SLOT; // 144000
+
+            // Generative cacti — GPU mesh gen (slot-based addressing)
+            constexpr uint32_t MAX_CACTUS_INSTANCES = 20;
+            constexpr uint32_t CACTUSG_MAX_VERTS_PER_SLOT = 1500;
+            constexpr uint32_t CACTUSG_MAX_INDICES_PER_SLOT = 7998;  // must be divisible by 3!
+            constexpr uint32_t CACTUSG_TOTAL_VERTICES = MAX_CACTUS_INSTANCES * CACTUSG_MAX_VERTS_PER_SLOT;
+            constexpr uint32_t CACTUSG_TOTAL_INDICES = MAX_CACTUS_INSTANCES * CACTUSG_MAX_INDICES_PER_SLOT;
+
+            // Generative blade clusters — GPU mesh gen (slot-based addressing)
+            constexpr uint32_t MAX_BLADE_INSTANCES = 32;
+            constexpr uint32_t BLADEG_MAX_VERTS_PER_SLOT = 500;
+            constexpr uint32_t BLADEG_MAX_INDICES_PER_SLOT = 1998;  // must be divisible by 3!
+            constexpr uint32_t BLADEG_TOTAL_VERTICES = MAX_BLADE_INSTANCES * BLADEG_MAX_VERTS_PER_SLOT;
+            constexpr uint32_t BLADEG_TOTAL_INDICES = MAX_BLADE_INSTANCES * BLADEG_MAX_INDICES_PER_SLOT;
 
             // GoL zone system — per-zone automaton grids
             constexpr uint32_t MAX_GOL_ZONES = 8;
+
+            // Floating entity system — spheres, monoliths, future forms
+            constexpr uint32_t MAX_FLOATING_INSTANCES = 32;
             constexpr uint32_t GOL_ZONE_GRID = 32;      // cells per zone side
             constexpr uint32_t GOL_ZONE_CELLS = GOL_ZONE_GRID * GOL_ZONE_GRID;  // 1024
             constexpr uint32_t GOL_ZONE_LIFE_STRIDE = GOL_ZONE_CELLS * 7;  // 7 slots: visual, velocity, target, next, height_factor, color_visual, color_velocity
@@ -284,20 +312,27 @@ namespace t7 {
         };
 
         struct alignas(16) GPUDesignConfig {
+            // ─── Debug mutes ────────────────────────────────────────
             uint32_t mute_dynamics_0d;
             uint32_t mute_dynamics_2d;
             uint32_t mute_signal;
             uint32_t mute_couplings;
+
+            // ─── Interaction ────────────────────────────────────────
             float wave_time_scale;
             float pawn_speed;
             float camera_sensitivity;
             uint32_t freeze_sphere;
             float active_cell_size;
             uint32_t fpv_mode;
-            uint32_t wave_enable_mask;
-            uint32_t wave_freeze_mask;
-            float wave_frozen_t[3];
+
+            // ─── Terrain wave control ───────────────────────────────
+            uint32_t wave_enable_mask;        // per-band enable bits
+            uint32_t wave_freeze_mask;        // per-band freeze bits
+            float wave_frozen_t[3];           // frozen time per band triplet
             uint32_t world_seed;              // master seed for GPU-side terrain/zone generation
+
+            // ─── Lighting & atmosphere ──────────────────────────────
             float sun_direction[3];
             float aura_enabled;               // 0.0 = off, 1.0 = on (guards all aura sampling)
             float pawn_amp_scale;
@@ -305,8 +340,12 @@ namespace t7 {
             float pawn_aura_height;           // 0.0 = no aura extrusion, >0 = world units of rise
             float fog_density;                // exponential fog coefficient (default 0.003)
             float fog_color[3];               // fog/sky color RGB
+
+            // ─── Transition overlay ─────────────────────────────────
             float fade_alpha;                 // 0.0 = no overlay, 1.0 = fully opaque
             float fade_color[3];              // transition overlay RGB
+
+            // ─── World structure ────────────────────────────────────
             uint32_t pier_count;              // active pier count for bounded iteration
             float world_bound_min[2];         // XZ min clamp (0,0 = infinite)
             float world_bound_max[2];         // XZ max clamp (0,0 = infinite)
@@ -319,21 +358,24 @@ namespace t7 {
             // Per-band blend factor: -1.0 = use activity field (default),
             // [0,1] = direct blend between frozen and moving terrain.
             // CPU smoothly ramps these based on polyphony count.
-            float band_blend_0;               // continental
-            float band_blend_1;               // regional
-            float band_blend_2;               // local
-            float band_blend_3;               // detail
-            float band_blend_4;               // fine
-            float band_blend_5;               // tectonic
+            // Indexed as band_blend[i]: 0=continental, 1=regional, 2=local,
+            //                           3=detail, 4=fine, 5=tectonic
+            float band_blend_0;               // [0] continental
+            float band_blend_1;               // [1] regional
+            float band_blend_2;               // [2] local
+            float band_blend_3;               // [3] detail
+            float band_blend_4;               // [4] fine
+            float band_blend_5;               // [5] tectonic
             // Per-band phase origin (t_beats when band activated).
             // Moving phase = phase_base + (t_beats - origin) * freq,
             // so at activation moment the moving phase equals frozen phase.
-            float band_phase_origin_0;
-            float band_phase_origin_1;
-            float band_phase_origin_2;
-            float band_phase_origin_3;
-            float band_phase_origin_4;
-            float band_phase_origin_5;
+            // Indexed as band_phase_origin[i], same band order as above.
+            float band_phase_origin_0;        // [0] continental
+            float band_phase_origin_1;        // [1] regional
+            float band_phase_origin_2;        // [2] local
+            float band_phase_origin_3;        // [3] detail
+            float band_phase_origin_4;        // [4] fine
+            float band_phase_origin_5;        // [5] tectonic
 
             // ─── Musical animation modes ─────────────────────────────────
             // Each mode is an independently toggleable coupling circuit.
@@ -348,11 +390,12 @@ namespace t7 {
             float _pad_mode_3;
 
             // ─── Radial pulse ring buffer ────────────────────────────────
-            // 8 recent note onsets, each: (origin_x, origin_z, onset_beats, amplitude)
+            // 8 recent note onsets, indexed as pulse_data[i*4 + field]:
+            //   field 0 = origin_x, 1 = origin_z, 2 = onset_beats, 3 = amplitude
             // Evaluated in terrain VS + update_pawn as expanding ring wavefronts.
             uint32_t pulse_count;             // active entries (0–8)
             float _pulse_pad[3];
-            float pulse_data[32];             // 8 × (x, z, onset_beats, amplitude)
+            float pulse_data[32];             // 8 × {origin_x, origin_z, onset_beats, amplitude}
         };
 
         // Tile grid: modifier field for smooth archetype interpolation.
@@ -411,17 +454,33 @@ namespace t7 {
             float pan_y;
         };
 
-        struct alignas(16) GPUSphereState {
-            float pos[3];
-            float radius;
-            float orientation[4];      // quaternion (x, y, z, w)
-            float influence_radius;
-            float t;                   // curve parameter (advances when not frozen)
-            float _pad1;
-            float _pad2;
-            float color[3];            // current appearance (driven by polyphony)
-            float _pad3;
-        };
+        struct alignas(16) GPUFloatingEntityState {
+            float pos[3];              //   0: world position (computed by GPU)
+            float body_radius;         //  12: bounding/visual radius
+            float orientation[4];      //  16: quaternion
+            float influence_radius;    //  32: zone/terrain influence range
+            float t;                   //  36: curve parameter
+            float orbit_radius;        //  40: distance from anchor (orbit mode)
+            float orbit_speed;         //  44: angular velocity (orbit mode)
+            float color[3];            //  48: current appearance (coupling-driven)
+            float orbit_height;        //  60: base altitude above terrain
+            float anchor[3];           //  64: world anchor point
+            float face_variance;       //  76: per-face color spread (monolith)
+            float base_color[3];       //  80: seed-derived rest color
+            uint32_t geometry_type;    //  92: 0=sphere, 1=monolith
+            uint32_t motion_type;      //  96: 0=orbit, 1=hover-bob
+            float spin_speed;          // 100: Y-axis rotation rate (hover-bob)
+            float bob_amplitude;       // 104: vertical oscillation amplitude
+            float bob_period;          // 108: vertical oscillation period
+            float spin_tilt_x;         // 112: axis tilt X
+            float spin_tilt_z;         // 116: axis tilt Z
+            uint32_t entity_seed;      // 120: seed for VS face color hashing
+            uint32_t is_active;        // 124: 0=inactive, 1=active
+            float aspect_y;            // 128: Y-axis scale multiplier (1.0=cube, >1=tall, <1=flat)
+            float aspect_z;            // 132: Z-axis scale multiplier (1.0=cube, <1=thin slab)
+            float _future_2;           // 136: reserved
+            float _future_3;           // 140: reserved
+        };                             // 144 total
 
         struct alignas(16) GPURibbonState {
             float anchor[3];                                                    // 0
@@ -475,14 +534,14 @@ namespace t7 {
 
         // Pier tier enum (carried in tier field, not read by evaluation today)
         namespace PierTier {
-            constexpr uint32_t TEST_RIG         = 0;
-            constexpr uint32_t ARCH_DOORWAY     = 1;
-            constexpr uint32_t ARCH_STANDARD    = 2;
-            constexpr uint32_t ARCH_MONUMENTAL  = 3;
-            constexpr uint32_t COL_PILLAR       = 4;
-            constexpr uint32_t COL_DORIC        = 5;
-            constexpr uint32_t COL_ORNATE       = 6;
-            constexpr uint32_t COL_ANTENNA      = 7;
+            constexpr uint32_t TEST_RIG = 0;
+            constexpr uint32_t ARCH_DOORWAY = 1;
+            constexpr uint32_t ARCH_STANDARD = 2;
+            constexpr uint32_t ARCH_MONUMENTAL = 3;
+            constexpr uint32_t COL_PILLAR = 4;
+            constexpr uint32_t COL_DORIC = 5;
+            constexpr uint32_t COL_ORNATE = 6;
+            constexpr uint32_t COL_ANTENNA = 7;
             constexpr uint32_t COL_ANTENNA_SQUAT = 8;
             constexpr uint32_t COL_ANTENNA_COLOSSAL = 9;
         }
@@ -622,6 +681,92 @@ namespace t7 {
             float _pad128[3];           // pad to 128 bytes
         };
         static_assert(sizeof(GPUColumnMeshParams) == 128, "GPUColumnMeshParams must be 128 bytes");
+
+        // ─── Palm GPU structs ─────────────────────────────────────────────
+        struct alignas(16) GPUPalmMeshParams {
+            float center_x, center_z;
+            float height;
+            float base_r, top_r;
+            float lean, lean_dir;
+            float bark_rings, bark_depth;
+            float frond_count;
+            float frond_len, frond_width;
+            float frond_droop, frond_arch;
+            float crown_spread, crown_skirt;
+            float burial;
+            float trunk_r, trunk_g, trunk_b;
+            float frond_r, frond_g, frond_b;
+            float aged_r, aged_g, aged_b;
+            uint32_t trunk_segs, frond_segs;
+            uint32_t is_active;
+            float _pad0;
+        };
+        static_assert(sizeof(GPUPalmMeshParams) == 128, "GPUPalmMeshParams must be 128 bytes");
+
+        struct alignas(16) GPUPalmGroundEntry {
+            float center_x;
+            float center_z;
+            float ground_y;
+            uint32_t is_active;
+            float _pad0, _pad1, _pad2, _pad3;
+        };
+        static_assert(sizeof(GPUPalmGroundEntry) == 32, "GPUPalmGroundEntry must be 32 bytes");
+
+        // ─── Cactus GPU structs ──────────────────────────────────────────
+        // 21 floats + 4 uint32_t = 100 bytes data + 28 bytes pad = 128
+        struct alignas(16) GPUCactusMeshParams {
+            float center_x, center_z;                    // 2 floats
+            float height, radius, taper;                 // 3 floats
+            float ribs, rib_depth;                       // 2 floats
+            float lean, lean_dir;                        // 2 floats
+            float cap_round;                             // 1 float
+            float arm_count;                             // 1 float
+            float arm_height, arm_length, arm_radius;    // 3 floats
+            float arm_curve;                             // 1 float
+            float body_r, body_g, body_b;                // 3 floats
+            float rib_r, rib_g, rib_b;                   // 3 floats  = 21 floats
+            uint32_t trunk_segs, arm_segs;               // 2 uint32
+            uint32_t is_active;                          // 1 uint32
+            uint32_t seed;                               // 1 uint32  = 4 uint32 = 25 fields = 100 bytes
+            float _pad0, _pad1, _pad2, _pad3, _pad4, _pad5, _pad6;  // 7 pad = 128 bytes
+        };
+        static_assert(sizeof(GPUCactusMeshParams) == 128, "GPUCactusMeshParams must be 128 bytes");
+
+        struct alignas(16) GPUCactusGroundEntry {
+            float center_x;
+            float center_z;
+            float ground_y;
+            uint32_t is_active;
+            float _pad0, _pad1, _pad2, _pad3;
+        };
+        static_assert(sizeof(GPUCactusGroundEntry) == 32, "GPUCactusGroundEntry must be 32 bytes");
+
+        // ─── Blade Cluster GPU structs ──────────────────────────────────
+
+        struct alignas(16) GPUBladeClusterMeshParams {
+            float center_x, center_z;                        // 2 floats
+            float blade_count;                               // 1 float (cast to u32 in shader)
+            float blade_h, blade_h_var, blade_w;             // 3 floats
+            float splay, curve, twist, taper;                // 4 floats
+            float blade_r, blade_g, blade_b;                 // 3 floats
+            float aged_r, aged_g, aged_b;                    // 3 floats  = 16 floats = 64 bytes
+            uint32_t blade_segs;                             // 1 uint32
+            uint32_t is_active;                              // 1 uint32
+            uint32_t seed;                                   // 1 uint32
+            uint32_t _pad0;                                  // 1 uint32  = 4 uint32 = 16 bytes
+        };                                                   // total = 80 bytes
+        static_assert(sizeof(GPUBladeClusterMeshParams) == 80,
+            "GPUBladeClusterMeshParams must be 80 bytes");
+
+        struct alignas(16) GPUBladeClusterGroundEntry {
+            float center_x;
+            float center_z;
+            float ground_y;
+            uint32_t is_active;
+            float _pad0, _pad1, _pad2, _pad3;
+        };
+        static_assert(sizeof(GPUBladeClusterGroundEntry) == 32,
+            "GPUBladeClusterGroundEntry must be 32 bytes");
 
         // GoL zone config — per-zone parameters for compute + fragment shader
         struct alignas(16) GPUGoLZoneConfig {
@@ -847,7 +992,7 @@ namespace t7 {
         static_assert(sizeof(GPUTerrainState) == 32, "GPUTerrainState must be 32 bytes");
         static_assert(sizeof(GPUPawnState) == 48, "GPUPawnState must be 48 bytes");
         static_assert(sizeof(GPUCameraState) == 32, "GPUCameraState must be 32 bytes");
-        static_assert(sizeof(GPUSphereState) == 64, "GPUSphereState must be 64 bytes");
+        static_assert(sizeof(GPUFloatingEntityState) == 144, "GPUFloatingEntityState must be 144 bytes");
         static_assert(sizeof(GPURibbonState) == 96, "GPURibbonState must be 96 bytes");
         static_assert(sizeof(GPUVPMatrix) == 128, "GPUVPMatrix must be 128 bytes");
         static_assert(sizeof(GPUDirectionalLight) == 48, "GPUDirectionalLight must be 48 bytes");
@@ -860,7 +1005,7 @@ namespace t7 {
         // Unified painting slot — CPU mirror of WGSL UnifiedPaintingSlot (must match).
         // Both terrain-quad (photographer) and wall-frame (indoor) forms use this.
         // Each pipeline reads the fields it needs; form_type selects which pipeline draws it.
-        namespace FormType  { constexpr uint32_t TERRAIN_QUAD = 0; constexpr uint32_t WALL_FRAME = 1; }
+        namespace FormType { constexpr uint32_t TERRAIN_QUAD = 0; constexpr uint32_t WALL_FRAME = 1; }
         namespace ContentSource { constexpr uint32_t AUTHORED = 0; constexpr uint32_t SNAPSHOT = 1; }
 
         struct alignas(16) GPUPaintingSlot {
@@ -931,7 +1076,7 @@ namespace t7 {
             wgpu::TextureFormat colorFormat_ = wgpu::TextureFormat::BGRA8Unorm;  // set in initOffscreenResources
 
             wgpu::Buffer signalBuffer_, configBuffer_, terrainBuffer_, pawnBuffer_;
-            wgpu::Buffer cameraBuffer_, sphereBuffer_, trajectoriesBuffer_;
+            wgpu::Buffer cameraBuffer_, floatingEntityBuffer_, trajectoriesBuffer_;
             wgpu::Buffer ribbonBuffer_;
             wgpu::Buffer ringTransformsBuffer_;
             // (bindings 21, 40 reserved — formerly proximity_field, cell_states)
@@ -969,6 +1114,8 @@ namespace t7 {
             // (legacy cell mesh buffers removed — bindings 43-45 reserved)
             wgpu::Buffer sphereVertexBuffer_, sphereIndexBuffer_;
             uint32_t sphereIndexCount_ = 0;
+            wgpu::Buffer monolithVertexBuffer_, monolithIndexBuffer_;
+            uint32_t monolithIndexCount_ = 0;
 
             wgpu::Buffer archVertexBuffer_, archIndexBuffer_;
             wgpu::Buffer archGroundBuffer_;  // per-arch ground Y correction (GPU-corrected)
@@ -979,6 +1126,21 @@ namespace t7 {
             wgpu::Buffer columnGroundBuffer_;  // per-column ground Y correction (GPU-corrected)
             wgpu::Buffer columnMeshParamsBuffer_;  // GPU mesh gen: per-slot parameters
             uint32_t columnIndexCount_ = 0;
+
+            wgpu::Buffer palmVertexBuffer_, palmIndexBuffer_;
+            wgpu::Buffer palmGroundBuffer_;
+            wgpu::Buffer palmMeshParamsBuffer_;
+            uint32_t palmIndexCount_ = 0;
+
+            wgpu::Buffer cactusVertexBuffer_, cactusIndexBuffer_;
+            wgpu::Buffer cactusGroundBuffer_;
+            wgpu::Buffer cactusMeshParamsBuffer_;
+            uint32_t cactusIndexCount_ = 0;
+
+            wgpu::Buffer bladeVertexBuffer_, bladeIndexBuffer_;
+            wgpu::Buffer bladeGroundBuffer_;
+            wgpu::Buffer bladeMeshParamsBuffer_;
+            uint32_t bladeIndexCount_ = 0;
 
             wgpu::Buffer pyramidVertexBuffer_, pyramidIndexBuffer_;
             wgpu::Buffer pyramidGroundBuffer_;  // per-pyramid ground Y correction
@@ -993,9 +1155,15 @@ namespace t7 {
             wgpu::BindGroupLayout pyramidMeshGenLayout_;  // bindings 190-192
             wgpu::BindGroupLayout archMeshGenLayout_;    // bindings 193-195
             wgpu::BindGroupLayout columnMeshGenLayout_;  // bindings 196-198
+            wgpu::BindGroupLayout palmMeshGenLayout_;    // bindings 180-182
+            wgpu::BindGroupLayout cactusMeshGenLayout_;  // bindings 183-185
+            wgpu::BindGroupLayout bladeMeshGenLayout_;   // bindings 186-188
             wgpu::BindGroup pyramidMeshGenBindGroup_;
             wgpu::BindGroup archMeshGenBindGroup_;
             wgpu::BindGroup columnMeshGenBindGroup_;
+            wgpu::BindGroup palmMeshGenBindGroup_;
+            wgpu::BindGroup cactusMeshGenBindGroup_;
+            wgpu::BindGroup bladeMeshGenBindGroup_;
 
             // GoL zone system buffers
             wgpu::Buffer zoneConfigBuffer_;        // GPUGoLZoneArray storage (read_write)
@@ -1188,6 +1356,12 @@ namespace t7 {
                 queue.WriteBuffer(ribbonBuffer_, 0, &ribbon, sizeof(GPURibbonState));
             }
 
+            void upload_floating_entity_slot(wgpu::Queue& queue, uint32_t slot, const GPUFloatingEntityState& entity) {
+                queue.WriteBuffer(floatingEntityBuffer_,
+                    slot * sizeof(GPUFloatingEntityState),
+                    &entity, sizeof(GPUFloatingEntityState));
+            }
+
             void upload_pier_slot(wgpu::Queue& queue, uint32_t slot, const GPUPierInstance& pier) {
                 queue.WriteBuffer(pierBuffer_,
                     slot * sizeof(GPUPierInstance),
@@ -1248,10 +1422,10 @@ namespace t7 {
                     uint32_t n = width * height * 4;
                     swapped.resize(n);
                     for (uint32_t i = 0; i < width * height; ++i) {
-                        swapped[i*4 + 0] = rgba_data[i*4 + 2]; // B
-                        swapped[i*4 + 1] = rgba_data[i*4 + 1]; // G
-                        swapped[i*4 + 2] = rgba_data[i*4 + 0]; // R
-                        swapped[i*4 + 3] = rgba_data[i*4 + 3]; // A
+                        swapped[i * 4 + 0] = rgba_data[i * 4 + 2]; // B
+                        swapped[i * 4 + 1] = rgba_data[i * 4 + 1]; // G
+                        swapped[i * 4 + 2] = rgba_data[i * 4 + 0]; // R
+                        swapped[i * 4 + 3] = rgba_data[i * 4 + 3]; // A
                     }
                     src = swapped.data();
                 }
@@ -1278,10 +1452,10 @@ namespace t7 {
                 uint32_t N = Dim::PAINTING_RESOLUTION;
                 std::vector<uint8_t> pixels(N * N * 4);
                 for (uint32_t i = 0; i < N * N; ++i) {
-                    pixels[i*4 + 0] = need_swap ? b : r;
-                    pixels[i*4 + 1] = g;
-                    pixels[i*4 + 2] = need_swap ? r : b;
-                    pixels[i*4 + 3] = 255;
+                    pixels[i * 4 + 0] = need_swap ? b : r;
+                    pixels[i * 4 + 1] = g;
+                    pixels[i * 4 + 2] = need_swap ? r : b;
+                    pixels[i * 4 + 3] = 255;
                 }
                 upload_authored_painting(queue, layer, pixels.data(), N, N);
             }
@@ -1293,15 +1467,15 @@ namespace t7 {
 
                 auto makeTextureArray = [&](const char* label, uint32_t layers,
                     wgpu::TextureUsage usage) -> wgpu::Texture
-                {
-                    wgpu::TextureDescriptor desc{};
-                    desc.label = label;
-                    desc.size = { Dim::PAINTING_RESOLUTION, Dim::PAINTING_RESOLUTION, layers };
-                    desc.dimension = wgpu::TextureDimension::e2D;
-                    desc.format = colorFormat;
-                    desc.usage = usage;
-                    return device_.CreateTexture(&desc);
-                };
+                    {
+                        wgpu::TextureDescriptor desc{};
+                        desc.label = label;
+                        desc.size = { Dim::PAINTING_RESOLUTION, Dim::PAINTING_RESOLUTION, layers };
+                        desc.dimension = wgpu::TextureDimension::e2D;
+                        desc.format = colorFormat;
+                        desc.usage = usage;
+                        return device_.CreateTexture(&desc);
+                    };
 
                 auto makeArrayView = [&](wgpu::Texture tex, const char* label, uint32_t layers) -> wgpu::TextureView {
                     wgpu::TextureViewDescriptor vd{};
@@ -1309,7 +1483,7 @@ namespace t7 {
                     vd.arrayLayerCount = layers;
                     vd.label = label;
                     return tex.CreateView(&vd);
-                };
+                    };
 
                 // Snapshot staging — photographer writes here, promotion copies from here
                 snapshotStagingTexture_ = makeTextureArray("Snapshot Staging",
@@ -1623,6 +1797,9 @@ namespace t7 {
             wgpu::Buffer sphere_vertex_buffer() const { return sphereVertexBuffer_; }
             wgpu::Buffer sphere_index_buffer() const { return sphereIndexBuffer_; }
             uint32_t sphere_index_count() const { return sphereIndexCount_; }
+            wgpu::Buffer monolith_vertex_buffer() const { return monolithVertexBuffer_; }
+            wgpu::Buffer monolith_index_buffer() const { return monolithIndexBuffer_; }
+            uint32_t monolith_index_count() const { return monolithIndexCount_; }
             wgpu::Buffer arch_vertex_buffer() const { return archVertexBuffer_; }
             wgpu::Buffer arch_index_buffer() const { return archIndexBuffer_; }
             wgpu::Buffer arch_ground_buffer() const { return archGroundBuffer_; }
@@ -1653,6 +1830,65 @@ namespace t7 {
             void upload_column_origins(wgpu::Queue& queue, const GPUColumnGroundEntry* entries, uint32_t count) {
                 queue.WriteBuffer(columnGroundBuffer_, 0, entries,
                     sizeof(GPUColumnGroundEntry) * std::min(count, Dim::MAX_COLUMN_INSTANCES));
+            }
+
+            // --- Palm accessors and upload ---
+            wgpu::Buffer palm_vertex_buffer() const { return palmVertexBuffer_; }
+            wgpu::Buffer palm_index_buffer() const { return palmIndexBuffer_; }
+            wgpu::Buffer palm_ground_buffer() const { return palmGroundBuffer_; }
+            uint32_t palm_index_count() const { return palmIndexCount_; }
+            void set_palm_index_count(uint32_t count) { palmIndexCount_ = count; }
+
+            void upload_palm_mesh_params_slot(wgpu::Queue& queue, uint32_t slot, const GPUPalmMeshParams& params) {
+                queue.WriteBuffer(palmMeshParamsBuffer_,
+                    slot * sizeof(GPUPalmMeshParams),
+                    &params, sizeof(GPUPalmMeshParams));
+            }
+
+            wgpu::BindGroupLayout palm_mesh_gen_layout() const { return palmMeshGenLayout_; }
+            wgpu::BindGroup palm_mesh_gen_group() const { return palmMeshGenBindGroup_; }
+
+            void upload_palm_origins(wgpu::Queue& queue, const GPUPalmGroundEntry* entries, uint32_t count) {
+                queue.WriteBuffer(palmGroundBuffer_, 0, entries,
+                    sizeof(GPUPalmGroundEntry) * std::min(count, Dim::MAX_PALM_INSTANCES));
+            }
+
+            // --- Cactus accessors and upload ---
+            wgpu::Buffer cactus_vertex_buffer() const { return cactusVertexBuffer_; }
+            wgpu::Buffer cactus_index_buffer() const { return cactusIndexBuffer_; }
+            wgpu::Buffer cactus_ground_buffer() const { return cactusGroundBuffer_; }
+            uint32_t cactus_index_count() const { return cactusIndexCount_; }
+            void set_cactus_index_count(uint32_t count) { cactusIndexCount_ = count; }
+            void upload_cactus_mesh_params_slot(wgpu::Queue& queue, uint32_t slot, const GPUCactusMeshParams& params) {
+                queue.WriteBuffer(cactusMeshParamsBuffer_,
+                    slot * sizeof(GPUCactusMeshParams),
+                    &params, sizeof(GPUCactusMeshParams));
+            }
+            wgpu::BindGroupLayout cactus_mesh_gen_layout() const { return cactusMeshGenLayout_; }
+            wgpu::BindGroup cactus_mesh_gen_group() const { return cactusMeshGenBindGroup_; }
+            void upload_cactus_origins(wgpu::Queue& queue, const GPUCactusGroundEntry* entries, uint32_t count) {
+                queue.WriteBuffer(cactusGroundBuffer_, 0, entries,
+                    sizeof(GPUCactusGroundEntry) * std::min(count, Dim::MAX_CACTUS_INSTANCES));
+            }
+
+            // --- Blade Cluster accessors and upload ---
+            wgpu::Buffer blade_vertex_buffer() const { return bladeVertexBuffer_; }
+            wgpu::Buffer blade_index_buffer() const { return bladeIndexBuffer_; }
+            wgpu::Buffer blade_ground_buffer() const { return bladeGroundBuffer_; }
+            uint32_t blade_index_count() const { return bladeIndexCount_; }
+            void set_blade_index_count(uint32_t count) { bladeIndexCount_ = count; }
+            void upload_blade_mesh_params_slot(wgpu::Queue& queue, uint32_t slot,
+                const GPUBladeClusterMeshParams& params) {
+                queue.WriteBuffer(bladeMeshParamsBuffer_,
+                    slot * sizeof(GPUBladeClusterMeshParams),
+                    &params, sizeof(GPUBladeClusterMeshParams));
+            }
+            wgpu::BindGroupLayout blade_mesh_gen_layout() const { return bladeMeshGenLayout_; }
+            wgpu::BindGroup blade_mesh_gen_group() const { return bladeMeshGenBindGroup_; }
+            void upload_blade_origins(wgpu::Queue& queue,
+                const GPUBladeClusterGroundEntry* entries, uint32_t count) {
+                queue.WriteBuffer(bladeGroundBuffer_, 0, entries,
+                    sizeof(GPUBladeClusterGroundEntry) * std::min(count, Dim::MAX_BLADE_INSTANCES));
             }
 
             // --- Pyramid accessors and upload ---
@@ -1836,7 +2072,7 @@ namespace t7 {
             wgpu::Buffer patch_params_buffer() const { return patchParamsBuffer_; }
             wgpu::Buffer patch_staging_buffer() const { return patchStagingBuffer_; }
             void upload_patch_staging(wgpu::Queue& queue, const GPUPatchParams* params,
-                                     uint32_t count, uint32_t offset = 0) {
+                uint32_t count, uint32_t offset = 0) {
                 queue.WriteBuffer(patchStagingBuffer_,
                     offset * sizeof(GPUPatchParams),
                     params, sizeof(GPUPatchParams) * count);
@@ -1864,7 +2100,9 @@ namespace t7 {
                 pawnBuffer_ = makeBuffer("Pawn State", sizeof(GPUPawnState),
                     wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::CopySrc);
                 cameraBuffer_ = makeBuffer("Camera State", sizeof(GPUCameraState), SU);
-                sphereBuffer_ = makeBuffer("Sphere State", sizeof(GPUSphereState), SU);
+                floatingEntityBuffer_ = makeBuffer("Floating Entity Array",
+                    Dim::MAX_FLOATING_INSTANCES * sizeof(GPUFloatingEntityState),
+                    SU | wgpu::BufferUsage::Uniform);
                 ribbonBuffer_ = makeBuffer("Ribbon State", sizeof(GPURibbonState), SU | wgpu::BufferUsage::Uniform);
                 ringTransformsBuffer_ = makeBuffer("Ring Transforms",
                     sizeof(GPURibbonRingTransform) * Dim::RIBBON_MAX_RINGS,
@@ -1917,7 +2155,7 @@ namespace t7 {
                     wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst);
 
                 return signalBuffer_ && configBuffer_ && terrainBuffer_ && pawnBuffer_ &&
-                    cameraBuffer_ && sphereBuffer_ && trajectoriesBuffer_ && ringTransformsBuffer_ &&
+                    cameraBuffer_ && floatingEntityBuffer_ && trajectoriesBuffer_ && ringTransformsBuffer_ &&
                     vpBuffer_ && spotLightArrayBuffer_ && spotVPStagingBuffer_ && directionalLightBuffer_ && pointLightsBuffer_ && patchParamsBuffer_ &&
                     patchStagingBuffer_ && tileGridBuffer_ && pierBuffer_ && patchInstancesBuffer_ &&
                     patchHeightScratchBuffer_ &&
@@ -1986,7 +2224,7 @@ namespace t7 {
                     q.WriteBuffer(patchIndexBufferLOD1_, 0, idx.data(), idx.size() * 4);
                 }
 
-                return createSphereMesh() && createArchMesh() && createColumnMesh() && createPyramidMesh() && createShellMesh() && createGoLZoneBuffers();
+                return createSphereMesh() && createMonolithMesh() && createArchMesh() && createColumnMesh() && createPalmMesh() && createCactusMesh() && createBladeMesh() && createPyramidMesh() && createShellMesh() && createGoLZoneBuffers();
             }
 
             // (createCellMeshBuffers removed — legacy cell mesh gen)
@@ -2019,6 +2257,82 @@ namespace t7 {
                 return true;
             }
 
+
+            bool createMonolithMesh() {
+                // Imperfect unit cube: 6 faces, slightly jittered corners.
+                // Same MeshVertex format as sphere (pos + normal).
+                // Face index derived from normal direction in VS.
+                static constexpr float J = 0.06f;  // jitter magnitude
+                auto jit = [](int corner, int axis) -> float {
+                    uint32_t h = (uint32_t)(corner * 3 + axis);
+                    h = (h * 2654435769u) ^ (h >> 16);
+                    return ((float)(h & 0xFFFFu) / 65535.0f - 0.5f) * J * 2.0f;
+                };
+
+                // 8 corners: y in [-1,+1], z in [-1,+1], x in [-1,+1]
+                float corners[8][3];
+                int ci = 0;
+                for (int y = -1; y <= 1; y += 2)
+                    for (int z = -1; z <= 1; z += 2)
+                        for (int x = -1; x <= 1; x += 2) {
+                            corners[ci][0] = (float)x + jit(ci, 0);
+                            corners[ci][1] = (float)y + jit(ci, 1);
+                            corners[ci][2] = (float)z + jit(ci, 2);
+                            ci++;
+                        }
+
+                // 6 faces (CCW winding from outside)
+                static constexpr int FACES[6][4] = {
+                    {1, 5, 7, 3},  // +X
+                    {0, 2, 6, 4},  // -X
+                    {4, 6, 7, 5},  // +Y
+                    {0, 1, 3, 2},  // -Y
+                    {2, 3, 7, 6},  // +Z
+                    {0, 4, 5, 1},  // -Z
+                };
+
+                std::vector<MeshVertex> v;
+                std::vector<uint32_t> idx;
+
+                for (int f = 0; f < 6; f++) {
+                    float* c0 = corners[FACES[f][0]];
+                    float* c1 = corners[FACES[f][1]];
+                    float* c2 = corners[FACES[f][2]];
+                    float* c3 = corners[FACES[f][3]];
+
+                    // Face normal from cross product of edges
+                    float e1[3] = { c1[0]-c0[0], c1[1]-c0[1], c1[2]-c0[2] };
+                    float e2[3] = { c2[0]-c0[0], c2[1]-c0[1], c2[2]-c0[2] };
+                    float nx = e1[1]*e2[2] - e1[2]*e2[1];
+                    float ny = e1[2]*e2[0] - e1[0]*e2[2];
+                    float nz = e1[0]*e2[1] - e1[1]*e2[0];
+                    float len = std::sqrt(nx*nx + ny*ny + nz*nz);
+                    nx /= len; ny /= len; nz /= len;
+
+                    uint32_t base = (uint32_t)v.size();
+                    v.push_back({{c0[0],c0[1],c0[2]}, {nx,ny,nz}});
+                    v.push_back({{c1[0],c1[1],c1[2]}, {nx,ny,nz}});
+                    v.push_back({{c2[0],c2[1],c2[2]}, {nx,ny,nz}});
+                    v.push_back({{c3[0],c3[1],c3[2]}, {nx,ny,nz}});
+
+                    idx.push_back(base); idx.push_back(base+1); idx.push_back(base+2);
+                    idx.push_back(base); idx.push_back(base+2); idx.push_back(base+3);
+                }
+
+                monolithIndexCount_ = (uint32_t)idx.size();
+                monolithVertexBuffer_ = makeBuffer("Monolith VB", v.size() * sizeof(MeshVertex),
+                    wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst);
+                monolithIndexBuffer_ = makeBuffer("Monolith IB", idx.size() * 4,
+                    wgpu::BufferUsage::Index | wgpu::BufferUsage::CopyDst);
+                if (!monolithVertexBuffer_ || !monolithIndexBuffer_) return false;
+                auto q = device_.GetQueue();
+                q.WriteBuffer(monolithVertexBuffer_, 0, v.data(), v.size() * sizeof(MeshVertex));
+                q.WriteBuffer(monolithIndexBuffer_, 0, idx.data(), idx.size() * 4);
+
+                std::cout << "[GPUState] Monolith mesh: "
+                    << v.size() << " verts, " << idx.size() << " indices\n";
+                return true;
+            }
 
             bool createArchMesh() {
                 // VB: Vertex + CopyDst (transition fallback) + Storage (GPU compute writes)
@@ -2099,6 +2413,92 @@ namespace t7 {
                 std::cout << "[GPUState] Column buffers (GPU mesh gen): "
                     << Dim::CMG_TOTAL_VERTICES << " vert, "
                     << Dim::CMG_TOTAL_INDICES << " index capacity\n";
+                return true;
+            }
+
+            bool createPalmMesh() {
+                palmVertexBuffer_ = makeBuffer("Palm VB (GPU mesh gen)",
+                    Dim::PALMG_TOTAL_VERTICES * sizeof(ArchVertex),
+                    wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Storage);
+                palmIndexBuffer_ = makeBuffer("Palm IB (GPU mesh gen)",
+                    Dim::PALMG_TOTAL_INDICES * sizeof(uint32_t),
+                    wgpu::BufferUsage::Index | wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Storage);
+                palmGroundBuffer_ = makeBuffer("Palm Ground Y",
+                    Dim::MAX_PALM_INSTANCES * sizeof(GPUPalmGroundEntry),
+                    wgpu::BufferUsage::Storage | wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst);
+                palmMeshParamsBuffer_ = makeBuffer("Palm Mesh Params",
+                    Dim::MAX_PALM_INSTANCES * sizeof(GPUPalmMeshParams),
+                    wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst);
+
+                if (!palmVertexBuffer_ || !palmIndexBuffer_ || !palmGroundBuffer_ ||
+                    !palmMeshParamsBuffer_) return false;
+
+                palmIndexCount_ = 0;
+                {
+                    GPUPalmMeshParams emptyParams[Dim::MAX_PALM_INSTANCES]{};
+                    device_.GetQueue().WriteBuffer(palmMeshParamsBuffer_, 0, emptyParams,
+                        sizeof(GPUPalmMeshParams) * Dim::MAX_PALM_INSTANCES);
+                }
+                {
+                    std::vector<uint8_t> zeros(Dim::PALMG_TOTAL_VERTICES * sizeof(ArchVertex), 0);
+                    device_.GetQueue().WriteBuffer(palmVertexBuffer_, 0, zeros.data(), zeros.size());
+                }
+                return true;
+            }
+
+            bool createCactusMesh() {
+                cactusVertexBuffer_ = makeBuffer("Cactus VB (GPU mesh gen)",
+                    Dim::CACTUSG_TOTAL_VERTICES * sizeof(ArchVertex),
+                    wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Storage);
+                cactusIndexBuffer_ = makeBuffer("Cactus IB (GPU mesh gen)",
+                    Dim::CACTUSG_TOTAL_INDICES * sizeof(uint32_t),
+                    wgpu::BufferUsage::Index | wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Storage);
+                cactusGroundBuffer_ = makeBuffer("Cactus Ground Y",
+                    Dim::MAX_CACTUS_INSTANCES * sizeof(GPUCactusGroundEntry),
+                    wgpu::BufferUsage::Storage | wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst);
+                cactusMeshParamsBuffer_ = makeBuffer("Cactus Mesh Params",
+                    Dim::MAX_CACTUS_INSTANCES * sizeof(GPUCactusMeshParams),
+                    wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst);
+                if (!cactusVertexBuffer_ || !cactusIndexBuffer_ || !cactusGroundBuffer_ ||
+                    !cactusMeshParamsBuffer_) return false;
+                cactusIndexCount_ = 0;
+                {
+                    GPUCactusMeshParams emptyParams[Dim::MAX_CACTUS_INSTANCES]{};
+                    device_.GetQueue().WriteBuffer(cactusMeshParamsBuffer_, 0, emptyParams,
+                        sizeof(GPUCactusMeshParams) * Dim::MAX_CACTUS_INSTANCES);
+                }
+                {
+                    std::vector<uint8_t> zeros(Dim::CACTUSG_TOTAL_VERTICES * sizeof(ArchVertex), 0);
+                    device_.GetQueue().WriteBuffer(cactusVertexBuffer_, 0, zeros.data(), zeros.size());
+                }
+                return true;
+            }
+
+            bool createBladeMesh() {
+                bladeVertexBuffer_ = makeBuffer("Blade VB (GPU mesh gen)",
+                    Dim::BLADEG_TOTAL_VERTICES * sizeof(ArchVertex),
+                    wgpu::BufferUsage::Storage | wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst);
+                bladeIndexBuffer_ = makeBuffer("Blade IB (GPU mesh gen)",
+                    Dim::BLADEG_TOTAL_INDICES * sizeof(uint32_t),
+                    wgpu::BufferUsage::Storage | wgpu::BufferUsage::Index | wgpu::BufferUsage::CopyDst);
+                bladeGroundBuffer_ = makeBuffer("Blade Ground Y",
+                    Dim::MAX_BLADE_INSTANCES * sizeof(GPUBladeClusterGroundEntry),
+                    wgpu::BufferUsage::Storage | wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst);
+                bladeMeshParamsBuffer_ = makeBuffer("Blade Mesh Params",
+                    Dim::MAX_BLADE_INSTANCES * sizeof(GPUBladeClusterMeshParams),
+                    wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst);
+                if (!bladeVertexBuffer_ || !bladeIndexBuffer_ || !bladeGroundBuffer_ ||
+                    !bladeMeshParamsBuffer_) return false;
+                bladeIndexCount_ = 0;
+                {
+                    GPUBladeClusterMeshParams emptyParams[Dim::MAX_BLADE_INSTANCES]{};
+                    device_.GetQueue().WriteBuffer(bladeMeshParamsBuffer_, 0, emptyParams,
+                        sizeof(GPUBladeClusterMeshParams) * Dim::MAX_BLADE_INSTANCES);
+                }
+                {
+                    std::vector<uint8_t> zeros(Dim::BLADEG_TOTAL_VERTICES * sizeof(ArchVertex), 0);
+                    device_.GetQueue().WriteBuffer(bladeVertexBuffer_, 0, zeros.data(), zeros.size());
+                }
                 return true;
             }
 
@@ -2489,7 +2889,7 @@ namespace t7 {
                 // Vertex shaders need entity state for positioning + VP for transform.
                 // Fragment shaders need camera for fog distance.
                 {
-                    std::array<wgpu::BindGroupLayoutEntry, 17> entries{};
+                    std::array<wgpu::BindGroupLayoutEntry, 20> entries{};
 
                     entries[0].binding = 1;    // config (uniform — fog, world_seed, aura_enabled, fade)
                     entries[0].visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
@@ -2517,7 +2917,7 @@ namespace t7 {
 
                     entries[6].binding = 300;
                     entries[6].visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
-                    entries[6].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
+                    entries[6].buffer.type = wgpu::BufferBindingType::Uniform;
 
                     entries[7].binding = 320;
                     entries[7].visibility = wgpu::ShaderStage::Fragment;
@@ -2537,7 +2937,7 @@ namespace t7 {
 
                     entries[11].binding = 360;
                     entries[11].visibility = wgpu::ShaderStage::Vertex;
-                    entries[11].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
+                    entries[11].buffer.type = wgpu::BufferBindingType::Uniform;
 
                     entries[12].binding = 361;
                     entries[12].visibility = wgpu::ShaderStage::Vertex;
@@ -2563,6 +2963,19 @@ namespace t7 {
                     entries[16].binding = 25;
                     entries[16].visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
                     entries[16].buffer.type = wgpu::BufferBindingType::Uniform;
+
+                    // Palm ground Y (VS reads)
+                    entries[17].binding = 383;
+                    entries[17].visibility = wgpu::ShaderStage::Vertex;
+                    entries[17].buffer.type = wgpu::BufferBindingType::Uniform;
+
+                    entries[18].binding = 384;
+                    entries[18].visibility = wgpu::ShaderStage::Vertex;
+                    entries[18].buffer.type = wgpu::BufferBindingType::Uniform;
+
+                    entries[19].binding = 385;
+                    entries[19].visibility = wgpu::ShaderStage::Vertex;
+                    entries[19].buffer.type = wgpu::BufferBindingType::Uniform;
 
                     wgpu::BindGroupLayoutDescriptor desc{};
                     desc.label = "Render Entity Layout";
@@ -2927,9 +3340,9 @@ namespace t7 {
                 // Runs every frame, unconditionally. Samples the baked heightfield
                 // and subtracts CPU-computed pier_correction to isolate each entity's
                 // own pier contribution (removing foreign pier contamination).
-                // 11 entries: config + pawn + painting slots + heightfield + entity grounds + GoL.
+                // 13 entries: config + pawn + painting slots + heightfield + entity grounds + GoL.
                 {
-                    std::array<wgpu::BindGroupLayoutEntry, 11> entries{};
+                    std::array<wgpu::BindGroupLayoutEntry, 13> entries{};
 
                     entries[0].binding = 1;
                     entries[0].visibility = wgpu::ShaderStage::Compute;
@@ -2975,6 +3388,14 @@ namespace t7 {
                     entries[10].binding = 161;
                     entries[10].visibility = wgpu::ShaderStage::Compute;
                     entries[10].buffer.type = wgpu::BufferBindingType::Storage;
+
+                    entries[11].binding = 150;
+                    entries[11].visibility = wgpu::ShaderStage::Compute;
+                    entries[11].buffer.type = wgpu::BufferBindingType::Storage;
+
+                    entries[12].binding = 151;
+                    entries[12].visibility = wgpu::ShaderStage::Compute;
+                    entries[12].buffer.type = wgpu::BufferBindingType::Storage;
 
                     wgpu::BindGroupLayoutDescriptor desc{};
                     desc.label = "Entity Placement Compute Layout";
@@ -3170,6 +3591,69 @@ namespace t7 {
                     if (!columnMeshGenLayout_) return false;
                 }
 
+                // Palm mesh gen layout (bindings 180-182)
+                {
+                    std::array<wgpu::BindGroupLayoutEntry, 3> entries{};
+
+                    entries[0].binding = 180;
+                    entries[0].visibility = wgpu::ShaderStage::Compute;
+                    entries[0].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
+
+                    entries[1].binding = 181;
+                    entries[1].visibility = wgpu::ShaderStage::Compute;
+                    entries[1].buffer.type = wgpu::BufferBindingType::Storage;
+
+                    entries[2].binding = 182;
+                    entries[2].visibility = wgpu::ShaderStage::Compute;
+                    entries[2].buffer.type = wgpu::BufferBindingType::Storage;
+
+                    wgpu::BindGroupLayoutDescriptor desc{};
+                    desc.label = "Palm Mesh Gen Layout";
+                    desc.entryCount = entries.size();
+                    desc.entries = entries.data();
+                    palmMeshGenLayout_ = device_.CreateBindGroupLayout(&desc);
+                    if (!palmMeshGenLayout_) return false;
+                }
+
+                // Cactus mesh gen layout (bindings 183-185)
+                {
+                    std::array<wgpu::BindGroupLayoutEntry, 3> entries{};
+                    entries[0].binding = 183;
+                    entries[0].visibility = wgpu::ShaderStage::Compute;
+                    entries[0].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
+                    entries[1].binding = 184;
+                    entries[1].visibility = wgpu::ShaderStage::Compute;
+                    entries[1].buffer.type = wgpu::BufferBindingType::Storage;
+                    entries[2].binding = 185;
+                    entries[2].visibility = wgpu::ShaderStage::Compute;
+                    entries[2].buffer.type = wgpu::BufferBindingType::Storage;
+                    wgpu::BindGroupLayoutDescriptor desc{};
+                    desc.label = "Cactus Mesh Gen Layout";
+                    desc.entryCount = entries.size();
+                    desc.entries = entries.data();
+                    cactusMeshGenLayout_ = device_.CreateBindGroupLayout(&desc);
+                    if (!cactusMeshGenLayout_) return false;
+                }
+
+                // Blade mesh gen layout (bindings 186-188)
+                {
+                    std::array<wgpu::BindGroupLayoutEntry, 3> entries{};
+                    entries[0].binding = 186;
+                    entries[0].visibility = wgpu::ShaderStage::Compute;
+                    entries[0].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
+                    entries[1].binding = 187;
+                    entries[1].visibility = wgpu::ShaderStage::Compute;
+                    entries[1].buffer.type = wgpu::BufferBindingType::Storage;
+                    entries[2].binding = 188;
+                    entries[2].visibility = wgpu::ShaderStage::Compute;
+                    entries[2].buffer.type = wgpu::BufferBindingType::Storage;
+                    wgpu::BindGroupLayoutDescriptor desc{};
+                    desc.label = "Blade Mesh Gen Layout";
+                    desc.entryCount = entries.size();
+                    desc.entries = entries.data();
+                    bladeMeshGenLayout_ = device_.CreateBindGroupLayout(&desc);
+                    if (!bladeMeshGenLayout_) return false;
+                }
 
 
                 // -- Bind group instances ------------------------------------
@@ -3205,8 +3689,8 @@ namespace t7 {
                     entries[5].size = sizeof(GPUCameraState);
 
                     entries[6].binding = 100;
-                    entries[6].buffer = sphereBuffer_;
-                    entries[6].size = sizeof(GPUSphereState);
+                    entries[6].buffer = floatingEntityBuffer_;
+                    entries[6].size = Dim::MAX_FLOATING_INSTANCES * sizeof(GPUFloatingEntityState);
 
                     entries[7].binding = 101;
                     entries[7].buffer = trajectoriesBuffer_;
@@ -3252,9 +3736,9 @@ namespace t7 {
                     if (!computeEntityBindGroup_) return false;
                 }
 
-                // Render entity bind group (17 entries: config + spaced by system +200)
+                // Render entity bind group (20 entries: config + spaced by system +200)
                 {
-                    std::array<wgpu::BindGroupEntry, 17> entries{};
+                    std::array<wgpu::BindGroupEntry, 20> entries{};
 
                     entries[0].binding = 1;
                     entries[0].buffer = configBuffer_;
@@ -3281,8 +3765,8 @@ namespace t7 {
                     entries[5].size = sizeof(GPUCameraState);
 
                     entries[6].binding = 300;
-                    entries[6].buffer = sphereBuffer_;
-                    entries[6].size = sizeof(GPUSphereState);
+                    entries[6].buffer = floatingEntityBuffer_;
+                    entries[6].size = Dim::MAX_FLOATING_INSTANCES * sizeof(GPUFloatingEntityState);
 
                     entries[7].binding = 320;
                     entries[7].buffer = directionalLightBuffer_;
@@ -3324,6 +3808,18 @@ namespace t7 {
                     entries[16].binding = 25;
                     entries[16].buffer = tileGridBuffer_;
                     entries[16].size = sizeof(GPUTileGrid);
+
+                    entries[17].binding = 383;
+                    entries[17].buffer = palmGroundBuffer_;
+                    entries[17].size = sizeof(GPUPalmGroundEntry) * Dim::MAX_PALM_INSTANCES;
+
+                    entries[18].binding = 384;
+                    entries[18].buffer = cactusGroundBuffer_;
+                    entries[18].size = sizeof(GPUCactusGroundEntry) * Dim::MAX_CACTUS_INSTANCES;
+
+                    entries[19].binding = 385;
+                    entries[19].buffer = bladeGroundBuffer_;
+                    entries[19].size = sizeof(GPUBladeClusterGroundEntry) * Dim::MAX_BLADE_INSTANCES;
 
                     wgpu::BindGroupDescriptor desc{};
                     desc.label = "Render Entity BindGroup";
@@ -3541,7 +4037,7 @@ namespace t7 {
 
                 // Photographer render entity bind group (same layout as main, different VP)
                 {
-                    std::array<wgpu::BindGroupEntry, 17> entries{};
+                    std::array<wgpu::BindGroupEntry, 20> entries{};
                     entries[0].binding = 1;
                     entries[0].buffer = configBuffer_;
                     entries[0].size = sizeof(GPUDesignConfig);
@@ -3561,8 +4057,8 @@ namespace t7 {
                     entries[5].buffer = photographerCameraBuffer_;  // ← photographer pos for fog
                     entries[5].size = sizeof(GPUCameraState);
                     entries[6].binding = 300;
-                    entries[6].buffer = sphereBuffer_;
-                    entries[6].size = sizeof(GPUSphereState);
+                    entries[6].buffer = floatingEntityBuffer_;
+                    entries[6].size = Dim::MAX_FLOATING_INSTANCES * sizeof(GPUFloatingEntityState);
                     entries[7].binding = 320;
                     entries[7].buffer = directionalLightBuffer_;
                     entries[7].size = sizeof(GPUDirectionalLight);
@@ -3593,6 +4089,16 @@ namespace t7 {
                     entries[16].binding = 25;
                     entries[16].buffer = tileGridBuffer_;
                     entries[16].size = sizeof(GPUTileGrid);
+                    entries[17].binding = 383;
+                    entries[17].buffer = palmGroundBuffer_;
+                    entries[17].size = sizeof(GPUPalmGroundEntry) * Dim::MAX_PALM_INSTANCES;
+                    entries[18].binding = 384;
+                    entries[18].buffer = cactusGroundBuffer_;
+                    entries[18].size = sizeof(GPUCactusGroundEntry) * Dim::MAX_CACTUS_INSTANCES;
+
+                    entries[19].binding = 385;
+                    entries[19].buffer = bladeGroundBuffer_;
+                    entries[19].size = sizeof(GPUBladeClusterGroundEntry) * Dim::MAX_BLADE_INSTANCES;
 
                     wgpu::BindGroupDescriptor desc{};
                     desc.label = "Photographer Render Entity BindGroup";
@@ -3655,7 +4161,7 @@ namespace t7 {
 
                 // Entity placement compute bind group (heightfield sampling + pier correction)
                 {
-                    std::array<wgpu::BindGroupEntry, 11> entries{};
+                    std::array<wgpu::BindGroupEntry, 13> entries{};
                     entries[0].binding = 1;
                     entries[0].buffer = configBuffer_;
                     entries[0].size = sizeof(GPUDesignConfig);
@@ -3687,6 +4193,14 @@ namespace t7 {
                     entries[10].binding = 161;
                     entries[10].buffer = zoneLifeBuffer_;
                     entries[10].size = Dim::MAX_GOL_ZONES * Dim::GOL_ZONE_LIFE_STRIDE * sizeof(float);
+
+                    entries[11].binding = 150;
+                    entries[11].buffer = palmGroundBuffer_;
+                    entries[11].size = sizeof(GPUPalmGroundEntry) * Dim::MAX_PALM_INSTANCES;
+
+                    entries[12].binding = 151;
+                    entries[12].buffer = cactusGroundBuffer_;
+                    entries[12].size = sizeof(GPUCactusGroundEntry) * Dim::MAX_CACTUS_INSTANCES;
 
                     wgpu::BindGroupDescriptor desc{};
                     desc.label = "Entity Placement Compute BindGroup";
@@ -3867,6 +4381,73 @@ namespace t7 {
                     if (!columnMeshGenBindGroup_) return false;
                 }
 
+                // Palm mesh gen bind group
+                {
+                    std::array<wgpu::BindGroupEntry, 3> entries{};
+
+                    entries[0].binding = 180;
+                    entries[0].buffer = palmMeshParamsBuffer_;
+                    entries[0].size = Dim::MAX_PALM_INSTANCES * sizeof(GPUPalmMeshParams);
+
+                    entries[1].binding = 181;
+                    entries[1].buffer = palmVertexBuffer_;
+                    entries[1].size = Dim::PALMG_TOTAL_VERTICES * sizeof(ArchVertex);
+
+                    entries[2].binding = 182;
+                    entries[2].buffer = palmIndexBuffer_;
+                    entries[2].size = Dim::PALMG_TOTAL_INDICES * sizeof(uint32_t);
+
+                    wgpu::BindGroupDescriptor desc{};
+                    desc.label = "Palm Mesh Gen BindGroup";
+                    desc.layout = palmMeshGenLayout_;
+                    desc.entryCount = entries.size();
+                    desc.entries = entries.data();
+                    palmMeshGenBindGroup_ = device_.CreateBindGroup(&desc);
+                    if (!palmMeshGenBindGroup_) return false;
+                }
+
+                // Cactus mesh gen bind group
+                {
+                    std::array<wgpu::BindGroupEntry, 3> entries{};
+                    entries[0].binding = 183;
+                    entries[0].buffer = cactusMeshParamsBuffer_;
+                    entries[0].size = Dim::MAX_CACTUS_INSTANCES * sizeof(GPUCactusMeshParams);
+                    entries[1].binding = 184;
+                    entries[1].buffer = cactusVertexBuffer_;
+                    entries[1].size = Dim::CACTUSG_TOTAL_VERTICES * sizeof(ArchVertex);
+                    entries[2].binding = 185;
+                    entries[2].buffer = cactusIndexBuffer_;
+                    entries[2].size = Dim::CACTUSG_TOTAL_INDICES * sizeof(uint32_t);
+                    wgpu::BindGroupDescriptor desc{};
+                    desc.label = "Cactus Mesh Gen BindGroup";
+                    desc.layout = cactusMeshGenLayout_;
+                    desc.entryCount = entries.size();
+                    desc.entries = entries.data();
+                    cactusMeshGenBindGroup_ = device_.CreateBindGroup(&desc);
+                    if (!cactusMeshGenBindGroup_) return false;
+                }
+
+                // Blade mesh gen bind group
+                {
+                    std::array<wgpu::BindGroupEntry, 3> entries{};
+                    entries[0].binding = 186;
+                    entries[0].buffer = bladeMeshParamsBuffer_;
+                    entries[0].size = Dim::MAX_BLADE_INSTANCES * sizeof(GPUBladeClusterMeshParams);
+                    entries[1].binding = 187;
+                    entries[1].buffer = bladeVertexBuffer_;
+                    entries[1].size = Dim::BLADEG_TOTAL_VERTICES * sizeof(ArchVertex);
+                    entries[2].binding = 188;
+                    entries[2].buffer = bladeIndexBuffer_;
+                    entries[2].size = Dim::BLADEG_TOTAL_INDICES * sizeof(uint32_t);
+                    wgpu::BindGroupDescriptor desc{};
+                    desc.label = "Blade Mesh Gen BindGroup";
+                    desc.layout = bladeMeshGenLayout_;
+                    desc.entryCount = entries.size();
+                    desc.entries = entries.data();
+                    bladeMeshGenBindGroup_ = device_.CreateBindGroup(&desc);
+                    if (!bladeMeshGenBindGroup_) return false;
+                }
+
                 return true;
             }
 
@@ -3971,24 +4552,52 @@ namespace t7 {
                 camera.pan_y = 0.0f;
                 queue.WriteBuffer(cameraBuffer_, 0, &camera, sizeof(camera));
 
-                GPUSphereState sphere{};
-                sphere.pos[0] = Idle::SPHERE_ORBIT_RADIUS;
-                sphere.pos[1] = Idle::SPHERE_HOVER_HEIGHT;
-                sphere.pos[2] = 0.0f;
-                sphere.radius = Idle::SPHERE_RADIUS;
-                sphere.orientation[0] = 0.0f;
-                sphere.orientation[1] = 0.0f;
-                sphere.orientation[2] = 0.0f;
-                sphere.orientation[3] = 1.0f;
-                sphere.influence_radius = Idle::SPHERE_INFLUENCE_RADIUS;
-                sphere.t = 0.0f;
-                sphere._pad1 = 0.0f;
-                sphere._pad2 = 0.0f;
-                sphere.color[0] = 0.95f;
-                sphere.color[1] = 0.75f;
-                sphere.color[2] = 0.4f;
-                sphere._pad3 = 0.0f;
-                queue.WriteBuffer(sphereBuffer_, 0, &sphere, sizeof(sphere));
+                // Zero-init all floating entity slots (inactive)
+                {
+                    std::vector<uint8_t> zeros(Dim::MAX_FLOATING_INSTANCES * sizeof(GPUFloatingEntityState), 0);
+                    queue.WriteBuffer(floatingEntityBuffer_, 0, zeros.data(), zeros.size());
+                }
+                // Populate slot 0 with default sphere (idle orbit around origin)
+                {
+                    GPUFloatingEntityState fe{};
+                    fe.pos[0] = Idle::SPHERE_ORBIT_RADIUS;
+                    fe.pos[1] = Idle::SPHERE_HOVER_HEIGHT;
+                    fe.pos[2] = 0.0f;
+                    fe.body_radius = Idle::SPHERE_RADIUS;
+                    fe.orientation[0] = 0.0f;
+                    fe.orientation[1] = 0.0f;
+                    fe.orientation[2] = 0.0f;
+                    fe.orientation[3] = 1.0f;
+                    fe.influence_radius = Idle::SPHERE_INFLUENCE_RADIUS;
+                    fe.t = 0.0f;
+                    fe.orbit_radius = Idle::SPHERE_ORBIT_RADIUS;
+                    fe.orbit_speed = Idle::SPHERE_ORBIT_SPEED;
+                    fe.color[0] = 0.95f;
+                    fe.color[1] = 0.75f;
+                    fe.color[2] = 0.4f;
+                    fe.orbit_height = Idle::SPHERE_HOVER_HEIGHT;
+                    fe.anchor[0] = 0.0f;
+                    fe.anchor[1] = 0.0f;
+                    fe.anchor[2] = 0.0f;
+                    fe.face_variance = 0.0f;
+                    fe.base_color[0] = 0.95f;
+                    fe.base_color[1] = 0.75f;
+                    fe.base_color[2] = 0.4f;
+                    fe.geometry_type = 0;    // sphere
+                    fe.motion_type = 0;      // orbit
+                    fe.spin_speed = 0.0f;
+                    fe.bob_amplitude = 0.0f;
+                    fe.bob_period = 0.0f;
+                    fe.spin_tilt_x = 0.0f;
+                    fe.spin_tilt_z = 0.0f;
+                    fe.entity_seed = 0;
+                    fe.is_active = 1;
+                    fe.aspect_y = 1.0f;
+                    fe.aspect_z = 1.0f;
+                    fe._future_2 = 0.0f;
+                    fe._future_3 = 0.0f;
+                    queue.WriteBuffer(floatingEntityBuffer_, 0, &fe, sizeof(fe));
+                }
 
                 // Default state — overwritten by spawner
                 GPURibbonState ribbon{};

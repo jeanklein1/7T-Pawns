@@ -30,31 +30,33 @@ void derive_indoor_lights(uint32_t seed, float bmin, float bmax,
     LightAnchor wall_a = use_ew ? LightAnchor::WALL_EAST : LightAnchor::WALL_NORTH;
     LightAnchor wall_b = use_ew ? LightAnchor::WALL_WEST : LightAnchor::WALL_SOUTH;
 
-    // Build slot list based on scheme
+    // Read slot definitions from scheme table
+    const auto& sch = LIGHT_SCHEMES[scheme];
     LightSlotDef slots[MAX_SPOT_LIGHTS];
-    uint32_t count = 0;
+    uint32_t count = sch.slot_count;
 
-    switch (scheme) {
-    case 0:  // Cathedral: ceiling primary + 2 wall accents
-        //                    anchor            int_m  int_s  inn_m inn_s out_m out_s warm_m warm_s  pitch_m pitch_s yaw_m  yaw_s
-        slots[0] = { LightAnchor::CEILING, 8.0f, 2.5f, 0.6f, 0.2f, 1.2f, 0.15f, 0.35f, 0.20f,  0.0f,  0.12f, 0.0f, 0.12f };
-        slots[1] = { wall_a,               5.0f, 1.5f, 0.4f, 0.15f, 1.0f, 0.15f, 0.20f, 0.15f,  0.60f, 0.40f, 0.0f, 0.30f };
-        slots[2] = { wall_b,               5.0f, 1.5f, 0.4f, 0.15f, 1.0f, 0.15f, 0.75f, 0.15f,  0.60f, 0.40f, 0.0f, 0.30f };
-        count = 3;
-        break;
-    case 1:  // Gallery: 2 opposing wall lights, no ceiling
-        slots[0] = { wall_a, 7.0f, 2.0f, 0.4f, 0.15f, 1.1f, 0.15f, 0.25f, 0.20f,  0.55f, 0.45f, 0.0f, 0.35f };
-        slots[1] = { wall_b, 7.0f, 2.0f, 0.4f, 0.15f, 1.1f, 0.15f, 0.65f, 0.20f,  0.55f, 0.45f, 0.0f, 0.35f };
-        count = 2;
-        break;
-    case 2: {  // Sanctum: single dramatic source
-        float anchor_roll = cpu_hash_f(seed, IndoorLightProp::ANCHOR_PICK);
-        LightAnchor anchor = (anchor_roll < 0.55f) ? LightAnchor::CEILING
-            : (anchor_roll < 0.775f) ? wall_a : wall_b;
-        slots[0] = { anchor, 10.0f, 2.5f, 0.5f, 0.2f, 1.2f, 0.15f, 0.45f, 0.25f,  0.50f, 0.40f, 0.0f, 0.30f };
-        count = 1;
-        break;
-    }
+    for (uint32_t i = 0; i < count; i++) {
+        const auto& src = sch.slots[i];
+        // Resolve anchor role to concrete LightAnchor
+        LightAnchor anchor;
+        switch (src.role) {
+        case AnchorRole::CEILING:   anchor = LightAnchor::CEILING; break;
+        case AnchorRole::WALL_A:    anchor = wall_a; break;
+        case AnchorRole::WALL_B:    anchor = wall_b; break;
+        case AnchorRole::SEED_PICK: {
+            float anchor_roll = cpu_hash_f(seed, IndoorLightProp::ANCHOR_PICK);
+            anchor = (anchor_roll < 0.55f) ? LightAnchor::CEILING
+                : (anchor_roll < 0.775f) ? wall_a : wall_b;
+            break;
+        }
+        }
+        slots[i] = { anchor,
+            src.intensity_mean, src.intensity_sigma,
+            src.inner_mean, src.inner_sigma,
+            src.outer_mean, src.outer_sigma,
+            src.warmth_mean, src.warmth_sigma,
+            src.aim_pitch_mean, src.aim_pitch_sigma,
+            src.aim_yaw_mean, src.aim_yaw_sigma };
     }
 
     // Derive each light from its slot spec + seed
