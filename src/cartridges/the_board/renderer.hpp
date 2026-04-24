@@ -793,7 +793,9 @@ namespace t7 {
                 pass.SetPipeline(pawnPipeline_);
                 pass.SetBindGroup(0, entityBindGroup);
                 pass.SetBindGroup(1, textureBindGroup);
-                pass.Draw(vertexCount);
+                // One instance per agent slot. Inactive slots collapse via a
+                // zero-scale local mesh in pawn_vs (see is_active branch).
+                pass.Draw(vertexCount, /*instanceCount=*/ Dim::MAX_AGENTS);
             }
 
             void draw_sphere(
@@ -1029,7 +1031,7 @@ namespace t7 {
                 pass.SetPipeline(shadowPawnPipeline_);
                 pass.SetBindGroup(0, entityBindGroup);
                 pass.SetBindGroup(1, textureBindGroup);
-                pass.Draw(vertexCount);
+                pass.Draw(vertexCount, /*instanceCount=*/ Dim::MAX_AGENTS);
             }
 
             void draw_shadow_sphere(

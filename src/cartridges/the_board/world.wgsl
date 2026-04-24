@@ -3711,7 +3711,13 @@ fn pawn_profile_normal_2d(t: f32) -> vec2<f32> {
 // --- Pawn Vertex Shader (chess pawn, GPU-generated)
 
 @vertex
-fn pawn_vs(@builtin(vertex_index) vid: u32) -> EntityVarying {
+fn pawn_vs(@builtin(vertex_index) vid: u32,
+           @builtin(instance_index) inst: u32) -> EntityVarying {
+    let agent = render_agents[inst];
+    // Collapse inactive slots to a degenerate point at the agent's pos.
+    // (Same trick as sphere_vs: zero-scale local geometry → no fragments.)
+    let active_f = f32(agent.is_active);
+
     var local_pos: vec3<f32>;
     var local_normal: vec3<f32>;
 
@@ -3784,17 +3790,23 @@ fn pawn_vs(@builtin(vertex_index) vid: u32) -> EntityVarying {
         }
     }
 
-    // Transform by pawn orientation and position
-    let pawn_q = render_pawn_orientation();
-    let pawn_p = render_pawn_pos();
-    let rotated_pos = quat_rotate(pawn_q, local_pos);
+    // Per-instance transform from this agent slot. orient_* carries
+    // heading + (player only) terrain tilt; pos_* is the world XZ + Y.
+    let pawn_q = vec4(agent.orient_x, agent.orient_y, agent.orient_z, agent.orient_w);
+    let pawn_p = vec3(agent.pos_x, agent.pos_y, agent.pos_z);
+    let rotated_pos = quat_rotate(pawn_q, local_pos * active_f);
     let rotated_normal = quat_rotate(pawn_q, local_normal);
+
+    // Tier color — body identity (the player's tier is whatever slot
+    // they currently inhabit; tier_idx is set at spawn / possession).
+    let tier = min(agent.tier_idx, AGENT_TIER_COUNT_WGSL - 1u);
+    let tg = AGENT_TIER_GAINS_WGSL[tier];
 
     var out: EntityVarying;
     out.clip_pos = render_vp.m * vec4(rotated_pos + pawn_p, 1.0);
     out.world_pos = rotated_pos + pawn_p;
     out.normal = rotated_normal;
-    out.entity_color = COLOR_PAWN;
+    out.entity_color = vec3(tg.color_r, tg.color_g, tg.color_b);
     return out;
 }
 
@@ -3861,7 +3873,11 @@ struct ShadowVarying {
 }
 
 @vertex
-fn shadow_pawn_vs(@builtin(vertex_index) vid: u32) -> ShadowVarying {
+fn shadow_pawn_vs(@builtin(vertex_index) vid: u32,
+                  @builtin(instance_index) inst: u32) -> ShadowVarying {
+    let agent = render_agents[inst];
+    let active_f = f32(agent.is_active);
+
     var local_pos: vec3<f32>;
 
     if (vid < PAWN_BODY_VERTICES) {
@@ -3915,7 +3931,9 @@ fn shadow_pawn_vs(@builtin(vertex_index) vid: u32) -> ShadowVarying {
         }
     }
 
-    let world_pos = quat_rotate(render_pawn_orientation(), local_pos) + render_pawn_pos();
+    let pawn_q = vec4(agent.orient_x, agent.orient_y, agent.orient_z, agent.orient_w);
+    let pawn_p = vec3(agent.pos_x, agent.pos_y, agent.pos_z);
+    let world_pos = quat_rotate(pawn_q, local_pos * active_f) + pawn_p;
 
     // Lift pawn above terrain in shadow map. With perspective projection
     // from a ceiling light, 0.01 is invisible in the depth buffer at 19+
