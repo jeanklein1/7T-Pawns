@@ -7553,6 +7553,27 @@ namespace t7 {
                     configure_orbs(ORB_MOOD_TABLE[activeMood_], q);
                 }
 
+                // Initial agent population for boot mood. Slot 0 (player) is
+                // already live on the GPU via GPUState's init; this populates
+                // slots 1..MAX_AGENTS-1 from AGENT_POPULATIONS[activeMood_].
+                // Mirror the player's idle pose into cpuAgents_[0] first so
+                // the full-buffer upload is idempotent.
+                {
+                    cpuAgents_[0].pos_x       = Idle::PAWN_POS_X;
+                    cpuAgents_[0].pos_y       = Idle::PAWN_POS_Y;
+                    cpuAgents_[0].pos_z       = Idle::PAWN_POS_Z;
+                    cpuAgents_[0].heading     = Idle::PAWN_HEADING;
+                    cpuAgents_[0].orient_w    = 1.0f;
+                    cpuAgents_[0].is_active   = 1u;
+                    cpuAgents_[0].behavior_id = AGENT_BEHAVIOR_PLAYER_CONTROLLED;
+                    cpuAgents_[0].tier_idx    = AGENT_TIER_WORKER;
+                    cpuAgents_[0].portal_trigger = -1;
+
+                    wgpu::Queue q = device_.GetQueue();
+                    spawn_population_for_mood(activeMood_, activeSeed_,
+                                              Idle::PAWN_POS_X, Idle::PAWN_POS_Z, q);
+                }
+
                 // Eager-load authored paintings at boot (avoids mid-frame stall on first gallery)
                 {
                     wgpu::Queue q = device_.GetQueue();
@@ -7676,6 +7697,8 @@ namespace t7 {
                         player_.possessed_slot = 0;
                         gpuState_.set_world_seed(activeSeed_);
                         apply_mood(pendingDestination_.mood, queue);
+                        spawn_population_for_mood(pendingDestination_.mood, activeSeed_,
+                                                  Idle::PAWN_POS_X, Idle::PAWN_POS_Z, queue);
                         // Deactivate ribbons in finite mode (mood 5 spawns its own in apply_mood)
                         if (finiteMode_ && activeRibbonCount_ > 0 && activeMood_ != 5) {
                             for (uint32_t i = 0; i < MAX_RIBBON_INSTANCES; i++) {

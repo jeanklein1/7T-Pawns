@@ -216,3 +216,91 @@ static_assert(sizeof(AGENT_POPULATIONS) / sizeof(AGENT_POPULATIONS[0]) == MOOD_C
 // a home for the storage.
 
 GPUAgentState cpuAgents_[Dim::MAX_AGENTS] = {};
+
+
+// ═══ SPAWN ════════════════════════════════════════════════════════
+//
+// Deterministic mood-driven population. Preserves slot 0 (player),
+// clears 1..MAX_AGENTS-1, then fills the first `count` non-player
+// slots by rolling behavior + tier from AGENT_POPULATIONS[mood_id]
+// weights. Position is uniform on a disk of radius spawn_radius
+// around (center_x, center_z); home tether offset is uniform on a
+// disk of radius home_seeding_radius around each spawn point.
+//
+// Called once at boot (for the initial mood) and once per mood
+// transition, after reset_player_agent + apply_mood. Uploads the
+// full 32-slot array — slot 0's re-upload is idempotent as long as
+// cpuAgents_[0] mirrors the player's idle pose.
+void spawn_population_for_mood(uint32_t mood_id,
+                               uint32_t seed,
+                               float center_x, float center_z,
+                               wgpu::Queue& queue) {
+    if (mood_id >= MOOD_COUNT) return;
+    const auto& pop = AGENT_POPULATIONS[mood_id];
+
+    for (uint32_t s = 1; s < Dim::MAX_AGENTS; s++) {
+        cpuAgents_[s] = GPUAgentState{};
+    }
+
+    float beh_sum = 0.0f;
+    for (uint32_t b = 0; b < AGENT_BEHAVIOR_COUNT; b++) beh_sum += pop.behavior_weights[b];
+    float tier_sum = 0.0f;
+    for (uint32_t t = 0; t < AGENT_TIER_COUNT; t++) tier_sum += pop.tier_weights[t];
+
+    uint32_t spawned = 0;
+    const uint32_t n = std::min(pop.count, Dim::MAX_AGENTS - 1u);
+    if (n > 0 && beh_sum > 0.0f && tier_sum > 0.0f) {
+        for (uint32_t i = 0; i < n; i++) {
+            uint32_t slot = i + 1;
+            uint32_t agent_seed = cpu_hash(cpu_hash(seed, 0xA6E00000u + mood_id), i + 1u);
+
+            uint32_t behavior_id = AGENT_BEHAVIOR_RANDOM_WALK;
+            {
+                float roll = cpu_hash_f(agent_seed, 1u);
+                float cum = 0.0f;
+                for (uint32_t b = 0; b < AGENT_BEHAVIOR_COUNT; b++) {
+                    cum += pop.behavior_weights[b] / beh_sum;
+                    if (roll < cum) { behavior_id = b; break; }
+                }
+            }
+
+            uint32_t tier_idx = AGENT_TIER_WORKER;
+            {
+                float roll = cpu_hash_f(agent_seed, 2u);
+                float cum = 0.0f;
+                for (uint32_t t = 0; t < AGENT_TIER_COUNT; t++) {
+                    cum += pop.tier_weights[t] / tier_sum;
+                    if (roll < cum) { tier_idx = t; break; }
+                }
+            }
+
+            const float two_pi = 6.28318530718f;
+            float theta = cpu_hash_f(agent_seed, 3u) * two_pi;
+            float r     = std::sqrt(cpu_hash_f(agent_seed, 4u)) * pop.spawn_radius;
+            float sx = center_x + std::cos(theta) * r;
+            float sz = center_z + std::sin(theta) * r;
+
+            float h_theta = cpu_hash_f(agent_seed, 5u) * two_pi;
+            float h_r     = std::sqrt(cpu_hash_f(agent_seed, 6u)) * pop.home_seeding_radius;
+            float hx = sx + std::cos(h_theta) * h_r;
+            float hz = sz + std::sin(h_theta) * h_r;
+
+            auto& a = cpuAgents_[slot];
+            a.pos_x = sx;   a.pos_y = 0.0f;   a.pos_z = sz;
+            a.home_x = hx;  a.home_y = 0.0f;  a.home_z = hz;
+            a.heading = 0.0f;
+            a.vel_x = 0.0f; a.vel_y = 0.0f; a.vel_z = 0.0f;
+            a.orient_x = 0.0f; a.orient_y = 0.0f; a.orient_z = 0.0f; a.orient_w = 1.0f;
+            a.seed = agent_seed;
+            a.behavior_id = behavior_id;
+            a.tier_idx = tier_idx;
+            a.is_active = 1u;
+            a.portal_trigger = -1;
+            spawned++;
+        }
+    }
+
+    gpuState_.upload_agent_state_all(queue, cpuAgents_);
+    std::cout << "[Agents] Spawned " << spawned << " for mood " << mood_id
+              << " around (" << center_x << "," << center_z << ")\n";
+}

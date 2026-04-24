@@ -644,6 +644,56 @@ fn agent_orientation(a: AgentState) -> vec4<f32> {
     return vec4(a.orient_x, a.orient_y, a.orient_z, a.orient_w);
 }
 
+// ─── Agent behavior + tier registries ──────────────────────────────
+// Mirror the C++ tables in modules/agents.inl. Both must move in
+// lockstep — if you change one, change the other.
+
+struct AgentBehaviorParams {
+    step_rate:       f32,  // steps/sec
+    step_size:       f32,  // world units/step
+    persistence:     f32,  // [0,1] correlated-walk angle persistence
+    drag:            f32,  // 1/s velocity decay
+    home_pull:       f32,  // 1/s² spring toward home
+    neighbor_radius: f32,  // flock neighbor search
+    speed_cap:       f32,  // max speed
+}
+
+const AGENT_BEHAVIOR_COUNT_WGSL: u32 = 10u;
+
+const AGENT_BEHAVIORS_WGSL = array<AgentBehaviorParams, 10>(
+    /* 0: PLAYER_CONTROLLED */ AgentBehaviorParams(0.0, 0.0, 0.0, 0.0,  0.0,  0.0,  0.0),
+    /* 1: RANDOM_WALK       */ AgentBehaviorParams(0.8, 1.5, 0.0, 3.0,  0.0,  0.0,  3.0),
+    /* 2: CORRELATED_WALK   */ AgentBehaviorParams(0.8, 1.5, 0.6, 3.0,  0.0,  0.0,  3.0),
+    /* 3: WANDERER          */ AgentBehaviorParams(0.8, 1.5, 0.6, 3.0,  0.25, 0.0,  3.0),
+    /* 4: HOME_SEEKER       */ AgentBehaviorParams(1.2, 0.8, 0.3, 2.5,  1.5,  0.0,  3.0),
+    /* 5: PATROL            */ AgentBehaviorParams(1.0, 2.0, 0.9, 3.0,  0.0,  0.0,  3.0),
+    /* 6: PURSUIT           */ AgentBehaviorParams(0.0, 0.0, 0.0, 3.0,  0.0, 30.0,  4.0),
+    /* 7: FLEE              */ AgentBehaviorParams(0.0, 0.0, 0.0, 3.0,  0.0, 30.0,  4.0),
+    /* 8: FLOCK2D           */ AgentBehaviorParams(0.0, 0.0, 0.0, 2.0,  0.0, 12.0,  3.5),
+    /* 9: LEVY_FLIGHT       */ AgentBehaviorParams(0.5, 1.5, 0.0, 3.0,  0.0,  0.0,  5.0),
+);
+
+struct AgentTierParams {
+    step_gain:     f32,
+    persist_gain:  f32,
+    speed_gain:    f32,
+    coupling_gain: f32,
+    home_gain:     f32,
+    weight:        f32,
+    color_r:       f32,
+    color_g:       f32,
+    color_b:       f32,
+}
+
+const AGENT_TIER_COUNT_WGSL: u32 = 4u;
+
+const AGENT_TIER_GAINS_WGSL = array<AgentTierParams, 4>(
+    /* 0: WORKER   */ AgentTierParams(1.0, 1.0, 1.0, 1.0, 1.0, 4.0, 0.60, 0.62, 0.65),
+    /* 1: SCOUT    */ AgentTierParams(1.8, 0.4, 1.4, 1.0, 0.5, 2.0, 0.85, 0.65, 0.40),
+    /* 2: SENTINEL */ AgentTierParams(0.6, 1.2, 0.5, 1.0, 2.0, 1.0, 0.30, 0.40, 0.70),
+    /* 3: LEADER   */ AgentTierParams(1.2, 0.9, 1.1, 2.5, 0.8, 0.3, 0.95, 0.85, 0.55),
+);
+
 // --- [STATE:camera] CameraState
 
 struct CameraState {
@@ -5199,13 +5249,67 @@ fn behavior_player_controlled(agent_in: AgentState) -> AgentState {
     return agent;
 }
 
-// ─── Behavior: RandomWalk (Pass 1 stub) ──────────────────────────
-// Pass 2 fills in the per-step heading randomization and ground
-// resolve via POLICY_WALKER_AGENT. Pass 1 keeps the slot inert so
-// the unified kernel compiles and dispatches cleanly with no
-// behavioral side effects.
+// ─── Behavior: RandomWalk ────────────────────────────────────────
+// Per-step velocity impulse in a random direction, decayed by drag
+// and capped at speed_cap. Ground snaps via POLICY_WALKER_AGENT
+// (static base + pyramids + GoL zones + waves + pulses + external
+// pawn aura — no self-suppression). Heading follows velocity.
+//
+// Step timing uses floor(t·rate) comparison across dt so each step
+// index fires exactly once per `1/rate` seconds. Per-step direction
+// is hash(seed, step_idx), making motion fully deterministic given
+// the agent's spawn seed.
 fn behavior_random_walk(agent_in: AgentState) -> AgentState {
-    return agent_in;
+    var a = agent_in;
+    let dt = signal.dt;
+    let t  = signal.t_seconds;
+
+    let b = AGENT_BEHAVIORS_WGSL[1u];
+    let tier = min(a.tier_idx, AGENT_TIER_COUNT_WGSL - 1u);
+    let g = AGENT_TIER_GAINS_WGSL[tier];
+
+    // Step trigger — hash per step_idx for deterministic direction.
+    let step_idx      = u32(floor(t * b.step_rate));
+    let prev_step_idx = u32(floor(max(0.0, t - dt) * b.step_rate));
+    if (step_idx > prev_step_idx) {
+        let theta   = hash_property(a.seed, 7000u + step_idx) * 6.28318530718;
+        let impulse = b.step_size * g.step_gain * b.step_rate;
+        a.vel_x += cos(theta) * impulse;
+        a.vel_z += sin(theta) * impulse;
+    }
+
+    // Drag (exponential decay).
+    let decay = exp(-b.drag * dt);
+    a.vel_x *= decay;
+    a.vel_z *= decay;
+
+    // Speed cap.
+    let sp2 = a.vel_x * a.vel_x + a.vel_z * a.vel_z;
+    let cap = b.speed_cap * g.speed_gain;
+    if (sp2 > cap * cap) {
+        let inv = cap / sqrt(sp2);
+        a.vel_x *= inv;
+        a.vel_z *= inv;
+    }
+
+    // Integrate XZ, snap Y to POLICY_WALKER_AGENT ground.
+    a.pos_x += a.vel_x * dt;
+    a.pos_z += a.vel_z * dt;
+
+    let qi = QueryInputs(vec3(a.pos_x, a.pos_y, a.pos_z), t);
+    a.pos_y = query_ground_walker_agent(vec2(a.pos_x, a.pos_z), qi);
+
+    // Heading from velocity (when moving).
+    if (sp2 > 0.01) {
+        a.heading = atan2(a.vel_x, a.vel_z);
+        let hq = quat_from_axis_angle(vec3(0.0, 1.0, 0.0), a.heading);
+        a.orient_x = hq.x;
+        a.orient_y = hq.y;
+        a.orient_z = hq.z;
+        a.orient_w = hq.w;
+    }
+
+    return a;
 }
 
 // ─── Unified compute kernel ──────────────────────────────────────

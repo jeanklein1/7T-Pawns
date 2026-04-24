@@ -1927,6 +1927,13 @@ namespace t7 {
                 p.portal_trigger = -1;
                 queue.WriteBuffer(agentStateBuffer_, 0, buf, sizeof(buf));
             }
+            // Upload the full 32-slot agent array. Slot 0 (player) is rewritten
+            // to whatever the caller has in cpuAgents_[0] — caller is responsible
+            // for keeping that mirror consistent with the player's idle pose.
+            void upload_agent_state_all(wgpu::Queue& queue, const GPUAgentState* src) {
+                queue.WriteBuffer(agentStateBuffer_, 0, src,
+                                  Dim::MAX_AGENTS * sizeof(GPUAgentState));
+            }
             void set_fog(float density, float r, float g, float b) {
                 if (config_.fog_density != density ||
                     config_.fog_color[0] != r || config_.fog_color[1] != g || config_.fog_color[2] != b) {
