@@ -5098,74 +5098,68 @@ fn pawn_ground_resolve(
     return vec4(prev_xz.x, prev_y, prev_xz.y, 0.0);
 }
 
-@compute @workgroup_size(1)
-fn update_pawn() {
-    if (!dynamics_0d_active()) { return; }
-
+// ─── Behavior: PlayerControlled ──────────────────────────────────
+// The body the player is currently inhabiting. Reads input/couplings,
+// resolves ground, computes tilt orientation, detects portal triggers.
+// Only meaningful for the slot whose behavior_id is PLAYER_CONTROLLED
+// — by convention that is the same slot as config.possessed_slot.
+fn behavior_player_controlled(agent_in: AgentState) -> AgentState {
+    var agent = agent_in;
     let dt = signal.dt;
-
-    // Pass 1 Step 2 — the pawn now lives in agent_state[possessed_slot].
-    // The kernel body is the same as before; it just reads/writes the
-    // player's slot in the unified buffer. Step 3 fuses this into
-    // update_agents with a behavior switch.
-    let slot = config.possessed_slot;
-    var pawn = agent_state[slot];
-    let prev_xz = vec2(pawn.pos_x, pawn.pos_z);
-    let prev_y  = pawn.pos_y;
+    let prev_xz = vec2(agent.pos_x, agent.pos_z);
+    let prev_y  = agent.pos_y;
 
     if (coupling_active(COUPLING_INPUT_MOVES_PAWN)) {
         let input_dir = vec2(signal.move_x, signal.move_z);
         let world_vel = coupling_input_to_pawn_velocity(input_dir, camera_state.azimuth);
 
         let speed = select(PAWN_SPEED, config.pawn_speed, config.pawn_speed > 0.0);
-        pawn.pos_x += world_vel.x * speed * dt;
-        pawn.pos_z += world_vel.y * speed * dt;
+        agent.pos_x += world_vel.x * speed * dt;
+        agent.pos_z += world_vel.y * speed * dt;
 
         if (fpv_mode_active()) {
-            pawn.heading = camera_state.azimuth;
+            agent.heading = camera_state.azimuth;
         } else {
-            pawn.heading = coupling_velocity_to_pawn_heading(world_vel, pawn.heading, dt);
+            agent.heading = coupling_velocity_to_pawn_heading(world_vel, agent.heading, dt);
         }
 
-        pawn.vel_x = world_vel.x * speed;
-        pawn.vel_z = world_vel.y * speed;
+        agent.vel_x = world_vel.x * speed;
+        agent.vel_z = world_vel.y * speed;
     } else {
-        pawn.vel_x = 0.0;
-        pawn.vel_z = 0.0;
+        agent.vel_x = 0.0;
+        agent.vel_z = 0.0;
 
         if (fpv_mode_active()) {
-            pawn.heading = camera_state.azimuth;
+            agent.heading = camera_state.azimuth;
         }
     }
 
     // --- Finite world boundary clamp
     if (config.world_bound_max.x > 0.0) {
-        pawn.pos_x = clamp(pawn.pos_x, config.world_bound_min.x, config.world_bound_max.x);
-        pawn.pos_z = clamp(pawn.pos_z, config.world_bound_min.y, config.world_bound_max.y);
+        agent.pos_x = clamp(agent.pos_x, config.world_bound_min.x, config.world_bound_max.x);
+        agent.pos_z = clamp(agent.pos_z, config.world_bound_min.y, config.world_bound_max.y);
     }
 
     // --- Ground resolve: single query_ground_walker call.
     // POLICY_WALKER includes static base + pyramids + GoL zones + terrain
     // waves + radial pulses + pawn aura − consumer-local GoL suppression
-    // (centered on the pawn's start-of-frame position via qi.consumer_pos).
-    // qi reads the pre-move position (consumer_pos = current slot pos)
-    // so GoL self-suppression stays anchored to start-of-frame.
+    // (centered on the agent's start-of-frame position via qi.consumer_pos).
     let qi = QueryInputs(vec3(prev_xz.x, prev_y, prev_xz.y), signal.t_seconds);
 
     if (coupling_active(COUPLING_TERRAIN_TO_PAWN_Y)) {
-        let resolved = pawn_ground_resolve(vec2(pawn.pos_x, pawn.pos_z), prev_xz, prev_y, qi);
-        pawn.pos_x = resolved.x;
-        pawn.pos_y = resolved.y;
-        pawn.pos_z = resolved.z;
+        let resolved = pawn_ground_resolve(vec2(agent.pos_x, agent.pos_z), prev_xz, prev_y, qi);
+        agent.pos_x = resolved.x;
+        agent.pos_y = resolved.y;
+        agent.pos_z = resolved.z;
         if (resolved.w < 0.5) {
-            pawn.vel_x = 0.0;
-            pawn.vel_z = 0.0;
+            agent.vel_x = 0.0;
+            agent.vel_z = 0.0;
         }
     }
 
     // --- Orientation: heading + walker-policy terrain tilt
     if (coupling_active(COUPLING_TERRAIN_TO_PAWN_TILT)) {
-        let normal = terrain_normal_at(vec2(pawn.pos_x, pawn.pos_z), qi);
+        let normal = terrain_normal_at(vec2(agent.pos_x, agent.pos_z), qi);
 
         let world_up = vec3(0.0, 1.0, 0.0);
         let d = dot(world_up, normal);
@@ -5178,32 +5172,62 @@ fn update_pawn() {
             tilt_quat = vec4(0.0, 0.0, 0.0, 1.0);
         }
 
-        let heading_quat = quat_from_axis_angle(vec3(0.0, 1.0, 0.0), pawn.heading);
+        let heading_quat = quat_from_axis_angle(vec3(0.0, 1.0, 0.0), agent.heading);
         let orient = quat_multiply(tilt_quat, heading_quat);
-        pawn.orient_x = orient.x;
-        pawn.orient_y = orient.y;
-        pawn.orient_z = orient.z;
-        pawn.orient_w = orient.w;
+        agent.orient_x = orient.x;
+        agent.orient_y = orient.y;
+        agent.orient_z = orient.z;
+        agent.orient_w = orient.w;
     }
 
     // --- Portal ellipse detection (GPU-authoritative)
     // Ellipse spans the arch opening: lateral = half_span, forward = depth/2.
-    pawn.portal_trigger = -1;
+    agent.portal_trigger = -1;
     for (var pi = 0u; pi < portal_array.count; pi++) {
         let p = portal_array.portals[pi];
-        let dx = pawn.pos_x - p.x;
-        let dz = pawn.pos_z - p.z;
-        // Project offset into arch-local axes
-        let lat = dx * p.facing_cos + dz * p.facing_sin;   // lateral (foot-to-foot)
-        let fwd = -dx * p.facing_sin + dz * p.facing_cos;  // forward (walk-through)
+        let dx = agent.pos_x - p.x;
+        let dz = agent.pos_z - p.z;
+        let lat = dx * p.facing_cos + dz * p.facing_sin;
+        let fwd = -dx * p.facing_sin + dz * p.facing_cos;
         let e = lat * lat * p.inv_span_sq + fwd * fwd * p.inv_depth_sq;
         if (e < 1.0) {
-            pawn.portal_trigger = i32(p.arch_index);
+            agent.portal_trigger = i32(p.arch_index);
             break;
         }
     }
 
-    agent_state[slot] = pawn;
+    return agent;
+}
+
+// ─── Behavior: RandomWalk (Pass 1 stub) ──────────────────────────
+// Pass 2 fills in the per-step heading randomization and ground
+// resolve via POLICY_WALKER_AGENT. Pass 1 keeps the slot inert so
+// the unified kernel compiles and dispatches cleanly with no
+// behavioral side effects.
+fn behavior_random_walk(agent_in: AgentState) -> AgentState {
+    return agent_in;
+}
+
+// ─── Unified compute kernel ──────────────────────────────────────
+// One thread per slot. Skip inactive slots, dispatch on behavior_id.
+// MAX_AGENTS = 32 — must stay in sync with Dim::MAX_AGENTS.
+@compute @workgroup_size(32)
+fn update_agents(@builtin(global_invocation_id) gid: vec3<u32>) {
+    if (!dynamics_0d_active()) { return; }
+
+    let slot = gid.x;
+    if (slot >= 32u) { return; }
+
+    var agent = agent_state[slot];
+    if (agent.is_active == 0u) { return; }
+
+    switch agent.behavior_id {
+        case 0u: { agent = behavior_player_controlled(agent); }
+        case 1u: { agent = behavior_random_walk(agent); }
+        default: { /* Pass 2 — other behaviors fill in here */ }
+    }
+
+    agent_state[slot] = agent;
 }
 
 @compute @workgroup_size(1)

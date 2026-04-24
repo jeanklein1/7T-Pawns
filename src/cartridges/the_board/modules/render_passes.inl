@@ -152,7 +152,7 @@
                     gpuState_.compute_entity_group()
                 );
 
-                renderer_.dispatch_update_pawn(
+                renderer_.dispatch_update_agents(
                     compute,
                     gpuState_.compute_entity_group(),
                     gpuState_.compute_texture_group()   // aura + sampler for POLICY_WALKER
