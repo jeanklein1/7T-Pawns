@@ -1,0 +1,218 @@
+// ─── agents.inl ─────────────────────────────────────────────────
+//
+// Unified entity registry: the control panel for the agent system.
+// Every pawn-like body on the board — the one the player inhabits and
+// every mood-authored wanderer — is one slot in agentStateBuffer_,
+// driven by one of these behaviors, tinted by one of these tiers,
+// populated per mood from AGENT_POPULATIONS.
+//
+// The player's relationship to this array is `player_.possessed_slot`;
+// the compute kernel treats that slot as the PlayerControlled branch
+// and every other active slot as its authored behavior. See
+// agent_system_design.md for the full rationale.
+//
+// ┌─── Three registries ────────────────────────────────────────────┐
+// │                                                                  │
+// │  AGENT_BEHAVIORS    per-behavior motion parameters               │
+// │                     (step rate, step size, drag, speed cap, ...) │
+// │                                                                  │
+// │  AGENT_TIER_GAINS   per-tier multipliers + render color          │
+// │                     (Worker / Scout / Sentinel / Leader)         │
+// │                                                                  │
+// │  AGENT_POPULATIONS  per-mood population authoring                │
+// │                     (count, behavior/tier weights, spawn radius) │
+// │                                                                  │
+// └──────────────────────────────────────────────────────────────────┘
+//
+// Pass 1 fully implements PlayerControlled + RandomWalk; other
+// behaviors are stubbed for Pass 2. Tier gains are authored for all
+// four tiers (colors drive visual identity even when gains are 1×).
+// Populations are authored for open_default and open_sunset; other
+// moods default to count=0 (unpopulated).
+//
+// Included inside the Cartridge class body, after orbs.inl.
+// Depends on: state.hpp (Dim::MAX_AGENTS), musical.inl (MMODE_COUNT),
+//             MOOD_COUNT in enclosing class.
+// ─────────────────────────────────────────────────────────────────
+
+
+// ═══ BEHAVIOR IDS ════════════════════════════════════════════════
+//
+// Stable indices into AGENT_BEHAVIORS. The compute kernel's behavior
+// switch dispatches on these values. Pass 1 implements the first two;
+// the rest are reserved slots so the mood author and kernel switch
+// can be written against the full set without churn when Pass 2 fills
+// in the behavior bodies.
+
+enum AgentBehaviorId : uint32_t {
+    AGENT_BEHAVIOR_PLAYER_CONTROLLED = 0,
+    AGENT_BEHAVIOR_RANDOM_WALK       = 1,
+    AGENT_BEHAVIOR_CORRELATED_WALK   = 2,   // Pass 2 — rotated step direction
+    AGENT_BEHAVIOR_WANDERER          = 3,   // Pass 2 — correlated + home tether
+    AGENT_BEHAVIOR_HOME_SEEKER       = 4,   // Pass 2 — strong spring to home
+    AGENT_BEHAVIOR_PATROL            = 5,   // Pass 2 — deterministic waypoints
+    AGENT_BEHAVIOR_PURSUIT           = 6,   // Pass 2 — chase target
+    AGENT_BEHAVIOR_FLEE              = 7,   // Pass 2 — inverse pursuit
+    AGENT_BEHAVIOR_FLOCK2D           = 8,   // Pass 2 — Vicsek alignment
+    AGENT_BEHAVIOR_LEVY_FLIGHT       = 9,   // Pass 2 — heavy-tailed steps
+    AGENT_BEHAVIOR_COUNT             = 10,
+};
+
+
+// ═══ TIER IDS ════════════════════════════════════════════════════
+//
+// Visual + parametric archetype — a property of the body, not of the
+// driver. A Scout stays a Scout when the player leaves it; a
+// RandomWalk scout moves with Scout-tier speed/persistence.
+
+enum AgentTierId : uint32_t {
+    AGENT_TIER_WORKER   = 0,
+    AGENT_TIER_SCOUT    = 1,
+    AGENT_TIER_SENTINEL = 2,
+    AGENT_TIER_LEADER   = 3,
+    AGENT_TIER_COUNT    = 4,
+};
+
+
+// ═══ REGISTRY: BEHAVIORS ═════════════════════════════════════════
+//
+// Per-behavior motion parameters. Units:
+//   step_rate         steps per second (RandomWalk-style behaviors)
+//   step_size         world units per step
+//   persistence       [0,1] — correlation between consecutive step angles
+//   drag              1/s — velocity decay coefficient (exponential)
+//   home_pull         1/s² — spring coefficient toward home (HomeSeeker)
+//   neighbor_radius   world units — flock neighbor search radius
+//   speed_cap         world units/s — per-agent max speed
+//
+// PlayerControlled rows are all zero: the kernel switch case reads
+// input directly rather than these parameters.
+
+struct AgentBehaviorDef {
+    AgentBehaviorId id;
+    const char*     name;
+    float           step_rate;
+    float           step_size;
+    float           persistence;
+    float           drag;
+    float           home_pull;
+    float           neighbor_radius;
+    float           speed_cap;
+};
+
+static constexpr AgentBehaviorDef AGENT_BEHAVIORS[AGENT_BEHAVIOR_COUNT] = {
+    //  id                                  name               step_rate  step_size  persistence  drag  home_pull  neighbor_radius  speed_cap
+    { AGENT_BEHAVIOR_PLAYER_CONTROLLED, "player_controlled",   0.0f,      0.0f,      0.0f,        0.0f, 0.0f,      0.0f,            0.0f    },
+    { AGENT_BEHAVIOR_RANDOM_WALK,       "random_walk",         0.8f,      1.5f,      0.0f,        3.0f, 0.0f,      0.0f,            3.0f    },
+    { AGENT_BEHAVIOR_CORRELATED_WALK,   "correlated_walk",     0.8f,      1.5f,      0.6f,        3.0f, 0.0f,      0.0f,            3.0f    },
+    { AGENT_BEHAVIOR_WANDERER,          "wanderer",            0.8f,      1.5f,      0.6f,        3.0f, 0.25f,     0.0f,            3.0f    },
+    { AGENT_BEHAVIOR_HOME_SEEKER,       "home_seeker",         1.2f,      0.8f,      0.3f,        2.5f, 1.50f,     0.0f,            3.0f    },
+    { AGENT_BEHAVIOR_PATROL,            "patrol",              1.0f,      2.0f,      0.9f,        3.0f, 0.0f,      0.0f,            3.0f    },
+    { AGENT_BEHAVIOR_PURSUIT,           "pursuit",             0.0f,      0.0f,      0.0f,        3.0f, 0.0f,      30.0f,           4.0f    },
+    { AGENT_BEHAVIOR_FLEE,              "flee",                0.0f,      0.0f,      0.0f,        3.0f, 0.0f,      30.0f,           4.0f    },
+    { AGENT_BEHAVIOR_FLOCK2D,           "flock2d",             0.0f,      0.0f,      0.0f,        2.0f, 0.0f,      12.0f,           3.5f    },
+    { AGENT_BEHAVIOR_LEVY_FLIGHT,       "levy_flight",         0.5f,      1.5f,      0.0f,        3.0f, 0.0f,      0.0f,            5.0f    },
+};
+
+static_assert(sizeof(AGENT_BEHAVIORS) / sizeof(AGENT_BEHAVIORS[0]) == AGENT_BEHAVIOR_COUNT,
+              "AGENT_BEHAVIORS must declare one row per AgentBehaviorId");
+
+
+// ═══ REGISTRY: TIER GAINS ════════════════════════════════════════
+//
+// Per-tier multipliers on behavior parameters, plus render color.
+// Compound with behavior params: a Scout running RandomWalk takes
+// longer, less-persistent steps than a Worker running RandomWalk.
+//
+// Color authored as RGB [0,1]. The tier color is the body's identity
+// — a Scout is bronze regardless of who's driving it.
+
+struct AgentTierDef {
+    AgentTierId id;
+    const char* name;
+    float       step_gain;       // multiplies step_size
+    float       persist_gain;    // multiplies persistence
+    float       speed_gain;      // multiplies speed_cap
+    float       coupling_gain;   // future: per-tier music coupling scale
+    float       home_gain;       // multiplies home_pull
+    float       weight;          // default selection weight (tier_weights override)
+    float       color_r;
+    float       color_g;
+    float       color_b;
+};
+
+static constexpr AgentTierDef AGENT_TIER_GAINS[AGENT_TIER_COUNT] = {
+    //  id                     name        step  persist  speed  cpl   home  wt    color
+    { AGENT_TIER_WORKER,   "worker",   1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 4.0f,  0.60f, 0.62f, 0.65f },  // slate gray
+    { AGENT_TIER_SCOUT,    "scout",    1.8f, 0.4f, 1.4f, 1.0f, 0.5f, 2.0f,  0.85f, 0.65f, 0.40f },  // bronze
+    { AGENT_TIER_SENTINEL, "sentinel", 0.6f, 1.2f, 0.5f, 1.0f, 2.0f, 1.0f,  0.30f, 0.40f, 0.70f },  // deep blue
+    { AGENT_TIER_LEADER,   "leader",   1.2f, 0.9f, 1.1f, 2.5f, 0.8f, 0.3f,  0.95f, 0.85f, 0.55f },  // pale gold
+};
+
+static_assert(sizeof(AGENT_TIER_GAINS) / sizeof(AGENT_TIER_GAINS[0]) == AGENT_TIER_COUNT,
+              "AGENT_TIER_GAINS must declare one row per AgentTierId");
+
+
+// ═══ REGISTRY: POPULATIONS ═══════════════════════════════════════
+//
+// Per-mood population authoring. Indexed by mood id; one row per
+// mood. `count = 0` means the mood spawns no agents (the player is
+// alone — a valid configuration).
+//
+// behavior_weights[] and tier_weights[] are probabilities (any
+// non-negative values; they're normalized at spawn time).
+// spawn_radius is the XZ distance from the player at which new
+// agents appear; home_seeding_radius is how far each agent's home
+// tether offset ranges from its spawn point.
+
+struct AgentPopulationDef {
+    uint32_t mood_id;
+    uint32_t count;                                          // 0..Dim::MAX_AGENTS-1
+    float    behavior_weights[AGENT_BEHAVIOR_COUNT];
+    float    tier_weights[AGENT_TIER_COUNT];
+    float    spawn_radius;                                   // world units from player
+    float    home_seeding_radius;                            // world units from spawn point
+};
+
+// Mood ordering matches MOOD_TABLE in cartridge.hpp:
+//   0 open_default   1 open_sunset   2 indoor_flat   3 indoor_vault
+//   4 finite_outdoor 5 finite_outdoor_ref
+//
+// Pass 1 authors two outdoor moods with RandomWalk populations.
+// Other moods carry count=0 rows so the table stays mood-indexed.
+static constexpr AgentPopulationDef AGENT_POPULATIONS[MOOD_COUNT] = {
+    /* 0 open_default */
+    { /*mood=*/ 0, /*count=*/ 6,
+      /*behavior_weights=*/ { 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+      /*tier_weights=*/     { 2.0f, 2.0f, 1.0f, 0.0f },
+      /*spawn_radius=*/ 50.0f,
+      /*home_seeding_radius=*/ 5.0f },
+    /* 1 open_sunset */
+    { /*mood=*/ 1, /*count=*/ 4,
+      /*behavior_weights=*/ { 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+      /*tier_weights=*/     { 1.0f, 3.0f, 0.0f, 0.0f },
+      /*spawn_radius=*/ 60.0f,
+      /*home_seeding_radius=*/ 8.0f },
+    /* 2 indoor_flat */
+    { 2, 0, { 0 }, { 0 }, 0.0f, 0.0f },
+    /* 3 indoor_vault */
+    { 3, 0, { 0 }, { 0 }, 0.0f, 0.0f },
+    /* 4 finite_outdoor */
+    { 4, 0, { 0 }, { 0 }, 0.0f, 0.0f },
+    /* 5 finite_outdoor_ref */
+    { 5, 0, { 0 }, { 0 }, 0.0f, 0.0f },
+};
+
+static_assert(sizeof(AGENT_POPULATIONS) / sizeof(AGENT_POPULATIONS[0]) == MOOD_COUNT,
+              "AGENT_POPULATIONS must declare one row per mood");
+
+
+// ═══ CPU MIRROR ══════════════════════════════════════════════════
+//
+// The CPU shadow of agent state. Readback from the GPU keeps this in
+// sync for Caps Lock targeting (nearest-within-radius query) and
+// other host-side consumers (patch streaming reads the possessed
+// agent's XZ). Wired up in Step 2; declared here so later steps have
+// a home for the storage.
+
+GPUAgentState cpuAgents_[Dim::MAX_AGENTS] = {};

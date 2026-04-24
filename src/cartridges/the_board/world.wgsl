@@ -607,6 +607,54 @@ struct PawnState {
     _pad1: f32,
 }
 
+// --- [STATE:agent] AgentState
+//
+// Unified entity state — mirrors GPUAgentState in state.hpp (80 bytes).
+// Slot 0 is the player's body (possessed at session start); slots 1..31
+// are mood-authored agents driven by AGENT_BEHAVIORS. Scalar fields
+// throughout so WGSL uniform/storage layout matches C++ without vec3
+// alignment surprises. Orientation stored (not derived) to preserve
+// terrain-tilt transparency for the possessed slot.
+//
+// See agent_system_design.md and modules/agents.inl for rationale.
+struct AgentState {
+    pos_x: f32,
+    pos_y: f32,
+    pos_z: f32,
+    t: f32,
+    vel_x: f32,
+    vel_y: f32,
+    vel_z: f32,
+    heading: f32,
+    home_x: f32,
+    home_y: f32,
+    home_z: f32,
+    seed: u32,
+    behavior_id: u32,
+    tier_idx: u32,
+    is_active: u32,
+    _pad: u32,
+    orient_x: f32,
+    orient_y: f32,
+    orient_z: f32,
+    orient_w: f32,
+}
+
+// Scalar → vec helpers. Kept close to the struct so callers don't
+// invent their own conversions. Not used until Step 2 wires the buffer.
+fn agent_pos(a: AgentState) -> vec3<f32> {
+    return vec3(a.pos_x, a.pos_y, a.pos_z);
+}
+fn agent_vel(a: AgentState) -> vec3<f32> {
+    return vec3(a.vel_x, a.vel_y, a.vel_z);
+}
+fn agent_home(a: AgentState) -> vec3<f32> {
+    return vec3(a.home_x, a.home_y, a.home_z);
+}
+fn agent_orientation(a: AgentState) -> vec4<f32> {
+    return vec4(a.orient_x, a.orient_y, a.orient_z, a.orient_w);
+}
+
 // --- [STATE:camera] CameraState
 
 struct CameraState {
@@ -1247,9 +1295,12 @@ struct DesignConfig {
     _pad_mode_3: f32,
     // ─── Radial pulse ring buffer ────────────────────────────────
     pulse_count: u32,
+    // Agent system: slot index of the player's current body in
+    // agent_state[]. Piggybacks on the radial-pulse pad triple (no
+    // struct size delta). Order matches GPUDesignConfig in state.hpp.
+    possessed_slot: u32,
     _pulse_pad_0: f32,
     _pulse_pad_1: f32,
-    _pulse_pad_2: f32,
     pulse_data: array<vec4<f32>, 8>,  // each: (origin_x, origin_z, onset_seconds, amplitude)
 }
 

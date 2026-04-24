@@ -74,6 +74,25 @@ namespace t7 {
             // ── Musical Coupling State (modules/musical.inl) ──
 #include "modules/musical.inl"
 
+            // ── Player State (unified entity layer) ──
+            //
+            // The player's relationship to the world, not a physical body.
+            // The body lives in agentStateBuffer_[possessed_slot]; this
+            // struct is what travels with the player on possession
+            // transfer (Caps Lock). Pass 1 Step 1: only possessed_slot
+            // is authoritative here; aura/mmodes still live in their
+            // respective modules. Future passes consolidate.
+            //
+            // See agent_system_design.md §2.1 for the full design.
+            struct PlayerState {
+                uint32_t possessed_slot = 0;   // slot in agent_state[] that the player inhabits
+                // Future (deferred):
+                //   uint32_t active_couplings;         // COUPLING_* bitmask owned by player
+                //   float    aura_presence;            // migrated from auraPresence_
+                //   float    mmode_intensities[MMODE_COUNT];  // migrated from mmodeIntensity_
+            };
+            PlayerState player_{};
+
             GPUSpotLightArray cpuSpotLights_{};  // count=0 disables (outdoor)
             bool spotLightActive_ = false;
 
@@ -1509,6 +1528,12 @@ namespace t7 {
                 /* 4 finite_outdoor      */ {  true,  128, 0.08f, 0.06f, 0.85f, 0.4f, 20.0f,  0u,  0.012f, {0.15f, 0.97f, 0.10f},  0.0f, 0u,  true,  true,  true,  0.12f, false, 0u,           50.0f, 120.0f, 200.0f, 30.0f, 8.0f,  15.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
                 /* 5 finite_outdoor_ref  */ {  true,  128, 0.08f, 0.06f, 0.85f, 0.4f, 20.0f,  0u,  0.012f, {0.15f, 0.97f, 0.10f},  0.0f, 0u,  true,  true,  true,  0.12f, false, 0u,           50.0f, 120.0f, 200.0f, 30.0f, 8.0f,  15.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
             };
+
+            // ── Agents (modules/agents.inl) ──
+            // Unified entity registry: behaviors, tier gains, populations.
+            // Pass 1 scaffold — registries declared; kernel/render wiring
+            // lands in later steps.
+#include "modules/agents.inl"
 
 // ── Spawn Engine & Entity Lifecycle (modules/spawn_engine.inl) ──
 // ═══ INLINED: modules/spawn_engine.inl ═══════════════════════════════

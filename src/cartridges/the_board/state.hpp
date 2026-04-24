@@ -217,6 +217,11 @@ namespace t7 {
 
             // Orb sky layer — luminous points on a dome above the world
             constexpr uint32_t MAX_ORBS = 256;
+
+            // Agent system — unified entity layer. Slot 0 is the player's
+            // body; slots 1..MAX_AGENTS-1 are mood-authored agents. See
+            // modules/agents.inl and agent_system_design.md.
+            constexpr uint32_t MAX_AGENTS = 32;
         }
 
 
@@ -410,7 +415,11 @@ namespace t7 {
             //   field 0 = origin_x, 1 = origin_z, 2 = onset_beats, 3 = amplitude
             // Evaluated in terrain VS + update_pawn as expanding ring wavefronts.
             uint32_t pulse_count;             // active entries (0–8)
-            float _pulse_pad[3];
+            // ─── Agent system ────────────────────────────────────────────
+            // Slot index of the player's current body in agent_state[].
+            // Piggybacks on the existing _pulse_pad triple (kept size 384).
+            uint32_t possessed_slot;          // slot 0 at session start
+            float _pulse_pad[2];
             float pulse_data[32];             // 8 × {origin_x, origin_z, onset_beats, amplitude}
         };
 
@@ -460,6 +469,39 @@ namespace t7 {
             int32_t portal_trigger;    // -1 = none, >=0 = arch index that triggered
             float _pad1;
         };
+
+        // Unified entity state — the player's body and all mood-authored
+        // agents share this layout. Slot 0 is the player (possessed on
+        // session start); slots 1..MAX_AGENTS-1 are mood-spawned.
+        //
+        // Scalar fields throughout (no vec3) so WGSL uniform/storage
+        // layout matches C++ without vec3 alignment surprises.
+        //
+        // Orientation is stored (not derived) because the pawn currently
+        // renders with a terrain-tilt quaternion written by update_pawn;
+        // keeping it in the slot preserves that transparency for Pass 1.
+        struct alignas(16) GPUAgentState {
+            float pos_x;           //  0
+            float pos_y;           //  4
+            float pos_z;           //  8
+            float t;               // 12 — personal clock
+            float vel_x;           // 16
+            float vel_y;           // 20
+            float vel_z;           // 24
+            float heading;         // 28
+            float home_x;          // 32
+            float home_y;          // 36
+            float home_z;          // 40
+            uint32_t seed;         // 44 — stable noise source
+            uint32_t behavior_id;  // 48 — AgentBehaviorId (see modules/agents.inl)
+            uint32_t tier_idx;     // 52 — AgentTierId     (see modules/agents.inl)
+            uint32_t is_active;    // 56 — 0 = inactive (collapsed in VS + skipped in update)
+            uint32_t _pad;         // 60
+            float orient_x;        // 64 — heading ⊗ tilt quaternion
+            float orient_y;        // 68
+            float orient_z;        // 72
+            float orient_w;        // 76
+        };                         // 80 total
 
         struct alignas(16) GPUCameraState {
             float pos[3];
@@ -1190,6 +1232,8 @@ namespace t7 {
         static_assert(sizeof(GPUTrajectory) == 16, "GPUTrajectory must be 16 bytes");
         static_assert(sizeof(GPUTerrainState) == 32, "GPUTerrainState must be 32 bytes");
         static_assert(sizeof(GPUPawnState) == 48, "GPUPawnState must be 48 bytes");
+        static_assert(sizeof(GPUAgentState) == 80, "GPUAgentState must be 80 bytes");
+        static_assert(sizeof(GPUAgentState) % 16 == 0, "GPUAgentState must be 16-byte aligned");
         static_assert(sizeof(GPUCameraState) == 32, "GPUCameraState must be 32 bytes");
         static_assert(sizeof(GPUFloatingEntityState) == 144, "GPUFloatingEntityState must be 144 bytes");
         static_assert(sizeof(GPURibbonState) == 96, "GPURibbonState must be 96 bytes");
@@ -1277,6 +1321,10 @@ namespace t7 {
             wgpu::TextureFormat colorFormat_ = wgpu::TextureFormat::BGRA8Unorm;  // set in initOffscreenResources
 
             wgpu::Buffer signalBuffer_, configBuffer_, terrainBuffer_, pawnBuffer_;
+            // Agent system — unified entity buffer. Added alongside pawnBuffer_
+            // in Pass 1 Step 1; wired up in Step 2 (pawn migrates to slot 0).
+            wgpu::Buffer agentStateBuffer_;
+            wgpu::Buffer agentStateReadbackStaging_;
             wgpu::Buffer cameraBuffer_, floatingEntityBuffer_, trajectoriesBuffer_;
             wgpu::Buffer ribbonBuffer_;
             wgpu::Buffer ringTransformsBuffer_;
@@ -2197,6 +2245,15 @@ namespace t7 {
             wgpu::Buffer pawn_buffer() const { return pawnBuffer_; }
             wgpu::Buffer pawn_readback_staging() const { return pawnReadbackStaging_; }
             static constexpr size_t pawn_state_size() { return sizeof(GPUPawnState); }
+            wgpu::Buffer agent_state_buffer() const { return agentStateBuffer_; }
+            wgpu::Buffer agent_state_readback_staging() const { return agentStateReadbackStaging_; }
+            static constexpr size_t agent_state_buffer_size() { return Dim::MAX_AGENTS * sizeof(GPUAgentState); }
+            void set_possessed_slot(uint32_t slot) {
+                if (config_.possessed_slot != slot) {
+                    config_.possessed_slot = slot;
+                    configDirty_ = true;
+                }
+            }
             wgpu::Buffer ribbon_readback_staging() const { return ribbonReadbackStaging_; }
             wgpu::Buffer ring_transforms_buffer() const { return ringTransformsBuffer_; }
             static constexpr size_t ribbon_ring_readback_size() { return sizeof(GPURibbonRingTransform) * Dim::RIBBON_MAX_RINGS; }
@@ -2472,6 +2529,9 @@ namespace t7 {
                 terrainBuffer_ = makeBuffer("Terrain State", sizeof(GPUTerrainState), SU);
                 pawnBuffer_ = makeBuffer("Pawn State", sizeof(GPUPawnState),
                     wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::CopySrc);
+                agentStateBuffer_ = makeBuffer("Agent State",
+                    Dim::MAX_AGENTS * sizeof(GPUAgentState),
+                    wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::CopySrc);
                 cameraBuffer_ = makeBuffer("Camera State", sizeof(GPUCameraState), SU);
                 floatingEntityBuffer_ = makeBuffer("Floating Entity Array",
                     Dim::TOTAL_FLOATING_SLOTS * sizeof(GPUFloatingEntityState),
@@ -2497,6 +2557,13 @@ namespace t7 {
                     sd.size = sizeof(GPUPawnState);  // full pawn state: position + portal trigger
                     sd.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::MapRead;
                     pawnReadbackStaging_ = device_.CreateBuffer(&sd);
+                }
+                {
+                    wgpu::BufferDescriptor sd{};
+                    sd.label = "Agent State Readback Staging";
+                    sd.size = Dim::MAX_AGENTS * sizeof(GPUAgentState);
+                    sd.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::MapRead;
+                    agentStateReadbackStaging_ = device_.CreateBuffer(&sd);
                 }
                 {
                     wgpu::BufferDescriptor sd{};
@@ -2550,6 +2617,7 @@ namespace t7 {
                     wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst);
 
                 return signalBuffer_ && configBuffer_ && terrainBuffer_ && pawnBuffer_ &&
+                    agentStateBuffer_ && agentStateReadbackStaging_ &&
                     cameraBuffer_ && floatingEntityBuffer_ && trajectoriesBuffer_ && ringTransformsBuffer_ &&
                     vpBuffer_ && spotLightArrayBuffer_ && spotVPStagingBuffer_ && directionalLightBuffer_ && pointLightsBuffer_ && patchParamsBuffer_ &&
                     patchStagingBuffer_ && tileGridBuffer_ && pierBuffer_ && patchInstancesBuffer_ &&
@@ -5206,6 +5274,7 @@ namespace t7 {
                 config_.mode_gol_height_scale = 1.0f;
                 config_.pulse_count = 0;
                 for (int i = 0; i < 32; i++) config_.pulse_data[i] = 0.0f;
+                config_.possessed_slot = 0;  // player starts in slot 0
                 config_.world_bound_min[0] = 0.0f;
                 config_.world_bound_min[1] = 0.0f;
                 config_.world_bound_max[0] = 0.0f;
