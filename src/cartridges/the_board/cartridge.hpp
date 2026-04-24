@@ -330,9 +330,11 @@ namespace t7 {
             uint32_t backPortalReturnMood_ = 0;
             uint32_t backPortalReturnRadius_ = 2;
 
-            // GPU pawn readback state machine: IDLE → COPIED → MAPPING → IDLE
-            // Reads full GPUPawnState: position (for patch streaming, photographer,
-            // ribbon spawning) and portal_trigger (for world transitions).
+            // GPU agent-state readback machine: IDLE → COPIED → MAPPING → IDLE
+            // Reads the full agent_state buffer (MAX_AGENTS × GPUAgentState).
+            // Consumers: patch streaming / ribbon / photographer (possessed
+            // slot's XZ), portal triggers (possessed slot's portal_trigger),
+            // Caps Lock nearest-agent query (all slots, Step 7).
             enum class PawnReadbackState { IDLE, COPIED, MAPPING };
             PawnReadbackState pawnReadbackState_ = PawnReadbackState::IDLE;
             int32_t readbackPortalTrigger_ = -1;
@@ -7658,7 +7660,20 @@ namespace t7 {
                         readbackPortalTrigger_ = -1;
                         pawnReadback_x_ = 0.0f;
                         pawnReadback_z_ = 0.0f;
-                        gpuState_.reset_pawn(queue);
+                        gpuState_.reset_player_agent(queue);
+                        gpuState_.set_possessed_slot(0);
+                        // Keep cpuAgents_ in sync with the GPU reset so
+                        // patch streaming + ribbon + Caps Lock see current state.
+                        std::memset(cpuAgents_, 0, sizeof(cpuAgents_));
+                        cpuAgents_[0].pos_x       = 0.0f;  // Idle::PAWN_POS_X
+                        cpuAgents_[0].pos_y       = 0.0f;
+                        cpuAgents_[0].pos_z       = 0.0f;
+                        cpuAgents_[0].orient_w    = 1.0f;
+                        cpuAgents_[0].is_active   = 1u;
+                        cpuAgents_[0].behavior_id = AGENT_BEHAVIOR_PLAYER_CONTROLLED;
+                        cpuAgents_[0].tier_idx    = AGENT_TIER_WORKER;
+                        cpuAgents_[0].portal_trigger = -1;
+                        player_.possessed_slot = 0;
                         gpuState_.set_world_seed(activeSeed_);
                         apply_mood(pendingDestination_.mood, queue);
                         // Deactivate ribbons in finite mode (mood 5 spawns its own in apply_mood)
@@ -7920,30 +7935,36 @@ namespace t7 {
 
                 wgpu::Queue queue = device_.GetQueue();
 
-                // --- GPU pawn readback (one-frame latency) ---
-                // Copies full GPUPawnState to staging each frame (after compute).
-                // Reads back position (for patch streaming, photographer, ribbon)
-                // and portal_trigger (for world transitions).
-                // State machine: IDLE → copy pawn buffer to staging → COPIED
+                // --- GPU agent buffer readback (one-frame latency) ---
+                // Copies the full agent_state array (MAX_AGENTS × 80 bytes)
+                // to staging each frame after compute. CPU mirror is used
+                // for patch streaming / ribbon / photographer (possessed
+                // slot's XZ) and for Caps Lock nearest-agent targeting in
+                // Step 7. Portal triggers surface from the possessed slot's
+                // portal_trigger field.
+                //
+                // State machine: IDLE → copy agent buffer to staging → COPIED
                 //                COPIED → call MapAsync → MAPPING
                 //                MAPPING → callback fires, reads data → IDLE
                 if (pawnReadbackState_ == PawnReadbackState::COPIED) {
                     pawnReadbackState_ = PawnReadbackState::MAPPING;
-                    gpuState_.pawn_readback_staging().MapAsync(
-                        wgpu::MapMode::Read, 0, GPUState::pawn_state_size(),
+                    gpuState_.agent_state_readback_staging().MapAsync(
+                        wgpu::MapMode::Read, 0, GPUState::agent_state_buffer_size(),
                         wgpu::CallbackMode::AllowSpontaneous,
                         [this](wgpu::MapAsyncStatus status, wgpu::StringView) {
                             if (status == wgpu::MapAsyncStatus::Success) {
-                                auto* data = static_cast<const float*>(
-                                    gpuState_.pawn_readback_staging().GetConstMappedRange(
-                                        0, GPUState::pawn_state_size()));
+                                const auto* data = static_cast<const GPUAgentState*>(
+                                    gpuState_.agent_state_readback_staging().GetConstMappedRange(
+                                        0, GPUState::agent_state_buffer_size()));
                                 if (data) {
-                                    pawnReadback_x_ = data[0];   // pos[0]
-                                    pawnReadback_z_ = data[2];   // pos[2]
-                                    // portal_trigger is int32_t at offset 40 = float index 10
-                                    readbackPortalTrigger_ = reinterpret_cast<const int32_t*>(data)[10];
+                                    std::memcpy(cpuAgents_, data,
+                                        GPUState::agent_state_buffer_size());
+                                    const auto& p = cpuAgents_[player_.possessed_slot];
+                                    pawnReadback_x_ = p.pos_x;
+                                    pawnReadback_z_ = p.pos_z;
+                                    readbackPortalTrigger_ = p.portal_trigger;
                                 }
-                                gpuState_.pawn_readback_staging().Unmap();
+                                gpuState_.agent_state_readback_staging().Unmap();
                             }
                             pawnReadbackState_ = PawnReadbackState::IDLE;
                         });
@@ -8039,12 +8060,12 @@ namespace t7 {
                 upload_lights(queue);
                 dispatch_compute(encoder);
 
-                // Copy full pawn state from GPU to staging (for readback next frame)
+                // Copy full agent buffer from GPU to staging (for readback next frame)
                 if (pawnReadbackState_ == PawnReadbackState::IDLE) {
                     encoder.CopyBufferToBuffer(
-                        gpuState_.pawn_buffer(), 0,
-                        gpuState_.pawn_readback_staging(), 0,
-                        GPUState::pawn_state_size());
+                        gpuState_.agent_state_buffer(), 0,
+                        gpuState_.agent_state_readback_staging(), 0,
+                        GPUState::agent_state_buffer_size());
                     pawnReadbackState_ = PawnReadbackState::COPIED;
                 }
 

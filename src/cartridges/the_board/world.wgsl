@@ -596,17 +596,6 @@ struct TerrainState {
     _pad: f32,
 }
 
-// --- [STATE:pawn] PawnState
-
-struct PawnState {
-    pos: vec3<f32>,
-    heading: f32,
-    orientation: vec4<f32>,
-    velocity: vec2<f32>,      // Current XZ velocity (for force field radius)
-    portal_trigger: i32,      // -1 = none, >=0 = arch index triggering transition
-    _pad1: f32,
-}
-
 // --- [STATE:agent] AgentState
 //
 // Unified entity state — mirrors GPUAgentState in state.hpp (80 bytes).
@@ -633,7 +622,7 @@ struct AgentState {
     behavior_id: u32,
     tier_idx: u32,
     is_active: u32,
-    _pad: u32,
+    portal_trigger: i32,   // only meaningful on possessed slot; -1 = none
     orient_x: f32,
     orient_y: f32,
     orient_z: f32,
@@ -2403,18 +2392,18 @@ fn contrib_radial_pulses_at(world_xz: vec2<f32>, t_seconds: f32) -> f32 {
 // Has two consumer-facing forms; policies pick per consumer.
 //
 // ─ external form ──────────────────────────────────────────────
-// Grid sample at an arbitrary world xz, using pawn_state.pos as the
-// field's anchor for the bounding-box check. Used by consumers
-// querying away from the pawn: POLICY_FLYER (spheres, cubes, camera),
-// POLICY_WALKER_AGENT (non-pawn walkers), and inline render-side
-// samples in patch_terrain_vs / zone_extrusion_vs.
+// Grid sample at an arbitrary world xz, using the possessed agent's
+// position as the field's anchor for the bounding-box check. Used by
+// consumers querying away from the pawn: POLICY_FLYER (spheres, cubes,
+// camera), POLICY_WALKER_AGENT (non-pawn walkers), and inline render-
+// side samples in patch_terrain_vs / zone_extrusion_vs.
 // Contributes: height extrusion at xz based on the directional-biased
 //   aura cell that xz falls into.
 // Dependencies (via DAG): none — orthogonal to the static stack.
 // Notes: wraps sample_pawn_aura (defined later — WGSL resolves
 //   function references module-wide).
 fn contrib_pawn_aura_at_external(world_xz: vec2<f32>) -> f32 {
-    return sample_pawn_aura(world_xz, pawn_state.pos.xz).r * config.pawn_aura_height;
+    return sample_pawn_aura(world_xz, compute_pawn_pos().xz).r * config.pawn_aura_height;
 }
 
 // ─ self form ─────────────────────────────────────────────────
@@ -3425,7 +3414,7 @@ fn patch_terrain_vs(
 
     // Pawn aura: raise terrain under the pawn's influence footprint
     // Uses config.pawn_aura_height so terrain and pawn always agree (includes expansion + presence ramp)
-    let aura = sample_pawn_aura(world_pos.xz, render_pawn.pos.xz);
+    let aura = sample_pawn_aura(world_pos.xz, render_pawn_pos().xz);
     world_pos.y += aura.r * config.pawn_aura_height;
 
     // Polyphony-driven wave overlay — fused height + analytical gradient (1 loop, not 5)
@@ -3512,7 +3501,7 @@ fn patch_terrain_fs(in: PatchTerrainVarying) -> @location(0) vec4<f32> {
                             );
 
                             // Pawn force field: tint zone cells near pawn (render context)
-                            let pawn_ff = 1.0 - zone_pawn_ff(in.world_pos.xz, render_pawn.pos, render_pawn.velocity);
+                            let pawn_ff = 1.0 - zone_pawn_ff(in.world_pos.xz, render_pawn_pos(), render_pawn_vel_xz());
                             if (pawn_ff > 0.01) {
                                 base_color = mix(base_color, ZONE_PAWN_TINT, pawn_ff * ZONE_PAWN_TINT_STRENGTH * color_val);
                             }
@@ -3534,7 +3523,7 @@ fn patch_terrain_fs(in: PatchTerrainVarying) -> @location(0) vec4<f32> {
     // Texture encoding: R=height_blend, GBA=pre-multiplied color delta (with oscillation)
     // Runtime guard: sample returns near-zero when the aura system is idle.
     {
-        let aura = sample_pawn_aura(in.world_pos.xz, render_pawn.pos.xz);
+        let aura = sample_pawn_aura(in.world_pos.xz, render_pawn_pos().xz);
         let aura_active = max(aura.r, max(abs(aura.g), max(abs(aura.b), abs(aura.a))));
         if (aura_active > 0.01) {
             // Color oscillation: GBA already modulated by compute
@@ -3746,12 +3735,14 @@ fn pawn_vs(@builtin(vertex_index) vid: u32) -> EntityVarying {
     }
 
     // Transform by pawn orientation and position
-    let rotated_pos = quat_rotate(render_pawn.orientation, local_pos);
-    let rotated_normal = quat_rotate(render_pawn.orientation, local_normal);
+    let pawn_q = render_pawn_orientation();
+    let pawn_p = render_pawn_pos();
+    let rotated_pos = quat_rotate(pawn_q, local_pos);
+    let rotated_normal = quat_rotate(pawn_q, local_normal);
 
     var out: EntityVarying;
-    out.clip_pos = render_vp.m * vec4(rotated_pos + render_pawn.pos, 1.0);
-    out.world_pos = rotated_pos + render_pawn.pos;
+    out.clip_pos = render_vp.m * vec4(rotated_pos + pawn_p, 1.0);
+    out.world_pos = rotated_pos + pawn_p;
     out.normal = rotated_normal;
     out.entity_color = COLOR_PAWN;
     return out;
@@ -3874,7 +3865,7 @@ fn shadow_pawn_vs(@builtin(vertex_index) vid: u32) -> ShadowVarying {
         }
     }
 
-    let world_pos = quat_rotate(render_pawn.orientation, local_pos) + render_pawn.pos;
+    let world_pos = quat_rotate(render_pawn_orientation(), local_pos) + render_pawn_pos();
 
     // Lift pawn above terrain in shadow map. With perspective projection
     // from a ceiling light, 0.01 is invisible in the depth buffer at 19+
@@ -4383,7 +4374,12 @@ fn fade_overlay_fs(in: FadeVarying) -> @location(0) vec4<f32> {
 @group(0) @binding(1)   var<uniform>             config: DesignConfig;
 @group(0) @binding(2)   var<storage, read_write> vp_data: VPMatrix;
 @group(0) @binding(20)  var<storage, read_write> terrain_state: TerrainState;
-@group(0) @binding(60)  var<storage, read_write> pawn_state: PawnState;
+
+// Agent system — unified entity buffer. Slot 0 is the player's body;
+// slots 1..31 are mood-authored agents. The player's relationship
+// to this array is config.possessed_slot. Array size matches
+// Dim::MAX_AGENTS (32) in state.hpp — keep in sync.
+@group(0) @binding(60)  var<storage, read_write> agent_state: array<AgentState, 32>;
 
 // Portal proximity array (uploaded by CPU, checked by update_pawn)
 struct PortalEntry {
@@ -4410,13 +4406,44 @@ struct PortalArray {
 @group(0) @binding(101) var<storage, read_write> trajectories: array<Trajectory, 16>;
 @group(0) @binding(120) var<uniform>             ribbon_state: RibbonState;
 
+// Possessed-agent helpers (compute stage). Every kernel that used to
+// read pawn_state.pos now goes through these. Extracting here keeps
+// the indexing + scalar→vec conversion at one site and the call sites
+// read as "the pawn's pos" without repeating the slot lookup.
+fn compute_pawn_pos() -> vec3<f32> {
+    let a = agent_state[config.possessed_slot];
+    return vec3(a.pos_x, a.pos_y, a.pos_z);
+}
+fn compute_pawn_vel_xz() -> vec2<f32> {
+    let a = agent_state[config.possessed_slot];
+    return vec2(a.vel_x, a.vel_z);
+}
+fn compute_pawn_heading() -> f32 {
+    return agent_state[config.possessed_slot].heading;
+}
+
 // --- [BINDINGS:compute] Group 0 — Render entity mirrors (read-only, +200 offset)
 @group(0) @binding(200) var<storage, read> render_signal: FrameSignal;
 @group(0) @binding(201) var<storage, read> render_vp: VPMatrix;
 @group(0) @binding(220) var<storage, read> render_terrain: TerrainState;
-@group(0) @binding(260) var<storage, read> render_pawn: PawnState;
+@group(0) @binding(260) var<storage, read> render_agents: array<AgentState, 32>;
 @group(0) @binding(280) var<storage, read> render_camera: CameraState;
 @group(0) @binding(300) var<uniform> render_floating: FloatingEntityArray;
+
+// Possessed-agent helpers (render stage). VS/FS consumers that used
+// to read render_pawn.pos etc. go through these.
+fn render_pawn_pos() -> vec3<f32> {
+    let a = render_agents[config.possessed_slot];
+    return vec3(a.pos_x, a.pos_y, a.pos_z);
+}
+fn render_pawn_vel_xz() -> vec2<f32> {
+    let a = render_agents[config.possessed_slot];
+    return vec2(a.vel_x, a.vel_z);
+}
+fn render_pawn_orientation() -> vec4<f32> {
+    let a = render_agents[config.possessed_slot];
+    return vec4(a.orient_x, a.orient_y, a.orient_z, a.orient_w);
+}
 
 // --- Ribbon (Group 0: render, binding 360)
 @group(0) @binding(360) var<uniform> render_ribbon: RibbonState;
@@ -5077,17 +5104,22 @@ fn update_pawn() {
 
     let dt = signal.dt;
 
-    var pawn = pawn_state;
-    let prev_xz = pawn.pos.xz;
-    let prev_y = pawn.pos.y;
+    // Pass 1 Step 2 — the pawn now lives in agent_state[possessed_slot].
+    // The kernel body is the same as before; it just reads/writes the
+    // player's slot in the unified buffer. Step 3 fuses this into
+    // update_agents with a behavior switch.
+    let slot = config.possessed_slot;
+    var pawn = agent_state[slot];
+    let prev_xz = vec2(pawn.pos_x, pawn.pos_z);
+    let prev_y  = pawn.pos_y;
 
     if (coupling_active(COUPLING_INPUT_MOVES_PAWN)) {
         let input_dir = vec2(signal.move_x, signal.move_z);
         let world_vel = coupling_input_to_pawn_velocity(input_dir, camera_state.azimuth);
 
         let speed = select(PAWN_SPEED, config.pawn_speed, config.pawn_speed > 0.0);
-        pawn.pos.x += world_vel.x * speed * dt;
-        pawn.pos.z += world_vel.y * speed * dt;
+        pawn.pos_x += world_vel.x * speed * dt;
+        pawn.pos_z += world_vel.y * speed * dt;
 
         if (fpv_mode_active()) {
             pawn.heading = camera_state.azimuth;
@@ -5095,9 +5127,11 @@ fn update_pawn() {
             pawn.heading = coupling_velocity_to_pawn_heading(world_vel, pawn.heading, dt);
         }
 
-        pawn.velocity = world_vel * speed;
+        pawn.vel_x = world_vel.x * speed;
+        pawn.vel_z = world_vel.y * speed;
     } else {
-        pawn.velocity = vec2(0.0);
+        pawn.vel_x = 0.0;
+        pawn.vel_z = 0.0;
 
         if (fpv_mode_active()) {
             pawn.heading = camera_state.azimuth;
@@ -5106,32 +5140,32 @@ fn update_pawn() {
 
     // --- Finite world boundary clamp
     if (config.world_bound_max.x > 0.0) {
-        pawn.pos.x = clamp(pawn.pos.x, config.world_bound_min.x, config.world_bound_max.x);
-        pawn.pos.z = clamp(pawn.pos.z, config.world_bound_min.y, config.world_bound_max.y);
+        pawn.pos_x = clamp(pawn.pos_x, config.world_bound_min.x, config.world_bound_max.x);
+        pawn.pos_z = clamp(pawn.pos_z, config.world_bound_min.y, config.world_bound_max.y);
     }
 
     // --- Ground resolve: single query_ground_walker call.
     // POLICY_WALKER includes static base + pyramids + GoL zones + terrain
     // waves + radial pulses + pawn aura − consumer-local GoL suppression
     // (centered on the pawn's start-of-frame position via qi.consumer_pos).
-    // No manual strip-and-re-add of dynamics: prev_y already includes
-    // them from the last frame's resolved height, and the new sample
-    // includes them too, so step-climb compares like-for-like.
-    let qi = QueryInputs(pawn_state.pos, signal.t_seconds);
+    // qi reads the pre-move position (consumer_pos = current slot pos)
+    // so GoL self-suppression stays anchored to start-of-frame.
+    let qi = QueryInputs(vec3(prev_xz.x, prev_y, prev_xz.y), signal.t_seconds);
 
     if (coupling_active(COUPLING_TERRAIN_TO_PAWN_Y)) {
-        let resolved = pawn_ground_resolve(pawn.pos.xz, prev_xz, prev_y, qi);
-        pawn.pos.x = resolved.x;
-        pawn.pos.y = resolved.y;
-        pawn.pos.z = resolved.z;
+        let resolved = pawn_ground_resolve(vec2(pawn.pos_x, pawn.pos_z), prev_xz, prev_y, qi);
+        pawn.pos_x = resolved.x;
+        pawn.pos_y = resolved.y;
+        pawn.pos_z = resolved.z;
         if (resolved.w < 0.5) {
-            pawn.velocity = vec2(0.0);
+            pawn.vel_x = 0.0;
+            pawn.vel_z = 0.0;
         }
     }
 
     // --- Orientation: heading + walker-policy terrain tilt
     if (coupling_active(COUPLING_TERRAIN_TO_PAWN_TILT)) {
-        let normal = terrain_normal_at(pawn.pos.xz, qi);
+        let normal = terrain_normal_at(vec2(pawn.pos_x, pawn.pos_z), qi);
 
         let world_up = vec3(0.0, 1.0, 0.0);
         let d = dot(world_up, normal);
@@ -5145,7 +5179,11 @@ fn update_pawn() {
         }
 
         let heading_quat = quat_from_axis_angle(vec3(0.0, 1.0, 0.0), pawn.heading);
-        pawn.orientation = quat_multiply(tilt_quat, heading_quat);
+        let orient = quat_multiply(tilt_quat, heading_quat);
+        pawn.orient_x = orient.x;
+        pawn.orient_y = orient.y;
+        pawn.orient_z = orient.z;
+        pawn.orient_w = orient.w;
     }
 
     // --- Portal ellipse detection (GPU-authoritative)
@@ -5153,8 +5191,8 @@ fn update_pawn() {
     pawn.portal_trigger = -1;
     for (var pi = 0u; pi < portal_array.count; pi++) {
         let p = portal_array.portals[pi];
-        let dx = pawn.pos.x - p.x;
-        let dz = pawn.pos.z - p.z;
+        let dx = pawn.pos_x - p.x;
+        let dz = pawn.pos_z - p.z;
         // Project offset into arch-local axes
         let lat = dx * p.facing_cos + dz * p.facing_sin;   // lateral (foot-to-foot)
         let fwd = -dx * p.facing_sin + dz * p.facing_cos;  // forward (walk-through)
@@ -5165,7 +5203,7 @@ fn update_pawn() {
         }
     }
 
-    pawn_state = pawn;
+    agent_state[slot] = pawn;
 }
 
 @compute @workgroup_size(1)
@@ -5191,9 +5229,9 @@ fn update_camera() {
     }
 
     if (fpv_mode_active()) {
-        camera.pos = pawn_state.pos + vec3(0.0, FPV_EYE_HEIGHT, 0.0);
+        camera.pos = compute_pawn_pos() + vec3(0.0, FPV_EYE_HEIGHT, 0.0);
     } else if (coupling_active(COUPLING_PAWN_TO_CAMERA_TARGET)) {
-        camera.pos = coupling_pawn_to_camera_target(pawn_state.pos, camera);
+        camera.pos = coupling_pawn_to_camera_target(compute_pawn_pos(), camera);
     }
 
     // ─── Camera terrain clamp: never go underground ──────────────
@@ -5268,11 +5306,12 @@ fn update_sphere() {
         var best_dist_sq = 999999.0;
         var best_slot = 0u;
         var found = false;
+        let pawn_p = compute_pawn_pos();
         for (var slot = 0u; slot < SPHERE_SLOT_COUNT; slot++) {
             let fe = floating_entities.entities[slot];
             if (fe.is_active == 0u || fe.orbit_radius <= 0.0) { continue; }
-            let dx = fe.pos.x - pawn_state.pos.x;
-            let dz = fe.pos.z - pawn_state.pos.z;
+            let dx = fe.pos.x - pawn_p.x;
+            let dz = fe.pos.z - pawn_p.z;
             let d2 = dx * dx + dz * dz;
             if (d2 < best_dist_sq) {
                 best_dist_sq = d2;
@@ -5350,7 +5389,7 @@ fn compute_vp() {
     // Sun VP: kite coupling — sun orbits pawn at fixed offset
     if (coupling_active(COUPLING_PAWN_TO_SUN_VP)) {
         vp_data.light_vp = coupling_pawn_to_sun_vp(
-            pawn_state.pos,
+            compute_pawn_pos(),
             config.sun_direction
         );
     }
@@ -6101,7 +6140,8 @@ fn zone_extrusion_vs(
     let wave_y = contrib_terrain_waves_at(pos.xz);
 
     // Suppression target = terrain + aura height + wave overlay
-    let aura = sample_pawn_aura(pos.xz, render_pawn.pos.xz);
+    let pawn_xz = render_pawn_pos().xz;
+    let aura = sample_pawn_aura(pos.xz, pawn_xz);
     let ground_target = terrain_y + aura.r * config.pawn_aura_height + wave_y;
 
     // Wave overlay: lift entire extrusion mesh with animated terrain
@@ -6112,13 +6152,12 @@ fn zone_extrusion_vs(
     // Must stay in sync with the contributor's smoothstep (same
     // ZONE_SUPPRESS_INNER / ZONE_SUPPRESS_OUTER radii, same
     // 1 - smoothstep(inner, outer, dist) shape). The two cannot easily
-    // share a function because this VS reads render-stage bindings
-    // (render_pawn @group(1)) while contrib_gol_suppression_at reads
-    // compute-stage bindings (pawn_state @group(0) / zone_config @160).
-    // If either changes radii or shape, update the other.
-    // The shadow zone extrusion VS below also mirrors this; keep all
-    // three in sync.
-    let pawn_dist = distance(pos.xz, render_pawn.pos.xz);
+    // share a function because this VS reads the render-stage
+    // render_agents binding while contrib_gol_suppression_at reads
+    // the compute-stage agent_state binding. If either changes radii
+    // or shape, update the other. The shadow zone extrusion VS below
+    // also mirrors this; keep all three in sync.
+    let pawn_dist = distance(pos.xz, pawn_xz);
     let suppression = 1.0 - smoothstep(ZONE_SUPPRESS_INNER, ZONE_SUPPRESS_OUTER, pawn_dist);
     if (suppression > 0.001) {
         world_pos.y = mix(pos.y, ground_target, suppression);
@@ -6138,7 +6177,7 @@ fn zone_extrusion_fs(in: ZoneExtrusionVarying) -> @location(0) vec4<f32> {
     var block_color = clamp(in.cell_color, vec3(0.0), vec3(1.0));
 
     // Pawn force field tint on extrusion blocks (render context)
-    let pawn_ff = 1.0 - zone_pawn_ff(in.world_pos.xz, render_pawn.pos, render_pawn.velocity);
+    let pawn_ff = 1.0 - zone_pawn_ff(in.world_pos.xz, render_pawn_pos(), render_pawn_vel_xz());
     if (pawn_ff > 0.01) {
         block_color = mix(block_color, ZONE_PAWN_TINT, pawn_ff * ZONE_PAWN_TINT_STRENGTH);
     }
@@ -6151,7 +6190,7 @@ fn zone_extrusion_fs(in: ZoneExtrusionVarying) -> @location(0) vec4<f32> {
 
     // Pawn aura: persistent tinting from toroidal spring grid
     {
-        let aura = sample_pawn_aura(in.world_pos.xz, render_pawn.pos.xz);
+        let aura = sample_pawn_aura(in.world_pos.xz, render_pawn_pos().xz);
         let aura_active = max(aura.r, max(abs(aura.g), max(abs(aura.b), abs(aura.a))));
         if (aura_active > 0.01) {
             block_color = clamp(block_color + aura.gba, vec3(0.0), vec3(1.0));
@@ -6182,7 +6221,7 @@ fn shadow_zone_extrusion_vs(
     // with the contributor and with zone_extrusion_vs's suppression
     // block (above). See that block's annotation for rationale on why
     // the function isn't shared across stages.
-    let pawn_dist = distance(pos.xz, render_pawn.pos.xz);
+    let pawn_dist = distance(pos.xz, render_pawn_pos().xz);
     let suppression = 1.0 - smoothstep(ZONE_SUPPRESS_INNER, ZONE_SUPPRESS_OUTER, pawn_dist);
     if (suppression > 0.001) {
         // Shadow doesn't have aura texture — use terrain_y + wave only
@@ -6208,7 +6247,7 @@ fn compute_pawn_aura(@builtin(global_invocation_id) gid: vec3<u32>) {
     let slot_idx = u32(sz * N + sx);
     var cell = pawn_aura_cells[slot_idx];
 
-    let pawn_xz = pawn_state.pos.xz;
+    let pawn_xz = compute_pawn_pos().xz;
     let cs = pawn_aura_cfg.cell_size;
     let radius = pawn_aura_cfg.influence_radius;
     let dt = pawn_aura_cfg.dt;
@@ -6273,7 +6312,7 @@ fn compute_pawn_aura(@builtin(global_invocation_id) gid: vec3<u32>) {
             // This makes the pawn the highest point with a leading ramp.
             if (dist > 0.5) {
                 let to_cell = (cell_center - pawn_xz) / dist;
-                let heading = pawn_state.heading;
+                let heading = compute_pawn_heading();
                 let forward = vec2(sin(heading), cos(heading));
                 let facing = dot(to_cell, forward);  // -1=behind, +1=in front
                 // Forward cells: gentle ramp (0.6–0.85). Behind: steeper (0.2–0.5).
@@ -6499,7 +6538,7 @@ fn build_lookat_vp(eye: vec3<f32>, aim_pt: vec3<f32>, fov_rad: f32, aspect: f32)
 @compute @workgroup_size(1)
 fn compute_photographer_vp() {
     let cfg = photographer_config;
-    let pawn_pos = pawn_state.pos;
+    let pawn_pos = compute_pawn_pos();
 
     // --- Camera position: spherical offset from pawn
     let cos_el = cos(cfg.elevation);
@@ -6710,7 +6749,7 @@ const FRUSTUM_LOD0_RADIUS_SQ: f32 = 3.5 * 3.5 * PATCH_EXTENT * PATCH_EXTENT;  //
 @group(0) @binding(340) var<storage, read>       fc_patches: array<PatchInstance>;
 @group(0) @binding(500) var<storage, read_write> fc_visible: array<u32>;
 @group(0) @binding(501) var<storage, read_write> fc_indirect: array<atomic<u32>, 5>;
-@group(0) @binding(60)  var<storage, read>       fc_pawn: PawnState;
+@group(0) @binding(60)  var<storage, read>       fc_agents: array<AgentState, 32>;
 
 // Extract frustum plane from VP matrix row combination.
 // Row i of column-major M: (M[0][i], M[1][i], M[2][i], M[3][i])
@@ -6780,8 +6819,9 @@ fn frustum_cull_patches(@builtin(global_invocation_id) id: vec3<u32>) {
     // LOD0 only: nearest-edge distance² from PAWN XZ to patch edge.
     // Uses pawn (not camera) to match CPU's LOD classification.
     // Patches at LOD1 distance are NOT emitted here — CPU draws them directly.
-    let dx = max(0.0, abs(fc_pawn.pos.x - pi.origin.x) - half);
-    let dz = max(0.0, abs(fc_pawn.pos.z - pi.origin.y) - half);
+    let fc_pawn = fc_agents[fc_config.possessed_slot];
+    let dx = max(0.0, abs(fc_pawn.pos_x - pi.origin.x) - half);
+    let dz = max(0.0, abs(fc_pawn.pos_z - pi.origin.y) - half);
     let dist2 = dx * dx + dz * dz;
 
     if (dist2 <= FRUSTUM_LOD0_RADIUS_SQ) {
