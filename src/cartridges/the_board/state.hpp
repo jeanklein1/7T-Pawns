@@ -3841,42 +3841,46 @@ namespace t7 {
                 // -- Photographer compute layout (Group 0) -- VP + terrain clamp --
                 // Reads GPU pawn position + config → builds VP, clamps camera above terrain.
                 // Entity Y-correction is handled separately by compute_entity_placement.
-                // 3 storage + 1 read-only + 1 uniform + 1 texture + 1 sampler + 1 patch_grid = 8 entries.
+                // 1 config uniform + 3 storage + 1 read-only + 1 uniform + 1 texture + 1 sampler + 1 patch_grid = 9 entries.
                 {
-                    std::array<wgpu::BindGroupLayoutEntry, 8> entries{};
+                    std::array<wgpu::BindGroupLayoutEntry, 9> entries{};
 
-                    entries[0].binding = 60;   // agent_state (read pos via possessed_slot)
+                    entries[0].binding = 1;    // config (DesignConfig — possessed_slot lookup via compute_pawn_pos)
                     entries[0].visibility = wgpu::ShaderStage::Compute;
-                    entries[0].buffer.type = wgpu::BufferBindingType::Storage;
+                    entries[0].buffer.type = wgpu::BufferBindingType::Uniform;
 
-                    entries[1].binding = 140;  // photographer_config (camera params)
+                    entries[1].binding = 60;   // agent_state (read pos via possessed_slot)
                     entries[1].visibility = wgpu::ShaderStage::Compute;
-                    entries[1].buffer.type = wgpu::BufferBindingType::Uniform;
+                    entries[1].buffer.type = wgpu::BufferBindingType::Storage;
 
-                    entries[2].binding = 141;  // photographer_vp (output VP matrix)
+                    entries[2].binding = 140;  // photographer_config (camera params)
                     entries[2].visibility = wgpu::ShaderStage::Compute;
-                    entries[2].buffer.type = wgpu::BufferBindingType::Storage;
+                    entries[2].buffer.type = wgpu::BufferBindingType::Uniform;
 
-                    entries[3].binding = 142;  // photographer_camera_out (output camera pos)
+                    entries[3].binding = 141;  // photographer_vp (output VP matrix)
                     entries[3].visibility = wgpu::ShaderStage::Compute;
                     entries[3].buffer.type = wgpu::BufferBindingType::Storage;
 
-                    entries[4].binding = 144;  // patch_instances (terrain lookup)
+                    entries[4].binding = 142;  // photographer_camera_out (output camera pos)
                     entries[4].visibility = wgpu::ShaderStage::Compute;
-                    entries[4].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
+                    entries[4].buffer.type = wgpu::BufferBindingType::Storage;
 
-                    entries[5].binding = 145;  // patch_heightfield (terrain texture)
+                    entries[5].binding = 144;  // patch_instances (terrain lookup)
                     entries[5].visibility = wgpu::ShaderStage::Compute;
-                    entries[5].texture.sampleType = wgpu::TextureSampleType::Float;
-                    entries[5].texture.viewDimension = wgpu::TextureViewDimension::e2DArray;
+                    entries[5].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
 
-                    entries[6].binding = 146;  // bilinear_sampler
+                    entries[6].binding = 145;  // patch_heightfield (terrain texture)
                     entries[6].visibility = wgpu::ShaderStage::Compute;
-                    entries[6].sampler.type = wgpu::SamplerBindingType::Filtering;
+                    entries[6].texture.sampleType = wgpu::TextureSampleType::Float;
+                    entries[6].texture.viewDimension = wgpu::TextureViewDimension::e2DArray;
 
-                    entries[7].binding = 152;  // patch_grid (O(1) spatial index for sample_terrain_y_at)
+                    entries[7].binding = 146;  // bilinear_sampler
                     entries[7].visibility = wgpu::ShaderStage::Compute;
-                    entries[7].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
+                    entries[7].sampler.type = wgpu::SamplerBindingType::Filtering;
+
+                    entries[8].binding = 152;  // patch_grid (O(1) spatial index for sample_terrain_y_at)
+                    entries[8].visibility = wgpu::ShaderStage::Compute;
+                    entries[8].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
 
                     wgpu::BindGroupLayoutDescriptor desc{};
                     desc.label = "Photographer Compute Layout";
@@ -4798,31 +4802,34 @@ namespace t7 {
                     if (!photographerRenderEntityBindGroup_) return false;
                 }
 
-                // Photographer compute bind group (8 entries: pawn + config + outputs + terrain + patch_grid)
+                // Photographer compute bind group (9 entries: config + agents + outputs + terrain + patch_grid)
                 {
-                    std::array<wgpu::BindGroupEntry, 8> entries{};
-                    entries[0].binding = 60;
-                    entries[0].buffer = agentStateBuffer_;
-                    entries[0].size = Dim::MAX_AGENTS * sizeof(GPUAgentState);
-                    entries[1].binding = 140;
-                    entries[1].buffer = photographerConfigBuffer_;
-                    entries[1].size = sizeof(GPUPhotographerConfig);
-                    entries[2].binding = 141;
-                    entries[2].buffer = photographerVPBuffer_;
-                    entries[2].size = sizeof(GPUVPMatrix);
-                    entries[3].binding = 142;
-                    entries[3].buffer = photographerCameraBuffer_;
-                    entries[3].size = sizeof(GPUCameraState);
-                    entries[4].binding = 144;
-                    entries[4].buffer = patchInstancesBuffer_;
-                    entries[4].size = sizeof(GPUPatchInstance) * Dim::MAX_ACTIVE_PATCHES;
-                    entries[5].binding = 145;
-                    entries[5].textureView = patchHeightfieldArrayReadView_;
-                    entries[6].binding = 146;
-                    entries[6].sampler = bilinearSampler_;
-                    entries[7].binding = 152;
-                    entries[7].buffer = patchGridBuffer_;
-                    entries[7].size = sizeof(GPUPatchGrid);
+                    std::array<wgpu::BindGroupEntry, 9> entries{};
+                    entries[0].binding = 1;
+                    entries[0].buffer = configBuffer_;
+                    entries[0].size = sizeof(GPUDesignConfig);
+                    entries[1].binding = 60;
+                    entries[1].buffer = agentStateBuffer_;
+                    entries[1].size = Dim::MAX_AGENTS * sizeof(GPUAgentState);
+                    entries[2].binding = 140;
+                    entries[2].buffer = photographerConfigBuffer_;
+                    entries[2].size = sizeof(GPUPhotographerConfig);
+                    entries[3].binding = 141;
+                    entries[3].buffer = photographerVPBuffer_;
+                    entries[3].size = sizeof(GPUVPMatrix);
+                    entries[4].binding = 142;
+                    entries[4].buffer = photographerCameraBuffer_;
+                    entries[4].size = sizeof(GPUCameraState);
+                    entries[5].binding = 144;
+                    entries[5].buffer = patchInstancesBuffer_;
+                    entries[5].size = sizeof(GPUPatchInstance) * Dim::MAX_ACTIVE_PATCHES;
+                    entries[6].binding = 145;
+                    entries[6].textureView = patchHeightfieldArrayReadView_;
+                    entries[7].binding = 146;
+                    entries[7].sampler = bilinearSampler_;
+                    entries[8].binding = 152;
+                    entries[8].buffer = patchGridBuffer_;
+                    entries[8].size = sizeof(GPUPatchGrid);
 
                     wgpu::BindGroupDescriptor desc{};
                     desc.label = "Photographer Compute BindGroup";
