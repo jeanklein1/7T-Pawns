@@ -304,3 +304,105 @@ void spawn_population_for_mood(uint32_t mood_id,
     std::cout << "[Agents] Spawned " << spawned << " for mood " << mood_id
               << " around (" << center_x << "," << center_z << ")\n";
 }
+
+
+// ═══ RESPAWN (per-frame, evicted slots → fresh agents) ════════════
+//
+// The GPU's update_agents kernel marks any non-player slot whose XZ
+// distance from the possessed slot exceeds AGENT_EVICTION_RADIUS as
+// inactive. This routine runs every frame on the CPU side: scans
+// cpuAgents_[1..MAX_AGENTS-1] for is_active == 0, refills each with
+// a fresh agent in a disk around the *player's current position*
+// (not the original mood spawn center — the population trails the
+// player as they wander).
+//
+// Each respawn uses a per-slot counter to advance the seed, so the
+// same slot in the same world produces a different agent on each
+// successive respawn cycle (otherwise an agent that drifts out and
+// gets re-evicted would respawn into the same place forever).
+//
+// Writes only the changed slots — never the player slot — so the
+// GPU's per-frame player update never sees a stale CPU snapshot.
+uint32_t agentRespawnCounters_[Dim::MAX_AGENTS] = {};
+
+void respawn_evicted_agents(uint32_t mood_id,
+                            uint32_t world_seed,
+                            wgpu::Queue& queue) {
+    if (mood_id >= MOOD_COUNT) return;
+    const auto& pop = AGENT_POPULATIONS[mood_id];
+    if (pop.count == 0) return;
+
+    float beh_sum = 0.0f;
+    for (uint32_t b = 0; b < AGENT_BEHAVIOR_COUNT; b++) beh_sum += pop.behavior_weights[b];
+    float tier_sum = 0.0f;
+    for (uint32_t t = 0; t < AGENT_TIER_COUNT; t++) tier_sum += pop.tier_weights[t];
+    if (beh_sum <= 0.0f || tier_sum <= 0.0f) return;
+
+    const uint32_t possessed = player_.possessed_slot;
+    const float px = cpuAgents_[possessed].pos_x;
+    const float pz = cpuAgents_[possessed].pos_z;
+
+    const uint32_t n = std::min(pop.count, Dim::MAX_AGENTS - 1u);
+    uint32_t respawned = 0;
+
+    for (uint32_t i = 0; i < n; i++) {
+        uint32_t slot = i + 1;
+        if (slot == possessed) continue;
+        if (cpuAgents_[slot].is_active != 0u) continue;
+
+        agentRespawnCounters_[slot]++;
+        uint32_t agent_seed = cpu_hash(
+            cpu_hash(world_seed, 0xA6E00000u + mood_id),
+            slot * 0x10001u + agentRespawnCounters_[slot] * 0x100u);
+
+        uint32_t behavior_id = AGENT_BEHAVIOR_RANDOM_WALK;
+        {
+            float roll = cpu_hash_f(agent_seed, 1u);
+            float cum = 0.0f;
+            for (uint32_t b = 0; b < AGENT_BEHAVIOR_COUNT; b++) {
+                cum += pop.behavior_weights[b] / beh_sum;
+                if (roll < cum) { behavior_id = b; break; }
+            }
+        }
+        uint32_t tier_idx = AGENT_TIER_WORKER;
+        {
+            float roll = cpu_hash_f(agent_seed, 2u);
+            float cum = 0.0f;
+            for (uint32_t t = 0; t < AGENT_TIER_COUNT; t++) {
+                cum += pop.tier_weights[t] / tier_sum;
+                if (roll < cum) { tier_idx = t; break; }
+            }
+        }
+
+        const float two_pi = 6.28318530718f;
+        float theta = cpu_hash_f(agent_seed, 3u) * two_pi;
+        float r     = std::sqrt(cpu_hash_f(agent_seed, 4u)) * pop.spawn_radius;
+        float sx = px + std::cos(theta) * r;
+        float sz = pz + std::sin(theta) * r;
+
+        float h_theta = cpu_hash_f(agent_seed, 5u) * two_pi;
+        float h_r     = std::sqrt(cpu_hash_f(agent_seed, 6u)) * pop.home_seeding_radius;
+        float hx = sx + std::cos(h_theta) * h_r;
+        float hz = sz + std::sin(h_theta) * h_r;
+
+        auto& a = cpuAgents_[slot];
+        a.pos_x = sx;   a.pos_y = 0.0f;   a.pos_z = sz;
+        a.home_x = hx;  a.home_y = 0.0f;  a.home_z = hz;
+        a.heading = 0.0f;
+        a.vel_x = 0.0f; a.vel_y = 0.0f; a.vel_z = 0.0f;
+        a.orient_x = 0.0f; a.orient_y = 0.0f; a.orient_z = 0.0f; a.orient_w = 1.0f;
+        a.seed = agent_seed;
+        a.behavior_id = behavior_id;
+        a.tier_idx = tier_idx;
+        a.is_active = 1u;
+        a.portal_trigger = -1;
+
+        gpuState_.upload_agent_slot(queue, slot, &cpuAgents_[slot]);
+        respawned++;
+    }
+
+    if (respawned > 0) {
+        std::cout << "[Agents] Respawn " << respawned
+                  << " around (" << px << "," << pz << ")\n";
+    }
+}

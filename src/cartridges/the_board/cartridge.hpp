@@ -8009,6 +8009,10 @@ namespace t7 {
                     }
                 }
 
+                // Refill any agent slots the GPU evicted last frame.
+                // No-op when no slots were evicted — just a 32-slot scan.
+                respawn_evicted_agents(activeMood_, activeSeed_, queue);
+
                 stream_patches(encoder, queue);
 
                 // Periodic entity census dump

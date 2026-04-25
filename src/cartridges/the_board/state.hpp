@@ -1934,6 +1934,16 @@ namespace t7 {
                 queue.WriteBuffer(agentStateBuffer_, 0, src,
                                   Dim::MAX_AGENTS * sizeof(GPUAgentState));
             }
+            // Upload one slot only. Used by per-frame respawns so writes
+            // don't race with the GPU's own update of slot 0 (the player).
+            void upload_agent_slot(wgpu::Queue& queue,
+                                   uint32_t slot,
+                                   const GPUAgentState* src) {
+                if (slot >= Dim::MAX_AGENTS) return;
+                queue.WriteBuffer(agentStateBuffer_,
+                                  slot * sizeof(GPUAgentState),
+                                  src, sizeof(GPUAgentState));
+            }
             void set_fog(float density, float r, float g, float b) {
                 if (config_.fog_density != density ||
                     config_.fog_color[0] != r || config_.fog_color[1] != g || config_.fog_color[2] != b) {

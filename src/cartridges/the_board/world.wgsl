@@ -5331,8 +5331,12 @@ fn behavior_random_walk(agent_in: AgentState) -> AgentState {
 }
 
 // ─── Unified compute kernel ──────────────────────────────────────
-// One thread per slot. Skip inactive slots, dispatch on behavior_id.
+// One thread per slot. Skip inactive slots, dispatch on behavior_id,
+// then evict non-player agents that have drifted out of range.
 // MAX_AGENTS = 32 — must stay in sync with Dim::MAX_AGENTS.
+const AGENT_EVICTION_RADIUS:    f32 = 90.0;
+const AGENT_EVICTION_RADIUS_SQ: f32 = AGENT_EVICTION_RADIUS * AGENT_EVICTION_RADIUS;
+
 @compute @workgroup_size(32)
 fn update_agents(@builtin(global_invocation_id) gid: vec3<u32>) {
     if (!dynamics_0d_active()) { return; }
@@ -5347,6 +5351,19 @@ fn update_agents(@builtin(global_invocation_id) gid: vec3<u32>) {
         case 0u: { agent = behavior_player_controlled(agent); }
         case 1u: { agent = behavior_random_walk(agent); }
         default: { /* Pass 2 — other behaviors fill in here */ }
+    }
+
+    // Player-centered eviction. Non-player agents that wander too far
+    // from the possessed slot are deactivated; the CPU readback path
+    // detects them on the next frame and respawns fresh agents in a
+    // disk around the player. The player's own slot is never evicted.
+    if (slot != config.possessed_slot) {
+        let pp = agent_state[config.possessed_slot];
+        let dx = agent.pos_x - pp.pos_x;
+        let dz = agent.pos_z - pp.pos_z;
+        if (dx * dx + dz * dz > AGENT_EVICTION_RADIUS_SQ) {
+            agent.is_active = 0u;
+        }
     }
 
     agent_state[slot] = agent;
