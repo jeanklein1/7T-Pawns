@@ -7572,6 +7572,7 @@ namespace t7 {
                     wgpu::Queue q = device_.GetQueue();
                     spawn_population_for_mood(activeMood_, activeSeed_,
                                               Idle::PAWN_POS_X, Idle::PAWN_POS_Z, q);
+                    dump_agent_census("boot");
                 }
 
                 // Eager-load authored paintings at boot (avoids mid-frame stall on first gallery)
@@ -7699,6 +7700,7 @@ namespace t7 {
                         apply_mood(pendingDestination_.mood, queue);
                         spawn_population_for_mood(pendingDestination_.mood, activeSeed_,
                                                   Idle::PAWN_POS_X, Idle::PAWN_POS_Z, queue);
+                        dump_agent_census("mood-transition");
                         // Deactivate ribbons in finite mode (mood 5 spawns its own in apply_mood)
                         if (finiteMode_ && activeRibbonCount_ > 0 && activeMood_ != 5) {
                             for (uint32_t i = 0; i < MAX_RIBBON_INSTANCES; i++) {
@@ -8014,6 +8016,12 @@ namespace t7 {
                 respawn_evicted_agents(activeMood_, activeSeed_, queue);
 
                 stream_patches(encoder, queue);
+
+                // Periodic agent census dump
+                if (currentSeconds_ - lastAgentCensusDump_ >= AGENT_CENSUS_INTERVAL) {
+                    dump_agent_census("periodic");
+                    lastAgentCensusDump_ = currentSeconds_;
+                }
 
                 // Periodic entity census dump
 #ifdef DIAG_ENTITY_CENSUS

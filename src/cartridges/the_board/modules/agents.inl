@@ -483,3 +483,37 @@ void try_possess_nearest(wgpu::Queue& queue) {
               << " (tier " << cpuAgents_[new_slot].tier_idx
               << ", dist " << std::sqrt(best_d2) << ")\n";
 }
+
+
+// ═══ DIAGNOSTIC: agent census ═════════════════════════════════════
+//
+// Snapshot of cpuAgents_ broken down by tier + behavior, plus the
+// player's current possessed slot. Reads the same CPU mirror that
+// drives possession queries and patch streaming, so it's only as
+// fresh as the latest readback (one-frame lag is fine for a log).
+float lastAgentCensusDump_ = -999.0f;
+static constexpr float AGENT_CENSUS_INTERVAL = 30.0f;
+
+void dump_agent_census(const char* trigger) const {
+    uint32_t active = 0;
+    uint32_t by_behavior[AGENT_BEHAVIOR_COUNT] = {};
+    uint32_t by_tier[AGENT_TIER_COUNT] = {};
+
+    for (uint32_t i = 0; i < Dim::MAX_AGENTS; i++) {
+        const auto& a = cpuAgents_[i];
+        if (a.is_active == 0u) continue;
+        active++;
+        if (a.behavior_id < AGENT_BEHAVIOR_COUNT) by_behavior[a.behavior_id]++;
+        if (a.tier_idx     < AGENT_TIER_COUNT)     by_tier[a.tier_idx]++;
+    }
+
+    std::cout << "[AGENTS t=" << std::fixed << std::setprecision(1) << currentSeconds_
+              << " trigger=" << trigger << "] " << active << "/" << Dim::MAX_AGENTS
+              << " active, possessed=" << player_.possessed_slot
+              << " (tier W:" << by_tier[AGENT_TIER_WORKER]
+              << " S:"       << by_tier[AGENT_TIER_SCOUT]
+              << " Se:"      << by_tier[AGENT_TIER_SENTINEL]
+              << " L:"       << by_tier[AGENT_TIER_LEADER] << ")"
+              << " (drv P:"  << by_behavior[AGENT_BEHAVIOR_PLAYER_CONTROLLED]
+              << " RW:"      << by_behavior[AGENT_BEHAVIOR_RANDOM_WALK] << ")\n";
+}
