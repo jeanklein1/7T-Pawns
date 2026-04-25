@@ -79,9 +79,9 @@ namespace t7 {
             // The player's relationship to the world, not a physical body.
             // The body lives in agentStateBuffer_[possessed_slot]; this
             // struct is what travels with the player on possession
-            // transfer (Caps Lock). Pass 1 Step 1: only possessed_slot
-            // is authoritative here; aura/mmodes still live in their
-            // respective modules. Future passes consolidate.
+            // transfer (Caps Lock). Pass 1 only fills possessed_slot;
+            // aura/mmodes still live in their respective modules and
+            // are folded in by later passes.
             //
             // See agent_system_design.md §2.1 for the full design.
             struct PlayerState {

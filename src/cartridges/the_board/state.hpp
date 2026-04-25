@@ -413,7 +413,7 @@ namespace t7 {
             // ─── Radial pulse ring buffer ────────────────────────────────
             // 8 recent note onsets, indexed as pulse_data[i*4 + field]:
             //   field 0 = origin_x, 1 = origin_z, 2 = onset_beats, 3 = amplitude
-            // Evaluated in terrain VS + update_pawn as expanding ring wavefronts.
+            // Evaluated in terrain VS + behavior_player_controlled as expanding ring wavefronts.
             uint32_t pulse_count;             // active entries (0–8)
             // ─── Agent system ────────────────────────────────────────────
             // Slot index of the player's current body in agent_state[].
@@ -468,9 +468,10 @@ namespace t7 {
         // Scalar fields throughout (no vec3) so WGSL uniform/storage
         // layout matches C++ without vec3 alignment surprises.
         //
-        // Orientation is stored (not derived) because the pawn currently
-        // renders with a terrain-tilt quaternion written by update_pawn;
-        // keeping it in the slot preserves that transparency for Pass 1.
+        // Orientation is stored (not derived) because the player's body
+        // renders with a terrain-tilt quaternion written by
+        // behavior_player_controlled; keeping it per-slot keeps the tilt
+        // out of the vertex shader.
         struct alignas(16) GPUAgentState {
             float pos_x;           //  0
             float pos_y;           //  4
@@ -1201,7 +1202,7 @@ namespace t7 {
         static_assert(sizeof(GPUDesignConfig) == 384, "GPUDesignConfig must be 384 bytes");
 
         // Portal ellipse array — uploaded when portal set changes.
-        // GPU update_pawn tests pawn against arch-shaped ellipses and writes portal_trigger.
+        // GPU behavior_player_controlled tests pawn against arch-shaped ellipses and writes portal_trigger.
         static constexpr uint32_t MAX_GPU_PORTALS = 32;
         struct alignas(16) GPUPortalEntry {
             float x;                  //  0  world XZ center
@@ -1312,8 +1313,7 @@ namespace t7 {
 
             wgpu::Buffer signalBuffer_, configBuffer_, terrainBuffer_;
             // Agent system — unified entity buffer. Slot 0 is the player's
-            // body; slots 1..MAX_AGENTS-1 are mood-authored agents. Replaced
-            // the old pawnBuffer_ in Pass 1 Step 2.
+            // body; slots 1..MAX_AGENTS-1 are mood-authored agents.
             wgpu::Buffer agentStateBuffer_;
             wgpu::Buffer agentStateReadbackStaging_;
             wgpu::Buffer cameraBuffer_, floatingEntityBuffer_, trajectoriesBuffer_;
@@ -3407,13 +3407,13 @@ namespace t7 {
                     entries[12].visibility = wgpu::ShaderStage::Compute;
                     entries[12].buffer.type = wgpu::BufferBindingType::Storage;
 
-                    entries[13].binding = 62;   // portal_array (uniform — proximity check in update_pawn)
+                    entries[13].binding = 62;   // portal_array (uniform — proximity check in behavior_player_controlled)
                     entries[13].visibility = wgpu::ShaderStage::Compute;
                     entries[13].buffer.type = wgpu::BufferBindingType::Uniform;
 
                     // Cached patch heightfield + sampler + spatial index — sample_terrain_y_at
                     // (POLICY_BAKED_HEIGHTFIELD via texture). Required by compute pipelines that
-                    // do per-frame baked-path Y lookups: update_camera, update_pawn (in Step 4c),
+                    // do per-frame baked-path Y lookups: update_camera, update_agents,
                     // and any future cached-heightfield consumer that lives on this shared layout.
                     entries[14].binding = 145;  // photo_heightfield (texture_2d_array)
                     entries[14].visibility = wgpu::ShaderStage::Compute;
@@ -3663,7 +3663,7 @@ namespace t7 {
                 // storage buffers directly through Group 0 (bindings 30, 160,
                 // 161), so this layout only needs the aura texture + sampler.
                 //
-                // Attached to update_sphere, update_cube, update_pawn, and
+                // Attached to update_sphere, update_cube, update_agents, and
                 // update_camera pipelines so contrib_pawn_aura_at →
                 // sample_pawn_aura can run in the compute stage. Pipelines
                 // that stay on the baked heightfield path
@@ -4401,7 +4401,7 @@ namespace t7 {
                     entries[13].size = sizeof(GPUPortalArray);
 
                     // Cached patch heightfield — sample_terrain_y_at consumed by
-                    // update_camera, update_pawn (Step 4c), and any future
+                    // update_camera, update_agents, and any future
                     // POLICY_BAKED_HEIGHTFIELD compute consumer. Photographer
                     // and entity placement keep their dedicated layouts that
                     // also bind these — same handles, different layout slots.

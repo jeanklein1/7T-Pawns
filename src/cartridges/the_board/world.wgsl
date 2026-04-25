@@ -13,7 +13,6 @@
 //   PALETTE_LIGHT[4]              Light variant per palette
 //   PALETTE_VARIANCE[4]           Per-cell noise amplitude
 //   PALETTE_WEIGHT[4]             Selection probability
-//   COLOR_PAWN                    Pawn entity color
 //
 // ── Spatial Field Lattices (§2.2) ─────────────────────────────────
 //   PALETTE_LATTICE_SPACING       300 wu — palette blob size
@@ -610,7 +609,7 @@ struct AgentState {
     pos_x: f32,
     pos_y: f32,
     pos_z: f32,
-    t: f32,
+    t: f32,         // reserved (per-agent local clock; padding to vec4)
     vel_x: f32,
     vel_y: f32,
     vel_z: f32,
@@ -627,21 +626,6 @@ struct AgentState {
     orient_y: f32,
     orient_z: f32,
     orient_w: f32,
-}
-
-// Scalar → vec helpers. Kept close to the struct so callers don't
-// invent their own conversions. Not used until Step 2 wires the buffer.
-fn agent_pos(a: AgentState) -> vec3<f32> {
-    return vec3(a.pos_x, a.pos_y, a.pos_z);
-}
-fn agent_vel(a: AgentState) -> vec3<f32> {
-    return vec3(a.vel_x, a.vel_y, a.vel_z);
-}
-fn agent_home(a: AgentState) -> vec3<f32> {
-    return vec3(a.home_x, a.home_y, a.home_z);
-}
-fn agent_orientation(a: AgentState) -> vec4<f32> {
-    return vec4(a.orient_x, a.orient_y, a.orient_z, a.orient_w);
 }
 
 // ─── Agent behavior + tier registries ──────────────────────────────
@@ -1617,7 +1601,7 @@ const PULSE_ALGORITHM_CHANCE: f32 = 0.35;
 const PAWN_FORCEFIELD_ENABLED: bool = true;
 
 // --- Compile-time feature gates
-// These prune heavy dependency chains from update_pawn's pipeline compilation.
+// These prune heavy dependency chains from update_agents' pipeline compilation.
 // Set to false to cut compile time when iterating on unrelated features.
 const PAWN_GOL_GROUND_ENABLED: bool = false;    // Pawn walks on GoL extrusions
 // (PAWN_PYRAMID_GROUND_ENABLED removed — pyramids unconditionally in ground_formed)
@@ -1625,8 +1609,6 @@ const PAWN_FORCEFIELD_RADIUS_STATIONARY: f32 = 6.0;  // Radius when not moving
 const PAWN_FORCEFIELD_RADIUS_MOVING: f32 = 2.0;      // Radius at max speed
 const PAWN_FORCEFIELD_FALLOFF: f32 = 2.0;            // Edge softness (smoothstep width)
 const PAWN_FORCEFIELD_SPEED_SCALE: f32 = 1.0;        // How quickly radius shrinks with speed
-
-const COLOR_PAWN: vec3<f32> = vec3(0.8, 0.5, 0.8);
 
 // (legacy raymarcher constants removed: TERRAIN_BASE_COLOR, MAT_TERRAIN/PAWN/SPHERE/SKY,
 //  MAX_STEPS, MAX_DIST, SURF_DIST, RAYMARCH_STEP_FACTOR, GOL_TICKS_PER_BEAT)
@@ -3050,7 +3032,7 @@ fn compose_camera_position_from_orbit(aim_point: vec3<f32>, cam: CameraState) ->
 }
 
 // §5.1 0D COMPOSITION — Now split into 4 entry points (§7.1):
-//   update_terrain_config, update_pawn, update_camera, update_sphere
+//   update_terrain_config, update_agents, update_camera, update_sphere
 struct VPMatrix {
     m: mat4x4<f32>,
     light_vp: mat4x4<f32>,
@@ -4449,7 +4431,7 @@ fn fade_overlay_fs(in: FadeVarying) -> @location(0) vec4<f32> {
 // Dim::MAX_AGENTS (32) in state.hpp — keep in sync.
 @group(0) @binding(60)  var<storage, read_write> agent_state: array<AgentState, 32>;
 
-// Portal proximity array (uploaded by CPU, checked by update_pawn)
+// Portal proximity array (uploaded by CPU, checked in behavior_player_controlled)
 struct PortalEntry {
     x: f32,
     z: f32,
