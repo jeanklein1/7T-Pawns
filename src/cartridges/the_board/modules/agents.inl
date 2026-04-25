@@ -406,3 +406,80 @@ void respawn_evicted_agents(uint32_t mood_id,
                   << " around (" << px << "," << pz << ")\n";
     }
 }
+
+
+// ═══ POSSESSION TRANSFER (Caps Lock) ══════════════════════════════
+//
+// Player jumps from their current body to the nearest active non-
+// player slot within POSSESSION_RADIUS. The vacated slot stays where
+// it was, switches to RANDOM_WALK, and continues under autopilot —
+// it remains a body in the world, just no longer driven by input.
+// The new slot keeps its tier (and tier color), inherits the camera,
+// inherits portal-detection, and resets velocity to zero so the
+// player has clean control on entry.
+//
+// Blocked during portal transitions to avoid mid-teardown swaps.
+// No-op when no candidate is in range.
+static constexpr float POSSESSION_RADIUS    = 20.0f;
+static constexpr float POSSESSION_RADIUS_SQ = POSSESSION_RADIUS * POSSESSION_RADIUS;
+
+void try_possess_nearest(wgpu::Queue& queue) {
+    if (transitionPhase_ != TransitionPhase::IDLE) {
+        std::cout << "[Possess] Blocked (mid-transition)\n";
+        return;
+    }
+
+    const uint32_t cur = player_.possessed_slot;
+    const float px = cpuAgents_[cur].pos_x;
+    const float pz = cpuAgents_[cur].pos_z;
+
+    int best_slot = -1;
+    float best_d2 = POSSESSION_RADIUS_SQ;
+    for (uint32_t s = 0; s < Dim::MAX_AGENTS; s++) {
+        if (s == cur) continue;
+        const auto& a = cpuAgents_[s];
+        if (a.is_active == 0u) continue;
+        if (a.behavior_id == AGENT_BEHAVIOR_PLAYER_CONTROLLED) continue;
+
+        float dx = a.pos_x - px;
+        float dz = a.pos_z - pz;
+        float d2 = dx * dx + dz * dz;
+        if (d2 < best_d2) {
+            best_d2 = d2;
+            best_slot = (int)s;
+        }
+    }
+
+    if (best_slot < 0) {
+        std::cout << "[Possess] No agent within " << POSSESSION_RADIUS
+                  << " units of player at (" << px << "," << pz << ")\n";
+        return;
+    }
+
+    const uint32_t new_slot = (uint32_t)best_slot;
+
+    // Old slot → autopilot RandomWalk. Slot 0's seed is zero by default
+    // (reset_player_agent leaves it zero-init); give it a fresh seed so
+    // its random walk doesn't lock to hash(0, ...).
+    cpuAgents_[cur].behavior_id = AGENT_BEHAVIOR_RANDOM_WALK;
+    if (cpuAgents_[cur].seed == 0u) {
+        cpuAgents_[cur].seed = cpu_hash(activeSeed_, cur ^ 0xC11Cu);
+    }
+
+    // New slot → player control. Reset velocity + portal trigger so the
+    // player's first frame on the new body is clean.
+    cpuAgents_[new_slot].behavior_id    = AGENT_BEHAVIOR_PLAYER_CONTROLLED;
+    cpuAgents_[new_slot].vel_x          = 0.0f;
+    cpuAgents_[new_slot].vel_z          = 0.0f;
+    cpuAgents_[new_slot].portal_trigger = -1;
+
+    gpuState_.upload_agent_slot(queue, cur, &cpuAgents_[cur]);
+    gpuState_.upload_agent_slot(queue, new_slot, &cpuAgents_[new_slot]);
+
+    player_.possessed_slot = new_slot;
+    gpuState_.set_possessed_slot(new_slot);
+
+    std::cout << "[Possess] " << cur << " -> " << new_slot
+              << " (tier " << cpuAgents_[new_slot].tier_idx
+              << ", dist " << std::sqrt(best_d2) << ")\n";
+}
