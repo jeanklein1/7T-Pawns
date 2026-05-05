@@ -17,6 +17,7 @@
  * --------
  * - "abbott"   on Ableton channel 1 (internal channel 0)
  * - "costello" on Ableton channel 2 (internal channel 1)
+ * - "louise"   on Ableton channel 3 (internal channel 2) — live keyboard
  *
  * Each channel owns a MidiStream and a list of attached Trains. Every
  * incoming event is dispatched to the channel matching its MIDI channel
@@ -30,6 +31,7 @@
  * -------------
  * - stat(channel=0, slot=STAT_POLYPHONY_ABBOTT)   = abbott polyphony
  * - stat(channel=1, slot=STAT_POLYPHONY_COSTELLO) = costello polyphony
+ * - stat(channel=2, slot=STAT_POLYPHONY_LOUISE)   = louise polyphony
  */
 
 #include "analysis/analysis_cartridge.hpp"
@@ -66,6 +68,7 @@ constexpr int MAX_TRAINS_PER_CHANNEL = 4;
 
 constexpr int STAT_POLYPHONY_ABBOTT   = 0;
 constexpr int STAT_POLYPHONY_COSTELLO = 1;
+constexpr int STAT_POLYPHONY_LOUISE   = 2;
 
 // =============================================================================
 // CANVAS - The Analysis Cartridge Implementation
@@ -89,15 +92,18 @@ public:
                       << midi_port_.port_name() << "\n";
         }
 
-        // Register two channels (Ableton 1 and 2)
+        // Register channels (Ableton 1, 2, 3)
         register_channel("abbott",   1);
         register_channel("costello", 2);
+        register_channel("louise",   3);
 
         // Configure each Train and attach to its channel
         setup_abbott_train();
         setup_costello_train();
+        setup_louise_train();
         attach_train("abbott",   &abbott_train_);
         attach_train("costello", &costello_train_);
+        attach_train("louise",   &louise_train_);
 
         // Try to load default MIDI as fallback
         if (asset_path) {
@@ -259,8 +265,10 @@ private:
 
     Train abbott_train_;
     Train costello_train_;
+    Train louise_train_;
     TrainStatId abbott_polyphony_stat_;
     TrainStatId costello_polyphony_stat_;
+    TrainStatId louise_polyphony_stat_;
 
     // ─── OUTPUT ─────────────────────────────────────────────────────────────
     AnalysisSignal output_;
@@ -278,6 +286,14 @@ private:
     void setup_costello_train() {
         int ph = costello_train_.add_playhead();
         costello_polyphony_stat_ = costello_train_.define(
+            [ph](const TrainContext& ctx) {
+                return float(ctx.playhead(ph).current_count);
+            });
+    }
+
+    void setup_louise_train() {
+        int ph = louise_train_.add_playhead();
+        louise_polyphony_stat_ = louise_train_.define(
             [ph](const TrainContext& ctx) {
                 return float(ctx.playhead(ph).current_count);
             });
@@ -360,6 +376,8 @@ private:
                          abbott_train_.get(abbott_polyphony_stat_));
         output_.set_stat(1, STAT_POLYPHONY_COSTELLO,
                          costello_train_.get(costello_polyphony_stat_));
+        output_.set_stat(2, STAT_POLYPHONY_LOUISE,
+                         louise_train_.get(louise_polyphony_stat_));
     }
 };
 

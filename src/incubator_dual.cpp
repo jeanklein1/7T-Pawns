@@ -220,15 +220,17 @@ int main(int argc, char* argv[]) {
         // --- Update ---------------------------------------------------------
         analysis.update(dt);
 
-        // Debug: print abbott/costello polyphony every 0.5s
+        // Debug: print abbott/costello/louise polyphony every 0.5s
         static float debug_accum = 0.0f;
         debug_accum += dt;
         if (debug_accum >= 0.5f) {
             debug_accum = 0.0f;
             float a = analysis.output().stat(0, analysis_ns::STAT_POLYPHONY_ABBOTT);
             float c = analysis.output().stat(1, analysis_ns::STAT_POLYPHONY_COSTELLO);
+            float l = analysis.output().stat(2, analysis_ns::STAT_POLYPHONY_LOUISE);
             std::cout << "\n[mc] abbott=" << a
-                      << " costello=" << c << "\n";
+                      << " costello=" << c
+                      << " louise=" << l << "\n";
         }
 
         render.update(analysis.output(), console.aspect_ratio(), queue);
