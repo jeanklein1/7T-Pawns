@@ -688,6 +688,12 @@ namespace t7 {
             uint32_t is_visible;                                                // 68
             float orientation;                                                  // 72 (heading radians)
             uint32_t color_mode;                                                // 76
+            // #TODO[ribbon-color-distrib] Replace the 4 trailing pads with the
+            //   color-distribution fields (fits exactly, stays 96 B — no growth):
+            //     float color2[3];        // 80 (tail/secondary color; vec3 @80 is 16-aligned)
+            //     uint32_t color_rule;    // 92 (RibbonColorRule selector)
+            //   Mirror byte-for-byte in WGSL RibbonState. Existing
+            //   static_assert(sizeof==96) still holds.
             float _pad0;                                                        // 80
             float _pad1;                                                        // 84
             float _pad2;                                                        // 88
@@ -5753,6 +5759,8 @@ namespace t7 {
                 ribbon.color[0] = 0.85f;
                 ribbon.color[1] = 0.12f;
                 ribbon.color[2] = 0.08f;
+                // #TODO[ribbon-color-distrib] also set ribbon.color_rule = 0 (UNIFORM)
+                //   and ribbon.color2 = color here (hidden ribbon; avoids stale reads).
                 // Default (hidden) ribbon — set trail-frame fields directly
                 // (bypasses commit; is_visible=0 so values are placeholders).
                 ribbon.lateral_amp = 2.7f;

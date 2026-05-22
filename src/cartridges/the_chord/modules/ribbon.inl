@@ -84,6 +84,23 @@ struct RibbonConfig {
 // fill_ribbon_selection_geometry.
 
 
+// #TODO[ribbon-color-distrib] CONTROL PANEL REORG (purely structural — no value
+//   changes). Gather the module's whole design surface into ONE panel block
+//   here, top-to-bottom, with ═══ dividers:
+//     engine constants (RIBBON_TIER_COUNT, MAX_RIBBON_INSTANCES @319,
+//       RIBBON_MAX_LENGTH @320, RIBBON_SMOOTH_PALETTE_COUNT, the new
+//       RIBBON_DEFAULT_COLOR_RULE), RIBBON_SMOOTH_PALETTE, VERTICAL_RATIOS,
+//       TWIST_RATIOS, RIBBON_BASE_TIER_WEIGHTS, RibbonTierProfile + RIBBON_TIERS
+//       (keep the visual table comment), RIBBON_TIER_NAMES.
+//   Move MAX_RIBBON_INSTANCES/RIBBON_MAX_LENGTH UP from their current spot
+//   (~319-320, after the tiers). RibbonProp (seed-prop IDs) may stay near here
+//   too. Just relocation; identical values.
+// #TODO[ribbon-color-distrib] ADD the new spatial-distribution enum + default:
+//     struct RibbonColorRule { UNIFORM=0, LENGTH_GRADIENT=1, SIDE_PALETTE=2,
+//                              LENGTH_SIDE=3, COUNT=4 };
+//     static constexpr uint32_t RIBBON_DEFAULT_COLOR_RULE = 0; // UNIFORM (back-compat)
+//   NOTE: distinct from RibbonColorMode below (that picks the BASE color;
+//   color_rule picks how it's distributed in space). They coexist.
 // ═══ COLOR VOCABULARY ════════════════════════════════════════════
 
 struct RibbonColorMode {
@@ -573,6 +590,10 @@ static void commit_ribbon(RibbonState& rs, Cartridge* c,
     r.color[0] = plan.color[0];
     r.color[1] = plan.color[1];
     r.color[2] = plan.color[2];
+    // #TODO[ribbon-color-distrib] set the distribution fields:
+    //   r.color_rule = RIBBON_DEFAULT_COLOR_RULE;   // engine constant (no tier roll)
+    //   r.color2[0..2] = r.color[0..2];             // mirror until artist sets a real secondary
+    //   (rules 1/3 then look like UNIFORM; rules 0/2 leave color2 == color, no stale reads)
     r.is_visible = 1u;
 
     // Store in CPU mirror (per-frame nearest-selection uploads to GPU)

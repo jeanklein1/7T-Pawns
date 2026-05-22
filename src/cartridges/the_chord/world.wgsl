@@ -823,6 +823,10 @@ struct RibbonState {
     is_visible: u32,        // 0 = hidden, 1 = flying
     orientation: f32,       // heading angle (radians, 0 = +X axis)
     color_mode: u32,        // 0=smooth, 1=tinted, 2=contrast
+    // #TODO[ribbon-color-distrib] mirror GPURibbonState: replace the 4 pads with
+    //   color2: vec3<f32>,   // @80 (16-aligned — secondary/tail color)
+    //   color_rule: u32,     // @92 (0=UNIFORM,1=LENGTH_GRADIENT,2=SIDE_PALETTE,3=LENGTH_SIDE)
+    //   Stays 96 B / 16-aligned. No BOM.
     _pad0: f32,
     _pad1: f32,
     _pad2: f32,
@@ -4306,6 +4310,17 @@ fn ribbon_vs(@builtin(vertex_index) vid: u32) -> EntityVarying {
     out.clip_pos = render_vp.m * vec4(world_pos, 1.0);
     out.world_pos = world_pos;
     out.normal = world_normal;
+    // #TODO[ribbon-color-distrib] Replace with switch(ribbon.color_rule):
+    //   0 UNIFORM        -> ribbon.color
+    //   1 LENGTH_GRADIENT-> mix(ribbon.color, ribbon.color2, t), t = ring_idx/(ring_count-1)
+    //   2 SIDE_PALETTE   -> face 0..3 -> color + hue-rotated {90,180,270} variants
+    //   3 LENGTH_SIDE    -> length gradient combined with per-side hue offset
+    //   FACE-ID: computed per-vertex here (no fragment varying, entity_fs untouched).
+    //   ring_idx is already function-scoped; HOIST `face` to function scope
+    //   (declare a `var face_id: u32` up top, set in the body branch, default
+    //   e.g. 0 for the end-caps) so it's available at this assignment.
+    //   Add a hue-rotation helper (rotate RGB hue by 90/180/270 deg) near the
+    //   tube helpers if SIDE_PALETTE derives rather than stores its 4 colors.
     out.entity_color = ribbon.color;
     return out;
 }
