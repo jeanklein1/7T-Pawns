@@ -84,23 +84,34 @@ struct RibbonConfig {
 // fill_ribbon_selection_geometry.
 
 
-// #TODO[ribbon-color-distrib] CONTROL PANEL REORG (purely structural — no value
-//   changes). Gather the module's whole design surface into ONE panel block
-//   here, top-to-bottom, with ═══ dividers:
-//     engine constants (RIBBON_TIER_COUNT, MAX_RIBBON_INSTANCES @319,
-//       RIBBON_MAX_LENGTH @320, RIBBON_SMOOTH_PALETTE_COUNT, the new
-//       RIBBON_DEFAULT_COLOR_RULE), RIBBON_SMOOTH_PALETTE, VERTICAL_RATIOS,
-//       TWIST_RATIOS, RIBBON_BASE_TIER_WEIGHTS, RibbonTierProfile + RIBBON_TIERS
-//       (keep the visual table comment), RIBBON_TIER_NAMES.
-//   Move MAX_RIBBON_INSTANCES/RIBBON_MAX_LENGTH UP from their current spot
-//   (~319-320, after the tiers). RibbonProp (seed-prop IDs) may stay near here
-//   too. Just relocation; identical values.
-// #TODO[ribbon-color-distrib] ADD the new spatial-distribution enum + default:
-//     struct RibbonColorRule { UNIFORM=0, LENGTH_GRADIENT=1, SIDE_PALETTE=2,
-//                              LENGTH_SIDE=3, COUNT=4 };
-//     static constexpr uint32_t RIBBON_DEFAULT_COLOR_RULE = 0; // UNIFORM (back-compat)
-//   NOTE: distinct from RibbonColorMode below (that picks the BASE color;
-//   color_rule picks how it's distributed in space). They coexist.
+// ═══════════════════════════════════════════════════════════════════
+// RIBBON CONTROL PANEL — module design surface
+// ═══════════════════════════════════════════════════════════════════
+// One block to read the whole design surface. Capacity + color-rule
+// selection live here; the color vocabulary, harmonic ratios, tier
+// weights, RIBBON_TIERS matrix, and tier names follow below in order.
+
+// ── Capacity ──────────────────────────────────────────────────────
+// Single-render today (MAX_RIBBON_INSTANCES = 1); structured to scale
+// when the GPU supports multi-ribbon. RIBBON_MAX_LENGTH keeps anchor
+// coverage viable (~30 patches max).
+static constexpr uint32_t MAX_RIBBON_INSTANCES = 1;  // single-render; raise when GPU supports multi-ribbon
+static constexpr float    RIBBON_MAX_LENGTH = 700.0f;
+
+// ── Color distribution rule (spatial) ─────────────────────────────
+// Orthogonal to RibbonColorMode below: color_mode picks the BASE color
+// at spawn; color_rule distributes that color along length / per side.
+struct RibbonColorRule {
+    static constexpr uint32_t UNIFORM = 0;          // color everywhere (back-compat)
+    static constexpr uint32_t LENGTH_GRADIENT = 1;  // color (head) → color2 (tail)
+    static constexpr uint32_t SIDE_PALETTE = 2;     // per-face hue rotation of color
+    static constexpr uint32_t LENGTH_SIDE = 3;      // length gradient × per-face hue
+    static constexpr uint32_t COUNT = 4;
+};
+// All ribbons use this rule at spawn (swap manually to test each rule;
+// per-tier / per-ribbon rolling is deferred).
+static constexpr uint32_t RIBBON_DEFAULT_COLOR_RULE = RibbonColorRule::UNIFORM;
+
 // ═══ COLOR VOCABULARY ════════════════════════════════════════════
 
 struct RibbonColorMode {
@@ -329,12 +340,8 @@ static constexpr const char* RIBBON_COLOR_NAMES[] = {
 // ═══ RUNTIME STATE ═══════════════════════════════════════════════
 //
 // Per-instance ribbon state and the GPU-state mirrors. Single-render
-// today (MAX_RIBBON_INSTANCES = 1), structured to scale when the GPU
-// supports multi-ribbon.
-
-// ── Capacity ─────────────────────────────────────────────────────
-static constexpr uint32_t MAX_RIBBON_INSTANCES = 1;  // single-render; raise when GPU supports multi-ribbon
-static constexpr float    RIBBON_MAX_LENGTH = 700.0f;
+// today (MAX_RIBBON_INSTANCES = 1, see CONTROL PANEL above), structured
+// to scale when the GPU supports multi-ribbon.
 
 // ── Per-instance tracking ────────────────────────────────────────
 // Two-tip anchoring: ribbon survives until BOTH its tip patches are
@@ -590,10 +597,13 @@ static void commit_ribbon(RibbonState& rs, Cartridge* c,
     r.color[0] = plan.color[0];
     r.color[1] = plan.color[1];
     r.color[2] = plan.color[2];
-    // #TODO[ribbon-color-distrib] set the distribution fields:
-    //   r.color_rule = RIBBON_DEFAULT_COLOR_RULE;   // engine constant (no tier roll)
-    //   r.color2[0..2] = r.color[0..2];             // mirror until artist sets a real secondary
-    //   (rules 1/3 then look like UNIFORM; rules 0/2 leave color2 == color, no stale reads)
+    // Spatial distribution: single engine constant (no tier/per-ribbon roll yet).
+    // color2 mirrors color, so LENGTH_GRADIENT/LENGTH_SIDE look like UNIFORM until
+    // an artist sets a distinct secondary.
+    r.color_rule = RIBBON_DEFAULT_COLOR_RULE;
+    r.color2[0] = r.color[0];
+    r.color2[1] = r.color[1];
+    r.color2[2] = r.color[2];
     r.is_visible = 1u;
 
     // Store in CPU mirror (per-frame nearest-selection uploads to GPU)

@@ -823,14 +823,8 @@ struct RibbonState {
     is_visible: u32,        // 0 = hidden, 1 = flying
     orientation: f32,       // heading angle (radians, 0 = +X axis)
     color_mode: u32,        // 0=smooth, 1=tinted, 2=contrast
-    // #TODO[ribbon-color-distrib] mirror GPURibbonState: replace the 4 pads with
-    //   color2: vec3<f32>,   // @80 (16-aligned — secondary/tail color)
-    //   color_rule: u32,     // @92 (0=UNIFORM,1=LENGTH_GRADIENT,2=SIDE_PALETTE,3=LENGTH_SIDE)
-    //   Stays 96 B / 16-aligned. No BOM.
-    _pad0: f32,
-    _pad1: f32,
-    _pad2: f32,
-    _pad3: f32,
+    color2: vec3<f32>,      // @80 secondary/tail color (16-aligned)
+    color_rule: u32,        // @92 0=UNIFORM,1=LENGTH_GRADIENT,2=SIDE_PALETTE,3=LENGTH_SIDE
 }
 
 // Pre-computed per-ring transform (compute pass → VS + pawn overlay)
@@ -4150,6 +4144,28 @@ fn ribbon_ring_motor(ring_idx: u32, ribbon: RibbonState) -> Motor {
 const TUBE_VERTS_PER_SEGMENT: u32 = 24u;  // 4 faces × 6 verts
 const TUBE_CAP_VERTS: u32 = 12u;          // 2 caps × 6 verts
 
+// --- Ribbon color distribution helpers
+// Per-side hue offsets (radians): face 0 unrotated; faces 1-3 use these.
+// Shared by SIDE_PALETTE and LENGTH_SIDE color rules.
+const RIBBON_SIDE_HUE_OFFSETS = array<f32, 3>(1.5707963, 3.1415927, 4.712389);  // π/2, π, 3π/2
+
+fn ribbon_side_hue_offset(face: u32) -> f32 {
+    if (face == 0u) { return 0.0; }
+    var offs = RIBBON_SIDE_HUE_OFFSETS;
+    return offs[min(face - 1u, 2u)];
+}
+
+// Hue rotation about the luminance (grey) axis — Rodrigues rotation of the
+// RGB vector around normalized (1,1,1). Preserves luminance; clamped to [0,1].
+fn rotate_hue(color: vec3<f32>, angle: f32) -> vec3<f32> {
+    let k = vec3<f32>(0.5773503);  // normalize(vec3(1,1,1))
+    let ca = cos(angle);
+    let rotated = color * ca
+        + cross(k, color) * sin(angle)
+        + k * dot(k, color) * (1.0 - ca);
+    return clamp(rotated, vec3<f32>(0.0), vec3<f32>(1.0));
+}
+
 fn tube_corner(idx: u32, half: f32) -> vec3<f32> {
     switch idx {
         case 0u: { return vec3(0.0,  half,  half); }
@@ -4229,12 +4245,14 @@ fn ribbon_vs(@builtin(vertex_index) vid: u32) -> EntityVarying {
     var local_pos: vec3<f32>;
     var local_normal: vec3<f32>;
     var ring_idx: u32;
+    var face_id: u32 = 0u;   // tube face 0-3 (end caps default to 0 = base color)
 
     if (vid < body_verts) {
         // --- Body: extruded tube segments
         let seg = vid / TUBE_VERTS_PER_SEGMENT;
         let seg_vid = vid % TUBE_VERTS_PER_SEGMENT;
         let face = seg_vid / 6u;
+        face_id = face;
         let fv = seg_vid % 6u;
 
         let fc = tube_face_corners(face);
@@ -4310,18 +4328,28 @@ fn ribbon_vs(@builtin(vertex_index) vid: u32) -> EntityVarying {
     out.clip_pos = render_vp.m * vec4(world_pos, 1.0);
     out.world_pos = world_pos;
     out.normal = world_normal;
-    // #TODO[ribbon-color-distrib] Replace with switch(ribbon.color_rule):
-    //   0 UNIFORM        -> ribbon.color
-    //   1 LENGTH_GRADIENT-> mix(ribbon.color, ribbon.color2, t), t = ring_idx/(ring_count-1)
-    //   2 SIDE_PALETTE   -> face 0..3 -> color + hue-rotated {90,180,270} variants
-    //   3 LENGTH_SIDE    -> length gradient combined with per-side hue offset
-    //   FACE-ID: computed per-vertex here (no fragment varying, entity_fs untouched).
-    //   ring_idx is already function-scoped; HOIST `face` to function scope
-    //   (declare a `var face_id: u32` up top, set in the body branch, default
-    //   e.g. 0 for the end-caps) so it's available at this assignment.
-    //   Add a hue-rotation helper (rotate RGB hue by 90/180/270 deg) near the
-    //   tube helpers if SIDE_PALETTE derives rather than stores its 4 colors.
-    out.entity_color = ribbon.color;
+
+    // Spatial color distribution. color_mode (spawn-time) picked ribbon.color;
+    // color_rule (here) distributes it along length (ring t) and/or per side
+    // (face 0-3; end caps use face 0 = base). Computed per-vertex and baked
+    // into entity_color — entity_fs stays a plain shader, no extra varying.
+    let t = f32(ring_idx) / f32(max(ring_count - 1u, 1u));
+    let hue_off = ribbon_side_hue_offset(face_id);
+    switch ribbon.color_rule {
+        case 1u: {  // LENGTH_GRADIENT
+            out.entity_color = mix(ribbon.color, ribbon.color2, t);
+        }
+        case 2u: {  // SIDE_PALETTE
+            out.entity_color = rotate_hue(ribbon.color, hue_off);
+        }
+        case 3u: {  // LENGTH_SIDE
+            out.entity_color = mix(rotate_hue(ribbon.color, hue_off),
+                                   rotate_hue(ribbon.color2, hue_off), t);
+        }
+        default: {  // 0 UNIFORM
+            out.entity_color = ribbon.color;
+        }
+    }
     return out;
 }
 
