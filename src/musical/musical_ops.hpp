@@ -911,4 +911,30 @@ inline float similarity_playhead_playhead(const PlayheadReadout& a, const Playhe
     return pcv_cosine_similarity(va, vb);
 }
 
+
+// ════════════════════════════════════════════════════════════════════════════
+// PART 7: ATOMIC FEATURE DETECTORS
+//
+// Each op below measures ONE observable presence or characteristic, with a
+// known consumer in an analysis Train. PARTS 1-6 above are a speculative
+// bench from before the atomic-features framework; PART 7 is the active
+// forge -- ops land here when a coupling needs them, not before.
+//
+// Rule: each op produces one atomic feature. No bundled classifications.
+// Composition into compound meaning happens downstream (Train binding,
+// coupling layer).
+// ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Pitch class (0-11) of the lowest currently-sounding note.
+ * Returns -1 if no notes are sounding.
+ *
+ * Atomic feature: one observation per call. Consumers compose into
+ * presence-of-each-PC booleans downstream (e.g., in a Train's stat lambdas).
+ */
+inline int playhead_lowest_pc_current(const PlayheadReadout& r) {
+    int lowest = playhead_lowest_pitch_current(r);
+    return (lowest < 0) ? -1 : (lowest % 12);
+}
+
 } // namespace t7

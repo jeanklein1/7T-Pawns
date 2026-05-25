@@ -44,6 +44,7 @@
 #include "musical/midi_stream.hpp"
 #include "musical/playhead.hpp"
 #include "musical/train.hpp"
+#include "musical/musical_ops.hpp"
 
 #include <array>
 #include <iostream>
@@ -289,13 +290,7 @@ private:
         for (int pc = 0; pc < STAT_LOWEST_PC_COUNT; ++pc) {
             abbott_lowest_pc_stats_[pc] = abbott_train_.define(
                 [ph, pc](const TrainContext& ctx) -> float {
-                    const auto& r = ctx.playhead(ph);
-                    if (r.current_count == 0) return 0.0f;
-                    int lowest = 127;
-                    for (int i = 0; i < r.current_count; ++i)
-                        if (r.current[i].pitch < lowest)
-                            lowest = r.current[i].pitch;
-                    return ((lowest % 12) == pc) ? 1.0f : 0.0f;
+                    return (playhead_lowest_pc_current(ctx.playhead(ph)) == pc) ? 1.0f : 0.0f;
                 });
         }
     }
