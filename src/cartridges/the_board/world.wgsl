@@ -4756,7 +4756,11 @@ fn pulse_cell_target(cell_x: u32, cell_y: u32, t_beats: f32,
     let freq = tempo_jitter / max(tick_period * config.mode_gol_tick_scale, 0.1);
     let phase = t_beats * freq * 2.0 * PI + cell_phase;
 
-    return sin(phase) * 0.5 + 0.5;
+    // Threshold the sine into a planted on/off target, the way a Conway
+    // cell is binary alive/dead. The shared height spring smooths the 0↔1
+    // transitions, so the cell rests ON the ground when off and at full
+    // height when on, rather than hovering at the sine's 0.5 midpoint.
+    return select(0.0, 1.0, sin(phase) > 0.0);
 }
 
 // --- Terrain cell color at a world position
@@ -6955,9 +6959,11 @@ fn zone_gol_evolve(@builtin(global_invocation_id) gid: vec3<u32>) {
             zone_life[base + GOL_CELL_NEXT + idx] = next;
         }
     } else {
-        // Pulse: continuous sinusoidal target per cell (no neighbor rules)
-        // Writes every frame (not tick-gated) for smooth animation.
-        // The target is a continuous [0,1] blend factor.
+        // Pulse: per-cell on/off target on a sinusoidal schedule (no neighbor
+        // rules). Binary like Conway, so cells plant on the ground / at full
+        // height instead of hovering at mid-extension; the shared spring
+        // smooths the transitions. Written every frame (deterministic from
+        // t_beats), not tick-gated.
         let raw_target = pulse_cell_target(
             cell.x, cell.y,
             zone_config.t_beats,
