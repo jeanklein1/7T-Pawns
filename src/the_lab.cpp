@@ -107,13 +107,13 @@ struct ScrollingBuffer {
 };
 
 // =========================================================================
-// VECTOR HISTORY -- rolling per-bin time series for the line scopes
+// VECTOR HISTORY -- rolling per-frame columns for the playhead heatmap
 // =========================================================================
 //
 // A rolling window of the last `max_cols` frames, each a column of `bins`
-// values, with the wall-clock time of each column. Read back per bin as a
-// (time, value) series, oldest->newest, for an ImPlot line plot -- value on
-// the axis, time on the axis; no color encoding.
+// values, with the wall-clock time of each column. The playhead scope reads it
+// back as a (bin x frame) block, oldest->newest, laid across real seconds for
+// an ImPlot heatmap; series() exposes one bin as a (time, value) pair.
 
 struct VectorHistory {
     int bins;
@@ -338,33 +338,61 @@ static void draw_vector(const t7::StatGroup& g, const t7::AnalysisSignal& signal
     }
 }
 
-// History as time-scaled line scopes: each active bin (its degree above D) is a
-// line, value on the Y axis, real time (seconds) on X over the last 10s -- the
-// same idiom as the scalar scopes. The numbers are read off the axes; no
-// color-encoded heatmap. Bins that never sounded are skipped, to declutter.
+// The playhead history as a heatmap with a real time axis. Each column is one
+// past frame placed at its wall-clock time, each row a degree above D; the cell
+// is colored by that degree's weight (Viridis). This is the current_pc scope as
+// it read before -- which degree sounded, and when -- only now the X axis is in
+// seconds, not an unlabeled "older->newer", and the Y axis names the degree.
+// Frames are ~uniform (vsync), so spreading the filled columns evenly across
+// [t_oldest, now] lands each within a frame of its true time; the last 10 s
+// stay in view. Drawn only once filled; an empty buffer leaves the axes bare.
 static void draw_vector_history(const t7::StatGroup& g, const VectorHistory& hist,
                                 const t7::AnalysisSignal& signal) {
     const float now = signal.t_seconds;
     char id[64];
     std::snprintf(id, sizeof(id), "##%s_hist", g.name);
     if (ImPlot::BeginPlot(id, ImVec2(-1, 150))) {
-        ImPlot::SetupAxes("t (s)", "value",
-                          ImPlotAxisFlags_None, ImPlotAxisFlags_AutoFit);
+        ImPlot::SetupAxes("t (s)", "degree",
+                          ImPlotAxisFlags_None, ImPlotAxisFlags_NoGridLines);
         ImPlot::SetupAxisLimits(ImAxis_X1, now - 10.0, now, ImPlotCond_Always);
-        static std::vector<float> ts, ys;   // reused scratch; single-threaded UI
-        for (int b = 0; b < g.count; ++b) {
-            hist.series(b, ts, ys);
-            if (ts.empty()) continue;
-            bool any = false;
-            for (float y : ys) if (y != 0.0f) { any = true; break; }
-            if (!any) continue;              // skip pitch classes that never sounded
-            char lbl[16];
-            std::snprintf(lbl, sizeof(lbl), "%d", b);   // degree above D
-            ImPlotSpec spec;
-            ImPlot::PlotLine(lbl, ts.data(), ys.data(), (int)ts.size(), spec);
+        ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0, g.count, ImPlotCond_Always);
+
+        if (hist.filled > 0) {
+            // Transpose the column-major ring into a row-major (degree x frame)
+            // block, oldest->newest, flipping rows so degree 0 sits at the
+            // bottom (PlotHeatmap draws row 0 at the top). vmax (>= 1) spans the
+            // colormap so a lone voice reads as full scale.
+            static std::vector<float> data;   // reused scratch; single-threaded UI
+            const int rows = g.count;
+            const int cols = hist.filled;
+            data.assign((size_t)rows * cols, 0.0f);
+
+            const int oldest = (hist.head - hist.filled + hist.max_cols) % hist.max_cols;
+            float vmax = 1.0f;
+            for (int t = 0; t < cols; ++t) {
+                const int src = (oldest + t) % hist.max_cols;
+                for (int b = 0; b < rows; ++b) {
+                    const float val = hist.ring[(size_t)src * hist.bins + b];
+                    data[(size_t)(rows - 1 - b) * cols + t] = val;
+                    if (val > vmax) vmax = val;
+                }
+            }
+            const double t_old = hist.times[oldest];
+
+            ImPlot::PushColormap(ImPlotColormap_Viridis);
+            ImPlot::PlotHeatmap(g.name, data.data(), rows, cols, 0.0, vmax,
+                                nullptr, ImPlotPoint(t_old, 0.0),
+                                ImPlotPoint(now, rows));
+            ImPlot::PopColormap();
         }
         ImPlot::EndPlot();
     }
+}
+
+// Name compare without <cstring> (this TU parses stat names by hand).
+static bool name_eq(const char* a, const char* b) {
+    while (*a && *b && *a == *b) { ++a; ++b; }
+    return *a == *b;
 }
 
 struct StatScopes {
@@ -461,6 +489,10 @@ struct StatScopes {
         // (2) Channel sub-windows — dock into analysis_dock; drag/tab/split freely.
         for (auto& cg : channel_groups) {
             ImGui::Begin(cg.label);
+
+            // Instantaneous readings: one collapsed strip per stat. Scalars draw
+            // a scrolling line, vectors a bar over their slots. History is a
+            // single per-channel heatmap below — not one per stat.
             for (int g : cg.stats) {
                 const auto& grp = g_layout[g];
 
@@ -470,24 +502,29 @@ struct StatScopes {
                 const char* short_name = (*dot == '.') ? dot + 1 : grp.name;
 
                 if (ImGui::CollapsingHeader(short_name)) {  // collapsed by default
-                    if (grp.shape == t7::StatShape::Scalar) {
+                    if (grp.shape == t7::StatShape::Scalar)
                         draw_scalar(grp, scalar_history[hist_index[g]], signal);
-                    } else {
-                        ImGui::PushID(g);  // scope the inner "history" header id per stat
+                    else
                         draw_vector(grp, signal);
-                        // Tint the strip's "history" header a deeper blue so it
-                        // reads as a sub-section, distinct from the stat headers.
-                        ImGui::PushStyleColor(ImGuiCol_Header,        ImVec4(0.10f, 0.22f, 0.45f, 1.0f));
-                        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.15f, 0.32f, 0.62f, 1.0f));
-                        ImGui::PushStyleColor(ImGuiCol_HeaderActive,  ImVec4(0.20f, 0.40f, 0.78f, 1.0f));
-                        const bool show_hist = ImGui::CollapsingHeader("history");
-                        ImGui::PopStyleColor(3);
-                        if (show_hist)  // the line scope toggles on its own
-                            draw_vector_history(grp, vector_history[hist_index[g]], signal);
-                        ImGui::PopID();
-                    }
                 }
             }
+
+            // One heatmap per channel: the playhead (current_pc) over real time.
+            // This is the channel's history view; the strips above are the
+            // instantaneous values. A channel without a current_pc reading just
+            // shows no heatmap.
+            for (int g : cg.stats) {
+                const auto& grp = g_layout[g];
+                const char* dot = grp.name;
+                while (*dot && *dot != '.') ++dot;
+                const char* short_name = (*dot == '.') ? dot + 1 : grp.name;
+                if (name_eq(short_name, "current_pc")) {
+                    ImGui::SeparatorText("playhead history");
+                    draw_vector_history(grp, vector_history[hist_index[g]], signal);
+                    break;
+                }
+            }
+
             ImGui::End();
         }
     }
