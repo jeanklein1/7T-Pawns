@@ -107,36 +107,40 @@ struct ScrollingBuffer {
 };
 
 // =========================================================================
-// VECTOR HISTORY -- 2D rolling buffer for vector-stat heatmap strips
+// VECTOR HISTORY -- rolling per-bin time series for the line scopes
 // =========================================================================
 //
 // A rolling window of the last `max_cols` frames, each a column of `bins`
-// values. Stored column-major in a ring; unrolled oldest->newest into a
-// contiguous row-major block at draw time for ImPlot::PlotHeatmap.
+// values, with the wall-clock time of each column. Read back per bin as a
+// (time, value) series, oldest->newest, for an ImPlot line plot -- value on
+// the axis, time on the axis; no color encoding.
 
 struct VectorHistory {
     int bins;
     int max_cols;
     int head = 0;
     int filled = 0;
-    std::vector<float> ring;  // max_cols columns, each `bins` long (column-major)
+    std::vector<float> ring;   // max_cols columns, each `bins` long (column-major)
+    std::vector<float> times;  // t_seconds of each column
 
-    VectorHistory(int n_bins, int cols = 240)
-        : bins(n_bins), max_cols(cols), ring(n_bins * cols, 0.0f) {}
+    VectorHistory(int n_bins, int cols = 600)
+        : bins(n_bins), max_cols(cols), ring(n_bins * cols, 0.0f), times(cols, 0.0f) {}
 
-    void push(const float* col) {
+    void push(const float* col, float t) {
         for (int b = 0; b < bins; ++b) ring[head * bins + b] = col[b];
+        times[head] = t;
         head = (head + 1) % max_cols;
         if (filled < max_cols) ++filled;
     }
 
-    // Unroll oldest->newest into row-major [bins][max_cols] for PlotHeatmap.
-    void unroll(std::vector<float>& out) const {
-        out.resize(bins * max_cols);
-        for (int t = 0; t < max_cols; ++t) {
-            int src = (head + t) % max_cols;  // oldest first
-            for (int b = 0; b < bins; ++b)
-                out[b * max_cols + t] = ring[src * bins + b];
+    // One bin's series, oldest->newest: the time axis and the values.
+    void series(int bin, std::vector<float>& ts, std::vector<float>& ys) const {
+        ts.clear(); ys.clear();
+        const int oldest = (head - filled + max_cols) % max_cols;
+        for (int t = 0; t < filled; ++t) {
+            const int src = (oldest + t) % max_cols;
+            ts.push_back(times[src]);
+            ys.push_back(ring[src * bins + bin]);
         }
     }
 };
@@ -334,33 +338,33 @@ static void draw_vector(const t7::StatGroup& g, const t7::AnalysisSignal& signal
     }
 }
 
-// Heatmap-strip: a vector stat's history as bin(Y) x time(X), value as color.
-// Turns the instantaneous bar chart into a moving picture (the progression).
-static void draw_vector_history(const t7::StatGroup& g, const VectorHistory& hist) {
-    static std::vector<float> temp;  // reused scratch; dev tool, single-threaded UI
-    hist.unroll(temp);
-
-    float vmax = 0.0f;
-    for (float v : temp) vmax = std::max(vmax, v);
-    if (vmax < 1e-6f) vmax = 1.0f;  // empty strip: avoid a zero-width color range
-
+// History as time-scaled line scopes: each active bin (its degree above D) is a
+// line, value on the Y axis, real time (seconds) on X over the last 10s -- the
+// same idiom as the scalar scopes. The numbers are read off the axes; no
+// color-encoded heatmap. Bins that never sounded are skipped, to declutter.
+static void draw_vector_history(const t7::StatGroup& g, const VectorHistory& hist,
+                                const t7::AnalysisSignal& signal) {
+    const float now = signal.t_seconds;
     char id[64];
     std::snprintf(id, sizeof(id), "##%s_hist", g.name);
-
-    ImPlot::PushColormap(ImPlotColormap_Viridis);
-    if (ImPlot::BeginPlot(id, ImVec2(-1, 120))) {
-        ImPlot::SetupAxes("t (older -> newer)", "bin",
-                          ImPlotAxisFlags_NoDecorations,
-                          ImPlotAxisFlags_NoDecorations);
-        ImPlot::SetupAxisLimits(ImAxis_X1, 0, hist.max_cols, ImPlotCond_Always);
-        ImPlot::SetupAxisLimits(ImAxis_Y1, 0, g.count,        ImPlotCond_Always);
-        ImPlot::PlotHeatmap(g.name, temp.data(), g.count, hist.max_cols,
-                            0.0, (double)vmax, nullptr,
-                            ImPlotPoint(0, 0),
-                            ImPlotPoint((double)hist.max_cols, (double)g.count));
+    if (ImPlot::BeginPlot(id, ImVec2(-1, 150))) {
+        ImPlot::SetupAxes("t (s)", "value",
+                          ImPlotAxisFlags_None, ImPlotAxisFlags_AutoFit);
+        ImPlot::SetupAxisLimits(ImAxis_X1, now - 10.0, now, ImPlotCond_Always);
+        static std::vector<float> ts, ys;   // reused scratch; single-threaded UI
+        for (int b = 0; b < g.count; ++b) {
+            hist.series(b, ts, ys);
+            if (ts.empty()) continue;
+            bool any = false;
+            for (float y : ys) if (y != 0.0f) { any = true; break; }
+            if (!any) continue;              // skip pitch classes that never sounded
+            char lbl[16];
+            std::snprintf(lbl, sizeof(lbl), "%d", b);   // degree above D
+            ImPlotSpec spec;
+            ImPlot::PlotLine(lbl, ts.data(), ys.data(), (int)ts.size(), spec);
+        }
         ImPlot::EndPlot();
     }
-    ImPlot::PopColormap();
 }
 
 struct StatScopes {
@@ -421,7 +425,7 @@ struct StatScopes {
                 float col[128];
                 for (int i = 0; i < grp.count; ++i)
                     col[i] = signal.stat(grp.channel, grp.slot_base + i);
-                vector_history[hist_index[g]].push(col);
+                vector_history[hist_index[g]].push(col, signal.t_seconds);
             }
         }
     }
@@ -478,8 +482,8 @@ struct StatScopes {
                         ImGui::PushStyleColor(ImGuiCol_HeaderActive,  ImVec4(0.20f, 0.40f, 0.78f, 1.0f));
                         const bool show_hist = ImGui::CollapsingHeader("history");
                         ImGui::PopStyleColor(3);
-                        if (show_hist)  // strip toggles on its own
-                            draw_vector_history(grp, vector_history[hist_index[g]]);
+                        if (show_hist)  // the line scope toggles on its own
+                            draw_vector_history(grp, vector_history[hist_index[g]], signal);
                         ImGui::PopID();
                     }
                 }
