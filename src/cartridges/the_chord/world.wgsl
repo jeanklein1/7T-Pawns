@@ -5463,6 +5463,19 @@ fn behavior_player_controlled(agent_in: AgentState) -> AgentState {
         let q_pitch = quat_from_axis_angle(vec3(0.0, 0.0, 1.0), pitch_off);
         let q_roll  = quat_from_axis_angle(vec3(1.0, 0.0, 0.0), roll);
         let sky_q   = quat_multiply(q_yaw, quat_multiply(q_pitch, q_roll));
+        // Seat the base ON the tilted face (seat polish, ruled): the CPU
+        // mount lifts half a tube along WORLD up, but the face tilts
+        // with roll/pitch (BNK-1) — a vertical lift sinks the feet by
+        // half·(1/cos(tilt) − 1) mid-swing. Re-aim the lift along the
+        // frame's up: subtract the CPU's vertical half, add it rotated.
+        // Identity when the frame is level (correction = 0 exactly);
+        // zeroed ribbon_state on a transition frame gives half = 0.
+        let seat_half = ribbon_state.cube_size * 0.5;
+        let seat_lift = quat_rotate(sky_q, vec3(0.0, seat_half, 0.0))
+                      - vec3(0.0, seat_half, 0.0);
+        agent.pos_x += seat_lift.x;
+        agent.pos_y += seat_lift.y;
+        agent.pos_z += seat_lift.z;
         agent.orient_x = sky_q.x;
         agent.orient_y = sky_q.y;
         agent.orient_z = sky_q.z;

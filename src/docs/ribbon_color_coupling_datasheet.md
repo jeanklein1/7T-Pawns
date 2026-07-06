@@ -144,6 +144,15 @@ Two further future D-couplings live here:
   authored. On FINAL_LAPS the same resolution landed at 9fe988a with
   the full drift-trap story (Door B's CPU mirror caught leaning
   against the face — the twin-authorship alarm's first catch).
+- SEAT POLISH (ledger, BNK-2 follow-up, RULED): the half-tube seat
+  lift now rides the FRAME's up instead of world up — BNK-1 tilts the
+  top face with roll/pitch, and a world-vertical lift sank the feet
+  by half·(1/cos tilt − 1): ~0.02–0.15u in normal play, up to ~9% of
+  the tube at the roll clamp. Door A form: corrected GPU-side in the
+  sky branch on the agent position (subtract the CPU's vertical half,
+  add it rotated by sky_q); the camera keeps the vertical lift — the
+  CPU stays frame-blind, Door A's trade. Identity at a level frame
+  (correction = 0 exactly); zeroed ribbon_state gives half = 0.
 
 ## 3. SHADER CONSTANTS (world.wgsl, hot-reloadable — scene-level dials)
 | const                | meaning                         | class | notes |
