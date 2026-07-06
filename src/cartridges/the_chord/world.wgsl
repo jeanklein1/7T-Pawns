@@ -4210,10 +4210,16 @@ fn ribbon_ring_motor(ring_idx: u32, ribbon: RibbonState) -> Motor {
     let slopes = ribbon_wave_slopes(phase_age, ribbon);
     let p = max(ribbon.propagation_speed, 1e-3);
 
-    // Deflections of the frame toward the true tangent: the wave's
-    // velocity against forward travel. Small-angle honest: atan.
-    let yaw_off   = RIBBON_TANGENT_ALIGN * atan(slopes.x / p);
-    let pitch_off = RIBBON_TANGENT_ALIGN * atan(slopes.y / p);
+    // Deflections of the frame toward the true tangent — NEGATED: the
+    // tube axis runs TAILWARD (dir(w)), and the tailward tangent is
+    // exactly dir(w − atan(slopes.x/p)), pitched −atan(slopes.y/p).
+    // With a plus the nose crabs OUTWARD of the swing and dives on the
+    // rise (the gate-4 failure): caught on screen (BNK-1 sweep),
+    // confirmed by derivation — the apparent ring velocity equals
+    // −p × the tailward tangent, so nose-along-motion and
+    // axis-along-tangent impose the same sign.
+    let yaw_off   = -RIBBON_TANGENT_ALIGN * atan(slopes.x / p);
+    let pitch_off = -RIBBON_TANGENT_ALIGN * atan(slopes.y / p);
     let roll      = clamp(RIBBON_BANK_GAIN * (slopes.x / p),
                           -RIBBON_BANK_MAX, RIBBON_BANK_MAX);
 
@@ -4223,9 +4229,9 @@ fn ribbon_ring_motor(ring_idx: u32, ribbon: RibbonState) -> Motor {
     // base yaw: tube axis = +X, lateral = +Z, up = +Y (per tube_corner /
     // tube_face_normal). Apply the local rotors FIRST, then the base
     // yaw, then translate — gp_mm order per the existing comment (first
-    // argument applies first). Sign convention: verify on screen with
-    // the sweep test; if the nose crabs OUTWARD or the bank leans
-    // out of the turn, flip the offending sign and note it.
+    // argument applies first). Sign convention: RESOLVED — the
+    // tangent-align terms enter negated (see above); the bank's sign
+    // is aesthetic and stands as authored.
     let base_yaw = rotor(vec3(0.0, 1.0, 0.0), -(head_poses[ring_idx].w) - yaw_off);
     let r_pitch  = rotor(vec3(0.0, 0.0, 1.0), pitch_off);
     let r_roll   = rotor(vec3(1.0, 0.0, 0.0), roll);
@@ -5440,8 +5446,10 @@ fn behavior_player_controlled(agent_in: AgentState) -> AgentState {
             let p = max(ribbon_state.propagation_speed, 1e-3);
             let s_age = ribbon_state.time - RIBBON_SADDLE_SETBACK / p;
             let slopes = ribbon_wave_slopes(s_age, ribbon_state);
-            yaw_off   = RIBBON_TANGENT_ALIGN * atan(slopes.x / p);
-            pitch_off = RIBBON_TANGENT_ALIGN * atan(slopes.y / p);
+            // Negated tangent-align — the drift-trap resolution, in
+            // lockstep with ribbon_ring_motor's formulas above.
+            yaw_off   = -RIBBON_TANGENT_ALIGN * atan(slopes.x / p);
+            pitch_off = -RIBBON_TANGENT_ALIGN * atan(slopes.y / p);
             roll      = clamp(RIBBON_BANK_GAIN * (slopes.x / p),
                               -RIBBON_BANK_MAX, RIBBON_BANK_MAX);
         }

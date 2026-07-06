@@ -128,6 +128,22 @@ Two further future D-couplings live here:
   gate. Door B (CPU-computed angles shipped through the sky block's
   pads) lives on FINAL_LAPS at 8dd18ba for side-by-side comparison;
   reverted here at the branch root.
+- SIGN RESOLUTION (ledger, BNK-1/BNK-2): the committed tangent-align
+  deflections were MIRRORED across the base heading — the tube axis
+  runs tailward, and the tailward tangent is exactly
+  dir(w − atan(slopes.x/p)), so the terms enter NEGATED; with a plus
+  the nose crabs outward of the swing and dives on the rise (gate-4's
+  named failure, caught on screen by the BNK-1 sweep). Confirmed by
+  three independent adversarial derivations (operator handedness
+  numeric to 1e-16; spatial-tangent and apparent-velocity models
+  agree exactly: ring velocity = −p × tailward tangent). On this
+  branch the fix lands in world.wgsl's TWO formula copies (ring motor
+  + the pawn kernel's sky branch) — Door A has no CPU mirror to
+  drift, but a duplicated formula is its one redundancy; both copies
+  flipped in one commit. The bank's sign is aesthetic and stands as
+  authored. On FINAL_LAPS the same resolution landed at 9fe988a with
+  the full drift-trap story (Door B's CPU mirror caught leaning
+  against the face — the twin-authorship alarm's first catch).
 
 ## 3. SHADER CONSTANTS (world.wgsl, hot-reloadable — scene-level dials)
 | const                | meaning                         | class | notes |
