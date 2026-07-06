@@ -111,6 +111,23 @@ Two further future D-couplings live here:
   keep-or-mirror pending. The diameter law (DM-1) remains parked and
   COMPOSES with this: the diameter would reorient the wave these
   frames answer.
+- SADDLE JOINS THE FRAME LAW (ledger, BNK-2 via Door A — this branch,
+  FINAL_STEPS): the gimbal ruling is CLOSED by observation — the rider
+  follows the surface. Door A: the pawn kernel reads ribbon_state
+  DIRECTLY — binding 120 re-seated into the compute-entity layout (the
+  comment that marked its removal now marks its return: the player
+  kernel is ribbon_state's second consumer). The rider and the rings
+  read the SAME struct and the SAME frame constants — single-authored,
+  no tuning mirrors, no drift possible; the hot-reload loop tunes body
+  and rider together, and the swell inheritance is literal (the same
+  post-swell amp bytes). One geometric mirror remains:
+  RIBBON_SADDLE_SETBACK (world.wgsl) ↔ RIBBON_MOUNT_SETBACK
+  (ribbon.inl) — the seat offset, changes rarely. The frame samples at
+  the seat's arc age (head age − setback/p) while the mount POSITION
+  samples at head age — the deliberate seam, eyes on it at the ride
+  gate. Door B (CPU-computed angles shipped through the sky block's
+  pads) lives on FINAL_LAPS at 8dd18ba for side-by-side comparison;
+  reverted here at the branch root.
 
 ## 3. SHADER CONSTANTS (world.wgsl, hot-reloadable — scene-level dials)
 | const                | meaning                         | class | notes |

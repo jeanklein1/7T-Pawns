@@ -4174,6 +4174,12 @@ const RIBBON_TANGENT_ALIGN: f32 = 1.0;
 const RIBBON_BANK_GAIN: f32 = 0.9;
 const RIBBON_BANK_MAX: f32 = 0.6;   // radians, clamp
 
+// Saddle seat offset along +heading — LOCKSTEP MIRROR of ribbon.inl's
+// RIBBON_MOUNT_SETBACK (a geometric constant, not a tuning dial; it
+// changes rarely). Used by the pawn kernel's sky branch (BNK-2, Door A)
+// to evaluate the frame at the SEAT's arc age rather than the head's.
+const RIBBON_SADDLE_SETBACK: f32 = 1.5;
+
 // Build a PGA motor that places and orients one cross-section ring.
 // Composes: orient * translate — rotate the local frame, then place it.
 fn ribbon_ring_motor(ring_idx: u32, ribbon: RibbonState) -> Motor {
@@ -5417,11 +5423,38 @@ fn behavior_player_controlled(agent_in: AgentState) -> AgentState {
         agent.vel_x = 0.0;
         agent.vel_y = 0.0;
         agent.vel_z = 0.0;
-        // Upright on the head, facing the flight heading — drop the stale ground
-        // tilt the walker left in orient_* at takeoff. SEAM[ribbon:sky-mode].
-        // Negated: quat_rotate maps +X to (cos θ, −sin θ); the heading speaks
-        // dir(θ) = (cos θ, +sin θ). Same mirror as the ring motor, same fix.
-        let sky_q = quat_from_axis_angle(vec3(0.0, 1.0, 0.0), -signal.sky_heading);
+        // The saddle joins the frame law (BNK-2, Door A): the rider reads
+        // the SAME ribbon_state and the SAME frame constants as the ring
+        // motor — single-authored, no tuning mirrors, no drift possible;
+        // the hot-reload loop tunes body and rider together. (Binding 120
+        // re-seated into the compute-entity layout for this — the player
+        // kernel is ribbon_state's second consumer.) The frame is
+        // evaluated at the SADDLE's arc position: the head's age offset
+        // by the seat setback at propagation speed. Guard: a transition
+        // frame with no live ribbon reads a level frame (identity).
+        // SEAM[ribbon:sky-mode].
+        var yaw_off = 0.0;
+        var pitch_off = 0.0;
+        var roll = 0.0;
+        if (ribbon_state.is_visible != 0u && ribbon_state.cube_count >= 2u) {
+            let p = max(ribbon_state.propagation_speed, 1e-3);
+            let s_age = ribbon_state.time - RIBBON_SADDLE_SETBACK / p;
+            let slopes = ribbon_wave_slopes(s_age, ribbon_state);
+            yaw_off   = RIBBON_TANGENT_ALIGN * atan(slopes.x / p);
+            pitch_off = RIBBON_TANGENT_ALIGN * atan(slopes.y / p);
+            roll      = clamp(RIBBON_BANK_GAIN * (slopes.x / p),
+                              -RIBBON_BANK_MAX, RIBBON_BANK_MAX);
+        }
+        // Composed in ribbon_ring_motor's verified order — roll first,
+        // then pitch, then yaw (quat_multiply applies its SECOND argument
+        // first). Negated: quat_rotate maps +X to (cos θ, −sin θ); the
+        // heading speaks dir(θ) = (cos θ, +sin θ). Same mirror as the
+        // ring motor, same fix.
+        let q_yaw   = quat_from_axis_angle(vec3(0.0, 1.0, 0.0),
+                                           -signal.sky_heading - yaw_off);
+        let q_pitch = quat_from_axis_angle(vec3(0.0, 0.0, 1.0), pitch_off);
+        let q_roll  = quat_from_axis_angle(vec3(1.0, 0.0, 0.0), roll);
+        let sky_q   = quat_multiply(q_yaw, quat_multiply(q_pitch, q_roll));
         agent.orient_x = sky_q.x;
         agent.orient_y = sky_q.y;
         agent.orient_z = sky_q.z;

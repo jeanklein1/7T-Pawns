@@ -3680,7 +3680,7 @@ namespace t7 {
                 // Sphere:  100-119   (sphere_state, trajectories)
                 //
                 {
-                    std::array<wgpu::BindGroupLayoutEntry, 19> entries{};
+                    std::array<wgpu::BindGroupLayoutEntry, 20> entries{};
 
                     entries[0].binding = 0;
                     entries[0].visibility = wgpu::ShaderStage::Compute;
@@ -3699,7 +3699,6 @@ namespace t7 {
                     entries[3].buffer.type = wgpu::BufferBindingType::Storage;
 
                     // (bindings 21, 40 removed — formerly proximity_field, cell_states)
-                    // (binding 120 removed — ribbon_state only used by compute_ribbon_rings, separate group)
 
                     entries[4].binding = 60;
                     entries[4].visibility = wgpu::ShaderStage::Compute;
@@ -3772,6 +3771,16 @@ namespace t7 {
                     entries[18].binding = 111;  // agent_tier_gains
                     entries[18].visibility = wgpu::ShaderStage::Compute;
                     entries[18].buffer.type = wgpu::BufferBindingType::Uniform;
+
+                    // ribbon_state RE-SEATED (BNK-2, Door A): removed when
+                    // compute_ribbon_rings got its own group; back because
+                    // behavior_player_controlled is its SECOND consumer —
+                    // the mounted pawn reads the same struct the ring motor
+                    // reads, so rider and body can never disagree. Uniform
+                    // budget: 8 of 12 per stage after this.
+                    entries[19].binding = 120;
+                    entries[19].visibility = wgpu::ShaderStage::Compute;
+                    entries[19].buffer.type = wgpu::BufferBindingType::Uniform;
 
                     wgpu::BindGroupLayoutDescriptor desc{};
                     desc.label = "Compute Entity Layout";
@@ -4692,9 +4701,10 @@ namespace t7 {
 
                 // -- Bind group instances ------------------------------------
 
-                // Compute entity bind group (17 entries: systems + terrain + GoL zones + portals + cached heightfield)
+                // Compute entity bind group (20 entries: systems + terrain + GoL
+                // zones + portals + cached heightfield + ribbon_state)
                 {
-                    std::array<wgpu::BindGroupEntry, 19> entries{};
+                    std::array<wgpu::BindGroupEntry, 20> entries{};
 
                     entries[0].binding = 0;
                     entries[0].buffer = signalBuffer_;
@@ -4713,7 +4723,6 @@ namespace t7 {
                     entries[3].size = sizeof(GPUTerrainState);
 
                     // (bindings 21, 40 removed — formerly proximity_field, cell_states)
-                    // (binding 120 removed — ribbon_state only used by compute_ribbon_rings, separate group)
 
                     entries[4].binding = 60;
                     entries[4].buffer = agentStateBuffer_;
@@ -4783,6 +4792,12 @@ namespace t7 {
                     entries[18].binding = 111;
                     entries[18].buffer = agentTierGainsBuffer_;
                     entries[18].size = GPU_AGENT_TIER_COUNT * sizeof(GPUAgentTierDef);
+
+                    // ribbon_state — same buffer the ribbon compute group binds;
+                    // re-seated for behavior_player_controlled (BNK-2, Door A).
+                    entries[19].binding = 120;
+                    entries[19].buffer = ribbonBuffer_;
+                    entries[19].size = sizeof(GPURibbonState);
 
                     wgpu::BindGroupDescriptor desc{};
                     desc.label = "Compute Entity BindGroup";
