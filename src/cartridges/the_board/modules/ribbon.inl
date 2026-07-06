@@ -128,15 +128,6 @@ static constexpr float RIBBON_MOUNT_SETBACK  = 1.5f;    // pawn seat setback tow
 static constexpr float RIBBON_SKY_YAW_TAU    = 0.6f;    // s; first-order ease on the PLAYER's yaw hand — the body replays the heading history, so bang-bang arrows must become curves; short tau keeps it immediate
 static constexpr float RIBBON_REFERENCE_BPM  = 100.0f;  // the tempo at which the tiers' authored sway is DEFINED; phase advances at live-tempo/this (control-panel)
 
-// ── Frame-law mirrors (BNK-2) ── LOCKSTEP MIRRORS of world.wgsl's
-// RIBBON_TANGENT_ALIGN / RIBBON_BANK_GAIN / RIBBON_BANK_MAX. The GPU set
-// is the tuning authority (hot-reload); when a value settles there, copy
-// it here. Drift is SELF-ANNOUNCING: the rider visibly leans differently
-// than the face beneath it. (values below = the settled BNK-1 values)
-static constexpr float MOUNT_TANGENT_ALIGN = 1.0f;
-static constexpr float MOUNT_BANK_GAIN     = 0.9f;
-static constexpr float MOUNT_BANK_MAX      = 0.6f;
-
 // ── Wander policy ─────────────────────────────────────────────────
 // The steering channel's IDLE SCRIPT — the shape of autonomous drift.
 // Constants: control-panel material.
@@ -475,13 +466,6 @@ struct RibbonHead {
     float    heading = 0.0f;               // sky-flight heading (yawed by input)
     float    pos[3] = { 0.0f, 0.0f, 0.0f };  // live integrated head position
     float    mount[3] = { 0.0f, 0.0f, 0.0f }; // visible head-ring center + half-tube (pawn mount point)
-    // The saddle's FRAME (BNK-2): the three angles the mounted pawn
-    // leans with — same math as the GPU ring frames (MOUNT_* mirrors),
-    // sampled at the saddle's arc position. Shipped to the pawn kernel
-    // through the frame signal's sky block. Zeros = level (identity).
-    float    mount_yaw_off = 0.0f;  // tangent-align yaw deflection (rad)
-    float    mount_pitch   = 0.0f;  // tangent-align pitch (rad)
-    float    mount_roll    = 0.0f;  // bank into the lateral swing (rad, clamped)
 
     // ── Propagation history ── the body is the head's past, replayed at
     // propagation speed: ring k wears the head's state from
@@ -779,24 +763,6 @@ static void ribbon_advance_head(RibbonState& rs, GPUState& gpuState,
         hd.mount[0] = head_x + lat * (-sh) + RIBBON_MOUNT_SETBACK * ch;
         hd.mount[1] = head_y + ver + ribbon.cube_size * 0.5f;
         hd.mount[2] = head_z + lat * ( ch) + RIBBON_MOUNT_SETBACK * sh;
-
-        // The saddle's FRAME (BNK-2): identical math to the GPU ring
-        // motor (BNK-1), evaluated at the SADDLE's arc position — the
-        // head's age offset by the seat setback at propagation speed.
-        // Inputs are this slot's CPU mirror (amps POST-swell: the
-        // conductor's flush runs before this mover), so the rider's
-        // lean deepens with the musical swell for free.
-        const float p_spd  = std::max(ribbon.propagation_speed, 1e-3f);
-        const float s_age  = ribbon.time - RIBBON_MOUNT_SETBACK / p_spd;
-        const float sl_lat = std::cos(ribbon.lateral_freq  * s_age)
-                           * ribbon.lateral_amp  * ribbon.lateral_freq;
-        const float sl_ver = std::cos(ribbon.vertical_freq * s_age)
-                           * ribbon.vertical_amp * ribbon.vertical_freq;
-        hd.mount_yaw_off = MOUNT_TANGENT_ALIGN * std::atan(sl_lat / p_spd);
-        hd.mount_pitch   = MOUNT_TANGENT_ALIGN * std::atan(sl_ver / p_spd);
-        const float bank = MOUNT_BANK_GAIN * (sl_lat / p_spd);
-        hd.mount_roll = (bank >  MOUNT_BANK_MAX) ?  MOUNT_BANK_MAX :
-                        (bank < -MOUNT_BANK_MAX) ? -MOUNT_BANK_MAX : bank;
     }
 
     // Record the head's state into the propagation history (catch-up
@@ -832,15 +798,6 @@ static void ribbon_head_pose(const RibbonState& rs, float& x, float& y, float& z
     y = rs.head.mount[1];
     z = rs.head.mount[2];
     heading = rs.head.heading;
-}
-
-// The saddle's FRAME angles (BNK-2) — read by the cartridge's sky-block
-// fill beside ribbon_head_pose. Yaw offset, pitch, roll; zeros when the
-// head is unseeded (identity — the rider sits level).
-static void ribbon_head_frame(const RibbonState& rs, float& yaw_off, float& pitch, float& roll) {
-    yaw_off = rs.head.mount_yaw_off;
-    pitch   = rs.head.mount_pitch;
-    roll    = rs.head.mount_roll;
 }
 
 // The PEN — the true integrated head. Steering reads this; the

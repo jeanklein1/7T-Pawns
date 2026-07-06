@@ -629,12 +629,9 @@ struct FrameSignal {
     sky_head_y: f32,
     sky_head_z: f32,
     sky_heading: f32,
-    // The saddle's FRAME (BNK-2) — CPU-computed beside the mount point
-    // (ribbon.inl MOUNT_* mirrors); composed into the possessed agent's
-    // quaternion in behavior_player_controlled. Zeros = level.
-    sky_yaw_off: f32,     // tangent-align yaw deflection (rad)
-    sky_pitch: f32,       // tangent-align pitch (rad)
-    sky_roll: f32,        // bank into the lateral swing (rad, clamped)
+    _pad2: f32,
+    _pad3: f32,
+    _pad4: f32,
 }
 
 // --- [STATE:terrain] TerrainState
@@ -4173,7 +4170,6 @@ fn ribbon_spine_at(t: f32, ribbon: RibbonState) -> vec3<f32> {
 //   the extremes, clamped. Slope scales with amplitude, so the sustain
 //   swell deepens the carve and the lean with no extra pipe.
 // Identity at 0/0. Hot-reloadable; tune by save.
-// MIRRORED in ribbon.inl (MOUNT_*) — keep in lockstep; the rider is the drift test.
 const RIBBON_TANGENT_ALIGN: f32 = 1.0;
 const RIBBON_BANK_GAIN: f32 = 0.9;
 const RIBBON_BANK_MAX: f32 = 0.6;   // radians, clamp
@@ -5421,20 +5417,11 @@ fn behavior_player_controlled(agent_in: AgentState) -> AgentState {
         agent.vel_x = 0.0;
         agent.vel_y = 0.0;
         agent.vel_z = 0.0;
-        // The saddle joins the frame law (BNK-2): the rider wears the FULL
-        // frame — heading deflected by the tangent-align yaw, pitch with
-        // the vertical wave, roll into the bank. Angles arrive CPU-computed
-        // in the sky block (ribbon.inl MOUNT_* mirrors); composed here in
-        // ribbon_ring_motor's verified order — roll first, then pitch,
-        // then yaw (quat_multiply applies its SECOND argument first).
-        // SEAM[ribbon:sky-mode].
+        // Upright on the head, facing the flight heading — drop the stale ground
+        // tilt the walker left in orient_* at takeoff. SEAM[ribbon:sky-mode].
         // Negated: quat_rotate maps +X to (cos θ, −sin θ); the heading speaks
         // dir(θ) = (cos θ, +sin θ). Same mirror as the ring motor, same fix.
-        let q_yaw   = quat_from_axis_angle(vec3(0.0, 1.0, 0.0),
-                                           -signal.sky_heading - signal.sky_yaw_off);
-        let q_pitch = quat_from_axis_angle(vec3(0.0, 0.0, 1.0), signal.sky_pitch);
-        let q_roll  = quat_from_axis_angle(vec3(1.0, 0.0, 0.0), signal.sky_roll);
-        let sky_q   = quat_multiply(q_yaw, quat_multiply(q_pitch, q_roll));
+        let sky_q = quat_from_axis_angle(vec3(0.0, 1.0, 0.0), -signal.sky_heading);
         agent.orient_x = sky_q.x;
         agent.orient_y = sky_q.y;
         agent.orient_z = sky_q.z;

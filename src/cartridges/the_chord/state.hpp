@@ -348,12 +348,9 @@ namespace t7 {
             float    sky_head_y;
             float    sky_head_z;
             float    sky_heading;
-            // The saddle's FRAME (BNK-2) — CPU-computed beside the mount
-            // point (ribbon.inl MOUNT_* mirrors); the pawn kernel's sky
-            // branch composes the quaternion. Zeros = level (identity).
-            float    sky_yaw_off;    // tangent-align yaw deflection (rad)
-            float    sky_pitch;      // tangent-align pitch (rad)
-            float    sky_roll;       // bank into the lateral swing (rad, clamped)
+            float    _pad2;
+            float    _pad3;
+            float    _pad4;
         };
 
         struct alignas(16) GPUDesignConfig {
@@ -1764,17 +1761,15 @@ namespace t7 {
             // pawn mount after advance_ribbon_head so the pawn is sampled at the same
             // frame as the ribbon it rides (removes the one-frame mount lag). The eight
             // sky_* words are contiguous in GPUFrameSignal — a targeted sub-range write,
-            // the same idiom as upload_ribbon_time. The last three words carry the
-            // saddle's frame angles (BNK-2). The local block mirrors that field
+            // the same idiom as upload_ribbon_time. The local block mirrors that field
             // order exactly; the static_assert guards the 8-word size.
             void resync_sky_head(wgpu::Queue& queue, uint32_t sky_mode,
-                                 float head_x, float head_y, float head_z, float heading,
-                                 float yaw_off, float pitch, float roll) {
+                                 float head_x, float head_y, float head_z, float heading) {
                 struct SkyBlock {
                     uint32_t sky_mode;
                     float head_x, head_y, head_z, heading;
-                    float yaw_off, pitch, roll;
-                } block{ sky_mode, head_x, head_y, head_z, heading, yaw_off, pitch, roll };
+                    float pad2, pad3, pad4;
+                } block{ sky_mode, head_x, head_y, head_z, heading, 0.0f, 0.0f, 0.0f };
                 static_assert(sizeof(SkyBlock) == 32,
                     "SkyBlock must mirror GPUFrameSignal's eight contiguous sky_* words");
                 queue.WriteBuffer(signalBuffer_, offsetof(GPUFrameSignal, sky_mode),

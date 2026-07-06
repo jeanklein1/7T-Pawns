@@ -111,20 +111,6 @@ Two further future D-couplings live here:
   keep-or-mirror pending. The diameter law (DM-1) remains parked and
   COMPOSES with this: the diameter would reorient the wave these
   frames answer.
-- SADDLE JOINS THE FRAME LAW (ledger, BNK-2): the gimbal ruling is
-  CLOSED by observation — the rider follows the surface. Frame-law
-  constants are TWIN-AUTHORED: the GPU set (world.wgsl) is the tuning
-  authority, the CPU mirrors (ribbon.inl MOUNT_*) follow; drift is
-  self-announcing (the rider leans differently than the face beneath
-  it). Door B on record: the orient writer lives in the pawn kernel's
-  sky branch (behavior_player_controlled), fed CPU-computed angles
-  through the sky block's three pads — the handoff's CPU-writer scope
-  line met the R2 boundary's actual seam (verify-first held, per
-  canon; Door A, binding ribbon_state into the player kernel's
-  layout, was declined as renderer surgery). The saddle's frame
-  samples the wave at the seat's arc position (head age offset by
-  MOUNT_SETBACK/p) while the mount POSITION samples at the head's age
-  — a deliberate seam, Jean's eyes on it at the ride gate.
 
 ## 3. SHADER CONSTANTS (world.wgsl, hot-reloadable — scene-level dials)
 | const                | meaning                         | class | notes |

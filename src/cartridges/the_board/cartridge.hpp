@@ -3171,16 +3171,14 @@ namespace t7 {
                 {
                     float hx = 0.0f, hy = 0.0f, hz = 0.0f, hh = 0.0f;
                     ribbon_head_pose(ribbon_state_, hx, hy, hz, hh);
-                    float fyaw = 0.0f, fpitch = 0.0f, froll = 0.0f;
-                    ribbon_head_frame(ribbon_state_, fyaw, fpitch, froll);
                     gpuSignal.sky_mode    = player_.sky_mode ? 1u : 0u;
                     gpuSignal.sky_head_x  = hx;
                     gpuSignal.sky_head_y  = hy;
                     gpuSignal.sky_head_z  = hz;
                     gpuSignal.sky_heading = hh;
-                    gpuSignal.sky_yaw_off = fyaw;
-                    gpuSignal.sky_pitch   = fpitch;
-                    gpuSignal.sky_roll    = froll;
+                    gpuSignal._pad2 = 0.0f;
+                    gpuSignal._pad3 = 0.0f;
+                    gpuSignal._pad4 = 0.0f;
                 }
 
                 time_state_.beats = signal.t_beats;
@@ -3568,10 +3566,7 @@ namespace t7 {
                 {
                     float hx, hy, hz, hh;
                     ribbon_head_pose(ribbon_state_, hx, hy, hz, hh);
-                    float fyaw, fpitch, froll;
-                    ribbon_head_frame(ribbon_state_, fyaw, fpitch, froll);
-                    gpuState_.resync_sky_head(queue, player_.sky_mode ? 1u : 0u,
-                                              hx, hy, hz, hh, fyaw, fpitch, froll);
+                    gpuState_.resync_sky_head(queue, player_.sky_mode ? 1u : 0u, hx, hy, hz, hh);
                 }
 
                 dispatch_compute(encoder);
