@@ -190,7 +190,13 @@ EntityPlacement's 9: `agent_state`, `arch_ground`, `column_ground`, `plant_groun
 `photo_patch_instances`(RO), `patch_grid`(RO), `photo_painting_slots`, `zone_config`,
 `zone_life`.
 
-### Proposed coalescing (gets every stage ≤ 8 without stripping)
+### Proposed coalescing — **RETIRED** (kept as headroom contingencies)
+
+> **Both merges below are unnecessary** per the §2c census: the desktop counts
+> were layout **unions** including statically-unused entries, while web layouts
+> are authored from static usage, where every stage is ≤ 8 (max 7). Recorded
+> reason: union-vs-static. They stay documented as contingencies if a future
+> upstream coupling pushes a stage over the floor.
 
 1. **Merge `vp_data` into `camera_state`** as one `CameraBlock { camera: CameraState,
    vp: VPMatrix }`. The VP is derived from the camera and the two buffers co-travel in
@@ -248,9 +254,16 @@ kernel never references — desktop unions over-bind, which is legal but inflate
 the desktop-side count). **Neither upstream merge is needed**: not the
 ground-entries merge, not the vp+camera merge. Zero upstream changes for limits.
 
-Layout-authoring rules this table implies for `state.js`:
+Layout-authoring rules this table implies for `state.js` (authoring policy, final):
+- **Co-usage clusters by update frequency**: group 0 = frame-globals (signal,
+  config, camera block); group 1 = per-family resources; group 2+ = per-pass
+  resources. Hard ceiling: **4 bind groups per pipeline** (default maxBindGroups).
+  If any family cannot fit this clustering, **flag it in PORT_MAP before
+  improvising around it**.
 - Per-entry visibility flags must mirror this dump — marking a shared entry
   `VERTEX|FRAGMENT` when only one stage uses it re-inflates the per-stage count.
+  A shared group may hold **more than 8 storage entries in total** as long as
+  each stage's visibility-trimmed view sees ≤ 8.
 - Do NOT recreate the desktop's single shared RenderEntity union (its cross-family
   union is 11 storage in one group); split shared groups so each pipeline's summed
   per-stage total stays ≤ 8 (FS-common set ~7; small per-family VS groups).
@@ -487,6 +500,16 @@ should launch the desktop app once to confirm parity.
   (`create*PipelineAsync` everywhere).
 - The boot report times the two **separately**, per family: module create, each
   pipeline create, init dispatches, asset fetches, time-to-first-pixel.
+- **Report policy:** cumulative as families land — module create listed once, one
+  line per async pipeline create, first-pixel per boot stage. SwiftShader numbers
+  are rehearsal only; **Jean's Chrome numbers are what PORT_MAP records.**
+
+### Pending (not blocking)
+
+1. Jean's desktop parity launch after the stride fix (`3665ed6`).
+2. Jean's first hardware boot report (real-Chrome numbers for this section).
+
+**No release tag until both land.**
 
 ---
 
@@ -565,6 +588,12 @@ sub-addresses as follows:
 > `array<vec4<f32>, 16>` — **byte offsets above are unchanged**; scalar index *n*
 > in this table is WGSL `stats[n / 4][n % 4]`, and uniforms.js writes by byte
 > offset regardless.
+
+> **Stats region policy:** `array<vec4<f32>,16>` stands until the first
+> shader-side reader exists. Bands/colors remain host-side in JS through
+> Phases 1–2 (all five audio pipes are CPU-side uniform writes). Phase 3's
+> first shader reader triggers the named sub-layout above as an **upstream
+> edit per the mirror doctrine**, byte-compatible.
 
 Everything else is the desktop field, unchanged: `t_seconds`/`dt` are the wall
 clock (performance.now — **always runs**, pre-gesture drift); `t_beats`/`dt_beats`
