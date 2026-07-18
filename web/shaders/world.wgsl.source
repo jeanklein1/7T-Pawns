@@ -1,0 +1,5 @@
+source: src/cartridges/the_board/realization/world.wgsl
+source-commit: 631f732d477ce96fda6f36a9041d523eef411c89
+sha256: c69adaffa51f4d61f7b91a4c79bfc5d40d163b1441c8d51052f5902cbde249ca
+mirrored: 2026-07-18
+ritual: CLAUDE.md "Resync ritual" — never edit this mirror; changes land upstream first
