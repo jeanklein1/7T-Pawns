@@ -35,8 +35,8 @@ gallery + wall paintings + photographer; GoL (flagged; launch default decided by
 boot data); fade. **Indoor/portals stay unlifted.**
 
 **Lift order (one family at a time, page runnable after each step):**
-terrain → camera/vp → ribbon → decor mesh-gen → orbs → gallery/wall → fade →
-still pawn → (gol, flagged).
+terrain ✅ → camera/vp → ribbon → decor mesh-gen → orbs → gallery/wall → fade →
+still pawn → (gol, flagged). (Lift log: §9.)
 
 **Accepted divergence (Jean-approved):** the ribbon flies **riderless** — desktop's
 sky_mode=1 pawn-mounted-on-ribbon state can't occur with possession cut. The sky_*
@@ -504,6 +504,16 @@ should launch the desktop app once to confirm parity.
   line per async pipeline create, first-pixel per boot stage. SwiftShader numbers
   are rehearsal only; **Jean's Chrome numbers are what PORT_MAP records.**
 
+### maxTextureArrayLayers finding (terrain lift)
+
+Desktop runs **289** patch-texture layers (PREGEN_RADIUS=8, 17×17) but the core
+floor for `maxTextureArrayLayers` is **256** — a second desktop-rides-adapter-max
+case the storage-buffer census didn't cover. Web resolution: cap the patch window
+at **15×15 = 225 layers** (radius 7) — a JS-host tuning; shader arrays are
+runtime-sized, no WGSL change. Alternative if the full 17×17 window is ever
+wanted: `requiredLimits: { maxTextureArrayLayers: 289 }` (typical desktop
+adapters report 2048).
+
 ### Pending (not blocking)
 
 1. Jean's desktop parity launch after the stride fix (`3665ed6`).
@@ -624,3 +634,38 @@ reorder, never touch offsets 0–15 or 272–335.
 6. **Riderless ribbon** — accepted divergence (§0).
 7. **GoL launch default and any further cuts** — decided AFTER the boot report,
    by data (§6 boot staging exists to produce exactly that report).
+
+---
+
+## 9. Lift log
+
+### Terrain (landed) — state.js / uniforms.js / passes/terrain.js / boot.js
+
+Full chain per the frame graph: streaming conductor (allocate → generate → band)
+→ patch-gen dispatches (heights 16×16 / gradients 16×16 / cells 2×2 per patch,
+staged PatchParams copies) → frustum cull (4 wg) + indirect copy → LOD0
+`drawIndexedIndirect` + LOD1 direct draw. Headless-Chromium/SwiftShader
+rehearsal: BOOT OK, census check passed, **225/225 patches generated (lod0 52,
+render 164), 0 errors / 0 warnings**; stage-2 first pixel ~1.3 s (software).
+
+Census-check catch: `patch_terrain_fs` statically uses `tile_grid` (g0 b25) —
+missed in the hand-authored layout, caught by `createRenderPipelineAsync`
+exactly as §2b.3 intends; reflector ub-counts were right.
+
+Interim scaffolding (replaced by later lifts):
+- **Fixed camera** (desktop boot pose: eye ≈ (0, 11.7, 27.6), aim origin,
+  fov 1.0 rad) written from JS — camera/vp family is next.
+- **Shadow maps 16×16 cleared to 1.0** (fully lit) until the shadow pass lifts
+  (real size 4096²); `light_vp` = identity.
+- **Eviction idle** (lod_point fixed at origin); code lands with camera motion.
+
+Recorded deviations/parity questions:
+- **Piers:** desktop boots 3 test-rig piers (patch_system.hpp:317); web ships
+  `pier_count=0`. Jean: should the demo match the test-rig look?
+- **Terrain tokens skipped** — desktop has none active at boot (emission is
+  driven by musical outcomes); Phase 3 concern.
+- **`generate_terrain_indices` + `terrainIndexBuffer_` omitted** — no live
+  consumer on desktop either (patch draws use the CPU-built skirted index
+  buffers); recorded as a JS-host cut of a desktop husk.
+- Seed parity: cpu_hash/tile_seed are u32-exact ports; world_seed 42 tile
+  archetypes match desktop.
