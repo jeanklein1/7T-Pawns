@@ -463,6 +463,21 @@ Chrome ever objects: flip binding 0 to read-only storage upstream — the same s
 already binds as storage at binding 200 (`render_signal`), so it is proven
 storage-compatible.
 
+**RESULT (assertion executed): FAILED, then fixed upstream.** The vendored desktop
+Dawn predates enforcement; current Chrome Tint rejected two stride-4 arrays:
+`DesignConfig.wave_frozen_t: array<f32,3>` (the reported error) and
+`FrameSignal.stats: array<f32,64>` (same class). Fix taken was **type-level, not
+the storage-flip fallback** (kept in reserve): `stats → array<vec4<f32>,16>` and
+`wave_frozen_t → three f32 scalars` — both fields have zero shader-code readers
+and identical byte layout, so all CPU mirrors are untouched (upstream commit
+`3665ed6`, resync `33434ff`). Full-module validation is now **clean — 0 errors,
+0 warnings** — in headless Chromium with SwiftShader WebGPU, which also clears
+every other uniform struct (all struct-element arrays audited at 16/32 B strides).
+Module create+validate measured ~220 ms under SwiftShader (roster-independent
+cost; desktop-class hardware will differ — boot report tracks it). Desktop
+runtime: WGSL loads at runtime and old Tint accepts both new types, but Jean
+should launch the desktop app once to confirm parity.
+
 ### Boot-cost model
 
 - `createShaderModule` = **whole-module parse/validate** — roster-independent; the
@@ -545,6 +560,11 @@ sub-addresses as follows:
 | `stats[16..19]` | 80 | `colC: vec4f` | |
 | `stats[20..23]` | 96 | `colBg: vec4f` | |
 | `stats[24..63]` | 112–271 | — | reserved (160 B headroom) |
+
+> Notation note: since the stride fix (upstream `3665ed6`), the WGSL type is
+> `array<vec4<f32>, 16>` — **byte offsets above are unchanged**; scalar index *n*
+> in this table is WGSL `stats[n / 4][n % 4]`, and uniforms.js writes by byte
+> offset regardless.
 
 Everything else is the desktop field, unchanged: `t_seconds`/`dt` are the wall
 clock (performance.now — **always runs**, pre-gesture drift); `t_beats`/`dt_beats`
