@@ -235,6 +235,98 @@ layouts, so its numbers differ (and the roster cuts shrink them further). Method
    the ground-entries merge). The vp+camera merge happens only if a real count
    demands it — also upstream.
 
+### 2c. Census, web edition (RESULT — reflector dump at mirror 6edc755)
+
+Produced by `node web/dev/reflect.mjs web/shaders/world.wgsl --md` (per-entry-point
+static usage, transitive through helpers; 66 entry points, 104 bound resources,
+279 functions traversed).
+
+**Headline: every entry point is ≤ 8 storage buffers per stage by static usage —
+max is 7.** The predicted holdout `compute_entity_placement` statically uses 7
+(the desktop layout binds `agent_state` and `photo_patch_instances`, which the
+kernel never references — desktop unions over-bind, which is legal but inflated
+the desktop-side count). **Neither upstream merge is needed**: not the
+ground-entries merge, not the vp+camera merge. Zero upstream changes for limits.
+
+Layout-authoring rules this table implies for `state.js`:
+- Per-entry visibility flags must mirror this dump — marking a shared entry
+  `VERTEX|FRAGMENT` when only one stage uses it re-inflates the per-stage count.
+- Do NOT recreate the desktop's single shared RenderEntity union (its cross-family
+  union is 11 storage in one group); split shared groups so each pipeline's summed
+  per-stage total stays ≤ 8 (FS-common set ~7; small per-family VS groups).
+- Statically-unused bindings may be omitted from layouts (Tint validates only
+  statically-used ones) — pipeline creation remains the mechanical check (§2b.3).
+
+| entry point | stage | storage bufs | uniforms | textures | storage tex | samplers | roster | flag |
+|---|---|---|---|---|---|---|---|---|
+| `compute_entity_placement` | compute (1) | **7** | 1 | 1 | 1 | 1 | lifts |  |
+| `zone_gol_mesh_gen` | compute (8,8,1) | **7** | 3 | 1 | 0 | 1 | lifts |  |
+| `update_cube` | compute (1) | **6** | 4 | 1 | 0 | 1 | CUT |  |
+| `update_player_agent` | compute (1) | **6** | 5 | 1 | 0 | 1 | CUT |  |
+| `update_sphere` | compute (1) | **6** | 4 | 1 | 0 | 1 | CUT |  |
+| `compute_photographer_vp` | compute (1) | **5** | 2 | 1 | 0 | 1 | lifts |  |
+| `update_camera` | compute (1) | **5** | 4 | 1 | 0 | 1 | lifts |  |
+| `update_other_agents` | compute (32) | **5** | 6 | 1 | 0 | 1 | CUT |  |
+| `column_mesh_gen` | compute (1,1,1) | **4** | 1 | 0 | 0 | 0 | lifts |  |
+| `frustum_cull_patches` | compute (64) | **4** | 1 | 0 | 0 | 0 | lifts |  |
+| `arch_mesh_gen` | compute (1,1,1) | **3** | 0 | 0 | 0 | 0 | lifts |  |
+| `blade_cluster_mesh_gen` | compute (1) | **3** | 0 | 0 | 0 | 0 | lifts |  |
+| `cactus_mesh_gen` | compute (1,1,1) | **3** | 0 | 0 | 0 | 0 | lifts |  |
+| `compute_vp` | compute (1) | **3** | 2 | 0 | 0 | 0 | lifts |  |
+| `palm_mesh_gen` | compute (1,1,1) | **3** | 0 | 0 | 0 | 0 | lifts |  |
+| `compute_pawn_aura` | compute (8,8,1) | **2** | 2 | 0 | 1 | 0 | lifts |  |
+| `compute_ribbon_rings` | compute (64) | **2** | 1 | 0 | 0 | 0 | lifts |  |
+| `generate_patch_heights` | compute (16,16) | **2** | 4 | 0 | 0 | 0 | lifts |  |
+| `orb_dynamics` | compute (64) | **2** | 1 | 0 | 0 | 0 | lifts |  |
+| `orb_state_prev_copy` | compute (64) | **2** | 1 | 0 | 0 | 0 | lifts |  |
+| `zone_gol_evolve` | compute (8,8,1) | **2** | 1 | 0 | 1 | 0 | lifts |  |
+| `zone_gol_sync` | compute (8,8,1) | **2** | 0 | 0 | 0 | 0 | lifts |  |
+| `generate_patch_gradients` | compute (16,16) | **1** | 1 | 0 | 1 | 0 | lifts |  |
+| `generate_terrain_indices` | compute (8,8) | **1** | 0 | 0 | 0 | 0 | lifts |  |
+| `orb_init` | compute (64) | **1** | 1 | 0 | 0 | 0 | lifts |  |
+| `orb_recolor` | compute (64) | **1** | 1 | 0 | 0 | 0 | lifts |  |
+| `zone_derive_params` | compute (1) | **1** | 1 | 0 | 0 | 0 | lifts |  |
+| `zone_gol_mesh_reset` | compute (1,1,1) | **1** | 0 | 0 | 0 | 0 | lifts |  |
+| `generate_patch_cells` | compute (8,8) | **0** | 3 | 0 | 2 | 0 | lifts |  |
+| `patch_terrain_vs` | vertex | **5** | 1 | 2 | 0 | 1 | lifts |  |
+| `orb_vs` | vertex | **3** | 0 | 0 | 0 | 0 | lifts |  |
+| `gallery_frame_vs` | vertex | **2** | 1 | 0 | 0 | 0 | lifts |  |
+| `pawn_vs` | vertex | **2** | 2 | 0 | 0 | 0 | lifts |  |
+| `ribbon_vs` | vertex | **2** | 1 | 0 | 0 | 0 | lifts |  |
+| `shadow_patch_terrain_vs` | vertex | **2** | 1 | 1 | 0 | 1 | lifts |  |
+| `shadow_pawn_vs` | vertex | **2** | 0 | 0 | 0 | 0 | lifts |  |
+| `shadow_ribbon_vs` | vertex | **2** | 1 | 0 | 0 | 0 | lifts |  |
+| `shadow_zone_extrusion_vs` | vertex | **2** | 1 | 0 | 0 | 0 | lifts |  |
+| `wall_painting_vs` | vertex | **2** | 1 | 0 | 0 | 0 | lifts |  |
+| `zone_extrusion_vs` | vertex | **2** | 1 | 1 | 0 | 1 | lifts |  |
+| `arch_vs` | vertex | **1** | 1 | 1 | 0 | 0 | lifts |  |
+| `blade_cluster_vs` | vertex | **1** | 1 | 1 | 0 | 0 | lifts |  |
+| `cactus_vs` | vertex | **1** | 1 | 1 | 0 | 0 | lifts |  |
+| `column_vs` | vertex | **1** | 1 | 1 | 0 | 0 | lifts |  |
+| `monolith_vs` | vertex | **1** | 2 | 0 | 0 | 0 | CUT |  |
+| `palm_vs` | vertex | **1** | 1 | 1 | 0 | 0 | lifts |  |
+| `shadow_arch_vs` | vertex | **1** | 1 | 1 | 0 | 0 | lifts |  |
+| `shadow_blade_cluster_vs` | vertex | **1** | 1 | 1 | 0 | 0 | lifts |  |
+| `shadow_cactus_vs` | vertex | **1** | 1 | 1 | 0 | 0 | lifts |  |
+| `shadow_column_vs` | vertex | **1** | 1 | 1 | 0 | 0 | lifts |  |
+| `shadow_monolith_vs` | vertex | **1** | 1 | 0 | 0 | 0 | CUT |  |
+| `shadow_palm_vs` | vertex | **1** | 1 | 1 | 0 | 0 | lifts |  |
+| `shadow_shell_vs` | vertex | **1** | 0 | 0 | 0 | 0 | unlifted |  |
+| `shadow_sphere_vs` | vertex | **1** | 1 | 0 | 0 | 0 | CUT |  |
+| `shell_vs` | vertex | **1** | 0 | 0 | 0 | 0 | unlifted |  |
+| `sphere_vs` | vertex | **1** | 2 | 0 | 0 | 0 | CUT |  |
+| `fade_overlay_vs` | vertex | **0** | 0 | 0 | 0 | 0 | lifts |  |
+| `patch_terrain_fs` | fragment | **7** | 3 | 6 | 0 | 3 | lifts |  |
+| `entity_fs` | fragment | **6** | 1 | 2 | 0 | 1 | lifts |  |
+| `ribbon_fs` | fragment | **6** | 1 | 2 | 0 | 1 | lifts |  |
+| `zone_extrusion_fs` | fragment | **6** | 2 | 3 | 0 | 2 | lifts |  |
+| `wall_painting_canvas_fs` | fragment | **2** | 1 | 1 | 0 | 1 | lifts |  |
+| `gallery_frame_fs` | fragment | **1** | 1 | 1 | 0 | 1 | lifts |  |
+| `wall_painting_frame_fs` | fragment | **1** | 1 | 0 | 0 | 0 | lifts |  |
+| `fade_overlay_fs` | fragment | **0** | 1 | 0 | 0 | 0 | lifts |  |
+| `orb_fs` | fragment | **0** | 0 | 0 | 0 | 0 | lifts |  |
+
+
 ---
 
 ## 3. Uniform feed — what the C++ host writes, and its web replacement
