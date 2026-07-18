@@ -647,7 +647,11 @@ struct FrameSignal {
     // DRIVERLESS: no shader consumer since M1-C. Kept as infrastructure;
     // whether GPU-side direct coupling exists at all is a parked gen-2
     // design decision.
-    stats: array<f32, 64>,
+    // vec4 element type: core WGSL requires 16-byte array strides in the
+    // uniform address space (stride-4 f32 arrays are rejected by current
+    // Tint). Byte layout unchanged: 256 B at offset 16; CPU mirror stays
+    // std::array<float, 64>.
+    stats: array<vec4<f32>, 16>,
     move_x: f32,
     move_z: f32,
     look_az_delta: f32,
@@ -1398,7 +1402,12 @@ struct DesignConfig {
     fpv_mode: u32,
     wave_enable_mask: u32,
     wave_freeze_mask: u32,
-    wave_frozen_t: array<f32, 3>,
+    // three scalars, not array<f32,3>: core WGSL rejects stride-4 arrays in
+    // uniform address space. Same 12 bytes, same offsets; CPU mirror stays
+    // float[3].
+    wave_frozen_t0: f32,
+    wave_frozen_t1: f32,
+    wave_frozen_t2: f32,
     world_seed: u32,              // master seed for terrain/zone generation
     sun_direction: vec3<f32>,
     aura_enabled: f32,            // 0.0 = off, 1.0 = on (guards all aura sampling)
