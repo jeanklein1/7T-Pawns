@@ -2,8 +2,9 @@
 
 This repo is the desktop 7T Musical Visualizer: C++20 host, WGSL shaders, WebGPU via
 Google Dawn. The mission is a browser build in `web/` that becomes the public demo
-("art gallery" experience) for The Ever Expanding Board website. The desktop app
-stays untouched and its build stays green.
+("art gallery" experience) for The Ever Expanding Board website. The desktop build
+stays green throughout; the desktop source is upstream for every shader change
+(see Mirror doctrine).
 
 ## Decisions already made — do not relitigate
 
@@ -31,6 +32,18 @@ stays untouched and its build stays green.
   public build (merge families into one buffer with offsets; strip families the
   demo doesn't need). Acceptable interim: `requiredLimits` raise on Chrome/Dawn
   with a `TODO(portability)` comment.
+- **Mirror doctrine.** `web/shaders/world.wgsl` is a byte-identical MIRROR of
+  `src/cartridges/the_board/realization/world.wgsl`. Any WGSL change the port
+  needs lands in the DESKTOP source first (small commit, desktop build stays
+  green), then re-copies. The web side never edits the mirror. Demo cuts exist
+  only in the JS host (never create/dispatch/draw); no WGSL deletions.
+
+## Resync ritual (standing; for the every-few-days coupling updates)
+
+1. `cp src/cartridges/the_board/realization/world.wgsl web/shaders/world.wgsl`
+2. Record the source commit hash in the sidecar `web/shaders/world.wgsl.source`.
+3. Emit a diff summary (what changed since the last mirror) in the commit message.
+4. Smoke-test the page — boot clean, no console errors — before pushing.
 
 ## Reference implementation
 
@@ -56,17 +69,18 @@ Produce `web/PORT_MAP.md` containing:
    that could ever justify WASM later.
 5. **Portability flags.** Dawn-specific or non-core WGSL (extensions, f16, etc.).
 6. **Proposed module layout** for `web/` (shader files, host modules, entry page).
-7. **Propose the final `U` uniform struct** in PORT_MAP.md — current harness fields
-   plus bpm/beatPhase plus whatever item 3 (uniform feed mapping) shows the shaders
-   actually consume. Freeze this struct before Phase 1 so shader lifts happen once,
-   against the final layout.
+7. **Freeze the final `U` uniform block** in PORT_MAP.md before Phase 1, so shader
+   lifts happen once against the final layout. Resolved: `FrameSignal`'s field
+   names and layout stay verbatim; the driverless `stats[64]` 256 B region is
+   repurposed for the web fields (bpm, beatPhase, audio bands, count, palette
+   colors, padded) — zero `signal.*` rewrites in world.wgsl.
 
 ## Phase 1 — Lift shaders
 
-Copy WGSL into `web/shaders/`. If the desktop build can load from that same path,
-dedupe to a single source of truth; otherwise copy and note the divergence risk in
-PORT_MAP.md. Replace the harness placeholder at the seams one pipeline at a time.
-The page must stay runnable after every step.
+Mirror WGSL into `web/shaders/` per the mirror doctrine and resync ritual —
+divergence is handled by the ritual, not by dedupe. Replace the harness placeholder
+at the seams one pipeline at a time, one family at a time. The page must stay
+runnable after every step.
 
 ## Phase 2 — Host loop
 

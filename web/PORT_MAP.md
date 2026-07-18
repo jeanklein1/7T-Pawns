@@ -18,6 +18,32 @@ dashboard with no render cartridge — not the port source.
 
 ---
 
+## 0. Demo roster (decided)
+
+Cuts exist **only in the JS host** — the host never creates, dispatches, or draws
+them. No WGSL deletions (mirror doctrine).
+
+**CUT:** agent machinery (`update_player_agent`, `update_other_agents`, spawn/respawn,
+`trajectories`, agent witness readback, possession/fpv) and floating entities
+(`update_sphere`, `update_cube`, sphere/monolith draws, corral). **One still pawn
+ships instead:** a single frozen `agent_state` slot written at init + one placement
+pass + `Draw(pawn_verts, 1)` — no per-frame update.
+
+**LIFTS (behind roster flags):** terrain + streaming + frustum cull; decor mesh-gen
+families (arch, column, palm, cactus, blade); ribbon; pawn aura; orbs;
+gallery + wall paintings + photographer; GoL (flagged; launch default decided by
+boot data); fade. **Indoor/portals stay unlifted.**
+
+**Lift order (one family at a time, page runnable after each step):**
+terrain → camera/vp → ribbon → decor mesh-gen → orbs → gallery/wall → fade →
+still pawn → (gol, flagged).
+
+**Accepted divergence (Jean-approved):** the ribbon flies **riderless** — desktop's
+sky_mode=1 pawn-mounted-on-ribbon state can't occur with possession cut. The sky_*
+signal fields remain (written by the ribbon tick), merely unconsumed by a rider.
+
+---
+
 ## 1. Shader inventory — 66 entry points (29 compute, 28 vertex, 9 fragment)
 
 Line numbers are `fn` lines in `world.wgsl`. "Gate" = ROSTER/runtime condition that
@@ -189,6 +215,26 @@ Secondary budgets (all within core floors): uniforms ≤ 7/stage (floor 12); sam
 textures ≤ 6/stage (floor 16); samplers ≤ 3/stage (floor 16); storage textures ≤ 3/stage
 (floor 4 — patch-gen sits closest, watch if adding streaming outputs).
 
+### 2b. Census, web edition (method — desktop unions are the wrong number)
+
+The table above counts desktop C++ layout **unions**; the web build authors its own
+layouts, so its numbers differ (and the roster cuts shrink them further). Method:
+
+1. **Dev-only WGSL reflection** (single-file reflector vendored under `web/dev/` —
+   dev tooling, not a runtime dep) computes per-entry-point static usage,
+   **transitive through helper functions**. The census table below (§2c) comes from
+   this dump.
+2. **Minimal explicit bind group layouts** authored in `state.js` from that table,
+   shared across pipelines that genuinely share bind groups (drawable table,
+   shadow/main pairs). `layout:'auto'` is not usable for this: GPUBindGroupLayout
+   is opaque in the JS API and auto layouts are per-pipeline, non-interchangeable.
+3. **Verification is pipeline creation itself**: Tint validates every statically
+   used binding against the explicit layout, so the full-roster async create pass
+   IS the mechanical census check. Any stage > 8 after this → upstream fix per the
+   mirror doctrine (expected holdout: `compute_entity_placement`; expected fix:
+   the ground-entries merge). The vp+camera merge happens only if a real count
+   demands it — also upstream.
+
 ---
 
 ## 3. Uniform feed — what the C++ host writes, and its web replacement
@@ -224,7 +270,7 @@ omit for the demo.
 | per-world/mood: `world_seed`, `sun_direction`, `world_bound_min/max`, `terrain_amp_ceiling`, `ceiling_height`, `indoor_height_cap`, `aura_enabled`, `veil_ring`, `veil_icing`, `veil_dither`, `pawn_amp_scale`, `pawn_height_bias`, `pawn_aura_height` | mood/scene setup | **keep** as scene constants |
 | input toggles: `fpv_mode`, `freeze_sphere`, `point_host`, `floater_coordination` | keys | **keep/const** (demo decides interactivity) |
 | static knobs: `pawn_speed`, `camera_sensitivity`, `active_cell_size`, `wave_time_scale`, `wave_enable_mask`, `wave_freeze_mask`, `wave_frozen_t[3]`, `point_fly_speed`, `lod0_radius`, `mute_*` ×4 | boot config | **const** |
-| retired/DRIVERLESS (boot-only REST writes): `terrain_time`, `band_blend_0..5`, `band_phase_origin_0..5`, `mode_color_shift`, `mode_checker_scatter`, `mode_palette_target/intensity`, `mode_discrete_tier`, `mode_gol_tick_scale`, `mode_gol_height_scale`, `pulse_count`, `pulse_data[8]`, `palette_center[4]`, `palette_light[4]`, `palette_weight` | frozen couplings | **const** at rest values. Natural revival targets if the demo wants more music: `terrain_time` ← **BPM** (live terrain waves), `pulse_data` ← one radial pulse per beat, `palette_*` ← palette tokens |
+| retired/DRIVERLESS (boot-only REST writes): `terrain_time`, `band_blend_0..5`, `band_phase_origin_0..5`, `mode_color_shift`, `mode_checker_scatter`, `mode_palette_target/intensity`, `mode_discrete_tier`, `mode_gol_tick_scale`, `mode_gol_height_scale`, `pulse_count`, `pulse_data[8]`, `palette_center[4]`, `palette_light[4]`, `palette_weight` | frozen couplings | **const** at rest values — DECIDED. Revival candidates (`terrain_time` ← beat clock, `pulse_data` ← one radial pulse per beat) are recorded as **Phase 3 garnish — not built** |
 
 Port stance: **keep `DesignConfig`'s layout byte-identical to desktop** (shaders reference
 `config.*` throughout 11.7k lines); only re-source the writers. `FrameSignal` is replaced
@@ -314,123 +360,126 @@ feature is **not** needed (preserve that invariant).
 No required features, no Dawn toggles, no timestamp/occlusion queries, no
 `mappedAtCreation`, no dynamic offsets — the device request is limits-only.
 
+### Binding-0 array-stride assertion (first smoke test)
+
+`FrameSignal.stats: array<f32, 64>` (world.wgsl:650) has stride 4 inside a
+`var<uniform>` binding; WGSL's uniform address space historically requires 16-byte
+array strides. Desktop Dawn and Chrome share the Tint compiler, so behavior should
+be identical — but the **first mirror smoke test asserts it**: `createShaderModule`
++ a pipeline using binding 0 must produce zero validation errors. Fallback if
+Chrome ever objects: flip binding 0 to read-only storage upstream — the same struct
+already binds as storage at binding 200 (`render_signal`), so it is proven
+storage-compatible.
+
+### Boot-cost model
+
+- `createShaderModule` = **whole-module parse/validate** — roster-independent; the
+  full 66-entry mirror (~514 KB raw, ~138 KB gzipped) is parsed no matter what
+  ships.
+- Pipeline creation = **per-entry-point backend compile** — roster-scoped, async
+  (`create*PipelineAsync` everywhere).
+- The boot report times the two **separately**, per family: module create, each
+  pipeline create, init dispatches, asset fetches, time-to-first-pixel.
+
 ---
 
-## 6. Proposed `web/` module layout
+## 6. `web/` module layout
 
 Zero-build ES modules, mirroring the desktop's conductor/realization split:
 
 ```
 web/
-  index.html          entry page: palette tokens, canvas, "enter" gate, status/boot log
+  index.html          entry page: palette tokens, canvas, "enter" gate, status/boot report
   harness.html        kept runnable as the reference rig (contract)
   PORT_MAP.md         this file
   shaders/
-    world.wgsl        lifted from desktop (Phase 1; single-source question below)
+    world.wgsl        byte-identical MIRROR of the desktop file (never edited here)
+    world.wgsl.source sidecar: source commit hash of the current mirror
+  dev/
+    reflect.mjs       dev-only WGSL reflector (per-entry-point static usage, §2b)
   js/
-    boot.js           adapter/device/limits request, canvas config, error+limits logging
-    clock.js          wall clock + beat clock (bpm/beatPhase; holds 0 pre-gesture)
+    boot.js           adapter/device/limits, canvas config, error+limits logging, boot report
+    clock.js          wall clock + beat clock (bpm=100/beatPhase; holds 0 pre-gesture)
     audio.js          drone synth → AnalyserNode → bands/rms; soundtrack stub behind same analyser
-    palette.js        CSS token reader → color uniforms
-    uniforms.js       U + DesignConfig packing — the single writer (mirrors upload_signal/config)
-    state.js          buffer/texture/layout creation from §2 tables (state.hpp analogue)
+    palette.js        CSS token reader → color uniforms (audio blends semantic-tier hues)
+    uniforms.js       FrameSignal + DesignConfig packing — the single writer
+    state.js          buffers/textures + minimal explicit layouts from the §2c census
     frame.js          the two spines as JS arrays — same phase names, same order
     passes/
       compute.js      R10 dispatch block + mesh-gen + gol + aura + orbs + cull
       terrain.js      patch streaming conductor (patch_system.hpp analogue)
       draw.js         drawable table + shadow/main/fade encoding
-    readback.js       Promise-based witness machines (agent/floater/camera)
-    assets.js         painting manifest fetch + upload (gallery roster only)
-    autopilot.js      demo input driver (writes the input-delta fields)
+    readback.js       Promise-based witness machines (camera; agent/floater witnesses cut)
+    assets.js         painting manifest fetch, lazy, first-visible-first (gallery roster)
+    autopilot.js      attract-camera driver (writes input-delta fields; user look takes over)
 ```
 
-Desktop cannot load shaders from `web/shaders/` without a build change (it embeds via
-its own path), so **Phase 1 copies** `world.wgsl` and PORT_MAP records the divergence
-risk: any desktop shader edit after the copy must be re-lifted; diff `world.wgsl`
-against the copy before each web release.
+Shader single-source is handled by the **mirror doctrine + resync ritual**
+(CLAUDE.md): desktop file is upstream, `web/shaders/world.wgsl` is a byte-identical
+copy with a sidecar recording the source commit; any port-needed WGSL change lands
+upstream first.
 
-The ROSTER constexpr gates map to a JS build-of-scene object — the same family list,
-letting the demo strip families (gallery/photographer, GoL, indoor) without touching
-pass code. Which families ship is Jean's call (§8); stripping is **not** required for
-the ≤8 storage target if §2's coalescing is taken.
+**Boot staging** (the point of building full): async pipeline creation everywhere;
+terrain+sky pipelines → **first pixel** → remaining families created in background
+under the attract camera; per-family timings logged; the boot report table is the
+data Jean uses to flag families off (§8).
+
+The ROSTER constexpr gates map to a JS build-of-scene object — the same family
+list, so the §0 cuts and any post-boot-report cuts never touch pass code.
 
 ---
 
-## 7. Final `U` uniform struct (freeze before Phase 1)
+## 7. Final `U` uniform block (FROZEN)
 
-Successor to `FrameSignal` at `@group(0) @binding(0)`; `DesignConfig` (b1) ports
-byte-identical alongside it. Composition = harness fields + `bpm`/`beatPhase` + every
-FrameSignal field shaders actually consume; sole desktop-layout change is dropping
-driverless `stats[64]`. All scalars are f32/u32; the vec4 block starts at offset 112
-(16-aligned); total 176 B.
+**Revised freeze (supersedes the earlier re-laid proposal): the web `U` IS
+`FrameSignal`, verbatim.** Every existing field keeps its desktop name, type, and
+offset — **zero `signal.*` rewrites in world.wgsl**, which is what the mirror
+doctrine requires. The new web fields live inside the dead `stats[64]` region
+(256 B at byte offset 16, DRIVERLESS — read by zero shaders), which the JS host
+sub-addresses as follows:
 
-```wgsl
-struct U {
-  // clocks — time/dt run on performance.now() and never gate;
-  // beats/beat_phase/dt_beats derive from AudioContext.currentTime and hold 0 pre-gesture
-  time:        f32,   // wall seconds                       (harness `time` / t_seconds)
-  dt:          f32,   // wall frame delta                   (harness `dt`)
-  bpm:         f32,   // tempo knob (contract default 120; parity note §3e)
-  beat_phase:  f32,   // fract(beats), 0..1 within the beat
-  beats:       f32,   // monotonic beat time                (t_beats successor)
-  dt_beats:    f32,   // beat advance this frame            (bpm/60·dt while running)
+| stats index | byte offset | field | notes |
+|---|---|---|---|
+| `stats[0]` | 16 | `bpm` | tempo knob; **default 100** (desktop calibration anchor) |
+| `stats[1]` | 20 | `beat_phase` | fract(beats), 0..1 within the beat |
+| `stats[2]` | 24 | `rms` | audio bands from the analyser |
+| `stats[3]` | 28 | `bass` | |
+| `stats[4]` | 32 | `mid` | |
+| `stats[5]` | 36 | `treble` | |
+| `stats[6]` | 40 | `count` | harness agent count; per-scene reuse |
+| `stats[7]` | 44 | — | pad (reserved) |
+| `stats[8..11]` | 48 | `colA: vec4f` | palette accent (orb-red); 16-aligned ✓ |
+| `stats[12..15]` | 64 | `colB: vec4f` | |
+| `stats[16..19]` | 80 | `colC: vec4f` | |
+| `stats[20..23]` | 96 | `colBg: vec4f` | |
+| `stats[24..63]` | 112–271 | — | reserved (160 B headroom) |
 
-  // audio bands (harness contract)
-  rms:         f32,
-  bass:        f32,
-  mid:         f32,
-  treble:      f32,
+Everything else is the desktop field, unchanged: `t_seconds`/`dt` are the wall
+clock (performance.now — **always runs**, pre-gesture drift); `t_beats`/`dt_beats`
+are the beat clock (AudioContext.currentTime — **hold 0 until the start gesture**;
+a suspended context's clock doesn't advance); `aspect_ratio`; the 7 input deltas
+(autopilot + user-look takeover); the `sky_*` mount block (written by the ribbon
+tick, riderless per §0). `DesignConfig` (b1) ports byte-identical.
 
-  // surface
-  aspect:      f32,   // aspect_ratio
-  count:       f32,   // harness agent count; per-scene reuse
-
-  // input intent (autopilot and/or user; zeroed after consume, desktop-style)
-  move_x:        f32,
-  move_z:        f32,
-  look_az_delta: f32,
-  look_el_delta: f32,
-  zoom_delta:    f32,
-  pan_x_delta:   f32,
-  pan_y_delta:   f32,
-  _pad0:         f32,
-
-  // sky/ribbon mount block (FrameSignal tail; written by the ribbon tick)
-  sky_mode:    u32,
-  sky_head_x:  f32,
-  sky_head_y:  f32,
-  sky_head_z:  f32,
-  sky_heading: f32,
-  sky_yaw_off: f32,
-  sky_pitch:   f32,
-  sky_roll:    f32,
-
-  // palette (from CSS tokens, semantic tier)
-  colA:  vec4f,   // accent (orb-red)
-  colB:  vec4f,
-  colC:  vec4f,
-  colBg: vec4f,
-}
-```
-
-Freeze rationale: every Phase 1 shader lift rewrites `signal.<field>` references against
-this layout exactly once. The harness's placeholder seams adopt this struct in the same
-commit that freezes it. Extensions append after `sky_roll` (before the vec4 block) in
-padded groups of 4 — never reorder.
+Freeze rationale: the mirror never gets edited, so the layout literally cannot
+drift from desktop. The stats-region sub-layout above is a **JS-host convention**
+(uniforms.js is its single writer); shaders today read none of it, and any future
+GPU-side coupling that wants these fields is a desktop-first change that simply
+starts consuming the same slots. Extensions use the reserved region — never
+reorder, never touch offsets 0–15 or 272–335.
 
 ---
 
-## 8. Open questions for Jean (parity calls not invented here)
+## 8. Decisions (formerly open questions — all resolved by Jean)
 
-1. **Default BPM**: contract says 120; desktop's calibration anchor (ribbon, beat_rate
-   default) is 100. Ship 120, or 100 for desktop-parity feel?
-2. **Demo roster**: which families ship? Gallery/photographer brings the painting fetch
-   (8.8 MB / 57 files) + snapshot pass + promotion machinery; GoL brings the hidden
-   second submit; orbs/indoor are self-contained. All are cleanly strippable via the
-   roster gates.
-3. **Input**: pure attract-mode autopilot, user-controllable camera/pawn, or
-   autopilot-until-interaction?
-4. **Fog + ribbon audio mappings** (§3d): proposed bass→fog density, rms→ribbon swell,
-   rms-gate→ribbon tint; chroma-hue has no audio analogue — const or treble-hue?
-5. **Transitions/portals**: keep the fade/portal machinery, or pin the demo to one
-   outdoor world (drops indoor shell, spot-light shadow atlas variant, ceiling caps)?
+1. **BPM = 100** — desktop calibration parity (ribbon reference, beat_rate default).
+2. **Roster** — per §0: agents/floaters cut, one still pawn, everything else lifts
+   behind flags; indoor/portals unlifted; fade lifts.
+3. **Input** — camera autopilot with **user-look takeover**.
+4. **Audio mappings** — as §3d, under the palette rule: **audio blends
+   semantic-tier hues, never invents RGB** (all color motion interpolates between
+   palette-token colors fed through uniforms).
+5. **Paintings** — lazy, first-visible-first.
+6. **Riderless ribbon** — accepted divergence (§0).
+7. **GoL launch default and any further cuts** — decided AFTER the boot report,
+   by data (§6 boot staging exists to produce exactly that report).
