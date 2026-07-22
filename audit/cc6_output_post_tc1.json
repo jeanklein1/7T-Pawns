@@ -1,0 +1,2189 @@
+{
+  "source": "src/cartridges/the_board/realization/state.hpp",
+  "layouts": [
+    {
+      "label": "Compute Entity Layout",
+      "state_hpp_line": 3748,
+      "declared_entry_count": 12,
+      "parsed_entry_count": 12,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 0,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 1,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 2,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 3,
+          "binding": 60,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 4,
+          "binding": 80,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 5,
+          "binding": 100,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 6,
+          "binding": 62,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 7,
+          "binding": 145,
+          "class": "sampled_texture",
+          "detail": "Float",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": "2d-array"
+        },
+        {
+          "index": 8,
+          "binding": 146,
+          "class": "sampler",
+          "detail": "Filtering",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 9,
+          "binding": 152,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 10,
+          "binding": 110,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 11,
+          "binding": 111,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 5,
+          "uniform_buffer": 5,
+          "sampled_texture": 1,
+          "storage_texture": 0,
+          "sampler": 1
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Render Entity Layout",
+      "state_hpp_line": 3826,
+      "declared_entry_count": 18,
+      "parsed_entry_count": 18,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 1,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Vertex",
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 200,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Vertex",
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 201,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Vertex",
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 3,
+          "binding": 260,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Vertex",
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 4,
+          "binding": 280,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Vertex",
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 5,
+          "binding": 300,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Vertex",
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 6,
+          "binding": 320,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 7,
+          "binding": 321,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 8,
+          "binding": 322,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 9,
+          "binding": 340,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Vertex"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 10,
+          "binding": 360,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Vertex"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 11,
+          "binding": 361,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Vertex"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 12,
+          "binding": 25,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Vertex",
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 13,
+          "binding": 390,
+          "class": "sampled_texture",
+          "detail": "UnfilterableFloat",
+          "stages": [
+            "Vertex"
+          ],
+          "viewDimension": "2d"
+        },
+        {
+          "index": 14,
+          "binding": 391,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Vertex"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 15,
+          "binding": 400,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Vertex"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 16,
+          "binding": 411,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Vertex"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 17,
+          "binding": 111,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Vertex"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 8,
+          "uniform_buffer": 6,
+          "sampled_texture": 1,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 7,
+          "uniform_buffer": 3,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Mesh Gen Entity Layout",
+      "state_hpp_line": 3925,
+      "declared_entry_count": 1,
+      "parsed_entry_count": 1,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 1,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute",
+            "Vertex",
+            "Fragment"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 0,
+          "uniform_buffer": 1,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 1,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 1,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Shadow Texture Layout",
+      "state_hpp_line": 3944,
+      "declared_entry_count": 4,
+      "parsed_entry_count": 4,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 22,
+          "class": "sampler",
+          "detail": "Filtering",
+          "stages": [
+            "Vertex",
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 23,
+          "class": "sampler",
+          "detail": "NonFiltering",
+          "stages": [
+            "Vertex",
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 28,
+          "class": "sampled_texture",
+          "detail": "Float",
+          "stages": [
+            "Vertex"
+          ],
+          "viewDimension": "2d-array"
+        },
+        {
+          "index": 3,
+          "binding": 34,
+          "class": "sampled_texture",
+          "detail": "Float",
+          "stages": [
+            "Vertex"
+          ],
+          "viewDimension": "2d"
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 2,
+          "storage_texture": 0,
+          "sampler": 2
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 2
+        }
+      }
+    },
+    {
+      "label": "Render Texture Layout",
+      "state_hpp_line": 3977,
+      "declared_entry_count": 11,
+      "parsed_entry_count": 11,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 22,
+          "class": "sampler",
+          "detail": "Filtering",
+          "stages": [
+            "Vertex",
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 23,
+          "class": "sampler",
+          "detail": "NonFiltering",
+          "stages": [
+            "Vertex",
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 25,
+          "class": "sampled_texture",
+          "detail": "Depth",
+          "stages": [
+            "Fragment"
+          ],
+          "viewDimension": "2d"
+        },
+        {
+          "index": 3,
+          "binding": 26,
+          "class": "sampler",
+          "detail": "Comparison",
+          "stages": [
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 4,
+          "binding": 27,
+          "class": "sampled_texture",
+          "detail": "Depth",
+          "stages": [
+            "Fragment"
+          ],
+          "viewDimension": "2d"
+        },
+        {
+          "index": 5,
+          "binding": 28,
+          "class": "sampled_texture",
+          "detail": "Float",
+          "stages": [
+            "Vertex"
+          ],
+          "viewDimension": "2d-array"
+        },
+        {
+          "index": 6,
+          "binding": 29,
+          "class": "sampled_texture",
+          "detail": "Float",
+          "stages": [
+            "Fragment"
+          ],
+          "viewDimension": "2d-array"
+        },
+        {
+          "index": 7,
+          "binding": 31,
+          "class": "sampled_texture",
+          "detail": "UnfilterableFloat",
+          "stages": [
+            "Fragment"
+          ],
+          "viewDimension": "2d-array"
+        },
+        {
+          "index": 8,
+          "binding": 32,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 9,
+          "binding": 33,
+          "class": "sampled_texture",
+          "detail": "Float",
+          "stages": [
+            "Vertex",
+            "Fragment"
+          ],
+          "viewDimension": "2d"
+        },
+        {
+          "index": 10,
+          "binding": 34,
+          "class": "sampled_texture",
+          "detail": "Float",
+          "stages": [
+            "Vertex",
+            "Fragment"
+          ],
+          "viewDimension": "2d"
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 3,
+          "storage_texture": 0,
+          "sampler": 2
+        },
+        "Fragment": {
+          "storage_buffer": 1,
+          "uniform_buffer": 0,
+          "sampled_texture": 6,
+          "storage_texture": 0,
+          "sampler": 3
+        }
+      }
+    },
+    {
+      "label": "Compute Texture Layout",
+      "state_hpp_line": 4045,
+      "declared_entry_count": 4,
+      "parsed_entry_count": 4,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 22,
+          "class": "sampler",
+          "detail": "Filtering",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 23,
+          "class": "sampler",
+          "detail": "NonFiltering",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 33,
+          "class": "sampled_texture",
+          "detail": "Float",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": "2d"
+        },
+        {
+          "index": 3,
+          "binding": 34,
+          "class": "sampled_texture",
+          "detail": "Float",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": "2d"
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 2,
+          "storage_texture": 0,
+          "sampler": 2
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Terrain Index Gen Layout",
+      "state_hpp_line": 4078,
+      "declared_entry_count": 1,
+      "parsed_entry_count": 1,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 22,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 1,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Patch Gen Layout",
+      "state_hpp_line": 4096,
+      "declared_entry_count": 8,
+      "parsed_entry_count": 8,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 1,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 23,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 24,
+          "class": "storage_texture",
+          "detail": "RGBA16Float",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": "2d-array"
+        },
+        {
+          "index": 3,
+          "binding": 25,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 4,
+          "binding": 26,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 5,
+          "binding": 27,
+          "class": "storage_texture",
+          "detail": "RGBA8Unorm",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": "2d-array"
+        },
+        {
+          "index": 6,
+          "binding": 30,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 7,
+          "binding": 28,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 2,
+          "uniform_buffer": 4,
+          "sampled_texture": 0,
+          "storage_texture": 2,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Ribbon Compute Layout",
+      "state_hpp_line": 4145,
+      "declared_entry_count": 3,
+      "parsed_entry_count": 3,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 120,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 121,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 122,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 2,
+          "uniform_buffer": 1,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Gallery Entity Layout",
+      "state_hpp_line": 4169,
+      "declared_entry_count": 4,
+      "parsed_entry_count": 4,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 1,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Vertex",
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 201,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Vertex",
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 280,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 3,
+          "binding": 320,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Fragment"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 1,
+          "uniform_buffer": 1,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 3,
+          "uniform_buffer": 1,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Gallery Texture Layout",
+      "state_hpp_line": 4197,
+      "declared_entry_count": 5,
+      "parsed_entry_count": 5,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 50,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Vertex",
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 51,
+          "class": "sampled_texture",
+          "detail": "Float",
+          "stages": [
+            "Fragment"
+          ],
+          "viewDimension": "2d-array"
+        },
+        {
+          "index": 2,
+          "binding": 52,
+          "class": "sampler",
+          "detail": "Filtering",
+          "stages": [
+            "Fragment"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 3,
+          "binding": 22,
+          "class": "sampler",
+          "detail": "Filtering",
+          "stages": [
+            "Vertex"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 4,
+          "binding": 34,
+          "class": "sampled_texture",
+          "detail": "Float",
+          "stages": [
+            "Vertex"
+          ],
+          "viewDimension": "2d"
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 1,
+          "uniform_buffer": 0,
+          "sampled_texture": 1,
+          "storage_texture": 0,
+          "sampler": 1
+        },
+        "Fragment": {
+          "storage_buffer": 1,
+          "uniform_buffer": 0,
+          "sampled_texture": 1,
+          "storage_texture": 0,
+          "sampler": 1
+        }
+      }
+    },
+    {
+      "label": "Photographer Compute Layout",
+      "state_hpp_line": 4239,
+      "declared_entry_count": 9,
+      "parsed_entry_count": 9,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 1,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 60,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 8,
+          "binding": 80,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 140,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 3,
+          "binding": 141,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 4,
+          "binding": 142,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 5,
+          "binding": 145,
+          "class": "sampled_texture",
+          "detail": "Float",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": "2d-array"
+        },
+        {
+          "index": 6,
+          "binding": 146,
+          "class": "sampler",
+          "detail": "Filtering",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 7,
+          "binding": 152,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 5,
+          "uniform_buffer": 2,
+          "sampled_texture": 1,
+          "storage_texture": 0,
+          "sampler": 1
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Entity Placement Compute Layout",
+      "state_hpp_line": 4296,
+      "declared_entry_count": 9,
+      "parsed_entry_count": 9,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 1,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 143,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 145,
+          "class": "sampled_texture",
+          "detail": "Float",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": "2d-array"
+        },
+        {
+          "index": 3,
+          "binding": 146,
+          "class": "sampler",
+          "detail": "Filtering",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 4,
+          "binding": 147,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 5,
+          "binding": 148,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 6,
+          "binding": 150,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 7,
+          "binding": 151,
+          "class": "storage_texture",
+          "detail": "R32Float",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": "2d"
+        },
+        {
+          "index": 8,
+          "binding": 152,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 5,
+          "uniform_buffer": 1,
+          "sampled_texture": 1,
+          "storage_texture": 1,
+          "sampler": 1
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Frustum Cull Compute Layout",
+      "state_hpp_line": 4354,
+      "declared_entry_count": 5,
+      "parsed_entry_count": 5,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 1,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 2,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 340,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 3,
+          "binding": 500,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 4,
+          "binding": 501,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 4,
+          "uniform_buffer": 1,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "GoL Zone Compute Layout",
+      "state_hpp_line": 4391,
+      "declared_entry_count": 5,
+      "parsed_entry_count": 5,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 1,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 160,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 161,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 3,
+          "binding": 162,
+          "class": "storage_texture",
+          "detail": "RG32Float",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": "2d-array"
+        },
+        {
+          "index": 4,
+          "binding": 166,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 2,
+          "uniform_buffer": 2,
+          "sampled_texture": 0,
+          "storage_texture": 1,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Pawn Aura Compute Layout",
+      "state_hpp_line": 4428,
+      "declared_entry_count": 6,
+      "parsed_entry_count": 6,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 1,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 60,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 170,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 3,
+          "binding": 171,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 4,
+          "binding": 172,
+          "class": "storage_texture",
+          "detail": "RGBA16Float",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": "2d"
+        },
+        {
+          "index": 5,
+          "binding": 25,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 2,
+          "uniform_buffer": 3,
+          "sampled_texture": 0,
+          "storage_texture": 1,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Live Card Writer Layout",
+      "state_hpp_line": 4472,
+      "declared_entry_count": 6,
+      "parsed_entry_count": 6,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 0,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 1,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 160,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 3,
+          "binding": 161,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 4,
+          "binding": 31,
+          "class": "storage_texture",
+          "detail": "RGBA16Float",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": "2d"
+        },
+        {
+          "index": 5,
+          "binding": 32,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 3,
+          "uniform_buffer": 2,
+          "sampled_texture": 0,
+          "storage_texture": 1,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Zone Mask Layout",
+      "state_hpp_line": 4514,
+      "declared_entry_count": 5,
+      "parsed_entry_count": 5,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 1,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 25,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 160,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 3,
+          "binding": 161,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 4,
+          "binding": 166,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 2,
+          "uniform_buffer": 3,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Orb Compute Layout",
+      "state_hpp_line": 4549,
+      "declared_entry_count": 3,
+      "parsed_entry_count": 3,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 410,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 411,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 412,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 2,
+          "uniform_buffer": 1,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Orb Copy Layout",
+      "state_hpp_line": 4579,
+      "declared_entry_count": 3,
+      "parsed_entry_count": 3,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 413,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 411,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 414,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 2,
+          "uniform_buffer": 1,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Arch Mesh Gen Layout",
+      "state_hpp_line": 4606,
+      "declared_entry_count": 3,
+      "parsed_entry_count": 3,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 193,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 194,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 195,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 3,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Column Mesh Gen Layout",
+      "state_hpp_line": 4630,
+      "declared_entry_count": 5,
+      "parsed_entry_count": 5,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 196,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 197,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 198,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 3,
+          "binding": 190,
+          "class": "uniform_buffer",
+          "detail": "Uniform",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 4,
+          "binding": 191,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 4,
+          "uniform_buffer": 1,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Palm Mesh Gen Layout",
+      "state_hpp_line": 4665,
+      "declared_entry_count": 3,
+      "parsed_entry_count": 3,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 180,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 181,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 182,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 3,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Cactus Mesh Gen Layout",
+      "state_hpp_line": 4689,
+      "declared_entry_count": 3,
+      "parsed_entry_count": 3,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 183,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 184,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 185,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 3,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    },
+    {
+      "label": "Blade Mesh Gen Layout",
+      "state_hpp_line": 4709,
+      "declared_entry_count": 3,
+      "parsed_entry_count": 3,
+      "entries": [
+        {
+          "index": 0,
+          "binding": 186,
+          "class": "storage_buffer",
+          "detail": "ReadOnlyStorage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 1,
+          "binding": 187,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        },
+        {
+          "index": 2,
+          "binding": 188,
+          "class": "storage_buffer",
+          "detail": "Storage",
+          "stages": [
+            "Compute"
+          ],
+          "viewDimension": null
+        }
+      ],
+      "per_stage_counts": {
+        "Compute": {
+          "storage_buffer": 3,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Vertex": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        },
+        "Fragment": {
+          "storage_buffer": 0,
+          "uniform_buffer": 0,
+          "sampled_texture": 0,
+          "storage_texture": 0,
+          "sampler": 0
+        }
+      }
+    }
+  ],
+  "flags": []
+}

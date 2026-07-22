@@ -1,0 +1,280 @@
+{
+  "env": {
+    "adapterInfo": {
+      "vendor": "google",
+      "architecture": "swiftshader"
+    },
+    "wgslLanguageFeatures": [
+      "packed_4x8_integer_dot_product",
+      "unrestricted_pointer_parameters",
+      "pointer_composite_access",
+      "readonly_and_readwrite_storage_textures"
+    ],
+    "adapterLimits": {
+      "maxStorageBuffersPerShaderStage": 10,
+      "maxUniformBuffersPerShaderStage": 12,
+      "maxStorageTexturesPerShaderStage": 4
+    }
+  },
+  "module": {
+    "create_plus_info_ms": 114.4,
+    "messages": []
+  },
+  "baseline": {
+    "live_contrib": {
+      "groups": [
+        "Compute Entity Layout",
+        "Compute Texture Layout"
+      ],
+      "results": {
+        "update_player_agent": {
+          "ok": true,
+          "ms": 373.5
+        },
+        "update_other_agents": {
+          "ok": true,
+          "ms": 819
+        },
+        "update_camera": {
+          "ok": true,
+          "ms": 122.6
+        },
+        "update_sphere": {
+          "ok": true,
+          "ms": 169.8
+        },
+        "update_cube": {
+          "ok": true,
+          "ms": 306.4
+        }
+      }
+    },
+    "compute_vp": {
+      "groups": [
+        "Compute Entity Layout"
+      ],
+      "results": {
+        "compute_vp": {
+          "ok": true,
+          "ms": 74.2
+        }
+      }
+    },
+    "terrain_index_gen": {
+      "groups": [
+        "Terrain Index Gen Layout"
+      ],
+      "results": {
+        "generate_terrain_indices": {
+          "ok": true,
+          "ms": 47.4
+        }
+      }
+    },
+    "patch_gen": {
+      "groups": [
+        "Patch Gen Layout"
+      ],
+      "results": {
+        "generate_patch_heights": {
+          "ok": true,
+          "ms": 155.4
+        },
+        "generate_patch_gradients": {
+          "ok": true,
+          "ms": 169.6
+        },
+        "generate_patch_cells": {
+          "ok": true,
+          "ms": 239.5
+        }
+      }
+    },
+    "ribbon": {
+      "groups": [
+        "Ribbon Compute Layout"
+      ],
+      "results": {
+        "compute_ribbon_rings": {
+          "ok": true,
+          "ms": 78.6
+        }
+      }
+    },
+    "photographer": {
+      "groups": [
+        "Photographer Compute Layout"
+      ],
+      "results": {
+        "compute_photographer_vp": {
+          "ok": true,
+          "ms": 83.7
+        }
+      }
+    },
+    "entity_placement": {
+      "groups": [
+        "Entity Placement Compute Layout",
+        "Compute Texture Layout"
+      ],
+      "results": {
+        "compute_entity_placement": {
+          "ok": true,
+          "ms": 130.6
+        }
+      }
+    },
+    "frustum_cull": {
+      "groups": [
+        "Frustum Cull Compute Layout"
+      ],
+      "results": {
+        "frustum_cull_patches": {
+          "ok": true,
+          "ms": 81.4
+        }
+      }
+    },
+    "pawn_aura": {
+      "groups": [
+        "Pawn Aura Compute Layout"
+      ],
+      "results": {
+        "compute_pawn_aura": {
+          "ok": true,
+          "ms": 291.5
+        }
+      }
+    },
+    "live_card": {
+      "groups": [
+        "Live Card Writer Layout"
+      ],
+      "results": {
+        "write_live_card_heights": {
+          "ok": true,
+          "ms": 156.5
+        },
+        "write_live_card_resolve": {
+          "ok": true,
+          "ms": 144.1
+        }
+      }
+    },
+    "zone_mask": {
+      "groups": [
+        "Zone Mask Layout"
+      ],
+      "results": {
+        "zone_seed_mask": {
+          "ok": true,
+          "ms": 152.4
+        }
+      }
+    },
+    "orb": {
+      "groups": [
+        "Orb Compute Layout"
+      ],
+      "results": {
+        "orb_init": {
+          "ok": true,
+          "ms": 129.7
+        },
+        "orb_dynamics": {
+          "ok": true,
+          "ms": 195.3
+        },
+        "orb_recolor": {
+          "ok": true,
+          "ms": 97.3
+        }
+      }
+    },
+    "orb_copy": {
+      "groups": [
+        "Orb Copy Layout"
+      ],
+      "results": {
+        "orb_state_prev_copy": {
+          "ok": true,
+          "ms": 55
+        }
+      }
+    },
+    "gol_zone": {
+      "groups": [
+        "GoL Zone Compute Layout"
+      ],
+      "results": {
+        "zone_gol_sync": {
+          "ok": true,
+          "ms": 49.1
+        },
+        "zone_gol_evolve": {
+          "ok": true,
+          "ms": 85.2
+        },
+        "zone_derive_params": {
+          "ok": true,
+          "ms": 134.9
+        }
+      }
+    },
+    "arch_mesh": {
+      "groups": [
+        "Arch Mesh Gen Layout"
+      ],
+      "results": {
+        "arch_mesh_gen": {
+          "ok": true,
+          "ms": 229.9
+        }
+      }
+    },
+    "column_mesh": {
+      "groups": [
+        "Column Mesh Gen Layout"
+      ],
+      "results": {
+        "column_mesh_gen": {
+          "ok": true,
+          "ms": 359.3
+        }
+      }
+    },
+    "palm_mesh": {
+      "groups": [
+        "Palm Mesh Gen Layout"
+      ],
+      "results": {
+        "palm_mesh_gen": {
+          "ok": true,
+          "ms": 184.6
+        }
+      }
+    },
+    "cactus_mesh": {
+      "groups": [
+        "Cactus Mesh Gen Layout"
+      ],
+      "results": {
+        "cactus_mesh_gen": {
+          "ok": true,
+          "ms": 169.8
+        }
+      }
+    },
+    "blade_mesh": {
+      "groups": [
+        "Blade Mesh Gen Layout"
+      ],
+      "results": {
+        "blade_cluster_mesh_gen": {
+          "ok": true,
+          "ms": 92.4
+        }
+      }
+    }
+  }
+}

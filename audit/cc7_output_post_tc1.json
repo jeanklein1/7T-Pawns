@@ -1,0 +1,798 @@
+{
+  "source": "src/cartridges/the_board/realization/world.wgsl",
+  "declaration_count": 95,
+  "raw_group_literal_count": 95,
+  "raw_binding_literal_count": 105,
+  "per_group_counts": {
+    "g0": 81,
+    "g1": 14
+  },
+  "slots_of_interest": {
+    "g0:b31": [
+      "live_card_write @ line 5727"
+    ],
+    "g1:b34": [
+      "live_card_read @ line 5720"
+    ],
+    "g0:b34": "FREE (no declaration)",
+    "g1:b31": [
+      "zone_life_read @ line 5717"
+    ]
+  },
+  "duplicate_slots": {
+    "g0:b1": [
+      "config @ line 5291 (uniform)",
+      "fc_config @ line 8777 (uniform)"
+    ],
+    "g0:b2": [
+      "vp_data @ line 5292 (storage, read_write)",
+      "fc_vp @ line 8778 (storage, read)"
+    ],
+    "g0:b340": [
+      "patch_instances @ line 5452 (storage, read)",
+      "fc_patches @ line 8779 (storage, read)"
+    ]
+  },
+  "declarations": [
+    {
+      "group": 0,
+      "binding": 0,
+      "address_space": "uniform",
+      "name": "signal",
+      "type": "FrameSignal",
+      "line": 5290
+    },
+    {
+      "group": 0,
+      "binding": 1,
+      "address_space": "uniform",
+      "name": "config",
+      "type": "DesignConfig",
+      "line": 5291
+    },
+    {
+      "group": 0,
+      "binding": 1,
+      "address_space": "uniform",
+      "name": "fc_config",
+      "type": "DesignConfig",
+      "line": 8777
+    },
+    {
+      "group": 0,
+      "binding": 2,
+      "address_space": "storage, read_write",
+      "name": "vp_data",
+      "type": "VPMatrix",
+      "line": 5292
+    },
+    {
+      "group": 0,
+      "binding": 2,
+      "address_space": "storage, read",
+      "name": "fc_vp",
+      "type": "VPMatrix",
+      "line": 8778
+    },
+    {
+      "group": 0,
+      "binding": 22,
+      "address_space": "storage, read_write",
+      "name": "terrain_mesh_indices",
+      "type": "array<u32>",
+      "line": 5438
+    },
+    {
+      "group": 0,
+      "binding": 23,
+      "address_space": "uniform",
+      "name": "patch_params",
+      "type": "PatchParams",
+      "line": 5443
+    },
+    {
+      "group": 0,
+      "binding": 24,
+      "address_space": "",
+      "name": "patch_heightfield_array_write",
+      "type": "texture_storage_2d_array<rgba16float, write>",
+      "line": 5444
+    },
+    {
+      "group": 0,
+      "binding": 25,
+      "address_space": "uniform",
+      "name": "tile_grid",
+      "type": "TileGrid",
+      "line": 5445
+    },
+    {
+      "group": 0,
+      "binding": 26,
+      "address_space": "storage, read",
+      "name": "pier_instances",
+      "type": "array<PierInstance, 68>",
+      "line": 2311
+    },
+    {
+      "group": 0,
+      "binding": 27,
+      "address_space": "",
+      "name": "patch_cell_color_array_write",
+      "type": "texture_storage_2d_array<rgba8unorm, write>",
+      "line": 5446
+    },
+    {
+      "group": 0,
+      "binding": 28,
+      "address_space": "storage, read_write",
+      "name": "patch_height_scratch",
+      "type": "array<f32>",
+      "line": 5449
+    },
+    {
+      "group": 0,
+      "binding": 30,
+      "address_space": "uniform",
+      "name": "pyramid_instances",
+      "type": "PyramidArray",
+      "line": 2391
+    },
+    {
+      "group": 0,
+      "binding": 31,
+      "address_space": "",
+      "name": "live_card_write",
+      "type": "texture_storage_2d<rgba16float, write>",
+      "line": 5727
+    },
+    {
+      "group": 0,
+      "binding": 32,
+      "address_space": "storage, read_write",
+      "name": "live_card_scratch",
+      "type": "array<f32>",
+      "line": 5728
+    },
+    {
+      "group": 0,
+      "binding": 60,
+      "address_space": "storage, read_write",
+      "name": "agent_state",
+      "type": "array<AgentState, 32>",
+      "line": 5299
+    },
+    {
+      "group": 0,
+      "binding": 62,
+      "address_space": "uniform",
+      "name": "portal_array",
+      "type": "PortalArray",
+      "line": 5319
+    },
+    {
+      "group": 0,
+      "binding": 80,
+      "address_space": "storage, read_write",
+      "name": "camera_state",
+      "type": "CameraState",
+      "line": 5321
+    },
+    {
+      "group": 0,
+      "binding": 100,
+      "address_space": "storage, read_write",
+      "name": "floating_entities",
+      "type": "FloatingEntityArray",
+      "line": 5322
+    },
+    {
+      "group": 0,
+      "binding": 110,
+      "address_space": "uniform",
+      "name": "agent_behaviors",
+      "type": "array<AgentBehaviorParams, 10>",
+      "line": 897
+    },
+    {
+      "group": 0,
+      "binding": 111,
+      "address_space": "uniform",
+      "name": "agent_tier_gains",
+      "type": "array<AgentTierParams, 4>",
+      "line": 912
+    },
+    {
+      "group": 0,
+      "binding": 120,
+      "address_space": "uniform",
+      "name": "ribbon_state",
+      "type": "RibbonState",
+      "line": 5323
+    },
+    {
+      "group": 0,
+      "binding": 121,
+      "address_space": "storage, read_write",
+      "name": "ring_xforms",
+      "type": "array<RibbonRingTransform, 400>",
+      "line": 5403
+    },
+    {
+      "group": 0,
+      "binding": 122,
+      "address_space": "storage, read",
+      "name": "head_poses",
+      "type": "array<vec4<f32>, 400>",
+      "line": 5409
+    },
+    {
+      "group": 0,
+      "binding": 140,
+      "address_space": "uniform",
+      "name": "photographer_config",
+      "type": "PhotographerConfig",
+      "line": 8419
+    },
+    {
+      "group": 0,
+      "binding": 141,
+      "address_space": "storage, read_write",
+      "name": "photographer_vp",
+      "type": "VPMatrix",
+      "line": 8420
+    },
+    {
+      "group": 0,
+      "binding": 142,
+      "address_space": "storage, read_write",
+      "name": "photographer_camera_out",
+      "type": "CameraState",
+      "line": 8421
+    },
+    {
+      "group": 0,
+      "binding": 143,
+      "address_space": "storage, read_write",
+      "name": "photo_painting_slots",
+      "type": "array<UnifiedPaintingSlot, 32>",
+      "line": 8422
+    },
+    {
+      "group": 0,
+      "binding": 145,
+      "address_space": "",
+      "name": "photo_heightfield",
+      "type": "texture_2d_array<f32>",
+      "line": 8426
+    },
+    {
+      "group": 0,
+      "binding": 146,
+      "address_space": "",
+      "name": "photo_sampler",
+      "type": "sampler",
+      "line": 8427
+    },
+    {
+      "group": 0,
+      "binding": 147,
+      "address_space": "storage, read_write",
+      "name": "arch_ground",
+      "type": "array<ArchGroundEntry, 16>",
+      "line": 8439
+    },
+    {
+      "group": 0,
+      "binding": 148,
+      "address_space": "storage, read_write",
+      "name": "column_ground",
+      "type": "array<ColumnGroundEntry, 32>",
+      "line": 8451
+    },
+    {
+      "group": 0,
+      "binding": 150,
+      "address_space": "storage, read_write",
+      "name": "plant_ground",
+      "type": "array<PalmGroundEntry, 76>",
+      "line": 8464
+    },
+    {
+      "group": 0,
+      "binding": 151,
+      "address_space": "",
+      "name": "entity_ground_atlas_write",
+      "type": "texture_storage_2d<r32float, write>",
+      "line": 8467
+    },
+    {
+      "group": 0,
+      "binding": 152,
+      "address_space": "storage, read",
+      "name": "patch_grid",
+      "type": "PatchGrid",
+      "line": 8481
+    },
+    {
+      "group": 0,
+      "binding": 160,
+      "address_space": "storage, read_write",
+      "name": "zone_config",
+      "type": "GoLZoneArray",
+      "line": 5712
+    },
+    {
+      "group": 0,
+      "binding": 161,
+      "address_space": "storage, read_write",
+      "name": "zone_life",
+      "type": "array<f32>",
+      "line": 5713
+    },
+    {
+      "group": 0,
+      "binding": 162,
+      "address_space": "",
+      "name": "zone_life_tex_write",
+      "type": "texture_storage_2d_array<rg32float, write>",
+      "line": 5714
+    },
+    {
+      "group": 0,
+      "binding": 166,
+      "address_space": "uniform",
+      "name": "zone_derive_requests",
+      "type": "ZoneDeriveRequestArray",
+      "line": 5763
+    },
+    {
+      "group": 0,
+      "binding": 170,
+      "address_space": "uniform",
+      "name": "pawn_aura_cfg",
+      "type": "PawnAuraConfig",
+      "line": 5724
+    },
+    {
+      "group": 0,
+      "binding": 171,
+      "address_space": "storage, read_write",
+      "name": "pawn_aura_cells",
+      "type": "array<PawnAuraCell>",
+      "line": 5725
+    },
+    {
+      "group": 0,
+      "binding": 172,
+      "address_space": "",
+      "name": "pawn_aura_tex_write",
+      "type": "texture_storage_2d<rgba16float, write>",
+      "line": 5726
+    },
+    {
+      "group": 0,
+      "binding": 180,
+      "address_space": "storage, read",
+      "name": "palmg_params",
+      "type": "array<PalmMeshParams, 24>",
+      "line": 10228
+    },
+    {
+      "group": 0,
+      "binding": 181,
+      "address_space": "storage, read_write",
+      "name": "palmg_vertices",
+      "type": "array<f32>",
+      "line": 10229
+    },
+    {
+      "group": 0,
+      "binding": 182,
+      "address_space": "storage, read_write",
+      "name": "palmg_indices",
+      "type": "array<u32>",
+      "line": 10230
+    },
+    {
+      "group": 0,
+      "binding": 183,
+      "address_space": "storage, read",
+      "name": "cactusg_params",
+      "type": "array<CactusMeshParams, 20>",
+      "line": 10552
+    },
+    {
+      "group": 0,
+      "binding": 184,
+      "address_space": "storage, read_write",
+      "name": "cactusg_vertices",
+      "type": "array<f32>",
+      "line": 10553
+    },
+    {
+      "group": 0,
+      "binding": 185,
+      "address_space": "storage, read_write",
+      "name": "cactusg_indices",
+      "type": "array<u32>",
+      "line": 10554
+    },
+    {
+      "group": 0,
+      "binding": 186,
+      "address_space": "storage, read",
+      "name": "bladeg_params",
+      "type": "array<BladeClusterMeshParams, 32>",
+      "line": 10882
+    },
+    {
+      "group": 0,
+      "binding": 187,
+      "address_space": "storage, read_write",
+      "name": "bladeg_vertices",
+      "type": "array<f32>",
+      "line": 10883
+    },
+    {
+      "group": 0,
+      "binding": 188,
+      "address_space": "storage, read_write",
+      "name": "bladeg_indices",
+      "type": "array<u32>",
+      "line": 10884
+    },
+    {
+      "group": 0,
+      "binding": 190,
+      "address_space": "uniform",
+      "name": "cmg_config",
+      "type": "DesignConfig",
+      "line": 9719
+    },
+    {
+      "group": 0,
+      "binding": 191,
+      "address_space": "storage, read",
+      "name": "cmg_column_ground",
+      "type": "array<ColumnGroundEntry, 32>",
+      "line": 9720
+    },
+    {
+      "group": 0,
+      "binding": 193,
+      "address_space": "storage, read",
+      "name": "amg_params",
+      "type": "array<ArchMeshParams, 16>",
+      "line": 9355
+    },
+    {
+      "group": 0,
+      "binding": 194,
+      "address_space": "storage, read_write",
+      "name": "amg_vertices",
+      "type": "array<f32>",
+      "line": 9356
+    },
+    {
+      "group": 0,
+      "binding": 195,
+      "address_space": "storage, read_write",
+      "name": "amg_indices",
+      "type": "array<u32>",
+      "line": 9357
+    },
+    {
+      "group": 0,
+      "binding": 196,
+      "address_space": "storage, read",
+      "name": "cmg_params",
+      "type": "array<ColumnMeshParams, 32>",
+      "line": 9713
+    },
+    {
+      "group": 0,
+      "binding": 197,
+      "address_space": "storage, read_write",
+      "name": "cmg_vertices",
+      "type": "array<f32>",
+      "line": 9714
+    },
+    {
+      "group": 0,
+      "binding": 198,
+      "address_space": "storage, read_write",
+      "name": "cmg_indices",
+      "type": "array<u32>",
+      "line": 9715
+    },
+    {
+      "group": 0,
+      "binding": 200,
+      "address_space": "storage, read",
+      "name": "render_signal",
+      "type": "FrameSignal",
+      "line": 5353
+    },
+    {
+      "group": 0,
+      "binding": 201,
+      "address_space": "storage, read",
+      "name": "render_vp",
+      "type": "VPMatrix",
+      "line": 5354
+    },
+    {
+      "group": 0,
+      "binding": 260,
+      "address_space": "storage, read",
+      "name": "render_agents",
+      "type": "array<AgentState, 32>",
+      "line": 5356
+    },
+    {
+      "group": 0,
+      "binding": 280,
+      "address_space": "storage, read",
+      "name": "render_camera",
+      "type": "CameraState",
+      "line": 5357
+    },
+    {
+      "group": 0,
+      "binding": 300,
+      "address_space": "uniform",
+      "name": "render_floating",
+      "type": "FloatingEntityArray",
+      "line": 5358
+    },
+    {
+      "group": 0,
+      "binding": 320,
+      "address_space": "storage, read",
+      "name": "render_light",
+      "type": "DirectionalLight",
+      "line": 5412
+    },
+    {
+      "group": 0,
+      "binding": 321,
+      "address_space": "storage, read",
+      "name": "render_point_lights",
+      "type": "PointLightArray",
+      "line": 5413
+    },
+    {
+      "group": 0,
+      "binding": 322,
+      "address_space": "storage, read",
+      "name": "render_spot_lights",
+      "type": "SpotLightArray",
+      "line": 5414
+    },
+    {
+      "group": 0,
+      "binding": 340,
+      "address_space": "storage, read",
+      "name": "patch_instances",
+      "type": "array<PatchInstance>",
+      "line": 5452
+    },
+    {
+      "group": 0,
+      "binding": 340,
+      "address_space": "storage, read",
+      "name": "fc_patches",
+      "type": "array<PatchInstance>",
+      "line": 8779
+    },
+    {
+      "group": 0,
+      "binding": 360,
+      "address_space": "uniform",
+      "name": "render_ribbon",
+      "type": "RibbonState",
+      "line": 5386
+    },
+    {
+      "group": 0,
+      "binding": 361,
+      "address_space": "storage, read",
+      "name": "render_ring_xforms",
+      "type": "array<RibbonRingTransform, 400>",
+      "line": 5387
+    },
+    {
+      "group": 0,
+      "binding": 390,
+      "address_space": "",
+      "name": "entity_ground_atlas",
+      "type": "texture_2d<f32>",
+      "line": 5389
+    },
+    {
+      "group": 0,
+      "binding": 391,
+      "address_space": "storage, read",
+      "name": "visible_patch_indices",
+      "type": "array<u32>",
+      "line": 5453
+    },
+    {
+      "group": 0,
+      "binding": 400,
+      "address_space": "storage, read",
+      "name": "render_orb_state",
+      "type": "array<OrbState>",
+      "line": 11328
+    },
+    {
+      "group": 0,
+      "binding": 410,
+      "address_space": "storage, read_write",
+      "name": "orb_state",
+      "type": "array<OrbState>",
+      "line": 11313
+    },
+    {
+      "group": 0,
+      "binding": 411,
+      "address_space": "uniform",
+      "name": "orb_config",
+      "type": "OrbConfig",
+      "line": 11314
+    },
+    {
+      "group": 0,
+      "binding": 412,
+      "address_space": "storage, read",
+      "name": "orb_state_prev",
+      "type": "array<OrbState>",
+      "line": 11318
+    },
+    {
+      "group": 0,
+      "binding": 413,
+      "address_space": "storage, read",
+      "name": "orb_state_ro",
+      "type": "array<OrbState>",
+      "line": 11324
+    },
+    {
+      "group": 0,
+      "binding": 414,
+      "address_space": "storage, read_write",
+      "name": "orb_state_prev_rw",
+      "type": "array<OrbState>",
+      "line": 11325
+    },
+    {
+      "group": 0,
+      "binding": 500,
+      "address_space": "storage, read_write",
+      "name": "fc_visible",
+      "type": "array<u32>",
+      "line": 8780
+    },
+    {
+      "group": 0,
+      "binding": 501,
+      "address_space": "storage, read_write",
+      "name": "fc_indirect",
+      "type": "array<atomic<u32>, 5>",
+      "line": 8781
+    },
+    {
+      "group": 1,
+      "binding": 22,
+      "address_space": "",
+      "name": "bilinear_sampler",
+      "type": "sampler",
+      "line": 5418
+    },
+    {
+      "group": 1,
+      "binding": 23,
+      "address_space": "",
+      "name": "nearest_sampler",
+      "type": "sampler",
+      "line": 5419
+    },
+    {
+      "group": 1,
+      "binding": 25,
+      "address_space": "",
+      "name": "shadow_map",
+      "type": "texture_depth_2d",
+      "line": 5420
+    },
+    {
+      "group": 1,
+      "binding": 26,
+      "address_space": "",
+      "name": "shadow_sampler",
+      "type": "sampler_comparison",
+      "line": 5421
+    },
+    {
+      "group": 1,
+      "binding": 27,
+      "address_space": "",
+      "name": "spot_shadow_map",
+      "type": "texture_depth_2d",
+      "line": 5422
+    },
+    {
+      "group": 1,
+      "binding": 28,
+      "address_space": "",
+      "name": "patch_heightfield_array_read",
+      "type": "texture_2d_array<f32>",
+      "line": 5454
+    },
+    {
+      "group": 1,
+      "binding": 29,
+      "address_space": "",
+      "name": "patch_cell_color_array_read",
+      "type": "texture_2d_array<f32>",
+      "line": 5455
+    },
+    {
+      "group": 1,
+      "binding": 31,
+      "address_space": "",
+      "name": "zone_life_read",
+      "type": "texture_2d_array<f32>",
+      "line": 5717
+    },
+    {
+      "group": 1,
+      "binding": 32,
+      "address_space": "storage, read",
+      "name": "zone_params",
+      "type": "GoLZoneArray",
+      "line": 5718
+    },
+    {
+      "group": 1,
+      "binding": 33,
+      "address_space": "",
+      "name": "pawn_aura_read",
+      "type": "texture_2d<f32>",
+      "line": 5719
+    },
+    {
+      "group": 1,
+      "binding": 34,
+      "address_space": "",
+      "name": "live_card_read",
+      "type": "texture_2d<f32>",
+      "line": 5720
+    },
+    {
+      "group": 1,
+      "binding": 50,
+      "address_space": "storage, read",
+      "name": "painting_slots",
+      "type": "array<UnifiedPaintingSlot, 32>",
+      "line": 8908
+    },
+    {
+      "group": 1,
+      "binding": 51,
+      "address_space": "",
+      "name": "painting_array",
+      "type": "texture_2d_array<f32>",
+      "line": 8909
+    },
+    {
+      "group": 1,
+      "binding": 52,
+      "address_space": "",
+      "name": "painting_sampler_filt",
+      "type": "sampler",
+      "line": 8910
+    }
+  ]
+}

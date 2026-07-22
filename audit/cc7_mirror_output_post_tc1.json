@@ -1,0 +1,33 @@
+{
+  "registry_path": "src/cartridges/the_board/realization/binding_registry.hpp",
+  "registry_constant_count": 92,
+  "registry_slot_count": 92,
+  "wgsl_declaration_count": 95,
+  "wgsl_slot_count": 92,
+  "slots_matching_by_number_and_name": 89,
+  "wgsl_literal_without_registry_constant": [],
+  "registry_constant_without_wgsl_literal": [],
+  "name_mismatches_at_matched_numbers": [
+    "g0:b1 wgsl=['config', 'fc_config'] registry=['config']",
+    "g0:b2 wgsl=['vp_data', 'fc_vp'] registry=['vp_data']",
+    "g0:b340 wgsl=['patch_instances', 'fc_patches'] registry=['patch_instances']"
+  ],
+  "proposed_slots": {
+    "g0:b31": {
+      "wgsl": [
+        "live_card_write"
+      ],
+      "registry": [
+        "live_card_write"
+      ]
+    },
+    "g1:b34": {
+      "wgsl": [
+        "live_card_read"
+      ],
+      "registry": [
+        "live_card_read"
+      ]
+    }
+  }
+}

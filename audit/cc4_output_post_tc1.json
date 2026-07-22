@@ -1,0 +1,1979 @@
+{
+  "source": "src/cartridges/the_board/realization/world.wgsl",
+  "entry_point_count": 64,
+  "function_count": 278,
+  "usage": {
+    "patch_terrain_vs": {
+      "stage": "vertex",
+      "line": 3997,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "render_agents",
+          "group": 0,
+          "binding": 260
+        },
+        {
+          "name": "patch_instances",
+          "group": 0,
+          "binding": 340
+        },
+        {
+          "name": "visible_patch_indices",
+          "group": 0,
+          "binding": 391
+        },
+        {
+          "name": "bilinear_sampler",
+          "group": 1,
+          "binding": 22
+        },
+        {
+          "name": "nearest_sampler",
+          "group": 1,
+          "binding": 23
+        },
+        {
+          "name": "patch_heightfield_array_read",
+          "group": 1,
+          "binding": 28
+        },
+        {
+          "name": "pawn_aura_read",
+          "group": 1,
+          "binding": 33
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        }
+      ]
+    },
+    "patch_terrain_fs": {
+      "stage": "fragment",
+      "line": 4083,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "tile_grid",
+          "group": 0,
+          "binding": 25
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "render_agents",
+          "group": 0,
+          "binding": 260
+        },
+        {
+          "name": "render_camera",
+          "group": 0,
+          "binding": 280
+        },
+        {
+          "name": "render_floating",
+          "group": 0,
+          "binding": 300
+        },
+        {
+          "name": "render_light",
+          "group": 0,
+          "binding": 320
+        },
+        {
+          "name": "render_point_lights",
+          "group": 0,
+          "binding": 321
+        },
+        {
+          "name": "render_spot_lights",
+          "group": 0,
+          "binding": 322
+        },
+        {
+          "name": "bilinear_sampler",
+          "group": 1,
+          "binding": 22
+        },
+        {
+          "name": "nearest_sampler",
+          "group": 1,
+          "binding": 23
+        },
+        {
+          "name": "shadow_map",
+          "group": 1,
+          "binding": 25
+        },
+        {
+          "name": "shadow_sampler",
+          "group": 1,
+          "binding": 26
+        },
+        {
+          "name": "spot_shadow_map",
+          "group": 1,
+          "binding": 27
+        },
+        {
+          "name": "patch_cell_color_array_read",
+          "group": 1,
+          "binding": 29
+        },
+        {
+          "name": "zone_life_read",
+          "group": 1,
+          "binding": 31
+        },
+        {
+          "name": "zone_params",
+          "group": 1,
+          "binding": 32
+        },
+        {
+          "name": "pawn_aura_read",
+          "group": 1,
+          "binding": 33
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        }
+      ]
+    },
+    "shadow_patch_terrain_vs": {
+      "stage": "vertex",
+      "line": 4288,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "render_agents",
+          "group": 0,
+          "binding": 260
+        },
+        {
+          "name": "patch_instances",
+          "group": 0,
+          "binding": 340
+        },
+        {
+          "name": "bilinear_sampler",
+          "group": 1,
+          "binding": 22
+        },
+        {
+          "name": "nearest_sampler",
+          "group": 1,
+          "binding": 23
+        },
+        {
+          "name": "patch_heightfield_array_read",
+          "group": 1,
+          "binding": 28
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        }
+      ]
+    },
+    "pawn_vs": {
+      "stage": "vertex",
+      "line": 4415,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "agent_tier_gains",
+          "group": 0,
+          "binding": 111
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "render_agents",
+          "group": 0,
+          "binding": 260
+        }
+      ]
+    },
+    "sphere_vs": {
+      "stage": "vertex",
+      "line": 4525,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "render_floating",
+          "group": 0,
+          "binding": 300
+        }
+      ]
+    },
+    "entity_fs": {
+      "stage": "fragment",
+      "line": 4544,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "render_agents",
+          "group": 0,
+          "binding": 260
+        },
+        {
+          "name": "render_camera",
+          "group": 0,
+          "binding": 280
+        },
+        {
+          "name": "render_light",
+          "group": 0,
+          "binding": 320
+        },
+        {
+          "name": "render_point_lights",
+          "group": 0,
+          "binding": 321
+        },
+        {
+          "name": "render_spot_lights",
+          "group": 0,
+          "binding": 322
+        },
+        {
+          "name": "shadow_map",
+          "group": 1,
+          "binding": 25
+        },
+        {
+          "name": "shadow_sampler",
+          "group": 1,
+          "binding": 26
+        },
+        {
+          "name": "spot_shadow_map",
+          "group": 1,
+          "binding": 27
+        }
+      ]
+    },
+    "ribbon_fs": {
+      "stage": "fragment",
+      "line": 4552,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "render_agents",
+          "group": 0,
+          "binding": 260
+        },
+        {
+          "name": "render_camera",
+          "group": 0,
+          "binding": 280
+        },
+        {
+          "name": "render_light",
+          "group": 0,
+          "binding": 320
+        },
+        {
+          "name": "render_point_lights",
+          "group": 0,
+          "binding": 321
+        },
+        {
+          "name": "render_spot_lights",
+          "group": 0,
+          "binding": 322
+        },
+        {
+          "name": "shadow_map",
+          "group": 1,
+          "binding": 25
+        },
+        {
+          "name": "shadow_sampler",
+          "group": 1,
+          "binding": 26
+        },
+        {
+          "name": "spot_shadow_map",
+          "group": 1,
+          "binding": 27
+        }
+      ]
+    },
+    "monolith_vs": {
+      "stage": "vertex",
+      "line": 4558,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "render_floating",
+          "group": 0,
+          "binding": 300
+        }
+      ]
+    },
+    "shadow_pawn_vs": {
+      "stage": "vertex",
+      "line": 4603,
+      "bindings": [
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "render_agents",
+          "group": 0,
+          "binding": 260
+        }
+      ]
+    },
+    "shadow_sphere_vs": {
+      "stage": "vertex",
+      "line": 4679,
+      "bindings": [
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "render_floating",
+          "group": 0,
+          "binding": 300
+        }
+      ]
+    },
+    "shadow_monolith_vs": {
+      "stage": "vertex",
+      "line": 4691,
+      "bindings": [
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "render_floating",
+          "group": 0,
+          "binding": 300
+        }
+      ]
+    },
+    "arch_vs": {
+      "stage": "vertex",
+      "line": 4712,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "entity_ground_atlas",
+          "group": 0,
+          "binding": 390
+        },
+        {
+          "name": "bilinear_sampler",
+          "group": 1,
+          "binding": 22
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        }
+      ]
+    },
+    "shadow_arch_vs": {
+      "stage": "vertex",
+      "line": 4727,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "entity_ground_atlas",
+          "group": 0,
+          "binding": 390
+        },
+        {
+          "name": "bilinear_sampler",
+          "group": 1,
+          "binding": 22
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        }
+      ]
+    },
+    "column_vs": {
+      "stage": "vertex",
+      "line": 4740,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "entity_ground_atlas",
+          "group": 0,
+          "binding": 390
+        },
+        {
+          "name": "bilinear_sampler",
+          "group": 1,
+          "binding": 22
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        }
+      ]
+    },
+    "shadow_column_vs": {
+      "stage": "vertex",
+      "line": 4755,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "entity_ground_atlas",
+          "group": 0,
+          "binding": 390
+        },
+        {
+          "name": "bilinear_sampler",
+          "group": 1,
+          "binding": 22
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        }
+      ]
+    },
+    "shell_vs": {
+      "stage": "vertex",
+      "line": 4782,
+      "bindings": [
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        }
+      ]
+    },
+    "shadow_shell_vs": {
+      "stage": "vertex",
+      "line": 4792,
+      "bindings": [
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        }
+      ]
+    },
+    "compute_ribbon_rings": {
+      "stage": "compute",
+      "line": 4982,
+      "bindings": [
+        {
+          "name": "ribbon_state",
+          "group": 0,
+          "binding": 120
+        },
+        {
+          "name": "ring_xforms",
+          "group": 0,
+          "binding": 121
+        },
+        {
+          "name": "head_poses",
+          "group": 0,
+          "binding": 122
+        }
+      ]
+    },
+    "ribbon_vs": {
+      "stage": "vertex",
+      "line": 5030,
+      "bindings": [
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "render_ribbon",
+          "group": 0,
+          "binding": 360
+        },
+        {
+          "name": "render_ring_xforms",
+          "group": 0,
+          "binding": 361
+        }
+      ]
+    },
+    "shadow_ribbon_vs": {
+      "stage": "vertex",
+      "line": 5181,
+      "bindings": [
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "render_ribbon",
+          "group": 0,
+          "binding": 360
+        },
+        {
+          "name": "render_ring_xforms",
+          "group": 0,
+          "binding": 361
+        }
+      ]
+    },
+    "fade_overlay_vs": {
+      "stage": "vertex",
+      "line": 5273,
+      "bindings": []
+    },
+    "fade_overlay_fs": {
+      "stage": "fragment",
+      "line": 5283,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        }
+      ]
+    },
+    "zone_derive_params": {
+      "stage": "compute",
+      "line": 5809,
+      "bindings": [
+        {
+          "name": "zone_config",
+          "group": 0,
+          "binding": 160
+        },
+        {
+          "name": "zone_derive_requests",
+          "group": 0,
+          "binding": 166
+        }
+      ]
+    },
+    "zone_seed_mask": {
+      "stage": "compute",
+      "line": 5941,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "tile_grid",
+          "group": 0,
+          "binding": 25
+        },
+        {
+          "name": "zone_config",
+          "group": 0,
+          "binding": 160
+        },
+        {
+          "name": "zone_life",
+          "group": 0,
+          "binding": 161
+        },
+        {
+          "name": "zone_derive_requests",
+          "group": 0,
+          "binding": 166
+        }
+      ]
+    },
+    "update_player_agent": {
+      "stage": "compute",
+      "line": 6829,
+      "bindings": [
+        {
+          "name": "signal",
+          "group": 0,
+          "binding": 0
+        },
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "agent_state",
+          "group": 0,
+          "binding": 60
+        },
+        {
+          "name": "portal_array",
+          "group": 0,
+          "binding": 62
+        },
+        {
+          "name": "camera_state",
+          "group": 0,
+          "binding": 80
+        },
+        {
+          "name": "floating_entities",
+          "group": 0,
+          "binding": 100
+        },
+        {
+          "name": "agent_tier_gains",
+          "group": 0,
+          "binding": 111
+        },
+        {
+          "name": "photo_heightfield",
+          "group": 0,
+          "binding": 145
+        },
+        {
+          "name": "photo_sampler",
+          "group": 0,
+          "binding": 146
+        },
+        {
+          "name": "patch_grid",
+          "group": 0,
+          "binding": 152
+        },
+        {
+          "name": "bilinear_sampler",
+          "group": 1,
+          "binding": 22
+        },
+        {
+          "name": "nearest_sampler",
+          "group": 1,
+          "binding": 23
+        },
+        {
+          "name": "pawn_aura_read",
+          "group": 1,
+          "binding": 33
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        }
+      ]
+    },
+    "update_other_agents": {
+      "stage": "compute",
+      "line": 6903,
+      "bindings": [
+        {
+          "name": "signal",
+          "group": 0,
+          "binding": 0
+        },
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "agent_state",
+          "group": 0,
+          "binding": 60
+        },
+        {
+          "name": "camera_state",
+          "group": 0,
+          "binding": 80
+        },
+        {
+          "name": "floating_entities",
+          "group": 0,
+          "binding": 100
+        },
+        {
+          "name": "agent_behaviors",
+          "group": 0,
+          "binding": 110
+        },
+        {
+          "name": "agent_tier_gains",
+          "group": 0,
+          "binding": 111
+        },
+        {
+          "name": "photo_heightfield",
+          "group": 0,
+          "binding": 145
+        },
+        {
+          "name": "photo_sampler",
+          "group": 0,
+          "binding": 146
+        },
+        {
+          "name": "patch_grid",
+          "group": 0,
+          "binding": 152
+        },
+        {
+          "name": "bilinear_sampler",
+          "group": 1,
+          "binding": 22
+        },
+        {
+          "name": "nearest_sampler",
+          "group": 1,
+          "binding": 23
+        },
+        {
+          "name": "pawn_aura_read",
+          "group": 1,
+          "binding": 33
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        }
+      ]
+    },
+    "update_camera": {
+      "stage": "compute",
+      "line": 6995,
+      "bindings": [
+        {
+          "name": "signal",
+          "group": 0,
+          "binding": 0
+        },
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "agent_state",
+          "group": 0,
+          "binding": 60
+        },
+        {
+          "name": "camera_state",
+          "group": 0,
+          "binding": 80
+        },
+        {
+          "name": "photo_heightfield",
+          "group": 0,
+          "binding": 145
+        },
+        {
+          "name": "photo_sampler",
+          "group": 0,
+          "binding": 146
+        },
+        {
+          "name": "patch_grid",
+          "group": 0,
+          "binding": 152
+        },
+        {
+          "name": "bilinear_sampler",
+          "group": 1,
+          "binding": 22
+        },
+        {
+          "name": "nearest_sampler",
+          "group": 1,
+          "binding": 23
+        },
+        {
+          "name": "pawn_aura_read",
+          "group": 1,
+          "binding": 33
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        }
+      ]
+    },
+    "update_sphere": {
+      "stage": "compute",
+      "line": 7110,
+      "bindings": [
+        {
+          "name": "signal",
+          "group": 0,
+          "binding": 0
+        },
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "agent_state",
+          "group": 0,
+          "binding": 60
+        },
+        {
+          "name": "camera_state",
+          "group": 0,
+          "binding": 80
+        },
+        {
+          "name": "floating_entities",
+          "group": 0,
+          "binding": 100
+        },
+        {
+          "name": "photo_heightfield",
+          "group": 0,
+          "binding": 145
+        },
+        {
+          "name": "photo_sampler",
+          "group": 0,
+          "binding": 146
+        },
+        {
+          "name": "patch_grid",
+          "group": 0,
+          "binding": 152
+        },
+        {
+          "name": "bilinear_sampler",
+          "group": 1,
+          "binding": 22
+        },
+        {
+          "name": "nearest_sampler",
+          "group": 1,
+          "binding": 23
+        },
+        {
+          "name": "pawn_aura_read",
+          "group": 1,
+          "binding": 33
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        }
+      ]
+    },
+    "update_cube": {
+      "stage": "compute",
+      "line": 7261,
+      "bindings": [
+        {
+          "name": "signal",
+          "group": 0,
+          "binding": 0
+        },
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "agent_state",
+          "group": 0,
+          "binding": 60
+        },
+        {
+          "name": "camera_state",
+          "group": 0,
+          "binding": 80
+        },
+        {
+          "name": "floating_entities",
+          "group": 0,
+          "binding": 100
+        },
+        {
+          "name": "agent_tier_gains",
+          "group": 0,
+          "binding": 111
+        },
+        {
+          "name": "photo_heightfield",
+          "group": 0,
+          "binding": 145
+        },
+        {
+          "name": "photo_sampler",
+          "group": 0,
+          "binding": 146
+        },
+        {
+          "name": "patch_grid",
+          "group": 0,
+          "binding": 152
+        },
+        {
+          "name": "bilinear_sampler",
+          "group": 1,
+          "binding": 22
+        },
+        {
+          "name": "nearest_sampler",
+          "group": 1,
+          "binding": 23
+        },
+        {
+          "name": "pawn_aura_read",
+          "group": 1,
+          "binding": 33
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        }
+      ]
+    },
+    "compute_vp": {
+      "stage": "compute",
+      "line": 7463,
+      "bindings": [
+        {
+          "name": "signal",
+          "group": 0,
+          "binding": 0
+        },
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "vp_data",
+          "group": 0,
+          "binding": 2
+        },
+        {
+          "name": "agent_state",
+          "group": 0,
+          "binding": 60
+        },
+        {
+          "name": "camera_state",
+          "group": 0,
+          "binding": 80
+        }
+      ]
+    },
+    "generate_terrain_indices": {
+      "stage": "compute",
+      "line": 7486,
+      "bindings": [
+        {
+          "name": "terrain_mesh_indices",
+          "group": 0,
+          "binding": 22
+        }
+      ]
+    },
+    "generate_patch_heights": {
+      "stage": "compute",
+      "line": 7521,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "patch_params",
+          "group": 0,
+          "binding": 23
+        },
+        {
+          "name": "tile_grid",
+          "group": 0,
+          "binding": 25
+        },
+        {
+          "name": "pier_instances",
+          "group": 0,
+          "binding": 26
+        },
+        {
+          "name": "patch_height_scratch",
+          "group": 0,
+          "binding": 28
+        },
+        {
+          "name": "pyramid_instances",
+          "group": 0,
+          "binding": 30
+        }
+      ]
+    },
+    "generate_patch_gradients": {
+      "stage": "compute",
+      "line": 7542,
+      "bindings": [
+        {
+          "name": "patch_params",
+          "group": 0,
+          "binding": 23
+        },
+        {
+          "name": "patch_heightfield_array_write",
+          "group": 0,
+          "binding": 24
+        },
+        {
+          "name": "patch_height_scratch",
+          "group": 0,
+          "binding": 28
+        }
+      ]
+    },
+    "generate_patch_cells": {
+      "stage": "compute",
+      "line": 7899,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "patch_params",
+          "group": 0,
+          "binding": 23
+        },
+        {
+          "name": "tile_grid",
+          "group": 0,
+          "binding": 25
+        },
+        {
+          "name": "patch_cell_color_array_write",
+          "group": 0,
+          "binding": 27
+        }
+      ]
+    },
+    "zone_gol_sync": {
+      "stage": "compute",
+      "line": 7967,
+      "bindings": [
+        {
+          "name": "zone_config",
+          "group": 0,
+          "binding": 160
+        },
+        {
+          "name": "zone_life",
+          "group": 0,
+          "binding": 161
+        }
+      ]
+    },
+    "zone_gol_evolve": {
+      "stage": "compute",
+      "line": 7982,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "zone_config",
+          "group": 0,
+          "binding": 160
+        },
+        {
+          "name": "zone_life",
+          "group": 0,
+          "binding": 161
+        },
+        {
+          "name": "zone_life_tex_write",
+          "group": 0,
+          "binding": 162
+        }
+      ]
+    },
+    "write_live_card_heights": {
+      "stage": "compute",
+      "line": 8148,
+      "bindings": [
+        {
+          "name": "signal",
+          "group": 0,
+          "binding": 0
+        },
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "live_card_scratch",
+          "group": 0,
+          "binding": 32
+        },
+        {
+          "name": "zone_config",
+          "group": 0,
+          "binding": 160
+        },
+        {
+          "name": "zone_life",
+          "group": 0,
+          "binding": 161
+        }
+      ]
+    },
+    "write_live_card_resolve": {
+      "stage": "compute",
+      "line": 8178,
+      "bindings": [
+        {
+          "name": "live_card_write",
+          "group": 0,
+          "binding": 31
+        },
+        {
+          "name": "live_card_scratch",
+          "group": 0,
+          "binding": 32
+        }
+      ]
+    },
+    "compute_pawn_aura": {
+      "stage": "compute",
+      "line": 8258,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "tile_grid",
+          "group": 0,
+          "binding": 25
+        },
+        {
+          "name": "agent_state",
+          "group": 0,
+          "binding": 60
+        },
+        {
+          "name": "pawn_aura_cfg",
+          "group": 0,
+          "binding": 170
+        },
+        {
+          "name": "pawn_aura_cells",
+          "group": 0,
+          "binding": 171
+        },
+        {
+          "name": "pawn_aura_tex_write",
+          "group": 0,
+          "binding": 172
+        }
+      ]
+    },
+    "compute_photographer_vp": {
+      "stage": "compute",
+      "line": 8546,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "agent_state",
+          "group": 0,
+          "binding": 60
+        },
+        {
+          "name": "camera_state",
+          "group": 0,
+          "binding": 80
+        },
+        {
+          "name": "photographer_config",
+          "group": 0,
+          "binding": 140
+        },
+        {
+          "name": "photographer_vp",
+          "group": 0,
+          "binding": 141
+        },
+        {
+          "name": "photographer_camera_out",
+          "group": 0,
+          "binding": 142
+        },
+        {
+          "name": "photo_heightfield",
+          "group": 0,
+          "binding": 145
+        },
+        {
+          "name": "photo_sampler",
+          "group": 0,
+          "binding": 146
+        },
+        {
+          "name": "patch_grid",
+          "group": 0,
+          "binding": 152
+        }
+      ]
+    },
+    "compute_entity_placement": {
+      "stage": "compute",
+      "line": 8646,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "photo_painting_slots",
+          "group": 0,
+          "binding": 143
+        },
+        {
+          "name": "photo_heightfield",
+          "group": 0,
+          "binding": 145
+        },
+        {
+          "name": "photo_sampler",
+          "group": 0,
+          "binding": 146
+        },
+        {
+          "name": "arch_ground",
+          "group": 0,
+          "binding": 147
+        },
+        {
+          "name": "column_ground",
+          "group": 0,
+          "binding": 148
+        },
+        {
+          "name": "plant_ground",
+          "group": 0,
+          "binding": 150
+        },
+        {
+          "name": "entity_ground_atlas_write",
+          "group": 0,
+          "binding": 151
+        },
+        {
+          "name": "patch_grid",
+          "group": 0,
+          "binding": 152
+        },
+        {
+          "name": "nearest_sampler",
+          "group": 1,
+          "binding": 23
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        }
+      ]
+    },
+    "frustum_cull_patches": {
+      "stage": "compute",
+      "line": 8814,
+      "bindings": [
+        {
+          "name": "fc_config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "fc_vp",
+          "group": 0,
+          "binding": 2
+        },
+        {
+          "name": "fc_patches",
+          "group": 0,
+          "binding": 340
+        },
+        {
+          "name": "fc_visible",
+          "group": 0,
+          "binding": 500
+        },
+        {
+          "name": "fc_indirect",
+          "group": 0,
+          "binding": 501
+        }
+      ]
+    },
+    "gallery_frame_vs": {
+      "stage": "vertex",
+      "line": 8949,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "painting_slots",
+          "group": 1,
+          "binding": 50
+        }
+      ]
+    },
+    "gallery_frame_fs": {
+      "stage": "fragment",
+      "line": 9036,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_camera",
+          "group": 0,
+          "binding": 280
+        },
+        {
+          "name": "painting_array",
+          "group": 1,
+          "binding": 51
+        },
+        {
+          "name": "painting_sampler_filt",
+          "group": 1,
+          "binding": 52
+        }
+      ]
+    },
+    "wall_painting_vs": {
+      "stage": "vertex",
+      "line": 9218,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "bilinear_sampler",
+          "group": 1,
+          "binding": 22
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        },
+        {
+          "name": "painting_slots",
+          "group": 1,
+          "binding": 50
+        }
+      ]
+    },
+    "wall_painting_canvas_fs": {
+      "stage": "fragment",
+      "line": 9248,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_camera",
+          "group": 0,
+          "binding": 280
+        },
+        {
+          "name": "painting_slots",
+          "group": 1,
+          "binding": 50
+        },
+        {
+          "name": "painting_array",
+          "group": 1,
+          "binding": 51
+        },
+        {
+          "name": "painting_sampler_filt",
+          "group": 1,
+          "binding": 52
+        }
+      ]
+    },
+    "wall_painting_frame_fs": {
+      "stage": "fragment",
+      "line": 9262,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_camera",
+          "group": 0,
+          "binding": 280
+        }
+      ]
+    },
+    "arch_mesh_gen": {
+      "stage": "compute",
+      "line": 9580,
+      "bindings": [
+        {
+          "name": "amg_params",
+          "group": 0,
+          "binding": 193
+        },
+        {
+          "name": "amg_vertices",
+          "group": 0,
+          "binding": 194
+        },
+        {
+          "name": "amg_indices",
+          "group": 0,
+          "binding": 195
+        }
+      ]
+    },
+    "column_mesh_gen": {
+      "stage": "compute",
+      "line": 9753,
+      "bindings": [
+        {
+          "name": "cmg_config",
+          "group": 0,
+          "binding": 190
+        },
+        {
+          "name": "cmg_column_ground",
+          "group": 0,
+          "binding": 191
+        },
+        {
+          "name": "cmg_params",
+          "group": 0,
+          "binding": 196
+        },
+        {
+          "name": "cmg_vertices",
+          "group": 0,
+          "binding": 197
+        },
+        {
+          "name": "cmg_indices",
+          "group": 0,
+          "binding": 198
+        }
+      ]
+    },
+    "palm_mesh_gen": {
+      "stage": "compute",
+      "line": 10249,
+      "bindings": [
+        {
+          "name": "palmg_params",
+          "group": 0,
+          "binding": 180
+        },
+        {
+          "name": "palmg_vertices",
+          "group": 0,
+          "binding": 181
+        },
+        {
+          "name": "palmg_indices",
+          "group": 0,
+          "binding": 182
+        }
+      ]
+    },
+    "palm_vs": {
+      "stage": "vertex",
+      "line": 10492,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "entity_ground_atlas",
+          "group": 0,
+          "binding": 390
+        },
+        {
+          "name": "bilinear_sampler",
+          "group": 1,
+          "binding": 22
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        }
+      ]
+    },
+    "shadow_palm_vs": {
+      "stage": "vertex",
+      "line": 10513,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "entity_ground_atlas",
+          "group": 0,
+          "binding": 390
+        },
+        {
+          "name": "bilinear_sampler",
+          "group": 1,
+          "binding": 22
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        }
+      ]
+    },
+    "cactus_mesh_gen": {
+      "stage": "compute",
+      "line": 10581,
+      "bindings": [
+        {
+          "name": "cactusg_params",
+          "group": 0,
+          "binding": 183
+        },
+        {
+          "name": "cactusg_vertices",
+          "group": 0,
+          "binding": 184
+        },
+        {
+          "name": "cactusg_indices",
+          "group": 0,
+          "binding": 185
+        }
+      ]
+    },
+    "cactus_vs": {
+      "stage": "vertex",
+      "line": 10829,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "entity_ground_atlas",
+          "group": 0,
+          "binding": 390
+        },
+        {
+          "name": "bilinear_sampler",
+          "group": 1,
+          "binding": 22
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        }
+      ]
+    },
+    "shadow_cactus_vs": {
+      "stage": "vertex",
+      "line": 10847,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "entity_ground_atlas",
+          "group": 0,
+          "binding": 390
+        },
+        {
+          "name": "bilinear_sampler",
+          "group": 1,
+          "binding": 22
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        }
+      ]
+    },
+    "blade_cluster_mesh_gen": {
+      "stage": "compute",
+      "line": 10911,
+      "bindings": [
+        {
+          "name": "bladeg_params",
+          "group": 0,
+          "binding": 186
+        },
+        {
+          "name": "bladeg_vertices",
+          "group": 0,
+          "binding": 187
+        },
+        {
+          "name": "bladeg_indices",
+          "group": 0,
+          "binding": 188
+        }
+      ]
+    },
+    "blade_cluster_vs": {
+      "stage": "vertex",
+      "line": 11065,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "entity_ground_atlas",
+          "group": 0,
+          "binding": 390
+        },
+        {
+          "name": "bilinear_sampler",
+          "group": 1,
+          "binding": 22
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        }
+      ]
+    },
+    "shadow_blade_cluster_vs": {
+      "stage": "vertex",
+      "line": 11083,
+      "bindings": [
+        {
+          "name": "config",
+          "group": 0,
+          "binding": 1
+        },
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "entity_ground_atlas",
+          "group": 0,
+          "binding": 390
+        },
+        {
+          "name": "bilinear_sampler",
+          "group": 1,
+          "binding": 22
+        },
+        {
+          "name": "live_card_read",
+          "group": 1,
+          "binding": 34
+        }
+      ]
+    },
+    "orb_state_prev_copy": {
+      "stage": "compute",
+      "line": 11473,
+      "bindings": [
+        {
+          "name": "orb_config",
+          "group": 0,
+          "binding": 411
+        },
+        {
+          "name": "orb_state_ro",
+          "group": 0,
+          "binding": 413
+        },
+        {
+          "name": "orb_state_prev_rw",
+          "group": 0,
+          "binding": 414
+        }
+      ]
+    },
+    "orb_init": {
+      "stage": "compute",
+      "line": 11480,
+      "bindings": [
+        {
+          "name": "orb_state",
+          "group": 0,
+          "binding": 410
+        },
+        {
+          "name": "orb_config",
+          "group": 0,
+          "binding": 411
+        }
+      ]
+    },
+    "orb_recolor": {
+      "stage": "compute",
+      "line": 11567,
+      "bindings": [
+        {
+          "name": "orb_state",
+          "group": 0,
+          "binding": 410
+        },
+        {
+          "name": "orb_config",
+          "group": 0,
+          "binding": 411
+        }
+      ]
+    },
+    "orb_dynamics": {
+      "stage": "compute",
+      "line": 11611,
+      "bindings": [
+        {
+          "name": "orb_state",
+          "group": 0,
+          "binding": 410
+        },
+        {
+          "name": "orb_config",
+          "group": 0,
+          "binding": 411
+        },
+        {
+          "name": "orb_state_prev",
+          "group": 0,
+          "binding": 412
+        }
+      ]
+    },
+    "orb_vs": {
+      "stage": "vertex",
+      "line": 11908,
+      "bindings": [
+        {
+          "name": "render_vp",
+          "group": 0,
+          "binding": 201
+        },
+        {
+          "name": "render_camera",
+          "group": 0,
+          "binding": 280
+        },
+        {
+          "name": "render_orb_state",
+          "group": 0,
+          "binding": 400
+        }
+      ]
+    },
+    "orb_fs": {
+      "stage": "fragment",
+      "line": 11947,
+      "bindings": []
+    }
+  }
+}
