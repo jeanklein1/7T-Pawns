@@ -20,8 +20,8 @@
 // ONE CONSTANT PER SITE, named for the site (the WGSL variable it mirrors),
 // NOT one-per-buffer. The number addresses a (group, slot); the shared
 // buffer handle lives in the group entry's `.buffer`, not here. So the same
-// buffer wears several names: patch_instances(340) / photo_patch_instances
-// (144) / zone_patch_instances(165); orb_state(410) / render_orb_state(400)
+// buffer wears several names: patch_instances(340) /
+// zone_patch_instances(165); orb_state(410) / render_orb_state(400)
 // / orb_state_ro(413). Each name = one (group, slot).
 //
 // THE CEILING (Option A). This single-sources the two C++ copies (layout +
@@ -72,7 +72,6 @@ namespace t7 {
                 inline constexpr uint32_t portal_array               = 62;
                 inline constexpr uint32_t camera_state               = 80;   // aka fc_camera
                 inline constexpr uint32_t floating_entities          = 100;
-                inline constexpr uint32_t trajectories               = 101;
 
                 // agent registries (110–111)
                 inline constexpr uint32_t agent_behaviors            = 110;
@@ -88,7 +87,6 @@ namespace t7 {
                 inline constexpr uint32_t photographer_vp            = 141;
                 inline constexpr uint32_t photographer_camera_out    = 142;
                 inline constexpr uint32_t photo_painting_slots       = 143;
-                inline constexpr uint32_t photo_patch_instances      = 144;
                 inline constexpr uint32_t photo_heightfield          = 145;
                 inline constexpr uint32_t photo_sampler              = 146;
                 inline constexpr uint32_t arch_ground                = 147;

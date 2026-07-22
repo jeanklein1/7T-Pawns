@@ -116,7 +116,7 @@
 // SECTION MAP
 // ═══════════════════════════════════════════════════════════════════════
 //
-// §1    FOUNDATIONS         PGA algebra, trajectories, utilities, terrain height
+// §1    FOUNDATIONS         PGA algebra, utilities, terrain height
 // §2    STATE               Structs, constants, muting control
 // §3    COUPLINGS           Signal/input/terrain/entity cross-wiring
 // §4    DYNAMICS            PGA motor integration (pawn, camera)
@@ -239,20 +239,6 @@ fn sw_motor_point(m: Motor, p: Point) -> Point {
     return point_from_vec3(transformed);
 }
 
-
-// §1.2 TRAJECTORY PRIMITIVES
-
-struct Trajectory {
-    value: f32,
-    velocity: f32,
-    _pad0: f32,
-    _pad1: f32,
-}
-
-fn trajectory_release(t: Trajectory, goal: f32, dt: f32, rate: f32) -> Trajectory {
-    let new_val = t.value + (goal - t.value) * (1.0 - exp(-rate * dt));
-    return Trajectory(new_val, 0.0, 0.0, 0.0);
-}
 
 
 // §1.3 COORDINATE SYSTEMS
@@ -5324,7 +5310,6 @@ struct PortalArray {
 
 @group(0) @binding(80)  var<storage, read_write> camera_state: CameraState;
 @group(0) @binding(100) var<storage, read_write> floating_entities: FloatingEntityArray;
-@group(0) @binding(101) var<storage, read_write> trajectories: array<Trajectory, 16>;
 @group(0) @binding(120) var<uniform>             ribbon_state: RibbonState;
 
 // Possessed-agent helpers (compute stage). Every kernel that used to
@@ -8503,7 +8488,7 @@ struct PalmGroundEntry {
 
 // Spatial index for O(1) patch lookup. CPU populates entries[lz*side + lx]
 // with (layer + 1) for GENERATED/NEEDS_REGEN patches; 0 means empty slot.
-// Replaces the linear scan over photo_patch_instances in sample_terrain_y_at.
+// Replaces the old linear patch-instance scan in sample_terrain_y_at.
 // Runtime-sized: capacity is the bound buffer's — the CPU side
 // (Dim::MAX_ACTIVE_PATCHES) is the single source; no WGSL twin exists.
 struct PatchGrid {

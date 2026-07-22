@@ -43,7 +43,6 @@ namespace t7 {
         namespace Dim {
             // Grid dimensions
             // (bindings 21, 40 reserved — formerly proximity_field, cell_states)
-            constexpr int      MAX_TRAJECTORIES = 16;
 
             // Terrain mesh — GPU-derived grid, GPU-generated index buffer
             constexpr uint32_t TERRAIN_MESH_N = 256;
@@ -280,10 +279,6 @@ namespace t7 {
             constexpr float SPHERE_ORBIT_SPEED = 0.3f;
             constexpr float SPHERE_HOVER_HEIGHT = 8.0f;
             constexpr float SPHERE_INFLUENCE_RADIUS = 12.0f;
-            constexpr float TRAJECTORY_VALUE = 1.0f;
-            constexpr float TRAJECTORY_VELOCITY = 0.0f;
-            constexpr float TRAJECTORY_FIELD_VALUE = 0.0f;
-            constexpr float TRAJECTORY_FIELD_VELOCITY = 0.0f;
             constexpr float WAVE_TIME_SCALE = 1.0f;
             constexpr float PAWN_SPEED = 15.0f;
             constexpr float CAMERA_SENSITIVITY = 0.005f;
@@ -562,12 +557,6 @@ namespace t7 {
         };
         static_assert(sizeof(GPUTileGrid) == 16 + Dim::TILE_GRID_CAPACITY * 16, "GPUTileGrid must match WGSL layout");
 
-        struct alignas(16) GPUTrajectory {
-            float value;
-            float velocity;
-            float _pad0;
-            float _pad1;
-        };
 
         // (GPUTerrainState REMOVED: the dead terrain buffer's CPU
         //  mirror. No writer/reader; its bindings 20/220 + the buffer are gone.)
@@ -1377,7 +1366,6 @@ namespace t7 {
         };
         static_assert(sizeof(GPUPortalArray) == 16 + MAX_GPU_PORTALS * 32,
             "GPUPortalArray layout check");
-        static_assert(sizeof(GPUTrajectory) == 16, "GPUTrajectory must be 16 bytes");
         static_assert(sizeof(GPUAgentState) == 96, "GPUAgentState must be 96 bytes");
         static_assert(sizeof(GPUAgentState) % 16 == 0, "GPUAgentState must be 16-byte aligned");
         static_assert(sizeof(GPUAgentBehaviorDef) == 32, "GPUAgentBehaviorDef must be 32 bytes");
@@ -1485,7 +1473,7 @@ namespace t7 {
             // these buffers via storage bindings 110 / 111.
             wgpu::Buffer agentBehaviorsBuffer_;
             wgpu::Buffer agentTierGainsBuffer_;
-            wgpu::Buffer cameraBuffer_, floatingEntityBuffer_, trajectoriesBuffer_;
+            wgpu::Buffer cameraBuffer_, floatingEntityBuffer_;
             wgpu::Buffer ribbonBuffer_;
             wgpu::Buffer ringTransformsBuffer_;
             wgpu::Buffer headPosesBuffer_;  // ribbon body poses — written via upload_ribbon_head_poses (the head mover lives in bodies/ribbon.hpp); read by ribbon_centerline_at
@@ -2887,7 +2875,6 @@ namespace t7 {
                 headPosesBuffer_ = makeBuffer("Ribbon Head Poses",
                     sizeof(float) * 4 * Dim::RIBBON_MAX_RINGS,
                     wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst);
-                trajectoriesBuffer_ = makeBuffer("Trajectories", sizeof(GPUTrajectory) * Dim::MAX_TRAJECTORIES, SU);
                 // (proximity_field and terrain_cells stubs removed — bindings 21, 40 reserved)
                 vpBuffer_ = makeBuffer("VP Matrix", sizeof(GPUVPMatrix),
                     wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst);
@@ -2974,7 +2961,7 @@ namespace t7 {
 
                 return signalBuffer_ && configBuffer_ &&
                     agentStateBuffer_ && agentStateReadbackStaging_ &&
-                    cameraBuffer_ && floatingEntityBuffer_ && trajectoriesBuffer_ && ringTransformsBuffer_ && headPosesBuffer_ &&
+                    cameraBuffer_ && floatingEntityBuffer_ && ringTransformsBuffer_ && headPosesBuffer_ &&
                     vpBuffer_ && spotLightArrayBuffer_ && spotVPStagingBuffer_ && directionalLightBuffer_ && pointLightsBuffer_ && patchParamsBuffer_ &&
                     patchStagingBuffer_ && tileGridBuffer_ && pierBuffer_ && patchInstancesBuffer_ &&
                     patchGridBuffer_ &&
@@ -5774,13 +5761,6 @@ namespace t7 {
                 ribbon.propagation_speed = 40.0f;  // placeholder (hidden ribbon, never drawn)
                 ribbon.is_visible = 0u;  // hidden until spawning system activates one
                 queue.WriteBuffer(ribbonBuffer_, 0, &ribbon, sizeof(ribbon));
-
-                GPUTrajectory trajectories[Dim::MAX_TRAJECTORIES]{};
-                for (int i = 0; i < Dim::MAX_TRAJECTORIES; ++i) {
-                    trajectories[i].value = Idle::TRAJECTORY_VALUE;
-                    trajectories[i].velocity = Idle::TRAJECTORY_VELOCITY;
-                }
-                queue.WriteBuffer(trajectoriesBuffer_, 0, trajectories, sizeof(trajectories));
 
                 // Pier instances (all inactive — cartridge uploads test rig at setup)
                 {
