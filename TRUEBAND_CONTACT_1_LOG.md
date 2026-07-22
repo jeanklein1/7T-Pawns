@@ -208,3 +208,54 @@ unit's content is delineated below and in the commit message.
   - `update_other_agents` [0,1,60,80,100,110,111,145,146,152]
   - `update_cube`         [0,1,60,80,100,111,145,146,152]
   - `update_sphere`       [0,1,60,80,100,145,146,152]
+
+---
+
+## T3 — CLOSEOUT
+
+### [T3a] — da7bfd5 (closeout comment truths — out-of-spec finding + fix)
+
+The T3 overlay census (comment-inclusive, unlike T1c's code-only
+closure check) surfaced six stale comment sites; folded to truth,
+U1b stale-six precedent, comment-only, glaw1 GREEN:
+
+1. world.wgsl RAYMARCH tombstone: "NOT the live OVERLAY_WAVES voice
+   (that stays)" → "(then-live) … itself retired later (T1c)".
+2. The old table-site banner ("the two evaluators below stay" — both
+   are tombstones now) → retirement truth.
+3. The orphaned doc block above the terrain_wave_overlay_with_gradient
+   tombstone (its "Used by patch_terrain_vs" claim was refuted by
+   A3-3d) → deleted; tombstone stays.
+4. patch_terrain_vs header ("Uses terrain_wave_overlay_with_gradient…")
+   → the live-card truth (nothing wave-shaped evaluated in the VS).
+5. The live-card sample comment ("live.yz = waves-only gradient" —
+   superseded at T1b) → full-Δ gradient truth (the normals disclosure).
+6. state.hpp gallery layout entry note ("terrain_wave_overlay for VS")
+   → observed truth (veil ring + LOD point).
+
+### [T3b] — 2b10505 (instruments → _post_tc1)
+
+- cc6: machine-diffed vs _post_ug1 with state_hpp_line masked — the
+  Live Card Writer layout is the ONLY substantive diff (5→6 entries,
+  +g0:32 storage); flags EMPTY.
+- cc7: 95 declarations (+1 live_card_scratch); g0:81 / g1:14; the
+  overlay retirement is invisible to the census (consts, not
+  declarations). Mirror (swap/restore convention): 89 matched, zero
+  orphans both directions, only the three documented fc_ aliases.
+- cc4: 64 entry points (the split pair replaces write_live_card);
+  277→278 functions (+2 T1a, +1 T1b split, −2 T1c = +1 net).
+- Dawn witness `audit/probe_dawn_witness_post_tc1.mjs` (U roster;
+  live_card family = ['write_live_card_heights',
+  'write_live_card_resolve']): 19 families / 30 entry points,
+  ALL PIPELINE FAMILIES GREEN, zero module messages. SwiftShader
+  limits: 10 storage / 12 uniform per stage — matches the FXC banner.
+
+### [T3c] — report + push
+
+BATCH_REPORT_TC1.md written (recount table, the [T1a] bit-exactness
+argument, the overlay retirement census, the fossil evidence, the
+normals disclosure, deviations D1–D4, encoding sweep, Jean's gate
+list, seeds). Final glaw1 GREEN over the report tree. Encoding sweep:
+all touched files no-BOM LF-only; the FXC banner byte-untouched; the
+web/ mirror flagged as predating the batches (Jean's standing resync
+ritual, not a batch task). Push: `TRUEBAND_CONTACT_1` → origin.
