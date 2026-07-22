@@ -4168,7 +4168,7 @@ namespace t7 {
                 {
                     std::array<wgpu::BindGroupLayoutEntry, 4> entries{};
 
-                    entries[0].binding = bind::g0::config;    // config (uniform — fog for FS, terrain_wave_overlay for VS)
+                    entries[0].binding = bind::g0::config;    // config (uniform — fog for FS, veil ring + LOD point for VS)
                     entries[0].visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
                     entries[0].buffer.type = wgpu::BufferBindingType::Uniform;
 

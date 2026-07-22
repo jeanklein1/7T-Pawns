@@ -1685,7 +1685,8 @@ struct DesignConfig {
 // (IDLE_AMPLITUDE_SCALE / AMPLITUDE_ATTACK_TIME / AMPLITUDE_RELEASE_TIME)
 // were the animated field the dead SDF marched — read only by the
 // (also removed) update_terrain_config lipschitz chain, never by any live
-// VS/FS. Removed. NOT the live OVERLAY_WAVES voice (that stays).
+// VS/FS. Removed. NOT the (then-live) OVERLAY_WAVES voice — itself
+// retired later (TRUEBAND_CONTACT_1 T1c).
 // SAND_DUNE_CENTER / SAND_DUNE_VARIANCE removed — used only by the
 // (removed) coupling_sphere_to_terrain_tint. (RAYMARCH/SDF excavation)
 
@@ -2783,11 +2784,11 @@ fn ground_formed_with_complexity(world_xz: vec2<f32>) -> vec2<f32> {
 //
 // Cost: 6 sin() calls per evaluation point. Called in VS + pawn + camera.
 //
-// ─── Overlay wave band table → THE TERRAIN_LOOKS PANEL ─────────────
+// ─── Overlay wave band table — RETIRED (TRUEBAND_CONTACT_1 T1c) ────
 // (OverlayWave struct + OVERLAY_WAVE_COUNT + OVERLAY_WAVES + the
-//  design matrix moved to ROW 7, §2.2 — the movement third of the
-//  surface voice. The two evaluators below stay with the deformation
-//  machinery.)
+//  design matrix — panel-era residents of ROW 7 §2.2 — retired whole
+//  with their evaluators when the true-band writer replaced the
+//  overlay. The tombstones below mark the evaluators' sites.)
 
 
 
@@ -2797,10 +2798,6 @@ fn ground_formed_with_complexity(world_xz: vec2<f32>) -> vec2<f32> {
 // removed in Step 5. Callers now invoke contrib_terrain_waves_at
 // directly; nothing referenced the gradient-only helper.)
 
-// Fused height + analytical gradient for the wave overlay.
-// Returns vec3(height, dh/dx, dh/dz).
-// Replaces the 5x finite-difference approach with 1x loop + analytical derivatives.
-// Used by patch_terrain_vs where per-vertex cost dominates frame time.
 // (fn terrain_wave_overlay_with_gradient RETIRED — TRUEBAND_CONTACT_1 T1c;
 //  the true-band writer replaced the overlay; A3-3d certified the sole caller.)
 
@@ -3984,9 +3981,10 @@ struct PatchTerrainVarying {
 // Does NOT include CONTRIB_GOL_ZONES — the patch heightfield does not
 // cache GoL; zones are rendered as a separate extrusion pass.
 //
-// Uses terrain_wave_overlay_with_gradient (not contrib_terrain_waves_at)
-// because the gradient is needed for the fragment normal and is computed
-// analytically in the same loop pass.
+// Waves + pulses arrive via the live card (GROUND_CARD_1; true-band
+// deltas since TRUEBAND_CONTACT_1): the resolve pass computes the
+// gradient the fragment normal needs — nothing wave-shaped is
+// evaluated in this VS.
 //
 // Keep consistent with POLICY_TERRAIN_RENDER: if that policy's mask
 // gains or loses a contributor, update this function to match — or
@@ -4040,7 +4038,9 @@ fn patch_terrain_vs(
     world_pos.y += aura.r * config.pawn_aura_height;
 
     // The live card (GROUND_CARD_1): waves + pulses ride one field —
-    // live.x = Δh (waves+pulses), live.yz = waves-only gradient
+    // live.x = Δh (true-band waves + pulses), live.yz = the full-Δ
+    // gradient (TRUEBAND_CONTACT_1: the resolve differentiates the
+    // whole scratch — normals shade pulses AND bands)
     // (parity with the old fused overlay; pulse shading = Stage 6).
     let live = sample_live_card(world_pos.xz);
     world_pos.y += live.x;
