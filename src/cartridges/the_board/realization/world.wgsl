@@ -560,7 +560,13 @@ fn evaluate_radial_wave(
 }
 
 // --- Per-Node Wave Evaluation
-fn evaluate_lattice_wave(
+// THE PAIR FORM (TRUEBAND_CONTACT_1 T1a) — the one derivation. The body
+// is the T0-era evaluate_lattice_wave, moved verbatim (every expression
+// in its existing float order — the U5a discipline); both branches now
+// return (frozen, moving) instead of mixing. band_act stays in the
+// signature for stability (the mix consumer applies it; the delta
+// consumer applies it per node).
+fn evaluate_lattice_wave_pair(
     world_xz: vec2<f32>,
     node: vec2<i32>,
     node_seed: u32,
@@ -568,11 +574,11 @@ fn evaluate_lattice_wave(
     band_act: f32,       // activity level for this band [0,1] (from hierarchy)
     beat_freq: f32,      // cycles per beat from activity field
     t_beats: f32,        // current time in beats
-) -> f32 {
+) -> vec2<f32> {
     // Activation gate: if draw exceeds band activation, this node is silent.
     // Spatially coherent — a silent node is silent for all query points.
     if (hash_property(node_seed, WAVE_PROP_ACTIVE) > band.activation) {
-        return 0.0;
+        return vec2(0.0, 0.0);
     }
 
     // Derive parameters from seed via Gaussian / uniform draws
@@ -601,14 +607,30 @@ fn evaluate_lattice_wave(
         let center = node_world + vec2(cos(offset_angle), sin(offset_angle)) * offset_r;
         let val_frozen = evaluate_radial_wave(world_xz, center, freq, amp, damping, phase_frozen);
         let val_moving = evaluate_radial_wave(world_xz, center, freq, amp, damping, phase_moving);
-        return mix(val_frozen, val_moving, band_act);
+        return vec2(val_frozen, val_moving);
     } else {
         let dir_angle = hash_property(node_seed, WAVE_PROP_DIR_ANGLE) * 2.0 * PI;
         let dir = vec2(cos(dir_angle), sin(dir_angle));
         let val_frozen = evaluate_directional_wave(world_xz, node_world, freq, amp, damping, dir, phase_frozen);
         let val_moving = evaluate_directional_wave(world_xz, node_world, freq, amp, damping, dir, phase_moving);
-        return mix(val_frozen, val_moving, band_act);
+        return vec2(val_frozen, val_moving);
     }
+}
+
+fn evaluate_lattice_wave(
+    world_xz: vec2<f32>,
+    node: vec2<i32>,
+    node_seed: u32,
+    band: TerrainBand,
+    band_act: f32,       // activity level for this band [0,1] (from hierarchy)
+    beat_freq: f32,      // cycles per beat from activity field
+    t_beats: f32,        // current time in beats
+) -> f32 {
+    // One derivation, two consumers: the SAME two floats, the SAME mix
+    // the old body applied — bake path bit-exact by construction.
+    let pair = evaluate_lattice_wave_pair(world_xz, node, node_seed, band,
+                                          band_act, beat_freq, t_beats);
+    return mix(pair.x, pair.y, band_act);
 }
 
 // --- Polyphony-driven band motion accessors
@@ -683,6 +705,42 @@ fn terrain_band_contribution(
     }
 
     return vec2(height, complexity);
+}
+
+// THE DELTA FORM (TRUEBAND_CONTACT_1 T1a) — terrain_band_contribution's
+// node walk (same lattice, same seeds, same Hermite weights), summing
+// band_act × (moving − frozen) per node; no complexity accumulation.
+// band_act via band_activity_level: the seeded pools SHAPE where a
+// woken band breathes (campaign v2 §6).
+fn true_band_delta_contribution(world_xz: vec2<f32>, seed: u32,
+    t_eff_beats: f32, band_idx: u32,
+    raw_activity: f32, beat_freq: f32) -> f32 {
+    let band = TERRAIN_BANDS[band_idx];
+    let band_act = band_activity_level(raw_activity, band_idx);
+
+    let lattice_pos = world_xz / band.spacing;
+    let lattice_base = vec2<i32>(floor(lattice_pos));
+    let frac = fract(lattice_pos);
+    let w = frac * frac * (3.0 - 2.0 * frac);
+
+    var delta: f32 = 0.0;
+    for (var dz: i32 = 0; dz <= 1; dz++) {
+        for (var dx: i32 = 0; dx <= 1; dx++) {
+            let node = lattice_base + vec2<i32>(dx, dz);
+            let node_seed = lattice_node_seed(seed, node, band_idx);
+
+            let wx = select(1.0 - w.x, w.x, dx == 1);
+            let wz = select(1.0 - w.y, w.y, dz == 1);
+            let weight = wx * wz;
+
+            let pair = evaluate_lattice_wave_pair(
+                world_xz, node, node_seed, band,
+                band_act, beat_freq, t_eff_beats
+            );
+            delta += band_act * (pair.y - pair.x) * weight;
+        }
+    }
+    return delta;
 }
 
 // --- Total Height
