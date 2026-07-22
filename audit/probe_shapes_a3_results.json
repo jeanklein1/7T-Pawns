@@ -1,0 +1,27 @@
+{
+  "two_pass_card_writer": {
+    "module_ms": 2.2,
+    "messages": [],
+    "pipelines": {
+      "probe_pass1_heights": 12.5,
+      "probe_pass2_gradients": 14.3
+    },
+    "ok": true
+  },
+  "true_band_delta": {
+    "module_ms": 1.5,
+    "messages": [],
+    "pipelines": {
+      "probe_band_delta": 17.9
+    },
+    "ok": true
+  },
+  "contact_gather": {
+    "module_ms": 1.2,
+    "messages": [],
+    "pipelines": {
+      "probe_contact_gather": 22.6
+    },
+    "ok": true
+  }
+}
