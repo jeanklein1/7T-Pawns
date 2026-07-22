@@ -67,6 +67,7 @@ namespace t7 {
                 //  Number reserved; do not reuse.)
                 inline constexpr uint32_t pyramid_instances          = 30;
                 inline constexpr uint32_t live_card_write            = 31;  // GROUND_CARD_1: the live card (storage-tex write; writer kernel)
+                inline constexpr uint32_t live_card_scratch          = 32;  // TRUEBAND_CONTACT_1: two-pass writer scratch (stride-2: Δh, gol)
 
                 // agents / camera (60–101)
                 inline constexpr uint32_t agent_state                = 60;

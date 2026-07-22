@@ -5812,6 +5812,7 @@ struct PawnAuraCell {
 @group(0) @binding(171) var<storage, read_write> pawn_aura_cells: array<PawnAuraCell>;
 @group(0) @binding(172) var pawn_aura_tex_write: texture_storage_2d<rgba16float, write>;
 @group(0) @binding(31) var live_card_write: texture_storage_2d<rgba16float, write>;  // GROUND_CARD_1: writer kernel
+@group(0) @binding(32) var<storage, read_write> live_card_scratch: array<f32>;  // stride-2: Δh, gol — the two-pass writer (TRUEBAND_CONTACT_1)
 
 // --- Zone mesh gen output (Group 0: bindings 167-169, same layout as GoL compute)
 
@@ -8105,17 +8106,118 @@ fn sample_live_card_gol(world_xz: vec2<f32>) -> f32 {
     return textureSampleLevel(live_card_read, nearest_sampler,
                               live_card_uv(world_xz), 0.0).w;
 }
+// THE TWO-PASS WRITER (TRUEBAND_CONTACT_1 T1b — the bake's model at
+// card size). Pass 1 evaluates the TRUE-BAND delta (the terrain's own
+// waves: Σ bands of blend × Σnodes band_act (moving − frozen)) + pulses
+// into the stride-2 scratch; pass 2 resolves gradients (the bake's
+// cooperative-tile stencils) and stores vec4(h, gx, gz, gol).
+// terrain_time ≤ 0 ⇒ zeros (rest bit-frozen). Waking anti-teleport is
+// inherited: t_eff = 0 at the origin ⇒ moving ≡ frozen ⇒ a woken band
+// grows out of the frozen shape.
 @compute @workgroup_size(8, 8, 1)
-fn write_live_card(@builtin(global_invocation_id) gid: vec3<u32>) {
+fn write_live_card_heights(@builtin(global_invocation_id) gid: vec3<u32>) {
     if (gid.x >= LIVE_CARD_SIZE || gid.y >= LIVE_CARD_SIZE) { return; }
     let texel = LIVE_CARD_EXTENT / f32(LIVE_CARD_SIZE);
     let p = live_card_origin()
           + (vec2<f32>(gid.xy) + vec2(0.5)) * texel;
-    let w = terrain_wave_overlay_with_gradient(p);   // waves h,gx,gz
-    let pulses = contrib_radial_pulses_at(p, signal.t_seconds);  // scalar Δh
-    let gol = contrib_gol_zones_at(p);               // RAW lift
-    textureStore(live_card_write, vec2<i32>(gid.xy),
-                 vec4(w.x + pulses, w.y, w.z, gol));
+    var dh = 0.0;
+    if (config.terrain_time > 0.0) {
+        let af = terrain_activity_at(p, config.world_seed);
+        for (var b = 0u; b < TERRAIN_BAND_COUNT; b++) {
+            if (b == 4u) { continue; }   // the fine ripple stays bake-only —
+                                         // the Nyquist ruling (campaign v2 §6)
+            let blend = get_band_blend(b);
+            if (blend <= 0.0) { continue; }   // −1 sentinel + 0
+            let t_eff = config.terrain_time - get_band_phase_origin(b);
+            dh += clamp(blend, 0.0, 1.0)
+                * true_band_delta_contribution(p, config.world_seed,
+                      t_eff, b, af.x, af.y);
+        }
+    }
+    dh += contrib_radial_pulses_at(p, signal.t_seconds);
+    let base = (gid.y * LIVE_CARD_SIZE + gid.x) * 2u;
+    live_card_scratch[base]      = dh;
+    live_card_scratch[base + 1u] = contrib_gol_zones_at(p);
+}
+
+// Workgroup shared tile: 20×20 heights (16×16 interior + 2-texel halo
+// for the 3-point edge stencils) — the bake's pass-2 clone at res 512.
+var<workgroup> sh_card_h: array<f32, 400>;
+
+@compute @workgroup_size(16, 16)
+fn write_live_card_resolve(
+    @builtin(global_invocation_id) id: vec3<u32>,
+    @builtin(local_invocation_id) lid: vec3<u32>,
+    @builtin(workgroup_id) wid: vec3<u32>
+) {
+    let res = LIVE_CARD_SIZE;
+    let res_i = i32(res);
+
+    let thread_id = lid.y * 16u + lid.x;
+    let tile_origin_x = i32(wid.x * 16u) - 2;
+    let tile_origin_y = i32(wid.y * 16u) - 2;
+
+    for (var t = thread_id; t < 400u; t += 256u) {
+        let tx = i32(t % 20u);
+        let ty = i32(t / 20u);
+        let gx = clamp(tile_origin_x + tx, 0, res_i - 1);
+        let gy = clamp(tile_origin_y + ty, 0, res_i - 1);
+        sh_card_h[t] = live_card_scratch[(u32(gy) * res + u32(gx)) * 2u];
+    }
+    workgroupBarrier();
+
+    if (id.x >= res || id.y >= res) { return; }
+
+    let cx = lid.x + 2u;
+    let cy = lid.y + 2u;
+    let height = sh_card_h[cy * 20u + cx];
+
+    // eps = texel-CENTER spacing (extent / res): the card maps texel
+    // centers across the window, unlike the bake's corner-pinned
+    // (res − 1) grid — the one mapping difference from the model.
+    let eps = LIVE_CARD_EXTENT / f32(LIVE_CARD_SIZE);
+
+    let ix = id.x;
+    let iy = id.y;
+    let max_i = res - 1u;
+
+    var grad_x: f32;
+    if (ix == 0u) {
+        let h0 = height;
+        let h1 = sh_card_h[cy * 20u + cx + 1u];
+        let h2 = sh_card_h[cy * 20u + cx + 2u];
+        grad_x = (-3.0 * h0 + 4.0 * h1 - h2) / (2.0 * eps);
+    } else if (ix == max_i) {
+        let h0 = height;
+        let h1 = sh_card_h[cy * 20u + cx - 1u];
+        let h2 = sh_card_h[cy * 20u + cx - 2u];
+        grad_x = (3.0 * h0 - 4.0 * h1 + h2) / (2.0 * eps);
+    } else {
+        let h_px = sh_card_h[cy * 20u + cx + 1u];
+        let h_mx = sh_card_h[cy * 20u + cx - 1u];
+        grad_x = (h_px - h_mx) / (2.0 * eps);
+    }
+
+    var grad_z: f32;
+    if (iy == 0u) {
+        let h0 = height;
+        let h1 = sh_card_h[(cy + 1u) * 20u + cx];
+        let h2 = sh_card_h[(cy + 2u) * 20u + cx];
+        grad_z = (-3.0 * h0 + 4.0 * h1 - h2) / (2.0 * eps);
+    } else if (iy == max_i) {
+        let h0 = height;
+        let h1 = sh_card_h[(cy - 1u) * 20u + cx];
+        let h2 = sh_card_h[(cy - 2u) * 20u + cx];
+        grad_z = (3.0 * h0 - 4.0 * h1 + h2) / (2.0 * eps);
+    } else {
+        let h_pz = sh_card_h[(cy + 1u) * 20u + cx];
+        let h_mz = sh_card_h[(cy - 1u) * 20u + cx];
+        grad_z = (h_pz - h_mz) / (2.0 * eps);
+    }
+
+    let base = (id.y * res + id.x) * 2u;
+    textureStore(live_card_write, vec2<i32>(id.xy),
+                 vec4(height, grad_x, grad_z, live_card_scratch[base + 1u]));
 }
 
 // §7.4 PAWN AURA — Persistent terrain influence via toroidal spring grid

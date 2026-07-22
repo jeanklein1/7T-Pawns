@@ -37,7 +37,8 @@ namespace t7 {
             constexpr const char* GENERATE_PATCH_CELLS = "generate_patch_cells";              // 2D -- per-patch
             constexpr const char* COMPUTE_RIBBON_RINGS = "compute_ribbon_rings";              // 1D -- per ring
             constexpr const char* COMPUTE_PAWN_AURA = "compute_pawn_aura";                  // 2D -- toroidal grid
-            constexpr const char* WRITE_LIVE_CARD = "write_live_card";                      // 2D -- the live card (GROUND_CARD_1)
+            constexpr const char* WRITE_LIVE_CARD_HEIGHTS = "write_live_card_heights";      // 2D -- card pass 1 (TRUEBAND_CONTACT_1)
+            constexpr const char* WRITE_LIVE_CARD_RESOLVE = "write_live_card_resolve";      // 2D -- card pass 2 (gradients + store)
             constexpr const char* ZONE_SEED_MASK = "zone_seed_mask";                        // 2D -- the vocabulary mask (UNIFIED_GROUND_1)
 
             // Render
@@ -257,7 +258,8 @@ namespace t7 {
             wgpu::BindGroupLayout frustumCullLayout_;
             wgpu::BindGroupLayout entityPlacementComputeLayout_;
             wgpu::ComputePipeline pawnAuraPipeline_;
-            wgpu::ComputePipeline liveCardWriterPipeline_;   // GROUND_CARD_1
+            wgpu::ComputePipeline liveCardHeightsPipeline_;  // TRUEBAND_CONTACT_1 (two-pass writer)
+            wgpu::ComputePipeline liveCardResolvePipeline_;
             wgpu::ComputePipeline zoneSeedMaskPipeline_;     // UNIFIED_GROUND_1 U5
 
             // Orb sky layer pipelines
@@ -530,10 +532,17 @@ namespace t7 {
 
             void dispatch_live_card_write(wgpu::ComputePassEncoder& pass,
                                           wgpu::BindGroup group) {
-                pass.SetPipeline(liveCardWriterPipeline_);
+                // Two-pass writer (TRUEBAND_CONTACT_1): heights → scratch,
+                // then resolve (gradients + store). Sequential dispatches in
+                // ONE pass — storage-buffer visibility between dispatches is
+                // guaranteed (the U5a same-pass law).
+                pass.SetPipeline(liveCardHeightsPipeline_);
                 pass.SetBindGroup(0, group);
                 pass.DispatchWorkgroups(Dim::LIVE_CARD_SIZE / 8u,
                                         Dim::LIVE_CARD_SIZE / 8u, 1);
+                pass.SetPipeline(liveCardResolvePipeline_);
+                pass.DispatchWorkgroups(Dim::LIVE_CARD_SIZE / 16u,
+                                        Dim::LIVE_CARD_SIZE / 16u, 1);
             }
 
             void dispatch_orb_init(
@@ -1411,12 +1420,15 @@ namespace t7 {
                         pl, Entry::COMPUTE_PAWN_AURA, pawnAuraPipeline_)) return false;
                 }
 
-                // Live card writer pipeline (dedicated layout — GROUND_CARD_1)
+                // Live card writer pipelines (two-pass — TRUEBAND_CONTACT_1;
+                // the patch-gen dispatch-pair shape at card size)
                 {
                     wgpu::PipelineLayout pl = computeLayoutFor(liveCardWriterLayout_);
                     if (!pl) return false;
-                    if (!makeComputePipeline("write_live_card", "Live Card Writer (2D)",
-                        pl, Entry::WRITE_LIVE_CARD, liveCardWriterPipeline_)) return false;
+                    if (!makeComputePipeline("write_live_card_heights", "Live Card Heights (2D)",
+                        pl, Entry::WRITE_LIVE_CARD_HEIGHTS, liveCardHeightsPipeline_)) return false;
+                    if (!makeComputePipeline("write_live_card_resolve", "Live Card Resolve (2D)",
+                        pl, Entry::WRITE_LIVE_CARD_RESOLVE, liveCardResolvePipeline_)) return false;
                 }
 
                 // Orb compute pipelines (init + dynamics + recolor share the dedicated orb layout)

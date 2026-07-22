@@ -1603,6 +1603,7 @@ namespace t7 {
             wgpu::Texture liveCardTexture_;         // compute writes, VS/FS/compute read
             wgpu::TextureView liveCardWriteView_;   // storage texture write (writer kernel)
             wgpu::TextureView liveCardView_;        // sampled read (render + compute)
+            wgpu::Buffer liveCardScratchBuffer_;    // 512×512×2 floats (Δh + gol) — two-pass writer scratch (TRUEBAND_CONTACT_1)
             wgpu::BindGroupLayout liveCardWriterLayout_;
             wgpu::BindGroup liveCardWriterGroup_;
             wgpu::BindGroupLayout zoneMaskLayout_;      // UNIFIED_GROUND_1 U5
@@ -2944,6 +2945,11 @@ namespace t7 {
                 patchHeightScratchBuffer_ = makeBuffer("Patch Height Scratch",
                     Dim::PATCH_HEIGHTFIELD_N * Dim::PATCH_HEIGHTFIELD_N * 2 * sizeof(float),
                     wgpu::BufferUsage::Storage);
+                // The card writer's two-pass scratch (the patch pattern at card
+                // size — TRUEBAND_CONTACT_1)
+                liveCardScratchBuffer_ = makeBuffer("Live Card Scratch",
+                    Dim::LIVE_CARD_SIZE * Dim::LIVE_CARD_SIZE * 2 * sizeof(float),
+                    wgpu::BufferUsage::Storage);
 
                 // Self-Portrait Gallery
                 photographerVPBuffer_ = makeBuffer("Photographer VP",
@@ -2978,7 +2984,7 @@ namespace t7 {
                     vpBuffer_ && spotLightArrayBuffer_ && spotVPStagingBuffer_ && directionalLightBuffer_ && pointLightsBuffer_ && patchParamsBuffer_ &&
                     patchStagingBuffer_ && tileGridBuffer_ && pierBuffer_ && patchInstancesBuffer_ &&
                     patchGridBuffer_ &&
-                    patchHeightScratchBuffer_ &&
+                    patchHeightScratchBuffer_ && liveCardScratchBuffer_ &&
                     photographerVPBuffer_ && photographerCameraBuffer_ &&
                     photographerConfigBuffer_ && paintingSlotsBuffer_ &&
                     portalArrayBuffer_ && ribbonReadbackStaging_ && cameraStateReadbackStaging_ &&
@@ -4462,7 +4468,7 @@ namespace t7 {
                 // future sole home outside the GoL sim (post-H5 Compute Entity
                 // eviction — GROUND_CARD_1).
                 {
-                    std::array<wgpu::BindGroupLayoutEntry, 5> entries{};
+                    std::array<wgpu::BindGroupLayoutEntry, 6> entries{};
 
                     entries[0].binding = bind::g0::signal;    // signal (uniform — band blends, t_seconds)
                     entries[0].visibility = wgpu::ShaderStage::Compute;
@@ -4485,6 +4491,10 @@ namespace t7 {
                     entries[4].storageTexture.access = wgpu::StorageTextureAccess::WriteOnly;
                     entries[4].storageTexture.format = wgpu::TextureFormat::RGBA16Float;
                     entries[4].storageTexture.viewDimension = wgpu::TextureViewDimension::e2D;
+
+                    entries[5].binding = bind::g0::live_card_scratch;  // two-pass scratch (TRUEBAND_CONTACT_1)
+                    entries[5].visibility = wgpu::ShaderStage::Compute;
+                    entries[5].buffer.type = wgpu::BufferBindingType::Storage;
 
                     wgpu::BindGroupLayoutDescriptor desc{};
                     desc.label = "Live Card Writer Layout";
@@ -5356,7 +5366,7 @@ namespace t7 {
 
                 // Live card writer bind group (5 entries: 0, 1, 160, 161, 31)
                 {
-                    std::array<wgpu::BindGroupEntry, 5> entries{};
+                    std::array<wgpu::BindGroupEntry, 6> entries{};
 
                     entries[0].binding = bind::g0::signal;
                     entries[0].buffer = signalBuffer_;
@@ -5376,6 +5386,10 @@ namespace t7 {
 
                     entries[4].binding = bind::g0::live_card_write;
                     entries[4].textureView = liveCardWriteView_;
+
+                    entries[5].binding = bind::g0::live_card_scratch;
+                    entries[5].buffer = liveCardScratchBuffer_;
+                    entries[5].size = Dim::LIVE_CARD_SIZE * Dim::LIVE_CARD_SIZE * 2 * sizeof(float);
 
                     wgpu::BindGroupDescriptor desc{};
                     desc.label = "Live Card Writer BindGroup";
