@@ -1185,8 +1185,7 @@ inline void render_snapshot_pass(GalleryState& gs, GalleryDeps* c, wgpu::Command
     // draw over render_patch_count, no LOD split). Zone is not a snapshot member.
     DrawBind b{ c->gpuState_.photographer_render_entity_group(), c->gpuState_.render_texture_group(),
                 /*shadow=*/false,
-                c->ribbon_state_.rendered_slot != UINT32_MAX,
-                /*zone_active=*/false };
+                c->ribbon_state_.rendered_slot != UINT32_MAX };
     draw_table(c->renderer_, c->gpuState_, pass, b, DRAW_SNAPSHOT);
 
     pass.End();

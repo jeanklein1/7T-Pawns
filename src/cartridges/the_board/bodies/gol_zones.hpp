@@ -290,7 +290,6 @@ void flush_zone_derive_requests(GoLState& gs, GolDeps* c, wgpu::Queue& queue);
 void teardown_gol(GoLState& gs, GolDeps* c, wgpu::Queue& queue);
 void dispatch_zone_sync(GoLState& gs, GolDeps* c, wgpu::CommandEncoder& encoder);
 void dispatch_zone_evolve(GoLState& gs, GolDeps* c, wgpu::CommandEncoder& encoder);
-void dispatch_zone_mesh(GoLState& gs, GolDeps* c, wgpu::CommandEncoder& encoder);
 
 // ═══ IMPL:
 // rows deref gol_state_(own) + mood/world/time + tile faces via MachineCtx;
@@ -671,18 +670,6 @@ inline void dispatch_zone_evolve(GoLState& gs, GolDeps* c, wgpu::CommandEncoder&
     pass.End();
 }
 
-inline void dispatch_zone_mesh(GoLState& gs, GolDeps* c, wgpu::CommandEncoder& encoder) {
-    // Mesh gen pass (Group 0 = compute entity, Group 1 = zone mesh gen)
-    wgpu::ComputePassDescriptor cpd{};
-    cpd.label = "GoL Zone Mesh Gen";
-    wgpu::ComputePassEncoder pass = encoder.BeginComputePass(&cpd);
-    c->renderer_.dispatch_zone_mesh_reset(pass,
-        c->gpuState_.zone_mesh_gen_group());
-    c->renderer_.dispatch_zone_mesh_gen(pass,
-        c->gpuState_.zone_mesh_gen_group(),
-        gs.active_slot_count);
-    pass.End();
-}
 
 } // namespace the_board
 } // namespace t7

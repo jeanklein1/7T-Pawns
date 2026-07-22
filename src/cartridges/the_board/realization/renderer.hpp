@@ -84,14 +84,9 @@ namespace t7 {
             // GoL zone compute (zone-local automaton)
             constexpr const char* ZONE_GOL_SYNC = "zone_gol_sync";
             constexpr const char* ZONE_GOL_EVOLVE = "zone_gol_evolve";
-            constexpr const char* ZONE_GOL_MESH_RESET = "zone_gol_mesh_reset";
-            constexpr const char* ZONE_GOL_MESH_GEN = "zone_gol_mesh_gen";
             constexpr const char* ZONE_DERIVE_PARAMS = "zone_derive_params";
 
             // Zone extrusion rendering
-            constexpr const char* ZONE_EXTRUSION_VS = "zone_extrusion_vs";
-            constexpr const char* ZONE_EXTRUSION_FS = "zone_extrusion_fs";
-            constexpr const char* SHADOW_ZONE_EXTRUSION_VS = "shadow_zone_extrusion_vs";
 
             // GPU Entity Mesh Gen (Phase 2: Arches, Phase 3: Columns — pyramid mesh-gen CUT)
             constexpr const char* ARCH_MESH_GEN = "arch_mesh_gen";
@@ -137,7 +132,6 @@ namespace t7 {
             wgpu::BindGroupLayout pawnAuraComputeLayout_;
             wgpu::BindGroupLayout liveCardWriterLayout_;   // GROUND_CARD_1
             wgpu::BindGroupLayout zoneGolComputeLayout_;
-            wgpu::BindGroupLayout zoneMeshGenLayout_;
             wgpu::BindGroupLayout archMeshGenLayout_;
             wgpu::BindGroupLayout columnMeshGenLayout_;
             wgpu::BindGroupLayout palmMeshGenLayout_;
@@ -277,13 +271,9 @@ namespace t7 {
             wgpu::ComputePipeline zoneGolEvolvePipeline_;
 
             // Zone mesh gen (two-group: compute entity + mesh gen)
-            wgpu::ComputePipeline zoneGolMeshResetPipeline_;
-            wgpu::ComputePipeline zoneGolMeshGenPipeline_;
             wgpu::ComputePipeline zoneDeriveParamsPipeline_;
 
             // Zone extrusion render
-            wgpu::RenderPipeline zoneExtrusionPipeline_;
-            wgpu::RenderPipeline shadowZoneExtrusionPipeline_;
 
             // Fade overlay (fullscreen alpha-blended triangle)
             wgpu::RenderPipeline fadeOverlayPipeline_;
@@ -327,7 +317,6 @@ namespace t7 {
                 orbComputeLayout_ = gpuState.orb_compute_layout();
                 orbCopyLayout_    = gpuState.orb_copy_layout();
                 zoneGolComputeLayout_ = gpuState.zone_gol_compute_layout();
-                zoneMeshGenLayout_ = gpuState.zone_mesh_gen_layout();
                 archMeshGenLayout_ = gpuState.arch_mesh_gen_layout();
                 columnMeshGenLayout_ = gpuState.column_mesh_gen_layout();
                 palmMeshGenLayout_ = gpuState.palm_mesh_gen_layout();
@@ -630,27 +619,6 @@ namespace t7 {
             }
 
             // Zone mesh gen (single group — same layout as sync/evolve)
-            void dispatch_zone_mesh_reset(
-                wgpu::ComputePassEncoder& pass,
-                wgpu::BindGroup meshGenGroup
-            ) {
-                if constexpr (!(ROSTER.gol)) return;  // ROSTER-GATE gol (a') — pipeline never created; the holder tolerates
-                pass.SetPipeline(zoneGolMeshResetPipeline_);
-                pass.SetBindGroup(0, meshGenGroup);
-                pass.DispatchWorkgroups(1, 1, 1);
-            }
-
-            void dispatch_zone_mesh_gen(
-                wgpu::ComputePassEncoder& pass,
-                wgpu::BindGroup meshGenGroup,
-                uint32_t zone_count
-            ) {
-                if constexpr (!(ROSTER.gol)) return;  // ROSTER-GATE gol (a') — pipeline never created; the holder tolerates
-                if (zone_count == 0) return;
-                pass.SetPipeline(zoneGolMeshGenPipeline_);
-                pass.SetBindGroup(0, meshGenGroup);
-                pass.DispatchWorkgroups(4, 4, zone_count);
-            }
 
             // Zone parameter derivation (GPU-authoritative tier selection + Gaussian sampling)
             void dispatch_zone_derive_params(
@@ -722,39 +690,6 @@ namespace t7 {
             }
 
             // Zone extrusion rendering
-            void draw_zone_extrusion(
-                wgpu::RenderPassEncoder& pass,
-                wgpu::BindGroup entityBindGroup,
-                wgpu::BindGroup textureBindGroup,
-                wgpu::Buffer vertexBuffer,
-                wgpu::Buffer indexBuffer,
-                wgpu::Buffer indirectBuffer
-            ) {
-                if constexpr (!(ROSTER.gol)) return;  // ROSTER-GATE gol (a') — pipeline never created; the holder tolerates
-                pass.SetPipeline(zoneExtrusionPipeline_);
-                pass.SetBindGroup(0, entityBindGroup);
-                pass.SetBindGroup(1, textureBindGroup);
-                pass.SetVertexBuffer(0, vertexBuffer);
-                pass.SetIndexBuffer(indexBuffer, wgpu::IndexFormat::Uint32);
-                pass.DrawIndexedIndirect(indirectBuffer, 0);
-            }
-
-            void draw_shadow_zone_extrusion(
-                wgpu::RenderPassEncoder& pass,
-                wgpu::BindGroup entityBindGroup,
-                wgpu::BindGroup textureBindGroup,
-                wgpu::Buffer vertexBuffer,
-                wgpu::Buffer indexBuffer,
-                wgpu::Buffer indirectBuffer
-            ) {
-                if constexpr (!(ROSTER.gol)) return;  // ROSTER-GATE gol (a') — pipeline never created; the holder tolerates
-                pass.SetPipeline(shadowZoneExtrusionPipeline_);
-                pass.SetBindGroup(0, entityBindGroup);
-                pass.SetBindGroup(1, textureBindGroup);
-                pass.SetVertexBuffer(0, vertexBuffer);
-                pass.SetIndexBuffer(indexBuffer, wgpu::IndexFormat::Uint32);
-                pass.DrawIndexedIndirect(indirectBuffer, 0);
-            }
 
 
             void draw_patch_terrain_lod0_indirect(
@@ -1494,13 +1429,10 @@ namespace t7 {
                     if (!makeComputePipeline("zone_gol_evolve", "GoL Zone Evolve", pl, Entry::ZONE_GOL_EVOLVE, zoneGolEvolvePipeline_)) return false;
                 }
 
-                // Zone mesh gen pipelines (dedicated single-group layout with
-                // terrain eval + zone data + mesh output bindings)
+                // Zone derive pipeline (shared GoL layout; mesh pair retired — A2_P2)
                 if constexpr (ROSTER.gol) {  // ROSTER-GATE gol (a') — FXC skipped when disabled
-                    wgpu::PipelineLayout pl = computeLayoutFor(zoneMeshGenLayout_);
+                    wgpu::PipelineLayout pl = computeLayoutFor(zoneGolComputeLayout_);
                     if (!pl) return false;
-                    if (!makeComputePipeline("zone_gol_mesh_reset", "Zone Mesh Reset", pl, Entry::ZONE_GOL_MESH_RESET, zoneGolMeshResetPipeline_)) return false;
-                    if (!makeComputePipeline("zone_gol_mesh_gen", "Zone Mesh Gen", pl, Entry::ZONE_GOL_MESH_GEN, zoneGolMeshGenPipeline_)) return false;
                     if (!makeComputePipeline("zone_derive_params", "Zone Derive Params", pl, Entry::ZONE_DERIVE_PARAMS, zoneDeriveParamsPipeline_)) return false;
                 }
 
@@ -1678,53 +1610,7 @@ namespace t7 {
                 }
 
                 // Zone cell extrusion pipeline (GoL alive cells with height)
-                {
-                    std::array<wgpu::VertexAttribute, 4> zoneAttrs{};
-                    zoneAttrs[0].format = wgpu::VertexFormat::Float32x3;
-                    zoneAttrs[0].offset = 0;
-                    zoneAttrs[0].shaderLocation = 0;   // pos
-                    zoneAttrs[1].format = wgpu::VertexFormat::Float32x3;
-                    zoneAttrs[1].offset = 12;
-                    zoneAttrs[1].shaderLocation = 1;   // normal
-                    zoneAttrs[2].format = wgpu::VertexFormat::Float32x2;
-                    zoneAttrs[2].offset = 24;
-                    zoneAttrs[2].shaderLocation = 2;   // uv
-                    zoneAttrs[3].format = wgpu::VertexFormat::Float32x3;
-                    zoneAttrs[3].offset = 32;
-                    zoneAttrs[3].shaderLocation = 3;   // color (pre-computed)
-
-                    wgpu::VertexBufferLayout zoneVBL{};
-                    zoneVBL.arrayStride = 44;   // 11 floats: pos3+normal3+uv2+color3
-                    zoneVBL.stepMode = wgpu::VertexStepMode::Vertex;
-                    zoneVBL.attributeCount = zoneAttrs.size();
-                    zoneVBL.attributes = zoneAttrs.data();
-
-                    wgpu::FragmentState fragment{};
-                    fragment.module = shaderModule_;
-                    fragment.entryPoint = Entry::ZONE_EXTRUSION_FS;
-                    fragment.targetCount = 1;
-                    fragment.targets = &colorTarget;
-
-                    wgpu::RenderPipelineDescriptor desc{};
-                    desc.label = "Zone Cell Extrusion";
-                    desc.layout = renderLayout;
-                    desc.vertex.module = shaderModule_;
-                    desc.vertex.entryPoint = Entry::ZONE_EXTRUSION_VS;
-                    desc.vertex.bufferCount = 1;
-                    desc.vertex.buffers = &zoneVBL;
-                    desc.primitive.topology = wgpu::PrimitiveTopology::TriangleList;
-                    desc.primitive.cullMode = wgpu::CullMode::Back;
-                    desc.primitive.frontFace = wgpu::FrontFace::CCW;
-                    desc.depthStencil = &depthStencil;
-                    desc.fragment = &fragment;
-
-                    if constexpr (ROSTER.gol) {  // ROSTER-GATE gol (a') — FXC skipped when disabled
-                    if (!tPipe("zone_extrusion", [&]() {
-                        zoneExtrusionPipeline_ = device_.CreateRenderPipeline(&desc);
-                        return zoneExtrusionPipeline_ != nullptr;
-                    })) return false;
-                    }
-                }
+                // (zone extrusion render pipeline RETIRED — A2_P2)
 
                 // Pawn pipeline -- chess pawn, GPU-generated from vertex_index (bufferless, cull None)
                 if (!makeEntity("pawn", "Pawn Entity (Chess Pawn)", Entry::PAWN_VS,
@@ -2235,10 +2121,8 @@ namespace t7 {
                         vbl.attributeCount = attrs.size();
                         vbl.attributes = attrs.data();
 
-                        if constexpr (ROSTER.gol) {  // ROSTER-GATE gol (a') — FXC skipped when disabled
-                        if (!makeShadow("shadow_zone_extrusion", "Shadow Zone Extrusion", Entry::SHADOW_ZONE_EXTRUSION_VS,
-                            &vbl, wgpu::CullMode::Back, shadowZoneExtrusionPipeline_)) return false;
-                        }
+                        // (shadow zone extrusion RETIRED — A2_P2; vbl left unused)
+                        (void)vbl;
                     }
                 }
 

@@ -618,17 +618,7 @@ fn terrain_band_contribution(
 }
 
 // --- Total Height
-fn terrain_height_at(world_xz: vec2<f32>, master_seed: u32, t_beats: f32) -> f32 {
-    let af = terrain_activity_at(world_xz, master_seed);
-    let raw_activity = af.x;
-    let beat_freq = af.y;
-
-    var total: f32 = 0.0;
-    for (var b: u32 = 0u; b < TERRAIN_BAND_COUNT; b++) {
-        total += terrain_band_contribution(world_xz, master_seed, t_beats, b, raw_activity, beat_freq).x;
-    }
-    return total;
-}
+// (fn terrain_height_at RETIRED — A2_P2 Stage-5 probe)
 
 // --- Height + Complexity
 fn terrain_height_and_complexity(world_xz: vec2<f32>, master_seed: u32, t_beats: f32) -> vec2<f32> {
@@ -2623,11 +2613,7 @@ const POLICY_TERRAIN_RENDER_MASK       : u32 = GROUND_STATIC_BASE_MASK
 //   the registry so policy-closure validation operates on logical ids,
 //   but their evaluation is fused here because the multiplicative form
 //   doesn't decompose additively.
-fn contrib_static_base_at(world_xz: vec2<f32>) -> f32 {
-    let raw_h = terrain_height_at(world_xz, config.world_seed, 0.0);
-    let mods = tile_modifiers_at(world_xz);
-    return raw_h * mods.x + mods.y + structure_height_at(world_xz);
-}
+// (fn contrib_static_base_at RETIRED — A2_P2 Stage-5 probe)
 
 // CONTRIB_PAINTINGS_BASES — static_landform, global.
 // Contributes: 0.0 — placeholder stub.
@@ -2716,30 +2702,7 @@ fn overlay_band_params(i: u32, seed: u32) -> OverlayBandParams {
     return OverlayBandParams(dir, freq, amp);
 }
 
-fn contrib_terrain_waves_at(world_xz: vec2<f32>) -> f32 {
-    if (config.terrain_time <= 0.0) { return 0.0; }
-
-    let seed = config.world_seed;
-    var h: f32 = 0.0;
-
-    for (var i: u32 = 0u; i < OVERLAY_WAVE_COUNT; i++) {
-        let blend = get_band_blend(i);
-        if (blend <= 0.0) { continue; }
-
-        let ow = OVERLAY_WAVES[i];
-        let origin = get_band_phase_origin(i);
-        let t = config.terrain_time - origin;
-
-        let bp = overlay_band_params(i, seed);
-
-        let temporal = (2.0 * PI / ow.period) * t;
-        let spatial  = bp.freq * dot(bp.dir, world_xz);
-
-        h += blend * bp.amp * sin(spatial + temporal);
-    }
-
-    return h;
-}
+// (fn contrib_terrain_waves_at RETIRED — A2_P2 Stage-5 probe)
 
 // (terrain_wave_overlay forwarder and terrain_wave_overlay_gradient
 // removed in Step 5. Callers now invoke contrib_terrain_waves_at
@@ -2957,11 +2920,7 @@ fn query_ground_placement_vegetation(xz: vec2<f32>) -> f32 {
 //   the ground-without-dynamics. The texture variant is sample_terrain_y_at.
 // Notes: must stay consistent with ground_formed_with_complexity (the
 //   two-pass patch heightfield generator) — same contributor set.
-fn query_ground_baked_heightfield(xz: vec2<f32>) -> f32 {
-    var h = contrib_static_base_at(xz);
-    h += contrib_pyramids_at(xz);
-    return h;
-}
+// (fn query_ground_baked_heightfield RETIRED — A2_P2 Stage-5 probe)
 
 // ─── The shared dynamic-overlay stack (b2a) ─────────────────────────
 // The additive fold every DYNAMIC ground policy shares, authored ONCE
@@ -5623,26 +5582,7 @@ fn apply_gol_color(base_color: vec3<f32>, zp: GoLZoneConfig, cx: u32, cy: u32, b
 }
 
 // Extrusion block color: starts from per-cell terrain color, applies mode
-fn apply_gol_extrusion_color(world_xz: vec2<f32>, zp: GoLZoneConfig, cx: u32, cy: u32) -> vec3<f32> {
-    // Start from the actual terrain cell color at this block's position
-    let cell_color = gol_composite_cell_color(world_xz);
-
-    let h = gol_cell_hash(cx, cy);
-    let v = gol_cell_variation(h);
-    let variation = v * GOL_LENS_VARIATION_RANGE - GOL_LENS_VARIATION_RANGE * 0.5;
-
-    if (zp.color_mode == GOL_COLOR_NEUTRAL) {
-        return cell_color * (GOL_NEUTRAL_DARKEN + variation);
-    } else if (zp.color_mode == GOL_COLOR_LENS) {
-        let tint_color = vec3(zp.target_r, zp.target_g, zp.target_b);
-        return mix(cell_color, tint_color, GOL_LENS_BLEND_BASE + variation);
-    }
-    // BLACKISH
-    let dark_factor = GOL_BLACK_DARK_BASE + v * GOL_BLACK_DARK_RANGE;
-    let r_shift = f32((h >> 8u) & 0xFFu) / 255.0 * GOL_BLACK_R_SHIFT_RANGE - GOL_BLACK_R_SHIFT_RANGE * 0.5;
-    let g_shift = f32((h >> 16u) & 0xFFu) / 255.0 * GOL_BLACK_G_SHIFT_RANGE - GOL_BLACK_G_SHIFT_RANGE * 0.5;
-    return clamp(cell_color * dark_factor + vec3(r_shift, g_shift, -r_shift), vec3(0.0), vec3(1.0));
-}
+// (fn apply_gol_extrusion_color RETIRED — A2_P2 Stage-5 probe)
 
 struct GoLZoneArray {
     count: u32,
@@ -5751,18 +5691,12 @@ struct PawnAuraCell {
 @group(0) @binding(31) var live_card_write: texture_storage_2d<rgba16float, write>;  // GROUND_CARD_1: writer kernel
 
 // --- Zone mesh gen output (Group 0: bindings 167-169, same layout as GoL compute)
-@group(0) @binding(167) var<storage, read_write> zone_mesh_vertices: array<CellMeshVertex>;
-@group(0) @binding(168) var<storage, read_write> zone_mesh_indices: array<u32>;
-@group(0) @binding(169) var<storage, read_write> zone_mesh_indirect: array<atomic<u32>, 6>;
 
 // --- Zone heightfield sampling (mesh gen terrain alignment)
-@group(0) @binding(163) var zone_heightfield: texture_2d_array<f32>;
-@group(0) @binding(164) var zone_hf_sampler: sampler;
 // Runtime-sized: capacity is the bound buffer's — the CPU side
 // (Dim::MAX_ACTIVE_PATCHES) is the single source; no WGSL twin exists.
 // Zone terrain scan covers every active patch slot; overflow to the
 // analytic fallback is thereby eliminated, not merely bounded.
-@group(0) @binding(165) var<storage, read> zone_patch_instances: array<PatchInstance>;
 
 // --- Zone Parameter Derivation (GPU-authoritative) ──────────────────────
 //
@@ -5946,27 +5880,8 @@ fn zone_derive_params(@builtin(global_invocation_id) gid: vec3<u32>) {
 
 // Sample baked heightfield at world XZ — exact terrain as rendered.
 // Searches patch instances for the covering patch and samples its layer.
-fn zone_sample_baked_terrain_y(world_xz: vec2<f32>) -> f32 {
-    for (var i = 0u; i < arrayLength(&zone_patch_instances); i++) {
-        let pi = zone_patch_instances[i];
-        if (pi.extent < 0.01) { continue; }  // empty slot
-        let local = world_xz - pi.origin;
-        let half = pi.extent * 0.5;
-        if (abs(local.x) < half && abs(local.y) < half) {
-            let uv = local / pi.extent + 0.5;
-            let res = f32(PATCH_HEIGHTFIELD_N);
-            let sample_uv = (uv * (res - 1.0) + 0.5) / res;
-            let h = textureSampleLevel(zone_heightfield, zone_hf_sampler,
-                                       sample_uv, i32(pi.layer), 0.0);
-            return h.x;
-        }
-    }
-    // Fallback: analytical evaluation — POLICY_BAKED_HEIGHTFIELD matches
-    // what the zone heightfield texture caches when it IS present.
-    return query_ground_baked_heightfield(world_xz);
-}
+// (fn zone_sample_baked_terrain_y RETIRED — A2_P2 Stage-5 probe)
 
-const ZONE_MESH_MAX_VERTICES: u32 = 50000u;
 const ZONE_MESH_MAX_INDICES: u32 = 75000u;
 
 
@@ -7964,150 +7879,13 @@ fn zone_gol_evolve(@builtin(global_invocation_id) gid: vec3<u32>) {
 
 
 
-fn zone_emit_quad(
-    v0: vec3<f32>, v1: vec3<f32>, v2: vec3<f32>, v3: vec3<f32>,
-    n: vec3<f32>, uv: vec2<f32>, color: vec3<f32>
-) {
-    let vi = atomicAdd(&zone_mesh_indirect[5], 4u);
-    let ii = atomicAdd(&zone_mesh_indirect[0], 6u);
-    if (vi + 4u > ZONE_MESH_MAX_VERTICES || ii + 6u > ZONE_MESH_MAX_INDICES) { return; }
+// (fn zone_emit_quad RETIRED — A2_P2 Stage-5 probe)
 
-    zone_mesh_vertices[vi + 0u] = CellMeshVertex(v0.x, v0.y, v0.z, n.x, n.y, n.z, uv.x, uv.y, color.x, color.y, color.z);
-    zone_mesh_vertices[vi + 1u] = CellMeshVertex(v1.x, v1.y, v1.z, n.x, n.y, n.z, uv.x, uv.y, color.x, color.y, color.z);
-    zone_mesh_vertices[vi + 2u] = CellMeshVertex(v2.x, v2.y, v2.z, n.x, n.y, n.z, uv.x, uv.y, color.x, color.y, color.z);
-    zone_mesh_vertices[vi + 3u] = CellMeshVertex(v3.x, v3.y, v3.z, n.x, n.y, n.z, uv.x, uv.y, color.x, color.y, color.z);
+// (fn zone_mesh_gen_cell RETIRED — A2_P2 Stage-5 probe)
 
-    zone_mesh_indices[ii + 0u] = vi;
-    zone_mesh_indices[ii + 1u] = vi + 1u;
-    zone_mesh_indices[ii + 2u] = vi + 2u;
-    zone_mesh_indices[ii + 3u] = vi;
-    zone_mesh_indices[ii + 4u] = vi + 2u;
-    zone_mesh_indices[ii + 5u] = vi + 3u;
-}
+// (fn zone_gol_mesh_reset RETIRED — A2_P2 Stage-5 probe)
 
-fn zone_mesh_gen_cell(zone_id: u32, cx: u32, cy: u32) {
-    let z = zone_config.zones[zone_id];
-    let base = zone_id * GOL_ZONE_STRIDE;
-    let idx = cy * z.grid_size + cx;
-
-    // Height from visual value × alive_height × per-cell height factor
-    let visual = zone_life[base + GOL_CELL_VISUAL + idx];
-    let height_factor = zone_life[base + GOL_CELL_HEIGHT_FACTOR + idx];
-    var h = z.alive_height * visual * height_factor * config.mode_gol_height_scale;
-    // Indoor GoL cap: branchless clamp; cap = 0 disables (the select's
-    // false arm keeps outdoor byte-identical).
-    h = select(h, min(h, config.indoor_height_cap), config.indoor_height_cap > 0.0);
-    if (h < 0.05) { return; }
-
-    let cell_size = z.extent / f32(z.grid_size);
-    let corner_x = z.origin.x - z.extent * 0.5;
-    let corner_z = z.origin.y - z.extent * 0.5;
-
-    let x0 = corner_x + f32(cx) * cell_size;
-    let x1 = x0 + cell_size;
-    let z0 = corner_z + f32(cy) * cell_size;
-    let z1 = z0 + cell_size;
-
-    // Terrain height at corners — from baked heightfield for exact alignment
-    let th00 = zone_sample_baked_terrain_y(vec2(x0, z0));
-    let th10 = zone_sample_baked_terrain_y(vec2(x1, z0));
-    let th01 = zone_sample_baked_terrain_y(vec2(x0, z1));
-    let th11 = zone_sample_baked_terrain_y(vec2(x1, z1));
-
-    // Pre-compute color ONCE per cell in compute pass (not per pixel in fragment)
-    // Evaluates full composite terrain pipeline + applies GoL color mode differential
-    let cell_center = vec2(x0 + cell_size * 0.5, z0 + cell_size * 0.5);
-    let color = apply_gol_extrusion_color(cell_center, z, cx, cy);
-
-    // Store terrain height at cell center in ux for VS suppression
-    let cell_terrain_y = zone_sample_baked_terrain_y(cell_center);
-    let vert_uv = vec2(cell_terrain_y, 0.0);  // ux = terrain_y for suppression
-
-    // Top cap — uv.x carries terrain_y for VS suppression
-    let top00 = vec3(x0, th00 + h, z0);
-    let top10 = vec3(x1, th10 + h, z0);
-    let top01 = vec3(x0, th01 + h, z1);
-    let top11 = vec3(x1, th11 + h, z1);
-    zone_emit_quad(top00, top01, top11, top10, vec3(0.0, 1.0, 0.0), vert_uv, color);
-
-    // Side walls — only where this cell is taller than neighbor
-    let gs = z.grid_size;
-    // +X wall
-    {
-        var nh: f32 = 0.0;
-        if (cx + 1u < gs) {
-            let ni = cy * gs + cx + 1u;
-            nh = zone_life[base + GOL_CELL_VISUAL + ni] * z.alive_height * zone_life[base + GOL_CELL_HEIGHT_FACTOR + ni];
-        }
-        if (nh < h) {
-            let bot10 = vec3(x1, select(th10, th10 + nh, nh > 0.05), z0);
-            let bot11 = vec3(x1, select(th11, th11 + nh, nh > 0.05), z1);
-            zone_emit_quad(top10, top11, bot11, bot10, vec3(1.0, 0.0, 0.0), vert_uv, color);
-        }
-    }
-    // -X wall
-    {
-        var nh: f32 = 0.0;
-        if (cx > 0u) {
-            let ni = cy * gs + cx - 1u;
-            nh = zone_life[base + GOL_CELL_VISUAL + ni] * z.alive_height * zone_life[base + GOL_CELL_HEIGHT_FACTOR + ni];
-        }
-        if (nh < h) {
-            let bot00 = vec3(x0, select(th00, th00 + nh, nh > 0.05), z0);
-            let bot01 = vec3(x0, select(th01, th01 + nh, nh > 0.05), z1);
-            zone_emit_quad(top01, top00, bot00, bot01, vec3(-1.0, 0.0, 0.0), vert_uv, color);
-        }
-    }
-    // +Z wall
-    {
-        var nh: f32 = 0.0;
-        if (cy + 1u < gs) {
-            let ni = (cy + 1u) * gs + cx;
-            nh = zone_life[base + GOL_CELL_VISUAL + ni] * z.alive_height * zone_life[base + GOL_CELL_HEIGHT_FACTOR + ni];
-        }
-        if (nh < h) {
-            let bot01 = vec3(x0, select(th01, th01 + nh, nh > 0.05), z1);
-            let bot11 = vec3(x1, select(th11, th11 + nh, nh > 0.05), z1);
-            zone_emit_quad(top11, top01, bot01, bot11, vec3(0.0, 0.0, 1.0), vert_uv, color);
-        }
-    }
-    // -Z wall
-    {
-        var nh: f32 = 0.0;
-        if (cy > 0u) {
-            let ni = (cy - 1u) * gs + cx;
-            nh = zone_life[base + GOL_CELL_VISUAL + ni] * z.alive_height * zone_life[base + GOL_CELL_HEIGHT_FACTOR + ni];
-        }
-        if (nh < h) {
-            let bot00 = vec3(x0, select(th00, th00 + nh, nh > 0.05), z0);
-            let bot10 = vec3(x1, select(th10, th10 + nh, nh > 0.05), z0);
-            zone_emit_quad(top00, top10, bot10, bot00, vec3(0.0, 0.0, -1.0), vert_uv, color);
-        }
-    }
-}
-
-@compute @workgroup_size(1, 1, 1)
-fn zone_gol_mesh_reset() {
-    atomicStore(&zone_mesh_indirect[0], 0u);  // indexCount
-    atomicStore(&zone_mesh_indirect[1], 1u);  // instanceCount
-    atomicStore(&zone_mesh_indirect[2], 0u);  // firstIndex
-    atomicStore(&zone_mesh_indirect[3], 0u);  // baseVertex
-    atomicStore(&zone_mesh_indirect[4], 0u);  // firstInstance
-    atomicStore(&zone_mesh_indirect[5], 0u);  // vertex alloc counter
-}
-
-@compute @workgroup_size(8, 8, 1)
-fn zone_gol_mesh_gen(@builtin(global_invocation_id) gid: vec3<u32>) {
-    let zone_id = gid.z;
-    if (zone_id >= zone_config.count) { return; }
-    let z = zone_config.zones[zone_id];
-    if (z.transition_fraction <= 0.0) { return; }
-    if (z.alive_height < 0.01) { return; }  // skip flat zones (Flash, no-height)
-    let cell = gid.xy;
-    if (cell.x >= z.grid_size || cell.y >= z.grid_size) { return; }
-
-    zone_mesh_gen_cell(zone_id, cell.x, cell.y);
-}
+// (fn zone_gol_mesh_gen RETIRED — A2_P2 Stage-5 probe)
 
 // --- Zone extrusion render shaders
 
@@ -8118,142 +7896,11 @@ struct ZoneExtrusionVarying {
     @location(2) cell_color: vec3<f32>,    // pre-computed in compute pass
 }
 
-@vertex
-fn zone_extrusion_vs(
-    @location(0) pos: vec3<f32>,
-    @location(1) normal: vec3<f32>,
-    @location(2) uv: vec2<f32>,
-    @location(3) color: vec3<f32>
-) -> ZoneExtrusionVarying {
-    var world_pos = pos;
+// (fn zone_extrusion_vs RETIRED — A2_P2 Stage-5 probe)
 
-    // uv.x carries terrain_y (base height without extrusion)
-    let terrain_y = uv.x;
-    let wave_y = contrib_terrain_waves_at(pos.xz);
+// (fn zone_extrusion_fs RETIRED — A2_P2 Stage-5 probe)
 
-    // Suppression target = terrain + aura height + wave overlay
-    let pawn_xz = render_pawn_pos().xz;
-    let aura = sample_pawn_aura(pos.xz, pawn_xz);
-    let ground_target = terrain_y + aura.r * config.pawn_aura_height + wave_y;
-
-    // Wave overlay: lift entire extrusion mesh with animated terrain
-    world_pos.y += wave_y;
-
-    // ── Pawn proximity suppression — render-side mirror of
-    // contrib_gol_suppression_at ────────────────────────────────────
-    // Must stay in sync with the contributor's smoothstep (same
-    // ZONE_SUPPRESS_INNER / ZONE_SUPPRESS_OUTER radii, same
-    // 1 - smoothstep(inner, outer, dist) shape). The two cannot easily
-    // share a function because this VS reads the render-stage
-    // render_agents binding while contrib_gol_suppression_at reads
-    // the compute-stage agent_state binding. If either changes radii
-    // or shape, update the other. The shadow zone extrusion VS below
-    // also mirrors this; keep all three in sync.
-    let pawn_dist = distance(pos.xz, pawn_xz);
-    let suppression = 1.0 - smoothstep(ZONE_SUPPRESS_INNER, ZONE_SUPPRESS_OUTER, pawn_dist);
-    if (suppression > 0.001) {
-        world_pos.y = mix(pos.y, ground_target, suppression);
-    }
-
-    var out: ZoneExtrusionVarying;
-    out.clip_pos = render_vp.m * vec4(world_pos, 1.0);
-    out.world_pos = world_pos;
-    out.normal = normal;
-    out.cell_color = color;
-    // THE RING (draw authority) — zone extrusions join the draw set like
-    // flora: per-vertex kill beyond the ring (baked world-space mesh).
-    if (distance(world_pos.xz, vec2(config.lod_point_x, config.lod_point_z)) > config.veil_ring) {
-        out.clip_pos = vec4(0.0, 0.0, -1e4, 1.0);
-    }
-    return out;
-}
-
-@fragment
-fn zone_extrusion_fs(in: ZoneExtrusionVarying) -> @location(0) vec4<f32> {
-    let n = normalize(in.normal);
-    var block_color = clamp(in.cell_color, vec3(0.0), vec3(1.0));
-
-    // FF HARMONIZATION (Phase 2 D4 — ruling 4's pixel-visible half,
-    // charter C6-F1): the block's color spring (life_sample G channel)
-    // scales the FF tints, matching the terrain FS's life-proportional
-    // semantics — a dying block's tint now fades WITH the block instead
-    // of holding full strength. Wall faces sit ON cell boundaries, so
-    // the sample point nudges half a cell inward along the face normal
-    // to land in the OWNING cell (top faces: n.xz ≈ 0, no nudge).
-    // VERIFICATION FLAGGED: the minimal roster runs gol DISABLED (this
-    // pipeline is ROSTER-gated out) — the visual before/after rides
-    // Jean's next gol-enabled session.
-    var color_val = 0.0;
-    for (var z: u32 = 0u; z < zone_params.count; z++) {
-        let zp = zone_params.zones[z];
-        if (zp.transition_fraction <= 0.0) { continue; }
-        let zone_corner = zp.origin - zp.extent * 0.5;
-        let cell_size = zp.extent / f32(zp.grid_size);
-        let sample_xz = in.world_pos.xz - n.xz * cell_size * 0.5;
-        let rel = sample_xz - zone_corner;
-        let local_cell = vec2<i32>(floor(rel / cell_size));
-        if (local_cell.x < 0 || local_cell.x >= i32(zp.grid_size) ||
-            local_cell.y < 0 || local_cell.y >= i32(zp.grid_size)) { continue; }
-        let uv = (vec2<f32>(local_cell) + 0.5) / f32(zp.grid_size);
-        color_val = textureSampleLevel(zone_life_read, nearest_sampler, uv, i32(z), 0.0).y;
-        break;
-    }
-
-    // Pawn force field tint on extrusion blocks (render context)
-    let pawn_ff = 1.0 - zone_pawn_ff(in.world_pos.xz, render_pawn_pos(), render_pawn_vel_xz());
-    if (pawn_ff > 0.01) {
-        block_color = mix(block_color, ZONE_PAWN_TINT, pawn_ff * ZONE_PAWN_TINT_STRENGTH * color_val);
-    }
-
-    // Sphere force field tint on extrusion blocks (render context)
-    let sphere_ff = 1.0 - zone_sphere_ff(in.world_pos.xz, render_floating.entities[0].pos);
-    if (sphere_ff > 0.01) {
-        block_color = mix(block_color, ZONE_SPHERE_TINT, sphere_ff * ZONE_SPHERE_TINT_STRENGTH * color_val);
-    }
-
-    // Pawn aura: persistent tinting from toroidal spring grid
-    {
-        let aura = sample_pawn_aura(in.world_pos.xz, render_pawn_pos().xz);
-        let aura_active = max(aura.r, max(abs(aura.g), max(abs(aura.b), abs(aura.a))));
-        if (aura_active > 0.01) {
-            block_color = clamp(block_color + aura.gba, vec3(0.0), vec3(1.0));
-            let height_boost = aura.r * 0.12;
-            block_color = clamp(block_color + vec3(height_boost), vec3(0.0), vec3(1.0));
-        }
-    }
-
-    // Wall boost: vertical faces get extra ambient
-    let is_wall = abs(n.y) < 0.1;
-    let wall_boost = select(vec3(0.0), block_color * 0.15, is_wall);
-
-    return vec4(shade_lit(in.world_pos, n, block_color, 1.0) + wall_boost, 1.0);
-}
-
-@vertex
-fn shadow_zone_extrusion_vs(
-    @location(0) pos: vec3<f32>,
-    @location(1) normal: vec3<f32>,
-    @location(2) uv: vec2<f32>,
-    @location(3) color: vec3<f32>
-) -> ShadowVarying {
-    var world_pos = pos;
-    let terrain_y = uv.x;
-    let wave_y = contrib_terrain_waves_at(pos.xz);
-    world_pos.y += wave_y;
-    // Render-side mirror of contrib_gol_suppression_at — kept in sync
-    // with the contributor and with zone_extrusion_vs's suppression
-    // block (above). See that block's annotation for rationale on why
-    // the function isn't shared across stages.
-    let pawn_dist = distance(pos.xz, render_pawn_pos().xz);
-    let suppression = 1.0 - smoothstep(ZONE_SUPPRESS_INNER, ZONE_SUPPRESS_OUTER, pawn_dist);
-    if (suppression > 0.001) {
-        // Shadow doesn't have aura texture — use terrain_y + wave only
-        world_pos.y = mix(pos.y + wave_y, terrain_y + wave_y, suppression);
-    }
-    var out: ShadowVarying;
-    out.clip_pos = render_vp.light_vp * vec4(world_pos, 1.0);
-    return out;
-}
+// (fn shadow_zone_extrusion_vs RETIRED — A2_P2 Stage-5 probe)
 
 
 // ═══ §7.3b THE LIVE CARD (GROUND_CARD_1) ═══════════════════════════════

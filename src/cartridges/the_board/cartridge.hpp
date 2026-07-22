@@ -1370,7 +1370,6 @@ namespace t7 {
                 upload_gol_zone_config(gol_state_, &gol_deps_, queue);
                 dispatch_zone_sync(gol_state_, &gol_deps_, encoder);
                 dispatch_zone_evolve(gol_state_, &gol_deps_, encoder);
-                dispatch_zone_mesh(gol_state_, &gol_deps_, encoder);
             }
 
             // R13 — PAWN AURA (wall-clock). Persistent terrain influence; the

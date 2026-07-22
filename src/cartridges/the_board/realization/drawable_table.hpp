@@ -46,7 +46,6 @@ struct DrawBind {
     wgpu::BindGroup texture;    // shadow_texture_group | render_texture_group
     bool shadow;                // shadow pass -> draw_shadow_X ; else draw_X
     bool ribbon_active;         // ribbon_state_.rendered_slot != UINT32_MAX
-    bool zone_active;           // gol_state_.zone_count > 0
 };
 
 struct Drawable {
@@ -56,11 +55,6 @@ struct Drawable {
 };
 
 // ── The thunks: each knows its buffers and picks draw_X vs draw_shadow_X ──
-inline void dt_zone(Renderer& r, GPUState& g, wgpu::RenderPassEncoder& p, const DrawBind& b) {
-    if (!b.zone_active) return;
-    if (b.shadow) r.draw_shadow_zone_extrusion(p, b.entity, b.texture, g.zone_mesh_vertex_buffer(), g.zone_mesh_index_buffer(), g.zone_mesh_indirect_buffer());
-    else          r.draw_zone_extrusion       (p, b.entity, b.texture, g.zone_mesh_vertex_buffer(), g.zone_mesh_index_buffer(), g.zone_mesh_indirect_buffer());
-}
 inline void dt_pawn(Renderer& r, GPUState& g, wgpu::RenderPassEncoder& p, const DrawBind& b) {
     (void)g;
     if (b.shadow) r.draw_shadow_pawn(p, b.entity, b.texture, GPUState::pawn_vertex_count());
@@ -108,7 +102,6 @@ inline void dt_shell(Renderer& r, GPUState& g, wgpu::RenderPassEncoder& p, const
 // THE CANONICAL ORDER (== the shadow order). Membership is which passes a
 // drawable belongs to; snapshot is the photographer's subset.
 inline const Drawable DRAWABLES[] = {
-    { "zone",     DRAW_SHADOW | DRAW_MAIN,                dt_zone     },
     { "pawn",     DRAW_SHADOW | DRAW_MAIN | DRAW_SNAPSHOT, dt_pawn    },
     { "sphere",   DRAW_SHADOW | DRAW_MAIN | DRAW_SNAPSHOT, dt_sphere  },
     { "monolith", DRAW_SHADOW | DRAW_MAIN,                dt_monolith },

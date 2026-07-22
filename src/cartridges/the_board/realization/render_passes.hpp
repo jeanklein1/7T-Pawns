@@ -330,8 +330,7 @@ inline void draw_shadow_all(MachineCtx* c, wgpu::RenderPassEncoder& pass) {
     // The drawable table — shadow members, canonical order.
     DrawBind b{ c->gpuState_.render_entity_group(), c->gpuState_.shadow_texture_group(),
                 /*shadow=*/true,
-                c->ribbon_state_.rendered_slot != UINT32_MAX,
-                c->gol_state_.zone_count > 0 };
+                c->ribbon_state_.rendered_slot != UINT32_MAX };
     draw_table(c->renderer_, c->gpuState_, pass, b, DRAW_SHADOW);
 }
 
@@ -401,8 +400,7 @@ inline void render_main_pass(MachineCtx* c, wgpu::CommandEncoder& encoder,
     // ribbon's ordinal drift dies (it now draws with the entities, not late).
     DrawBind b{ c->gpuState_.render_entity_group(), c->gpuState_.render_texture_group(),
                 /*shadow=*/false,
-                c->ribbon_state_.rendered_slot != UINT32_MAX,
-                c->gol_state_.zone_count > 0 };
+                c->ribbon_state_.rendered_slot != UINT32_MAX };
     draw_table(c->renderer_, c->gpuState_, pass, b, DRAW_MAIN);
 
     // FORKS — the specials, kept explicit. Wall paintings + gallery frames use
