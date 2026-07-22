@@ -903,8 +903,8 @@ struct AgentTierParams {
     color_r:       f32,
     color_g:       f32,
     color_b:       f32,
-    _pad0:         f32,  // pad to 32 bytes (matches GPUAgentTierDef)
-    _pad1:         f32,
+    contact_radius: f32, // 24 — TRUEBAND_CONTACT_1: body radius (wu)
+    contact_mass:   f32, // 28 — relative yield authority
 }
 
 const AGENT_TIER_COUNT_WGSL: u32 = 4u;
@@ -2109,11 +2109,21 @@ const PAWN_FORCEFIELD_ENABLED: bool = true;
 // --- Compile-time feature gates
 // These prune heavy dependency chains from update_player_agent's pipeline compilation.
 // Set to false to cut compile time when iterating on unrelated features.
-const PAWN_GOL_GROUND_ENABLED: bool = false;    // Pawn walks on GoL extrusions
+// (PAWN_GOL_GROUND_ENABLED RETIRED — compile-time gate for the pre-card
+//  analytic chain; GROUND_CARD_1 retired the chain. Reference-free at T0
+//  — TRUEBAND_CONTACT_1 T2a.)
 const PAWN_FORCEFIELD_RADIUS_STATIONARY: f32 = 6.0;  // Radius when not moving
 const PAWN_FORCEFIELD_RADIUS_MOVING: f32 = 2.0;      // Radius at max speed
 const PAWN_FORCEFIELD_FALLOFF: f32 = 2.0;            // Edge softness (smoothstep width)
 const PAWN_FORCEFIELD_SPEED_SCALE: f32 = 1.0;        // How quickly radius shrinks with speed
+
+// --- Contact collision (TRUEBAND_CONTACT_1; the population panel owns
+//     these numbers' biography)
+const CONTACT_SPRING: f32 = 40.0;        // impulse per wu overlap per s
+const CONTACT_IMPULSE_CAP: f32 = 6.0;    // max Δv per pair per frame
+const CONTACT_SPHERE_RADIUS: f32 = 12.0; // = Idle::SPHERE_INFLUENCE_RADIUS (C++ twin — verified 12.0f)
+const CONTACT_CUBE_RADIUS: f32 = 3.0;
+const PAWN_CONTACT_MASS_MULT: f32 = 4.0; // the pawn is heavy: agents yield, the player barely feels it
 
 
 // §2.3 MUTING CONTROL
@@ -6831,6 +6841,55 @@ fn update_player_agent() {
         agent = behavior_player_controlled(agent);
     }
 
+    // ── CONTACT (TRUEBAND_CONTACT_1): the bounded pair gather ──────────
+    // Impulses land on VELOCITY only — position is already ground-
+    // resolved this frame; the springs realize next frame (soft by
+    // construction). flock2d's racy-neighbor read + the coded dispatch
+    // order (ribbon → player → others → camera → sphere → cube → vp) are
+    // the disclosed softness: one-frame asymmetries the springs absorb.
+    {
+        let g_self = agent_tier_gains[min(agent.tier_idx, 3u)];
+        // The pawn's authority: the pair weight m_other/(m_self+m_other)
+        // stays small — the player feels a nudge, never a shove.
+        let m_self = g_self.contact_mass * PAWN_CONTACT_MASS_MULT;
+        for (var k = 0u; k < 32u; k++) {
+            if (k == slot) { continue; }
+            let other = agent_state[k];
+            if (other.is_active == 0u) { continue; }
+            let og = agent_tier_gains[min(other.tier_idx, 3u)];
+            var m_other = og.contact_mass;
+            if (k == config.possessed_slot) { m_other *= PAWN_CONTACT_MASS_MULT; }
+            let dx = agent.pos_x - other.pos_x;
+            let dz = agent.pos_z - other.pos_z;
+            let d2 = dx * dx + dz * dz;
+            let r  = g_self.contact_radius + og.contact_radius;
+            if (d2 < r * r && d2 > 0.0001) {
+                let d = sqrt(d2);
+                let push = min((r - d) * CONTACT_SPRING * signal.dt,
+                               CONTACT_IMPULSE_CAP)
+                         * (m_other / (m_self + m_other));
+                agent.vel_x += (dx / d) * push;
+                agent.vel_z += (dz / d) * push;
+            }
+        }
+        // spheres push walkers (celestial-massive: only self yields)
+        for (var sph = 0u; sph < SPHERE_SLOT_COUNT; sph++) {
+            let fe = floating_entities.entities[sph];
+            if (fe.is_active == 0u) { continue; }
+            let dx = agent.pos_x - fe.pos.x;
+            let dz = agent.pos_z - fe.pos.z;
+            let d2 = dx * dx + dz * dz;
+            let r  = g_self.contact_radius + CONTACT_SPHERE_RADIUS;
+            if (d2 < r * r && d2 > 0.0001) {
+                let d = sqrt(d2);
+                let push = min((r - d) * CONTACT_SPRING * signal.dt,
+                               CONTACT_IMPULSE_CAP);
+                agent.vel_x += (dx / d) * push;
+                agent.vel_z += (dz / d) * push;
+            }
+        }
+    }
+
     // The player is never evicted — their slot is the reference
     // frame for eviction, not subject to it.
     agent_state[slot] = agent;
@@ -6867,6 +6926,53 @@ fn update_other_agents(@builtin(global_invocation_id) gid: vec3<u32>) {
         case 8u: { agent = behavior_flock2d(agent); }
         case 9u: { agent = behavior_levy_flight(agent); }
         default: { /* unknown behavior — no-op */ }
+    }
+
+    // ── CONTACT (TRUEBAND_CONTACT_1): the bounded pair gather ──────────
+    // Impulses land on VELOCITY only — position is already ground-
+    // resolved this frame; the springs realize next frame (soft by
+    // construction). flock2d's racy-neighbor read + the coded dispatch
+    // order (ribbon → player → others → camera → sphere → cube → vp) are
+    // the disclosed softness: one-frame asymmetries the springs absorb.
+    {
+        let g_self = agent_tier_gains[min(agent.tier_idx, 3u)];
+        let m_self = g_self.contact_mass;
+        for (var k = 0u; k < 32u; k++) {
+            if (k == slot) { continue; }
+            let other = agent_state[k];
+            if (other.is_active == 0u) { continue; }
+            let og = agent_tier_gains[min(other.tier_idx, 3u)];
+            var m_other = og.contact_mass;
+            if (k == config.possessed_slot) { m_other *= PAWN_CONTACT_MASS_MULT; }
+            let dx = agent.pos_x - other.pos_x;
+            let dz = agent.pos_z - other.pos_z;
+            let d2 = dx * dx + dz * dz;
+            let r  = g_self.contact_radius + og.contact_radius;
+            if (d2 < r * r && d2 > 0.0001) {
+                let d = sqrt(d2);
+                let push = min((r - d) * CONTACT_SPRING * signal.dt,
+                               CONTACT_IMPULSE_CAP)
+                         * (m_other / (m_self + m_other));
+                agent.vel_x += (dx / d) * push;
+                agent.vel_z += (dz / d) * push;
+            }
+        }
+        // spheres push walkers (celestial-massive: only self yields)
+        for (var sph = 0u; sph < SPHERE_SLOT_COUNT; sph++) {
+            let fe = floating_entities.entities[sph];
+            if (fe.is_active == 0u) { continue; }
+            let dx = agent.pos_x - fe.pos.x;
+            let dz = agent.pos_z - fe.pos.z;
+            let d2 = dx * dx + dz * dz;
+            let r  = g_self.contact_radius + CONTACT_SPHERE_RADIUS;
+            if (d2 < r * r && d2 > 0.0001) {
+                let d = sqrt(d2);
+                let push = min((r - d) * CONTACT_SPRING * signal.dt,
+                               CONTACT_IMPULSE_CAP);
+                agent.vel_x += (dx / d) * push;
+                agent.vel_z += (dz / d) * push;
+            }
+        }
     }
 
     // Point-centered eviction (was the possessed slot).
@@ -7271,8 +7377,29 @@ fn update_cube() {
             // making this a no-op for the default population.
             let behavior_force = cube_behavior_force(
                 fe, signal.t_seconds, point_xz, config.floater_coordination);
+
+            // ── CONTACT: cube-vs-pawn (TRUEBAND_CONTACT_1) ────────────
+            // A pawn repulsion joins the drift forces when the pawn is
+            // inside CONTACT_CUBE_RADIUS + the pawn's tier radius — the
+            // drift's own spring-to-zero returns the cube after the pawn
+            // passes: soft by the substrate's construction, zero new
+            // state. (cube-vs-cube stays deferred — campaign v2 ruling.)
+            var contact_force = vec3(0.0);
+            {
+                let pawn = agent_state[config.possessed_slot];
+                let pg = agent_tier_gains[min(pawn.tier_idx, 3u)];
+                let cdx = fe.pos.x - pawn.pos_x;
+                let cdz = fe.pos.z - pawn.pos_z;
+                let cd2 = cdx * cdx + cdz * cdz;
+                let cr = CONTACT_CUBE_RADIUS + pg.contact_radius;
+                if (cd2 < cr * cr && cd2 > 0.0001) {
+                    let cd = sqrt(cd2);
+                    let mag = (cr - cd) * CONTACT_SPRING;
+                    contact_force = vec3((cdx / cd) * mag, 0.0, (cdz / cd) * mag);
+                }
+            }
             let spring_a = -fe.drift * fe.spring_stiffness;
-            fe.drift_vel = fe.drift_vel + (spring_a + behavior_force) * dt;
+            fe.drift_vel = fe.drift_vel + (spring_a + behavior_force + contact_force) * dt;
             fe.drift_vel = fe.drift_vel * exp(-fe.drag * dt);
             fe.drift = fe.drift + fe.drift_vel * dt;
 

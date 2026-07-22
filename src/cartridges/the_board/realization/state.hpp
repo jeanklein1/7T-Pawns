@@ -651,7 +651,8 @@ namespace t7 {
             float color_r;         // 12 — vertex shader entity color (world.wgsl §6.3)
             float color_g;         // 16
             float color_b;         // 20
-            float _pad[2];         // 24-31 — pad to 32 bytes (16-byte alignment)
+            float contact_radius;  // 24 — TRUEBAND_CONTACT_1: body radius (wu)
+            float contact_mass;    // 28 — relative yield authority
         };                         // 32 total (16-byte aligned)
 
         struct alignas(16) GPUCameraState {

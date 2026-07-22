@@ -164,14 +164,16 @@ struct AgentTierDef {
     float       color_r;
     float       color_g;
     float       color_b;
+    float       contact_radius;  // TRUEBAND_CONTACT_1: body radius (wu) — Jean-tunable
+    float       contact_mass;    // relative yield authority — Jean-tunable
 };
 
 inline constexpr AgentTierDef AGENT_TIER_GAINS[AGENT_TIER_COUNT] = {
-    //  id                     name        step  persist  speed  color
-    { AGENT_TIER_WORKER,   "worker",   1.0f, 1.0f, 1.0f, 0.60f, 0.62f, 0.65f },  // slate gray
-    { AGENT_TIER_SCOUT,    "scout",    1.8f, 0.4f, 1.4f, 0.85f, 0.65f, 0.40f },  // bronze
-    { AGENT_TIER_SENTINEL, "sentinel", 0.6f, 1.2f, 0.5f, 0.30f, 0.40f, 0.70f },  // deep blue
-    { AGENT_TIER_LEADER,   "leader",   1.2f, 0.9f, 1.1f, 0.95f, 0.85f, 0.55f },  // pale gold
+    //  id                     name        step  persist  speed  color                 c_radius c_mass (contact — Jean-tunable)
+    { AGENT_TIER_WORKER,   "worker",   1.0f, 1.0f, 1.0f, 0.60f, 0.62f, 0.65f, 1.6f, 1.0f },  // slate gray
+    { AGENT_TIER_SCOUT,    "scout",    1.8f, 0.4f, 1.4f, 0.85f, 0.65f, 0.40f, 1.4f, 0.8f },  // bronze
+    { AGENT_TIER_SENTINEL, "sentinel", 0.6f, 1.2f, 0.5f, 0.30f, 0.40f, 0.70f, 2.0f, 1.5f },  // deep blue
+    { AGENT_TIER_LEADER,   "leader",   1.2f, 0.9f, 1.1f, 0.95f, 0.85f, 0.55f, 1.8f, 1.2f },  // pale gold
 };
 
 static_assert(sizeof(AGENT_TIER_GAINS) / sizeof(AGENT_TIER_GAINS[0]) == AGENT_TIER_COUNT,
@@ -334,8 +336,8 @@ inline void upload_agent_registries_to_gpu(AgentsDeps* c, wgpu::Queue& queue) {
         gpu_tiers[i].color_r       = src.color_r;
         gpu_tiers[i].color_g       = src.color_g;
         gpu_tiers[i].color_b       = src.color_b;
-        gpu_tiers[i]._pad[0] = 0.0f;
-        gpu_tiers[i]._pad[1] = 0.0f;
+        gpu_tiers[i].contact_radius = src.contact_radius;   // TRUEBAND_CONTACT_1
+        gpu_tiers[i].contact_mass   = src.contact_mass;
     }
 
     c->gpuState_.upload_agent_registries(queue,
