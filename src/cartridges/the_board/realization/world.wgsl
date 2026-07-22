@@ -92,7 +92,6 @@
 // ── Terrain Waves (→ §2.2 TERRAIN_LOOKS ROW 7) ────────────────────
 //   WAVE_THRESHOLD[6]             Per-band activity gate
 //   ACTIVITY_LATTICE_SPACING      400 wu — activity envelope
-//   OVERLAY_WAVES[6]              Band amp/freq/period/jitter table
 //
 // ── GoL Zones (§2.2, §7.0b) ──────────────────────────────────────
 //   GOL_TIERS[7]                  Tier params (density, tick, spring)
@@ -633,9 +632,10 @@ fn evaluate_lattice_wave(
     return mix(pair.x, pair.y, band_act);
 }
 
-// --- Polyphony-driven band motion accessors
-// DRIVERLESS since gen-1 retirement — held at neutral by the boot
-// block; revive via a gen-2 coupling or delete on the next pass here.
+// --- THE TRUE-BAND GATES (TRUEBAND_CONTACT_1): the writer's per-band
+// multiplier + skip sentinel; held at rest (−1) by the boot block until
+// the gen-2 band couplings land. The pools decide WHERE a woken band
+// breathes; these decide THAT it breathes.
 fn get_band_blend(band_index: u32) -> f32 {
     switch(band_index) {
         case 0u: { return config.band_blend_0; }
@@ -1717,8 +1717,8 @@ struct DesignConfig {
 // / mode_palette_{target,intensity,discrete_tier} rest at
 // terrain_looks::REST_* (C++ ROW 2), written once by the cartridge
 // boot-pin block; nothing else authors them today. terrain_time ≤ 0
-// freezes both overlay-wave evaluators (ROW 7's consumers) — rest IS
-// today's stillness. The mode trio is DRIVERLESS since the gen-1
+// freezes the true-band writer (ROW 7's consumer — the card's heights
+// pass; TRUEBAND_CONTACT_1) — rest IS today's stillness. The mode trio is DRIVERLESS since the gen-1
 // retirement: driver-ready dials held at rest, read by
 // animated_cell_color — the one live composite body (analytic since
 // Commit C) — (mode_bias, sparse_bias, drift).
@@ -1872,45 +1872,13 @@ const WAVE_THRESHOLD = array<f32, 6>(
 );
 const WAVE_THRESHOLD_SOFTNESS: f32 = 0.15;      // crossfade width at threshold boundary
 
-// ─── Overlay Wave Design Matrix ─────────────────────────────────────
-// (moved from the wave evaluators' side, §1.6; the two consumers —
-//  contrib_terrain_waves_at / terrain_wave_overlay_with_gradient —
-//  stay with the deformation machinery.)
-//
-//   amp        World-unit displacement at full blend.
-//   freq       Spatial frequency (cycles per world unit). Higher = tighter ripples.
-//   period     Temporal period in beats. One full sine cycle per this many beats.
-//   direction  Propagation angle (radians). 0 = +X, π/2 = +Z. Negative = seed-derived.
-//   amp_jit    Amplitude jitter range. Seed scales amp by (1 ± jit/2).
-//   freq_jit   Frequency jitter range. Seed scales freq by (1 ± jit/2).
-
-struct OverlayWave {
-    amp: f32,
-    freq: f32,
-    period: f32,
-    direction: f32,
-    amp_jit: f32,
-    freq_jit: f32,
-}
-
-const OVERLAY_WAVE_COUNT: u32 = 6u;
-
-//                                amp    freq    period  dir     amp_jit  freq_jit
-const OVERLAY_WAVES = array<OverlayWave, 6>(
-    OverlayWave(                  0.12,  1.00,   3.0,   -1.0,   0.4,     0.4  ),  // 0: fine ripple
-    OverlayWave(                  0.25,  0.50,   4.5,   -1.0,   0.4,     0.4  ),  // 1: detail
-    OverlayWave(                  0.50,  0.25,   6.0,   -1.0,   0.4,     0.4  ),  // 2: local swell
-    OverlayWave(                  1.00,  0.12,   9.0,   -1.0,   0.4,     0.4  ),  // 3: regional
-    OverlayWave(                  2.00,  0.06,  13.0,   -1.0,   0.4,     0.4  ),  // 4: broad
-    OverlayWave(                  3.50,  0.03,  18.0,   -1.0,   0.4,     0.4  ),  // 5: tectonic
-);
-
-// Overlay-wave seed properties (900-band — clear of entity 0–156 and
-// wave-lattice 200–221; stride separates the six bands).
-const OVERLAY_PROP_DIR_ANGLE: u32 = 900u;
-const OVERLAY_PROP_FREQ_JIT:  u32 = 901u;
-const OVERLAY_PROP_AMP_JIT:   u32 = 902u;
-const OVERLAY_PROP_STRIDE:    u32 = 10u;
+// ─── The Movement Third — THE TRUE BANDS (TRUEBAND_CONTACT_1) ───────
+// The overlay matrix is RETIRED: the terrain animates with its OWN
+// waves — the card writer's heights pass sums per-band
+// true_band_delta_contribution (TERRAIN_BANDS, §1.5), shaped by the
+// WAVE_THRESHOLD pools above and gated by get_band_blend's per-band
+// wires. WAVE_THRESHOLD + softness STAY — they are the true-band pool
+// thresholds.
 
 // ── ROW 8 — GOVERNING EXPRESSIONS ───────────────────────────────────
 // The palette's governing expression lives in-room (below). The
@@ -2811,39 +2779,7 @@ fn ground_formed_with_complexity(world_xz: vec2<f32>) -> vec2<f32> {
 //  surface voice. The two evaluators below stay with the deformation
 //  machinery.)
 
-// CONTRIB_TERRAIN_WAVES — deformation_field, global.
-// Contributes: sum of 6 polyphony-driven directional sine waves.
-// Dependencies (via DAG): none — orthogonal to the static stack.
-// Notes: blend ramps activate bands progressively with polyphony count.
-//   Seed-derived direction/freq/amp jitter per band. See the
-//   OVERLAY_WAVES table at TERRAIN_LOOKS ROW 7 (§2.2) for tuning.
-// One derivation, two evaluators: the per-band overlay parameters
-// (direction, jittered freq/amp) drawn once from seed + the ROW 7
-// design matrix. Height and fused-gradient consume the same law.
-struct OverlayBandParams {
-    dir:  vec2<f32>,
-    freq: f32,
-    amp:  f32,
-}
 
-fn overlay_band_params(i: u32, seed: u32) -> OverlayBandParams {
-    let ow = OVERLAY_WAVES[i];
-
-    // Direction: explicit angle or seed-derived when negative
-    var angle: f32;
-    if (ow.direction < 0.0) {
-        angle = hash_property(seed, OVERLAY_PROP_DIR_ANGLE + i * OVERLAY_PROP_STRIDE) * 2.0 * PI;
-    } else {
-        angle = ow.direction;
-    }
-    let dir = vec2(cos(angle), sin(angle));
-
-    // Seed-derived jitter on frequency and amplitude
-    let freq = ow.freq * (1.0 + (hash_property(seed, OVERLAY_PROP_FREQ_JIT + i * OVERLAY_PROP_STRIDE) - 0.5) * ow.freq_jit);
-    let amp  = ow.amp  * (1.0 + (hash_property(seed, OVERLAY_PROP_AMP_JIT + i * OVERLAY_PROP_STRIDE) - 0.5) * ow.amp_jit);
-
-    return OverlayBandParams(dir, freq, amp);
-}
 
 // (fn contrib_terrain_waves_at RETIRED — UNIFIED_GROUND_1 U4; A2-3 census)
 
@@ -2855,41 +2791,8 @@ fn overlay_band_params(i: u32, seed: u32) -> OverlayBandParams {
 // Returns vec3(height, dh/dx, dh/dz).
 // Replaces the 5x finite-difference approach with 1x loop + analytical derivatives.
 // Used by patch_terrain_vs where per-vertex cost dominates frame time.
-fn terrain_wave_overlay_with_gradient(world_xz: vec2<f32>) -> vec3<f32> {
-    if (config.terrain_time <= 0.0) { return vec3(0.0); }
-
-    let seed = config.world_seed;
-    var h: f32 = 0.0;
-    var gx: f32 = 0.0;
-    var gz: f32 = 0.0;
-
-    for (var i: u32 = 0u; i < OVERLAY_WAVE_COUNT; i++) {
-        let blend = get_band_blend(i);
-        if (blend <= 0.0) { continue; }
-
-        let ow = OVERLAY_WAVES[i];
-        let origin = get_band_phase_origin(i);
-        let t = config.terrain_time - origin;
-
-        let bp = overlay_band_params(i, seed);
-
-        let temporal = (2.0 * PI / ow.period) * t;
-        let phase    = bp.freq * dot(bp.dir, world_xz) + temporal;
-
-        // h  += B * A * sin(phase)
-        // dh/dx = B * A * freq * dir.x * cos(phase)
-        // dh/dz = B * A * freq * dir.y * cos(phase)
-        let ba = blend * bp.amp;
-        let s  = sin(phase);
-        let c  = cos(phase);
-
-        h  += ba * s;
-        gx += ba * bp.freq * bp.dir.x * c;
-        gz += ba * bp.freq * bp.dir.y * c;
-    }
-
-    return vec3(h, gx, gz);
-}
+// (fn terrain_wave_overlay_with_gradient RETIRED — TRUEBAND_CONTACT_1 T1c;
+//  the true-band writer replaced the overlay; A3-3d certified the sole caller.)
 
 // ─── Radial pulses: expanding ring wavefronts from note onsets ──────────
 //

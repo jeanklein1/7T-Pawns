@@ -86,7 +86,7 @@ inline constexpr float PALETTE_WEIGHT_REST[4] = {
 //   (Cartridge::initialize) writes exactly these through the setters;
 //   nothing else authors them today (the mode trio is DRIVERLESS since
 //   gen-1 retirement — driver-ready, held at rest by this row).
-// UNITS: terrain_time = beats (≤ 0 freezes both overlay-wave
+// UNITS: terrain_time = beats (≤ 0 freezes the true-band writer
 //   evaluators — rest IS today's stillness); band blend = activation
 //   [0,1] per band, -1 = inactive sentinel; band phase origin = beats;
 //   mode_color_shift = mode-field bias [−1,1]; mode_checker_scatter =
@@ -136,7 +136,8 @@ inline constexpr std::uint32_t REST_PULSE_COUNT = 0;
 //     survival, chess/mono cuts, DISCRETE_TINT_STRENGTH.
 //   ROW 6 — RETIRED (Phase 1, ruling 6): terrain-mode coupling went
 //     out with its lattice and evaluators; the tombstone is in-room.
-//   ROW 7 THE MOVEMENT THIRD: OVERLAY_WAVES + WAVE_THRESHOLD +
+//   ROW 7 THE MOVEMENT THIRD: the TRUE bands (TERRAIN_BANDS) +
+//     WAVE_THRESHOLD pool gates +
 //     activity motion-rate vocabulary (REST pins live in ROW 2 here).
 //   ROW 8 GOVERNING EXPRESSIONS: palette_color_smooth (in-room);
 //     composite_cell_color (by pointer — Discipline 2).
