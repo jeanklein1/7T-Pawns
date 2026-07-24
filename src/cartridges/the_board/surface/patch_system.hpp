@@ -725,6 +725,11 @@ inline void stream_patches(MachineCtx* c, wgpu::CommandEncoder& encoder, wgpu::Q
         c->world_state_.last_center_z = centerZ;
 
         bool fullRegen = (oldCX == INT32_MAX);  // first frame
+        // ── DIAG_SPAWN_SEAM (temporary) ───────────────────────
+        std::cerr << "[STREAM] gridChanged -> (" << centerX << "," << centerZ
+                  << ") fullRegen=" << (fullRegen ? 1 : 0)
+                  << " cache_pre=" << tile_world_state.tileCache_.size() << "\n";
+        // ── end DIAG_SPAWN_SEAM ─────────────────────────────
 
         // Lightweight cache maintenance (no GPU buffer writes)
         evict_distant_tiles(tile_world_state, centerX, centerZ);
@@ -745,6 +750,10 @@ inline void stream_patches(MachineCtx* c, wgpu::CommandEncoder& encoder, wgpu::Q
                 }
             }
 
+            // ── DIAG_SPAWN_SEAM (temporary) ───────────────────────
+            std::cerr << "[STREAM] bootstrap done cache_post="
+                      << tile_world_state.tileCache_.size() << "\n";
+            // ── end DIAG_SPAWN_SEAM ─────────────────────────────
             // NOW spawn portals — tile cache is populated, terrain heights are correct
             if (c->mood_state_.back_portal_pending) {
                 force_spawn_back_portal(&mood_deps, queue, *c);
