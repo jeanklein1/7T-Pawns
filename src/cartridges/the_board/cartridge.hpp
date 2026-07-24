@@ -1051,6 +1051,32 @@ namespace t7 {
                 }
 
                 //
+                // ── DIAG_FLOATER_BRIDGE (temporary) ───────────────────────
+                static uint32_t dbg_fb_cb   = 0;   // times the readback callback ran
+                static uint32_t dbg_fb_gsph = 0;   // GPU-side active spheres, last seen
+                static uint32_t dbg_fb_gcub = 0;   // GPU-side active cubes,   last seen
+                {
+                    static float dbg_fb_last = -1.0f;
+                    const float now_s = time_state_.seconds;
+                    if (now_s - dbg_fb_last >= 1.0f) {
+                        dbg_fb_last = now_s;
+                        uint32_t fs = 0, fc = 0;
+                        for (uint32_t i = 0; i < Dim::MAX_SPHERE_INSTANCES; i++)
+                            if (sphere_state_.activeSpheres_[i].active) fs++;
+                        for (uint32_t i = 0; i < Dim::MAX_CUBE_INSTANCES; i++)
+                            if (cube_behaviors_state_.activeCubes_[i].active) fc++;
+                        std::cout << "[FLOATER] sph n=" << sphere_state_.activeSphereCount_
+                                  << " f=" << fs
+                                  << " gpu=" << dbg_fb_gsph
+                                  << " | cub n=" << cube_behaviors_state_.activeCubeCount_
+                                  << " f=" << fc
+                                  << " gpu=" << dbg_fb_gcub
+                                  << " | cb=" << dbg_fb_cb
+                                  << " st=" << static_cast<int>(floaterReadbackState_)
+                                  << "\n";
+                    }
+                }
+                // ── end DIAG_FLOATER_BRIDGE ─────────────────────────────
                 if (floaterReadbackState_ == FloaterReadbackState::COPIED) {
                     floaterReadbackState_ = FloaterReadbackState::MAPPING;
                     gpuState_.floating_entity_readback_staging().MapAsync(
@@ -1071,6 +1097,18 @@ namespace t7 {
                                             reconcile_sphere_mirror(sphere_state_, &sphere_deps_, data);
                                         if constexpr (ROSTER.cube)    // ROSTER-GATE cube (b)
                                             reconcile_cube_mirror(cube_behaviors_state_, &cube_deps_, data);
+                                        // ── DIAG_FLOATER_BRIDGE (temporary) ───────────────────────
+                                        {
+                                            uint32_t gs = 0, gc = 0;
+                                            for (uint32_t i = 0; i < Dim::MAX_SPHERE_INSTANCES; i++)
+                                                if (data[i].is_active != 0u) gs++;
+                                            for (uint32_t i = 0; i < Dim::MAX_CUBE_INSTANCES; i++)
+                                                if (data[Dim::CUBE_SLOT_OFFSET + i].is_active != 0u) gc++;
+                                            dbg_fb_gsph = gs;
+                                            dbg_fb_gcub = gc;
+                                            dbg_fb_cb++;
+                                        }
+                                        // ── end DIAG_FLOATER_BRIDGE ─────────────────────────────
                                     }
                                 }
                                 gpuState_.floating_entity_readback_staging().Unmap();
