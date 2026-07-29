@@ -204,7 +204,7 @@ namespace t7 {
                     a.GetInfo(&info);
                     int score =
                         (info.adapterType == wgpu::AdapterType::DiscreteGPU ? 2 : 0)
-                      + (info.backendType == wgpu::BackendType::D3D12       ? 1 : 0);
+                      + (info.backendType == wgpu::BackendType::Vulkan      ? 1 : 0);
                     if (score > best) { best = score; adapterPick = i; }
                 }
             }
