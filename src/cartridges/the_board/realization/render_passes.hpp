@@ -320,17 +320,22 @@ inline void render_shadow_pass(MachineCtx* c, wgpu::CommandEncoder& encoder,
 // All shadow draws: terrain (FORK) + the drawable table (shadow filter).
 // A shadow pass is DEPTH-ONLY, so draw order is doubly immaterial here.
 inline void draw_shadow_all(MachineCtx* c, wgpu::RenderPassEncoder& pass) {
-    // FORK — terrain: LOD0 direct + a manual LOD1 DrawIndexed (per-pass shape).
+    // FORK — terrain, both bands at LOD1 density (ECONOMY_1 E2): the
+    // shadow target resolves coarser than even the half mesh, and the
+    // decode is patch-agnostic, so band 0 draws the LOD0 patches with
+    // the existing LOD1 index buffer. The legacy-band decode applies
+    // the cell lift (lift_scale = 1), so lifted zones still cast.
     c->renderer_.draw_shadow_patch_terrain(
         pass,
         c->gpuState_.render_entity_group(),
         c->gpuState_.shadow_texture_group(),
-        c->gpuState_.patch_index_buffer(),
-        c->gpuState_.patch_index_count(),
+        c->gpuState_.patch_index_buffer_lod1(),
+        c->gpuState_.patch_index_count_lod1(),
         c->world_state_.lod0_patch_count
     );
     if (c->world_state_.render_patch_count > c->world_state_.lod0_patch_count) {
-        pass.SetIndexBuffer(c->gpuState_.patch_index_buffer_lod1(), wgpu::IndexFormat::Uint32);
+        // Band 1 — same IB, already bound by the band-0 helper; the
+        // redundant re-bind collapsed (trivially adjacent).
         pass.DrawIndexed(c->gpuState_.patch_index_count_lod1(),
             c->world_state_.render_patch_count - c->world_state_.lod0_patch_count, 0, 0, c->world_state_.lod0_patch_count);
     }
