@@ -380,6 +380,11 @@ inline void render_main_pass(MachineCtx* c, wgpu::CommandEncoder& encoder,
             c->gpuState_.patch_index_buffer(),
             c->gpuState_.frustum_indirect_lod0()
         );
+        // PROBE C3 (HELD) — adjudicates L2.4: a SECOND plain
+        // DrawIndexedIndirect in one pass, zero-count args. If Dawn D3D12
+        // rejects it, the UncapturedErrorCallback prints; if it is silent,
+        // seven homes of the one-indirect claim retire.
+        pass.DrawIndexedIndirect(c->gpuState_.probe_null_indirect(), 0);
     } else {
         // Indoor: direct draw with CPU count
         c->renderer_.draw_patch_terrain_direct(

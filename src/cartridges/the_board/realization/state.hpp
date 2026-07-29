@@ -1837,6 +1837,7 @@ namespace t7 {
             // LOD1 always uses direct DrawIndexed; CPU computes its count.
             wgpu::Buffer frustumIndirectLOD0_;            // Indirect|CopyDst — DrawIndexedIndirect target
             wgpu::Buffer frustumComputeBuffer_;           // Storage|CopySrc|CopyDst — compute writes here
+            wgpu::Buffer probeNullIndirectBuffer_;        // PROBE C3 (HELD) — zeroed 5×u32, null indirect args
             wgpu::Buffer visiblePatchIndicesBuffer_;      // MAX_ACTIVE_PATCHES × u32 — LOD0 visible list
             wgpu::BindGroupLayout frustumCullLayout_;
             wgpu::BindGroup frustumCullBindGroup_;
@@ -2553,6 +2554,7 @@ namespace t7 {
             // --- GPU frustum culling ---
             wgpu::Buffer frustum_indirect_lod0() const { return frustumIndirectLOD0_; }
             wgpu::Buffer frustum_compute_buffer() const { return frustumComputeBuffer_; }
+            wgpu::Buffer probe_null_indirect() const { return probeNullIndirectBuffer_; }
             wgpu::Buffer visible_patch_indices_buffer() const { return visiblePatchIndicesBuffer_; }
             wgpu::BindGroupLayout frustum_cull_layout() const { return frustumCullLayout_; }
             wgpu::BindGroup frustum_cull_group() const { return frustumCullBindGroup_; }
@@ -3108,6 +3110,13 @@ namespace t7 {
                     Dim::MAX_ACTIVE_PATCHES * sizeof(uint32_t),
                     wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst);
 
+                // PROBE C3 (HELD) — zero-initialized null indirect args
+                // (WebGPU zero-inits buffers: indexCount 0, instanceCount 0
+                // is a valid, behaviorally null draw).
+                probeNullIndirectBuffer_ = makeBuffer("PROBE C3 Null Indirect",
+                    5 * sizeof(uint32_t),
+                    wgpu::BufferUsage::Indirect);
+
                 return signalBuffer_ && configBuffer_ &&
                     agentStateBuffer_ && agentStateReadbackStaging_ &&
                     cameraBuffer_ && floatingEntityBuffer_ && ringTransformsBuffer_ && headPosesBuffer_ &&
@@ -3118,7 +3127,8 @@ namespace t7 {
                     photographerVPBuffer_ && photographerCameraBuffer_ &&
                     photographerConfigBuffer_ && paintingSlotsBuffer_ &&
                     portalArrayBuffer_ && ribbonReadbackStaging_ && cameraStateReadbackStaging_ &&
-                    frustumIndirectLOD0_ && frustumComputeBuffer_ && visiblePatchIndicesBuffer_;
+                    frustumIndirectLOD0_ && frustumComputeBuffer_ && visiblePatchIndicesBuffer_ &&
+                    probeNullIndirectBuffer_;
             }
 
             bool createMeshBuffers() {
