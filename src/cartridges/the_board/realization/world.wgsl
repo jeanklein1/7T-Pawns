@@ -3239,7 +3239,13 @@ const SUN_ALTITUDE: f32 = 250.0;
 const SUN_HALF_EXTENT: f32 = 300.0;
 const SUN_NEAR: f32 = 0.1;
 const SUN_FAR: f32 = 600.0;
-const SHADOW_SNAP_SIZE: f32 = 2.0;   // world units — shadow VP snaps to this grid
+// TEXEL-ALIGNED SNAP (SHADOW_QUALITY_1 E-C). The old 2.0 wu was never
+// texel-aligned — 13.65 texels at 4096, 6.83 at 2048 — so every grid
+// crossing shifted map content by a FRACTIONAL texel and the edges
+// crawled. Derived from the texel now: integer-texel shifts, same feel
+// (7 x 0.29296875 = 2.0508 wu).
+const SHADOW_SNAP_TEXELS: f32 = 7.0;
+const SHADOW_SNAP_SIZE: f32 = SHADOW_SNAP_TEXELS * SUN_TEXEL_WORLD;
 
 fn coupling_pawn_to_sun_vp(pawn_pos: vec3<f32>, direction: vec3<f32>) -> mat4x4<f32> {
     // Snap pawn XZ to shadow grid for temporal stability.
@@ -3563,17 +3569,32 @@ struct SpotLightArray {
 // two depth textures and the atlas tiles. Change BOTH rooms
 // together. (L3 MIRROR.)
 const SHADOW_MAP_SIZE: f32 = 2048.0;
-// Bias is a function of texel size. Tuned at the 4096-era values
-// (0.0001 / 0.002), expressed per-texel so any resolution ruling
-// carries its bias for free. (ECONOMY_1 E6.)
-const SHADOW_BIAS_MIN: f32 = 0.4096 / SHADOW_MAP_SIZE;
-const SHADOW_BIAS_MAX: f32 = 8.192 / SHADOW_MAP_SIZE;
+// Settled values pinned; resolution-invariant form. The numerators
+// are the historically settled biases x 2048, so the effective values
+// at the live 2048 equal the settlement won months ago — the E6
+// rewrite doubled them and that is what re-broke the contact shadow.
+// (SHADOW_QUALITY_1 E-A.)
+const SHADOW_BIAS_MIN: f32 = 0.2048 / SHADOW_MAP_SIZE;
+const SHADOW_BIAS_MAX: f32 = 4.096 / SHADOW_MAP_SIZE;
+
+// NORMAL-OFFSET SAMPLING (E-B) — by derivation, so both numbers stay
+// true at any map size. The offset is expressed in TEXELS; the world
+// distance follows the sun's own footprint.
+const SUN_TEXEL_WORLD: f32 = (2.0 * SUN_HALF_EXTENT) / SHADOW_MAP_SIZE;
+const NORMAL_OFFSET_TEXELS: f32 = 1.5;   // tunable
 
 // --- Shadow Sampling with 4x4 PCF
 
 fn sample_shadow_pcf(world_pos: vec3<f32>, normal: vec3<f32>) -> f32 {
+    // NORMAL-OFFSET SAMPLING (SHADOW_QUALITY_1 E-B) — the proper acne
+    // cure. Push the sample point off the surface along its OWN normal
+    // by a fixed number of shadow texels, so one texel of depth
+    // quantization can no longer place a surface behind itself. Bias
+    // fights acne along the light ray and detaches contact shadows;
+    // this fights it along the surface and does not. Sun path only.
+    let offset_pos = world_pos + normal * (SUN_TEXEL_WORLD * NORMAL_OFFSET_TEXELS);
     // Transform to light clip space
-    let light_clip = render_vp.light_vp * vec4(world_pos, 1.0);
+    let light_clip = render_vp.light_vp * vec4(offset_pos, 1.0);
     let light_ndc = light_clip.xyz / light_clip.w;
 
     let shadow_uv = vec2(
@@ -3671,10 +3692,10 @@ fn calc_point_lights(world_pos: vec3<f32>, normal: vec3<f32>) -> vec3<f32> {
 // No normal offset — it breaks contact shadows (disconnects pawn shadow
 // from feet by lifting the comparison point above the occluder depth).
 
-// Per-texel form, tuned at the 4096-era values (0.0015 / 0.005) —
-// the same bias-as-ratio rewrite as the sun pair. (ECONOMY_1 E6.)
-const SPOT_DEPTH_BIAS: f32 = 6.144 / SHADOW_MAP_SIZE;    // base bias, scaled by 1/clip.w
-const SPOT_SLOPE_BIAS_MAX: f32 = 20.48 / SHADOW_MAP_SIZE;  // extra bias at grazing angles
+// Settled values pinned; resolution-invariant form — the spot half of
+// the same restoration. (SHADOW_QUALITY_1 E-A.)
+const SPOT_DEPTH_BIAS: f32 = 3.072 / SHADOW_MAP_SIZE;    // base bias, scaled by 1/clip.w
+const SPOT_SLOPE_BIAS_MAX: f32 = 10.24 / SHADOW_MAP_SIZE;  // extra bias at grazing angles
 
 fn sample_spot_shadow_pcf(world_pos: vec3<f32>, normal: vec3<f32>, light_index: u32) -> f32 {
     let light = render_spot_lights.lights[light_index];
