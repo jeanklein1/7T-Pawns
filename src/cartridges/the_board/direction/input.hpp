@@ -263,8 +263,29 @@ inline void on_key_down(InputDeps* c, int key,
         // the pawn to origin (the fail-LOUD zeros turned player-facing —
         // earlier recon). RIBBON is a host (RESIDUE_3); from camera host
         // possess() composes: release camera, mount.
-        if constexpr (ROSTER.ribbon)
-            possess(c, c->point_.host == PointHost::RIBBON ? PointHost::PAWN : PointHost::RIBBON);
+        //
+        // THE CANDIDATE SET (SWEEP_1 T9). The transfer targets ribbons IN
+        // SCOPE, and the scope is the flown one: ribbon_frame_tick elects
+        // rendered_slot as the nearest ACTIVE ribbon to the point and
+        // parks it at UINT32_MAX when the world holds none. Mounting an
+        // empty set gave the mount gate a zeroed sky head — the same
+        // ribbon-less failure the ROSTER gate above was built for, except
+        // that indoors, now that ribbons never spawn there, it is the
+        // NORMAL case rather than a demo configuration.
+        //
+        // Empty set falls back to the PAWN, through possess() like every
+        // other transfer — no side channel, and no-op when the pawn
+        // already hosts (the transaction returns on cur == next).
+        if constexpr (ROSTER.ribbon) {
+            if (c->point_.host == PointHost::RIBBON) {
+                possess(c, PointHost::PAWN);
+            } else {
+                const uint32_t flown = c->ribbon_state_.rendered_slot;
+                const bool have_ribbon = flown != UINT32_MAX
+                                      && c->ribbon_state_.active[flown].active;
+                possess(c, have_ribbon ? PointHost::RIBBON : PointHost::PAWN);
+            }
+        }
         break;
     }
     update_movement_intent(c);

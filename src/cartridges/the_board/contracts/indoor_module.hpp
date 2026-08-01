@@ -21,8 +21,9 @@
 // distribution. NATURAL keeps outdoor size; EXACT snaps to the
 // ceiling (column — architectural); CAP scales down to the fraction
 // of the ceiling only when taller — cap-only, nothing ever inflates.
-// Ribbon additionally pre-scales by RIBBON_INDOOR_SCALE before its
-// cap. BOUNDS go live at the margin site (spawn_engine's indoor
+// (The ribbon's extra RIBBON_INDOOR_SCALE pre-scale is unreachable
+// since SWEEP_1 T9 — see its row and the dial below.)
+// BOUNDS go live at the margin site (spawn_engine's indoor
 // clamp): MARGIN = the standing wall-margin clamp; FULL = wholly
 // inside (margin + the family's containment extent); FREE = may
 // straddle walls (no clamp).
@@ -35,6 +36,10 @@ enum class IndoorBounds : uint32_t { MARGIN, FULL, FREE };
 struct IndoorTreatment { IndoorSize size; IndoorBounds bounds; };
 
 inline constexpr float INDOOR_HEIGHT_CAP_FRACTION = 0.75f; // Jean's law
+// STATUS: LATENT[ribbon:indoor-miniature] — READER-FREE since SWEEP_1 T9.
+// Ribbons never spawn indoors now, so select_ribbon_for_patch returns
+// before the pre-scale it fed could run. Kept for one reading; retiring a
+// named dial is its own pass.
 inline constexpr float RIBBON_INDOOR_SCALE        = 0.15f; // Jean's dial — tune on sight
 
 // Clamp (not reject) is intentional: rejection-based logic
@@ -76,7 +81,10 @@ inline constexpr IndoorTreatment INDOOR_TREATMENT[PopFamily::COUNT] = {
     /* cactus  */ { IndoorSize::CAP,     IndoorBounds::MARGIN },
     /* blade   */ { IndoorSize::CAP,     IndoorBounds::MARGIN },
     /* sphere  */ { IndoorSize::CAP,     IndoorBounds::MARGIN },
-    /* ribbon  */ { IndoorSize::CAP,     IndoorBounds::FULL   },  // pre-scaled by RIBBON_INDOOR_SCALE; stays inside
+    // The ribbon row is UNREACHABLE since SWEEP_1 T9 — no ribbon is ever
+    // born indoors, so neither column is consulted. Row kept: the table's
+    // axis is PopFamily and F-1 pins it dense.
+    /* ribbon  */ { IndoorSize::CAP,     IndoorBounds::FULL   },  // (was: pre-scaled by RIBBON_INDOOR_SCALE; stays inside)
     /* cube    */ { IndoorSize::CAP,     IndoorBounds::MARGIN },
     /* gol     */ { IndoorSize::NATURAL, IndoorBounds::FREE   },  // may straddle; lift capped at derive
     /* gallery */ { IndoorSize::NATURAL, IndoorBounds::FULL   },  // sand-standing exhibits wholly inside
