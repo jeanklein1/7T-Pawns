@@ -2154,13 +2154,15 @@ const PAWN_FORCEFIELD_ENABLED: bool = true;
 // --- Compile-time feature gates
 // These prune heavy dependency chains from update_player_agent's pipeline compilation.
 // Set to false to cut compile time when iterating on unrelated features.
-// PAWN_FORCEFIELD_RADIUS_* stay as-is — the pawn's own visual forcefield
+// PAWN_FORCEFIELD_RADIUS stays as-is — the pawn's own visual forcefield
 // expression, distinct from the CONTACT_2 personal-shell family
 // (AgentTierParams.personal_radius: the flock + flee social radius).
-const PAWN_FORCEFIELD_RADIUS_STATIONARY: f32 = 6.0;  // Radius when not moving
-const PAWN_FORCEFIELD_RADIUS_MOVING: f32 = 2.0;      // Radius at max speed
+// SWEEP_1 T4 REMOVAL LEDGER: _STATIONARY became the one radius, and
+// _MOVING (2.0) and _SPEED_SCALE (1.0) are gone with the speed lerp
+// they fed. The glow is unconditional now, so there is no state for a
+// second radius to describe.
+const PAWN_FORCEFIELD_RADIUS: f32 = 6.0;             // wu — the glow's reach under the pawn
 const PAWN_FORCEFIELD_FALLOFF: f32 = 2.0;            // Edge softness (smoothstep width)
-const PAWN_FORCEFIELD_SPEED_SCALE: f32 = 1.0;        // How quickly radius shrinks with speed
 
 // === THE SCALE LEDGER (CONTACT_4) ==================================
 // Every influence radius, beside the world dimension it derives from.
@@ -2666,13 +2668,17 @@ const SPHERE_FORCEFIELD_RADIUS: f32 = 10.0;
 const SPHERE_FORCEFIELD_FALLOFF: f32 = 3.0;
 
 // --- Parameterized force field functions (binding-independent)
-fn zone_pawn_ff(world_xz: vec2<f32>, pawn_pos: vec3<f32>, pawn_vel: vec2<f32>) -> f32 {
+// THE GLOW LIVES FULLY (SWEEP_1 T4). This was a speed-shrinking radius —
+// 6 wu stopped, 2 wu at full walk — so the pawn's own glow contracted
+// under it the moment it moved. That is the "stopped" half of the
+// stopped/on-GoL condition and it dies with the other half: one radius,
+// always, and the pawn's velocity is no longer read here or anywhere.
+fn pawn_forcefield_at(world_xz: vec2<f32>, pawn_pos: vec3<f32>) -> f32 {
     if (!PAWN_FORCEFIELD_ENABLED) { return 1.0; }
     let pawn_dist = length(world_xz - pawn_pos.xz);
-    let pawn_speed = length(pawn_vel);
-    let speed_factor = saturate(pawn_speed * PAWN_FORCEFIELD_SPEED_SCALE / PAWN_SPEED);
-    let radius = mix(PAWN_FORCEFIELD_RADIUS_STATIONARY, PAWN_FORCEFIELD_RADIUS_MOVING, speed_factor);
-    return smoothstep(radius - PAWN_FORCEFIELD_FALLOFF, radius + PAWN_FORCEFIELD_FALLOFF, pawn_dist);
+    return smoothstep(PAWN_FORCEFIELD_RADIUS - PAWN_FORCEFIELD_FALLOFF,
+                      PAWN_FORCEFIELD_RADIUS + PAWN_FORCEFIELD_FALLOFF,
+                      pawn_dist);
 }
 
 fn zone_sphere_ff(world_xz: vec2<f32>, sphere_pos: vec3<f32>) -> f32 {
@@ -2684,9 +2690,13 @@ fn zone_sphere_ff(world_xz: vec2<f32>, sphere_pos: vec3<f32>) -> f32 {
     );
 }
 
-// --- Zone force field tint parameters
-const ZONE_PAWN_TINT: vec3<f32> = vec3(0.4, 0.2, 0.5);     // purple shift near pawn
-const ZONE_SPHERE_TINT: vec3<f32> = vec3(0.5, 0.35, 0.0);  // gold shift near sphere
+// --- Force field tint parameters
+// The PAWN pair left the zone family with the glow (SWEEP_1 T4): it
+// paints the ground under the pawn wherever the pawn stands, so it is
+// no longer a zone parameter. The SPHERE pair is still zone-scoped —
+// it tints live GoL cells only, inside the nest, untouched.
+const ZONE_PAWN_TINT: vec3<f32> = vec3(0.4, 0.2, 0.5);     // purple, under the pawn, always
+const ZONE_SPHERE_TINT: vec3<f32> = vec3(0.5, 0.35, 0.0);  // gold shift near sphere (GoL cells only)
 const ZONE_PAWN_TINT_STRENGTH: f32 = 0.6;
 const ZONE_SPHERE_TINT_STRENGTH: f32 = 0.5;
 
@@ -4698,11 +4708,9 @@ fn patch_terrain_fs(in: PatchTerrainVarying) -> @location(0) vec4<f32> {
                                 color_val * fade
                             );
 
-                            // Pawn force field: tint zone cells near pawn (render context)
-                            let pawn_ff = 1.0 - zone_pawn_ff(in.world_pos.xz, render_pawn_pos(), render_pawn_vel_xz());
-                            if (pawn_ff > 0.01) {
-                                base_color = mix(base_color, ZONE_PAWN_TINT, pawn_ff * ZONE_PAWN_TINT_STRENGTH * color_val);
-                            }
+                            // (The pawn glow left this nest — SWEEP_1 T4. It is
+                            //  unconditional now and lands below, outside every
+                            //  guard here.)
 
                             // Sphere force field: tint zone cells near sphere (render context)
                             let sphere_ff = 1.0 - zone_sphere_ff(in.world_pos.xz, render_floating.entities[0].pos);
@@ -4716,6 +4724,30 @@ fn patch_terrain_fs(in: PatchTerrainVarying) -> @location(0) vec4<f32> {
             }
         }
     }
+
+    // --- THE PAWN GLOW (SWEEP_1 T4) — UNCONDITIONAL, under the pawn.
+    //
+    // PROMOTED, NOT WIDENED. It used to live six guards deep inside the GoL
+    // zone nest: a nonzero cell tag, CELL_ANIM_GOL, the camera-distance
+    // fade, a live zone, this fragment inside that zone's grid, and a
+    // nonzero cell life — and then a seventh, its own radius shrinking from
+    // 6 wu to 2 as the pawn walked. GoL zones cover a small fraction of the
+    // ground the pawn can stand on, so the glow was mostly absent and
+    // flickered in and out at every zone edge and every stop.
+    //
+    // Promotion was a GUARD EDIT, which is what the ruling required. The
+    // colour is well-defined wherever a pawn stands (a const tint over the
+    // terrain's own base_color); the pawn's position was ALREADY read
+    // unconditionally in this shader, twelve lines down, for the aura — so
+    // no binding, buffer, or texture is added; and this is the terrain
+    // fragment stage, not the collision/ground chain, so no FXC-named chain
+    // gains anything. The mix weight lost `color_val` with the nest — the
+    // cell's spring life is not defined outside a zone, and it was the only
+    // zone-dependent term in the expression. Branchless: at range the
+    // smoothstep is 1, pawn_ff is 0, and mix returns base_color exactly.
+    base_color = mix(base_color, ZONE_PAWN_TINT,
+                     (1.0 - pawn_forcefield_at(in.world_pos.xz, render_pawn_pos()))
+                     * ZONE_PAWN_TINT_STRENGTH);
 
     // THE GEOMETRIC NORMAL, held before the aura touches it (PENUMBRA_1 P4).
     // Everything above this line is the real surface: a bilinear heightfield
@@ -6067,10 +6099,9 @@ fn render_point_pos() -> vec3<f32> {
     if (point_camera_hosted()) { return render_camera.pos; }
     return render_pawn_pos();
 }
-fn render_pawn_vel_xz() -> vec2<f32> {
-    let a = render_agents[config.possessed_slot];
-    return vec2(a.vel_x, a.vel_z);
-}
+// (render_pawn_vel_xz CUT — SWEEP_1 T4 removal ledger. Its one reader was
+//  the pawn glow's speed-shrinking radius, and that radius died when the
+//  glow went unconditional. git has it.)
 
 // --- Ribbon (Group 0: render, binding 360)
 @group(0) @binding(360) var<uniform> render_ribbon: RibbonState;
