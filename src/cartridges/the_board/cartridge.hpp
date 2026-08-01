@@ -773,14 +773,24 @@ namespace t7 {
                 gpuSignal.pan_x_delta = inputState_.pan_x_delta;
                 gpuSignal.pan_y_delta = inputState_.pan_y_delta;
 
-                // Possessed body's tilt lag rides the config's slow-dial cadence
-                // (CLOSURE_PAWN [6]). Idempotent: set_pawn_tilt_tau only dirties on a
-                // real change, so the per-frame call costs nothing while the figure
-                // stays put.
+                // THE POSSESSED BODY'S TWO SCALARS. Both ride the config's
+                // slow-dial cadence (CLOSURE_PAWN [6]) and both are here for
+                // the same structural reason: the figure table is a
+                // render-VS-only uniform (binding 112), absent from the
+                // Compute Entity layout, and both consumers are compute.
+                // Idempotent — the setters only dirty on a real change, so
+                // the per-frame calls cost nothing while the figure stays put.
+                //
+                // The skin clamp mirrors the shader's own
+                // (select(skin_id, 0u, skin_id >= PAWN_FIGURE_COUNT_WGSL)):
+                // an out-of-range skin IS figure 0 in both rooms. For
+                // tilt_tau that is byte-identical to the 0.0f it used to
+                // fall back to — figure 0 rests at TILT_LAG_NONE.
                 {
-                    const uint32_t sid = agent_state_.slots[player_.possessed_slot].skin_id;
-                    gpuState_.set_pawn_tilt_tau(
-                        sid < PAWN_FIGURE_COUNT ? PAWN_FIGURES[sid].tilt_tau : 0.0f);
+                    const uint32_t raw = agent_state_.slots[player_.possessed_slot].skin_id;
+                    const uint32_t sid = raw < PAWN_FIGURE_COUNT ? raw : 0u;
+                    gpuState_.set_pawn_tilt_tau(PAWN_FIGURES[sid].tilt_tau);
+                    gpuState_.set_pawn_eye_height(PAWN_FIGURES[sid].height * EYE_RATIO);   // SWEEP_1 T3
                 }
             }
 

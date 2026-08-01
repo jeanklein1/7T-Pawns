@@ -1681,7 +1681,12 @@ struct DesignConfig {
     mosaic_passage_scale: f32,
     mosaic_blend: f32,
     mosaic_facet: f32,
-    _pad592_0: f32,
+    // SWEEP_1 T3 — FPV eye height in world units for the POSSESSED body:
+    // PAWN_FIGURES[skin].height x EYE_RATIO, authored CPU-side each frame
+    // (bodies/pawn_figures.hpp holds the ratio and why it is CPU-side).
+    // GROWTH LAW (1): took _pad592_0, a declared tail pad — sizeof 592 is
+    // unmoved and state.hpp's witness must not change.
+    pawn_eye_height: f32,
     _pad592_1: f32,
     _pad592_2: f32,
 }
@@ -1974,7 +1979,10 @@ const CAMERA_MAX_ELEVATION: f32 = 1.5;
 
 // --- FPV (First-Person View) constants
 
-const FPV_EYE_HEIGHT: f32 = PAWN_HEIGHT + 0.2;  // Camera at eye level
+// The eye is config.pawn_eye_height — the POSSESSED body's own height x
+// EYE_RATIO, authored per frame (SWEEP_1 T3). The retired constant
+// (PAWN_HEIGHT + 0.2) put every figure's eye at 1.7 wu, which is the
+// conventional pawn's eye and nobody else's.
 const FPV_MIN_ELEVATION: f32 = -1.4;             // Look down ~80°
 const FPV_MAX_ELEVATION: f32 = 1.5;              // Look up ~86°
 
@@ -7979,7 +7987,10 @@ fn update_camera() {
     }
 
     if (fpv_mode_active()) {
-        camera.pos = pawn_pos + vec3(0.0, FPV_EYE_HEIGHT, 0.0);
+        // THE ANCHOR LAW: the eye rides the possessed body's LIVE height,
+        // so the common pawn is unchanged to the pixel and Colossal no
+        // longer looks out of its own waist.
+        camera.pos = pawn_pos + vec3(0.0, config.pawn_eye_height, 0.0);
     } else if (coupling_active(COUPLING_PAWN_TO_CAMERA_TARGET)) {
         camera.pos = coupling_pawn_to_camera_target(camera.aim_point, camera);
     }

@@ -265,6 +265,35 @@ inline constexpr PawnFigureDef PAWN_FIGURES[] = {
 
 inline constexpr uint32_t PAWN_FIGURE_COUNT = sizeof(PAWN_FIGURES) / sizeof(PAWN_FIGURES[0]);
 
+// ═══ THE EYE (SWEEP_1 T3) ═══════════════════════════════════════════════════
+// FPV eye height is a RATIO of the POSSESSED body's live height, not a number.
+// world.wgsl carried `const FPV_EYE_HEIGHT = PAWN_HEIGHT + 0.2` — 1.7 wu for
+// every figure alike, so possessing Colossal (3.50) put the eye at its waist
+// and Star (1.45) floated a head above itself.
+//
+// ANCHORED TO THE CONVENTIONAL PAWN, so the common case is preserved to the
+// pixel: figure 0 is 70% of the population (FIGURE_SHARES — one member at 70%,
+// against 2.50% each for the six smooth and 2.14% each for the seven heraldic),
+// and at its 1.50 the ratio reproduces 1.7 exactly. The rise is what the old
+// constant authored above the head; the ratio is derived from it and figure 0's
+// own height, so a re-scaled reference pawn carries both.
+//
+// CONSUMED CPU-SIDE, like tilt_tau above and for the same reason: the figure
+// table is a RENDER-VS-only uniform (binding 112 is absent from the Compute
+// Entity layout, which is full at 12), and the FPV camera is a compute kernel.
+// The cartridge reads PAWN_FIGURES[skin].height for the POSSESSED slot each
+// frame and ships height x EYE_RATIO in GPUDesignConfig.pawn_eye_height.
+inline constexpr float PAWN_EYE_RISE = 0.2f;   // wu above the head, as authored
+inline constexpr float EYE_RATIO =
+    (PAWN_FIGURES[0].height + PAWN_EYE_RISE) / PAWN_FIGURES[0].height;   // 1.7 / 1.5 = 1.1333333
+
+// The anchor, witnessed: the conventional pawn's eye must land where the
+// retired hardcode put it. Tolerance, not equality — EYE_RATIO is a quotient,
+// so the round trip through it is float-exact only by luck.
+static_assert(PAWN_FIGURES[0].height * EYE_RATIO > 1.69999f
+           && PAWN_FIGURES[0].height * EYE_RATIO < 1.70001f,
+    "T3: EYE_RATIO must reproduce the retired FPV_EYE_HEIGHT (1.7) on figure 0");
+
 // ── Family spans — derived from PAWN_FIGURES (for the spawn roll) ────────────
 // skin_id layout is contiguous per family: [regular | smooth | heraldic].
 inline constexpr uint32_t figure_family_member_count(PawnFamilyId fam) {

@@ -622,7 +622,17 @@ namespace t7 {
             float mosaic_passage_scale;
             float mosaic_blend;
             float mosaic_facet;
-            float _pad592_0;
+            // SWEEP_1 T3 — FPV eye height in world units for the POSSESSED
+            // body: PAWN_FIGURES[skin].height x EYE_RATIO, written every
+            // frame beside pawn_tilt_tau (cartridge.hpp, U1). GROWTH LAW (1):
+            // this took _pad592_0, a declared pad in the tail — sizeof stays
+            // 592, the witness below is unmoved, no bind group grows. It
+            // belongs to ─── Interaction ─── in spirit and cannot sit there,
+            // for the reason pawn_tilt_tau's note gives above. NO BOOT PIN,
+            // by the same precedent: the per-frame writer is unconditional,
+            // so a zero rest fails loud — the eye drops to the pawn's feet on
+            // frame 1 if it ever stops running.
+            float pawn_eye_height;
             float _pad592_1;
             float _pad592_2;
         };
@@ -2481,6 +2491,16 @@ namespace t7 {
             void set_pawn_tilt_tau(float tau) {
                 if (config_.pawn_tilt_tau != tau) {
                     config_.pawn_tilt_tau = tau;
+                    configDirty_ = true;
+                }
+            }
+            // SWEEP_1 T3 — the possessed body's eye, in world units. Same
+            // cadence and same idempotence as the tilt lag above: it only
+            // dirties on a real change, so a pawn standing still costs
+            // nothing.
+            void set_pawn_eye_height(float h) {
+                if (config_.pawn_eye_height != h) {
+                    config_.pawn_eye_height = h;
                     configDirty_ = true;
                 }
             }
