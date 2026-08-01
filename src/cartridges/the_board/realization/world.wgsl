@@ -424,16 +424,64 @@ struct TerrainBand {
 
 const TERRAIN_BAND_COUNT: u32 = 6u;
 
+// ─── THE HILL BAND (SWEEP_1 T5) ──────────────────────────────────────
+// More hill, less plain — WITHOUT lifting whole patches. The gain is
+// assigned by WAVELENGTH against the patch (PATCH_EXTENT = 50 wu), not
+// by band name, so the rule survives a retuned table. freq_mean is in
+// cycles per world unit, so wavelength = 1/freq_mean:
+//
+//   band            freq_μ   wavelength   class                    gain
+//   5 tectonic       0.012     83.33 wu   ≥ patch/2 (25)           ×1.0
+//   0 continental    0.030     33.33 wu   ≥ patch/2 (25)           ×1.0
+//   1 regional       0.080     12.50 wu   [patch/16, patch/2)      ×1.7  ← hill
+//   2 local          0.200      5.00 wu   [patch/16, patch/2)      ×1.7  ← hill
+//   3 detail         0.500      2.00 wu   < patch/16 (3.125)       ×1.0
+//   4 fine           1.200      0.833 wu  < patch/16 (3.125)       ×1.0
+//
+// μ AND σ both scale, so the whole per-node distribution moves and the
+// band keeps its character instead of getting a raised floor. The
+// PRE-SCALE numbers stay written out below — they are the authored
+// table, and RIDGE_AMP is derived from one of them.
+const HILL_BAND_GAIN: f32 = 1.7;
+
 const TERRAIN_BANDS = array<TerrainBand, 6>(
     //              spacing  freq_μ  freq_σ  amp_μ  amp_σ  damp_μ  damp_σ  damp_min activ  t_freq
     //                                                                      reach≈3/min
     TerrainBand(    200.0,   0.030,  0.010,  8.0,   3.0,   0.008,  0.004,  0.005,  0.70,  0.05  ),  // 0: continental  reach≈600
-    TerrainBand(     80.0,   0.080,  0.025,  3.0,   1.5,   0.020,  0.010,  0.010,  0.65,  0.10  ),  // 1: regional     reach≈300
-    TerrainBand(     30.0,   0.200,  0.060,  1.2,   0.5,   0.040,  0.020,  0.020,  0.60,  0.20  ),  // 2: local        reach≈150
+    TerrainBand(     80.0,   0.080,  0.025,  3.0 * HILL_BAND_GAIN,  1.5 * HILL_BAND_GAIN,
+                                                            0.020,  0.010,  0.010,  0.65,  0.10  ),  // 1: regional     reach≈300  HILL (pre-scale 3.0/1.5)
+    TerrainBand(     30.0,   0.200,  0.060,  1.2 * HILL_BAND_GAIN,  0.5 * HILL_BAND_GAIN,
+                                                            0.040,  0.020,  0.020,  0.60,  0.20  ),  // 2: local        reach≈150  HILL (pre-scale 1.2/0.5)
     TerrainBand(     12.0,   0.500,  0.150,  0.4,   0.2,   0.080,  0.040,  0.040,  0.55,  0.40  ),  // 3: detail       reach≈75
     TerrainBand(      5.0,   1.200,  0.350,  0.12,  0.05,  0.150,  0.075,  0.060,  0.50,  0.80  ),  // 4: fine         reach≈50
     TerrainBand(    500.0,   0.012,  0.004,  15.0,  6.0,   0.004,  0.002,  0.003,  0.75,  0.02  ),  // 5: tectonic     reach≈1000
 );
+
+// ─── THE RIDGED RISER (SWEEP_1 T5) ───────────────────────────────────
+// Sudden relief the smooth wave sum cannot make: |n| flipped and
+// squared creases where the field crosses zero instead of swelling.
+//
+// f_r — 2× the highest AMPLIFIED octave's frequency (band 2 local,
+//   0.200) = 0.400, wavelength 2.50 wu. THEN CLAMPED, AND THE CLAMP
+//   BINDS: the live card resolves LIVE_CARD_EXTENT / LIVE_CARD_SIZE =
+//   1000/640 = 1.5625 wu per texel, the floor is 4 texels = 6.25 wu, so
+//   f_r = 1/6.25 = 0.16. At 0.400 the riser would alias on the card and
+//   the floor would disagree with the ground the walker stands on.
+// amp_r — 0.35 × that octave's PRE-SCALE amp_mean (1.2) = 0.42 wu.
+//
+// THE FIELD IS TWO SINES, and that is a constraint speaking, not a
+// taste. terrain_height_and_complexity inlines ~8× into the ground
+// chain through pawn_ground_resolve, so this term is ARITHMETIC ONLY —
+// a hashed value noise would put four hash calls behind every one of
+// those eight, and a branch would be an L2 violation outright. Both
+// terms are unit-length axes, so the field carries EXACTLY the two
+// frequencies f_r and nothing higher: the 4-texel clamp is exact rather
+// than approximate, which a sine PRODUCT would have broken (its sum
+// term reaches 1.78 × f_r). RIDGE_AXIS_B is 54° off x so the creases
+// cross obliquely instead of lying on the world grid.
+const RIDGE_FREQ: f32 = 0.16;    // cycles/wu — wavelength 6.25 wu = 4 card texels
+const RIDGE_AMP:  f32 = 0.42;    // wu — 0.35 × band 2's pre-scale amp_mean (1.2)
+const RIDGE_AXIS_B: vec2<f32> = vec2<f32>(0.5878, 0.8090);   // unit, 54° off +x
 
 // Property indices for deriving wave parameters from a lattice node seed.
 // These occupy their own range (200+) to avoid collisions with entity
@@ -734,6 +782,29 @@ fn terrain_height_and_complexity(world_xz: vec2<f32>, master_seed: u32, t_beats:
         height += hc.x;
         complexity += hc.y;
     }
+
+    // ── THE RIDGED RISER (SWEEP_1 T5) ──
+    // Time-invariant by construction, and that is what keeps floor and
+    // card together: the card carries only (moving − frozen) per band
+    // (true_band_delta_contribution), and a term with no t_beats adds
+    // the same constant to both halves, so the delta is untouched while
+    // the baked base gains the relief. One authority, one shape.
+    //
+    // Arithmetic only — sin/dot/abs/pow, no call, no branch, no table.
+    // The panel above this file's TERRAIN_BANDS holds the derivation of
+    // both constants and why the field is two sines.
+    let rp = world_xz * (RIDGE_FREQ * 2.0 * PI);
+    let rphase = f32(master_seed & 0xFFFFu) * (2.0 * PI / 65536.0);   // per-world offset
+    let rn = 0.5 * (sin(rp.x + rphase)
+                  + sin(dot(rp, RIDGE_AXIS_B) + rphase * 1.7));
+    // The indoor amp ceiling governs every other wave in this evaluator
+    // (evaluate_lattice_wave_pair clamps per node), so the riser answers
+    // to it too — a room does not get 0.42 wu of extra relief the bands
+    // around it are capped out of. select, not if: the FXC sanctum.
+    let amp_r = select(RIDGE_AMP, min(RIDGE_AMP, config.terrain_amp_ceiling),
+                       config.terrain_amp_ceiling > 0.0);
+    height += amp_r * pow(1.0 - abs(rn), 2.0);
+
     return vec2(height, complexity / f32(TERRAIN_BAND_COUNT));
 }
 
