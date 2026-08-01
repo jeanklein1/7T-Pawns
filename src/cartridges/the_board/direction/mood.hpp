@@ -270,7 +270,26 @@ struct LightSlotDef {
     float hfrac_mean, hfrac_sigma;    // ceiling: Z; walls: height
 };
 
-inline constexpr float SCHEME_WEIGHTS[] = { 0.35f, 0.35f, 0.15f, 0.15f };
+// ── THE LIGHT COUNT, DRAWN PER ROOM (SWEEP_1 T6) ──────────────────
+// Count and scheme are the SAME draw here, because the scheme table is
+// a bijection onto the counts — Cathedral 3, Quartet 4, Gallery 2,
+// Sanctum 1, one scheme per count. So the ruled count distribution IS
+// this weight row, re-ordered onto the schemes that carry those counts:
+//
+//   4 lights → Quartet    70%   (was 35%)
+//   3 lights → Cathedral  20%   (was 35%)
+//   2 lights → Gallery     7%   (was 15%)
+//   1 light  → Sanctum     3%   (was 15%)
+//
+// The draw itself is unchanged: select_tier → select_weighted walks
+// these cumulatively off cpu_hash_f(seed, SCHEME), the tree's existing
+// RNG, seeded per destination.
+//
+// EYES OPEN (LEDGER_1 F-3): the indoor shadow list is drawn ONCE PER
+// SPOT LIGHT, terrain included, and this row makes the 4-light maximum
+// the common case rather than a third of rooms. Ruled anyway; the
+// multiplier is Layer E's to own, not this sweep's.
+inline constexpr float SCHEME_WEIGHTS[] = { 0.20f, 0.70f, 0.07f, 0.03f };
 inline constexpr uint32_t SCHEME_COUNT = 4;
 inline constexpr const char* SCHEME_NAMES[] = { "Cathedral", "Quartet", "Gallery", "Sanctum" };
 inline constexpr const char* ANCHOR_NAMES[] = { "ceiling", "wall_N", "wall_S", "wall_E", "wall_W" };
@@ -332,6 +351,22 @@ inline constexpr LightScheme LIGHT_SCHEMES[SCHEME_COUNT] = {
         { AnchorRole::SEED_PICK, 10.0f, 2.5f, 0.5f, 0.2f, 1.2f, 0.15f, 0.45f, 0.25f,  0.50f, 0.40f, 0.0f, 0.30f,   0.50f, 0.15f, 0.65f, 0.10f },
     }},
 };
+
+// THE COUNT WITNESSES (SWEEP_1 T6). The ruled distribution is over
+// COUNTS, and it only reaches the world through SCHEME_WEIGHTS because
+// scheme→slot_count is one-to-one. If a scheme is ever re-slotted or a
+// fifth is added, that bijection breaks and the count distribution
+// silently stops being the ruled one — with no other diagnostic. These
+// pin it where the rows live.
+static_assert(sizeof(SCHEME_WEIGHTS) / sizeof(SCHEME_WEIGHTS[0]) == SCHEME_COUNT,
+    "SCHEME_WEIGHTS must carry one weight per scheme");
+static_assert(LIGHT_SCHEMES[0].slot_count == 3 && LIGHT_SCHEMES[1].slot_count == 4
+           && LIGHT_SCHEMES[2].slot_count == 2 && LIGHT_SCHEMES[3].slot_count == 1,
+    "T6: scheme→count is a bijection (3/4/2/1); SCHEME_WEIGHTS carries the ruled "
+    "count distribution 4@70 / 3@20 / 2@7 / 1@3 through it");
+static_assert(SCHEME_WEIGHTS[1] == 0.70f && SCHEME_WEIGHTS[0] == 0.20f
+           && SCHEME_WEIGHTS[2] == 0.07f && SCHEME_WEIGHTS[3] == 0.03f,
+    "T6: the ruled count weights, on the schemes that carry those counts");
 
 // ═══ INDOOR LIGHT DERIVATION ═════════════════════════════════════
 
