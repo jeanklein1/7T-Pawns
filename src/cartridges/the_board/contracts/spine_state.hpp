@@ -21,19 +21,63 @@
 namespace t7 {
 namespace the_board {
 
-// ═══ TIME STATE ══════════════════════════════════════════════════
-// Per-frame clock state used everywhere. beats/seconds advance
-// monotonically; dt is the most recent frame delta.
+// ═══ TIME STATE — THE TRANSPORT (ONE CLOCK, SWEEP_1 T2) ══════════
+//
+// MUSICAL TIME IS THE PROGRAM'S TIME. The clock starts at BOOT (L10 —
+// boot is the transition whose prior state is empty), runs at
+// BPM_REFERENCE by default, and never waits for a DAW. A DAW writes
+// `bpm` and nothing else; it cannot start, stop, or seek this clock.
+//
+// THE SCALE, STATED ONCE. `dt` is WALL dt × bpm/BPM_REFERENCE — the
+// one place tempo enters the world, applied at the single source
+// (Cartridge::phase_advance_clock). At bpm == BPM_REFERENCE the scale
+// is exactly 1 and every authored rate in the tree means what it
+// meant before the transport existed: no constant rescales anywhere.
+// At 120 BPM the whole world runs 1.2x.
+//
+// WALL dt HAS EXACTLY TWO HOMES and this is one of them: the
+// transport, which needs it to derive. The other is THE FRAME METER
+// (cartridge.hpp), whose spec is real milliseconds against a real
+// 16.6 ms budget — a meter that scaled with tempo would measure
+// nothing. Every other consumer in the tree reads `dt` below.
+
+// The calibration anchor: the tempo at which program time IS wall
+// time. Every authored rate in the tree was tuned here.
+inline constexpr float BPM_REFERENCE = 100.0f;
+// Four beats to the bar. TimeState::bar is the only consumer.
+inline constexpr float BEATS_PER_BAR = 4.0f;
+
 struct TimeState {
-    float beats   = 0.0f;
-    float seconds = 0.0f;
-    float dt      = 0.016f;
-    // Musical tempo follower: beats/sec, HELD-LAST through silence
-    // and stopped transport; defaults to 100 BPM (the calibration
-    // anchor for the authored idle motion).
-    float beat_rate   = 100.0f / 60.0f;
+    // ── The tempo. The anchor at boot; the DAW's only write. ──
+    float bpm         = BPM_REFERENCE;
+
+    // ── The accumulator. Beats since boot; `beats` and `bar` derive. ──
+    float beat_phase  = 0.0f;
+
+    // ── Derived, published ──
+    float beats   = 0.0f;   // == beat_phase; the continuous beat position
+    float bar     = 0.0f;   // == beat_phase / BEATS_PER_BAR (floor for the index)
+    float seconds = 0.0f;   // the integral of dt below — PROGRAM seconds, not wall
+    float dt      = 0.016f; // wall dt x bpm/BPM_REFERENCE — THE frame delta
+
+    // Beats per PROGRAM second. Constant by construction: tempo lives
+    // in `dt`, so in scaled time the world always runs at
+    // BPM_REFERENCE. The transport derives beats as dt * beat_rate;
+    // the ribbon's sway integrates against the same rate. (This was
+    // the tempo FOLLOWER before T2 — the follower moved to `bpm`,
+    // where a rate belongs, and this became what it always read as.)
+    float beat_rate   = BPM_REFERENCE / 60.0f;
+
+    // The DAW's own beat count, last frame — the tempo read's other
+    // half, not a clock. Zero when no DAW is sending.
     float prev_beats  = 0.0f;
 };
+
+// The rest state IS the anchor: at boot the dt scale is exactly 1, so
+// the world runs as tuned before a DAW ever speaks. Fails loud if the
+// two ever drift apart.
+static_assert(TimeState{}.bpm == BPM_REFERENCE,
+    "T2: the transport rests at the calibration anchor (dt scale == 1 at boot)");
 
 // ═══ PLAYER STATE — THE WITNESS RECORD (v3 §11) ═══════════════════
 //

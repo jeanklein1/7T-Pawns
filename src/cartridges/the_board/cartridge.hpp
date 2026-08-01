@@ -705,7 +705,7 @@ namespace t7 {
                 F_NONE = 0,
                 F_SIGNAL = 1u << 0,   // the GPU signal buffer (clock/input/stats)
                 F_CONFIG = 1u << 1,   // the GPU config buffer (fog/world/fade/...)
-                F_CLOCK = 1u << 2,   // time_state_ (beats/seconds/dt/prev_beats)
+                F_CLOCK = 1u << 2,   // time_state_ — THE TRANSPORT (bpm/beat_phase/beats/bar/seconds/dt)
                 F_WITNESS = 1u << 3,   // the readback record (agent/floater/camera)
                 F_GROUND = 1u << 4,   // ground-entries / placement dirty cascade
                 F_COMPUTE = 1u << 5,   // encodes a GPU compute pass
@@ -749,16 +749,16 @@ namespace t7 {
                 uint32_t                        face;
             };
 
-            // U1 — SIGNAL FILL (music+input+wall-clock). Build the GPU signal
-            // from analysis + input. O-5a: dt_beats reads prev_beats BEFORE the
-            // clock advances it at U3. Input deltas were harvested by on_input.
+            // U1 — SIGNAL FILL (music+input). Build the GPU signal from
+            // analysis + input. THE CLOCK WORDS ARE NOT HERE (T2): t_seconds,
+            // t_beats, dt and dt_beats are the transport's, authored at U2
+            // from ONE derivation — a second spelling of the frame delta is
+            // exactly the drift this sweep closed. Input deltas were
+            // harvested by on_input.
             void phase_fill_signal(UpdateCtx& c) {
                 auto& gpuSignal = c.gpuSignal;
                 auto& signal = c.signal;
                 auto aspect_ratio = c.aspect_ratio;
-                gpuSignal.t_seconds = signal.t_seconds;
-                gpuSignal.t_beats = signal.t_beats;
-                gpuSignal.dt = signal.dt;
                 gpuSignal.aspect_ratio = aspect_ratio;
 
                 for (size_t i = 0; i < gpuSignal.stats.size(); ++i) {
@@ -772,7 +772,6 @@ namespace t7 {
                 gpuSignal.zoom_delta = inputState_.zoom_delta;
                 gpuSignal.pan_x_delta = inputState_.pan_x_delta;
                 gpuSignal.pan_y_delta = inputState_.pan_y_delta;
-                gpuSignal.dt_beats = signal.t_beats - time_state_.prev_beats;  // beats since last frame -> step_trigger
 
                 // Possessed body's tilt lag rides the config's slow-dial cadence
                 // (CLOSURE_PAWN [6]). Idempotent: set_pawn_tilt_tau only dirties on a
@@ -790,19 +789,49 @@ namespace t7 {
             // resync_sky_head (the ribbon tick's tail), with a boot-neutral
             // covering the ribbon-off case. One writer, one disjoint region.
 
-            // U3 — ADVANCE CLOCK (music+wall-clock). The tempo follower; bumps
-            // prev_beats (the O-5a partner of U1's dt_beats read).
+            // U2 — THE TRANSPORT (music+wall-clock). ONE CLOCK (T2). The
+            // program's time is musical time, and this is the only place it
+            // is made. Wall dt enters here and leaves scaled; nothing
+            // downstream — CPU or GPU — sees an unscaled delta again.
+            //
+            // THE DAW WRITES TEMPO, NOT TIME. `signal.t_beats` is the DAW's
+            // own beat count (canvas_1 reads the 24-ppq pulse counter through
+            // loopMIDI). We take its RATE and throw the position away: a
+            // stopped transport freezes t_beats, which under the old law
+            // froze the world's beats with it. Here a frozen t_beats simply
+            // stops updating bpm — held-last — and the clock runs on.
+            //
+            // The transport authors the GPU's clock words too (they used to
+            // ride U1): one derivation, one set of numbers, both rooms.
             void phase_advance_clock(UpdateCtx& c) {
                 auto& signal = c.signal;
-                time_state_.beats = signal.t_beats;
-                time_state_.seconds = signal.t_seconds;
-                time_state_.dt = signal.dt;
+                auto& gpuSignal = c.gpuSignal;
+                const float dt_wall = signal.dt;   // one of its two homes; the meter has the other
+
+                // ── The DAW override. Rate from the beat count, held-last. ──
                 {
                     const float db = signal.t_beats - time_state_.prev_beats;
-                    if (db > 1e-6f && time_state_.dt > 1e-6f)
-                        time_state_.beat_rate = db / time_state_.dt;
+                    if (db > 1e-6f && dt_wall > 1e-6f)
+                        time_state_.bpm = 60.0f * db / dt_wall;
                     time_state_.prev_beats = signal.t_beats;
                 }
+
+                // ── THE SCALE. The single source; every dt in the tree is this one. ──
+                time_state_.dt = dt_wall * (time_state_.bpm / BPM_REFERENCE);
+
+                // ── The accumulator, and what derives from it. ──
+                // dt * beat_rate == dt_wall * bpm/60 by construction: the
+                // scale carries the tempo, beat_rate is the anchor's rate.
+                time_state_.beat_phase += time_state_.dt * time_state_.beat_rate;
+                time_state_.beats   = time_state_.beat_phase;
+                time_state_.bar     = time_state_.beat_phase / BEATS_PER_BAR;
+                time_state_.seconds += time_state_.dt;
+
+                // ── The GPU's copy of the same four facts. ──
+                gpuSignal.t_seconds = time_state_.seconds;
+                gpuSignal.t_beats   = time_state_.beats;
+                gpuSignal.dt        = time_state_.dt;
+                gpuSignal.dt_beats  = time_state_.dt * time_state_.beat_rate;  // -> step_trigger
             }
 
             // U4 — MOTION DRIVERS (music). The music driver authors params
@@ -878,10 +907,13 @@ namespace t7 {
             // TEARDOWN arm owns the worldGen bump (P5 guard), return-state
             // capture, per-owner teardown verbs, agent reset, repopulation.
             void phase_transition_machine(UpdateCtx& c) {
-                auto& signal = c.signal;
                 auto& queue = c.queue;
                 if (transitionPhase_ != TransitionPhase::IDLE) {
-                    mood_state_.transition_timer += signal.dt;
+                    // ONE CLOCK (T2): the fade rides the transport's dt, not a
+                    // second read of the raw signal — this was the third dt
+                    // source in the scope and it is merged here. The fade
+                    // duration is in the same seconds `dt` integrates into.
+                    mood_state_.transition_timer += time_state_.dt;
                     switch (transitionPhase_) {
                     case TransitionPhase::FADE_OUT:
                         mood_state_.transition_fade_alpha = std::min(1.0f, mood_state_.transition_timer / mood_state_.transition_fade_duration);
@@ -1691,8 +1723,8 @@ namespace t7 {
             // THESE ROWS: manifest = the table, attribution = row membership.
             // ═══════════════════════════════════════════════════════════════
             static constexpr URow UPDATE_SPINE[] = {
-                { UPhase::FillSignal,          "fill_signal",           &Cartridge::phase_fill_signal,           Driver::Mixed,     true,             F_SIGNAL | F_CLOCK },
-                { UPhase::AdvanceClock,        "advance_clock",         &Cartridge::phase_advance_clock,         Driver::Music,     true,             F_CLOCK },
+                { UPhase::FillSignal,          "fill_signal",           &Cartridge::phase_fill_signal,           Driver::Mixed,     true,             F_SIGNAL },
+                { UPhase::AdvanceClock,        "advance_clock",         &Cartridge::phase_advance_clock,         Driver::Music,     true,             F_CLOCK | F_SIGNAL },
                 { UPhase::MotionDrivers,       "motion_drivers",        &Cartridge::phase_motion_drivers,        Driver::Music,     true,             F_CONFIG },
                 { UPhase::MotionBodies,        "motion_bodies",         &Cartridge::phase_motion_bodies,         Driver::WallClock, ROSTER.pawn_aura, F_NONE },
                 { UPhase::StageWorld,          "stage_world",           &Cartridge::phase_stage_world,           Driver::Algo,      true,             F_CONFIG },
@@ -1822,7 +1854,14 @@ namespace t7 {
             // (validate_spine, called once at init): a constexpr member fn
             // cannot be static_asserted inside its own incomplete class.
             // update laws:
-            static_assert((uint32_t)UPhase::FillSignal < (uint32_t)UPhase::AdvanceClock, "O-5a: dt_beats reads prev_beats before the clock advances it");
+            // O-5a REPHRASED BY T2 (ONE CLOCK). It used to pin FillSignal
+            // BEFORE AdvanceClock, because dt_beats was a difference across
+            // the clock's own advance and had to be read first. The transport
+            // authors dt_beats from its own scaled delta now — there is no
+            // before-and-after to straddle — so what needs pinning is the
+            // other end: the transport must land ahead of the drain, or the
+            // GPU reads last frame's clock words.
+            static_assert((uint32_t)UPhase::AdvanceClock < (uint32_t)UPhase::StageFadeUpload, "O-5a: the transport writes the signal's clock words before the drain");
             // E-3 (sky write-order) is now MECHANIZED, not an ordering assert:
             // update writes the sky block NOWHERE (upload_signal skips it), so its
             // sole author is resync_sky_head (R7). Structure replaced the paragraph.
