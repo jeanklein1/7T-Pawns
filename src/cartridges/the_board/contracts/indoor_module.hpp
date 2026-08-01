@@ -67,8 +67,14 @@ inline constexpr IndoorTreatment INDOOR_TREATMENT[PopFamily::COUNT] = {
     /* column  */ { IndoorSize::EXACT,   IndoorBounds::MARGIN },  // architectural: touches the ceiling
     /* antenna */ { IndoorSize::CAP,     IndoorBounds::MARGIN },
     /* palm    */ { IndoorSize::CAP,     IndoorBounds::MARGIN },
-    /* cactus  */ { IndoorSize::NATURAL, IndoorBounds::MARGIN },  // Jean: keeps size
-    /* blade   */ { IndoorSize::NATURAL, IndoorBounds::MARGIN },  // Jean: keeps size
+    // SWEEP_1 T8 — NO PLANT EXCEEDS ¾ OF ITS ROOM'S CEILING. Both were
+    // NATURAL ("Jean: keeps size"); that ruling is superseded. Cactus is
+    // why: CANDELABRA is authored at 20.0 ± 4.0 wu against a 20 wu flat
+    // ceiling. Blade never reaches the cap at its authored tiers and takes
+    // it anyway — the law is about plants, not about tall plants, and the
+    // cap only ever scales down.
+    /* cactus  */ { IndoorSize::CAP,     IndoorBounds::MARGIN },
+    /* blade   */ { IndoorSize::CAP,     IndoorBounds::MARGIN },
     /* sphere  */ { IndoorSize::CAP,     IndoorBounds::MARGIN },
     /* ribbon  */ { IndoorSize::CAP,     IndoorBounds::FULL   },  // pre-scaled by RIBBON_INDOOR_SCALE; stays inside
     /* cube    */ { IndoorSize::CAP,     IndoorBounds::MARGIN },

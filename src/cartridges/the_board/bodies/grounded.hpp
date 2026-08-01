@@ -971,6 +971,32 @@ inline SpawnGateOutput blade_run_gate(MachineCtx* c,
 }
 
 
+// Blade policy: CAP (INDOOR_TREATMENT) — SWEEP_1 T8. Only the two
+// LENGTHS scale. BLADE_COUNT is a count; BLADE_H_VAR is a ratio (the
+// mesh reads it as h_mult = 1 + (hash − 0.5)·var·2); SPLAY / CURVE /
+// TWIST are radians and TAPER a multiplier — CURVE rides blade_h in the
+// kernel (curve_off = curve · blade_h · t²), so it follows for free.
+inline constexpr uint32_t BLADE_INDOOR_RESCALE_PARAMS[] = {
+    BladeIdx::BLADE_H, BladeIdx::BLADE_W,
+};
+
+// The natural height is the TALLEST blade the cluster can grow, not the
+// mean: h_mult tops out at 1 + BLADE_H_VAR, and a cap that measured the
+// mean would let the tall ones through. BLADE_H_VAR is a ratio and does
+// not scale, so the capped extent scales by exactly the same factor —
+// the cap is exact, not approximate.
+//
+// At the authored tiers this never bites (THICKET is 5.20 ± 1.20 wu and
+// 3σ × 1.45 is 12.8, under ¾ × 20). It lands because the law is "no
+// plant", not "no tall plant" — cap-only, so nothing inflates and the
+// outdoor rig is untouched.
+inline void blade_apply_indoor_rescale(EntityInstance& inst, float ceiling_h) {
+    cap_to_ceiling(inst, ceiling_h, INDOOR_HEIGHT_CAP_FRACTION,
+        /*current_h*/ inst.params[BladeIdx::BLADE_H]
+            * (1.0f + inst.params[BladeIdx::BLADE_H_VAR]),
+        BLADE_INDOOR_RESCALE_PARAMS);
+}
+
 inline void blade_compute_solid_half(EntityInstance& inst,
     const TierProfile& /*tier*/) {
     inst.solid_half = inst.params[BladeIdx::BLADE_W] * 0.5f;
@@ -1021,7 +1047,7 @@ inline void blade_write_gpu(MachineCtx* c,
 
 inline constexpr EntityFamilyAdapter BLADE_ADAPTER = {
     blade_run_gate,
-    nullptr,                  // apply_indoor_rescale → NATURAL (INDOOR_TREATMENT): keeps size
+    blade_apply_indoor_rescale,   // CAP (INDOOR_TREATMENT) — SWEEP_1 T8
     blade_compute_solid_half,
     nullptr,                  // compute_colors → use generic (Q24)
     blade_write_active,
@@ -1406,6 +1432,37 @@ inline SpawnGateOutput cactus_run_gate(MachineCtx* c, int32_t gx, int32_t gz) {
 }
 
 
+// Cactus policy: CAP (INDOOR_TREATMENT) — SWEEP_1 T8. THIS IS THE ONE
+// THAT WAS PIERCING. CANDELABRA is authored at 20.0 ± 4.0 wu against
+// indoor ceilings of 20 (FLAT) and 25 (VAULT), so the common candelabra
+// went straight through the ceiling of a flat room; SAGUARO (13.0 ± 2.5)
+// went through the top of its own distribution.
+//
+// Only the LENGTHS scale. TAPER and CAP_ROUND are multipliers, RIBS and
+// ARM_COUNT are counts, LEAN / LEAN_DIR / ARM_CURVE are radians,
+// ARM_HEIGHT is a FRACTION of the trunk (the kernel reads it as
+// fork_frac), and RIB_DEPTH is a ratio on the radius (rib_mod = 1 +
+// cos(..)·rib_depth) despite sitting in the table's length row.
+inline constexpr uint32_t CACTUS_INDOOR_RESCALE_PARAMS[] = {
+    CactusIdx::HEIGHT, CactusIdx::RADIUS,
+    CactusIdx::ARM_LENGTH, CactusIdx::ARM_RADIUS,
+};
+
+// The natural height is the taller of the trunk and the arms' reach.
+// The arms fork at height·ARM_HEIGHT and curve up by at most ARM_LENGTH,
+// so trunk·frac + len is a CONSERVATIVE bound (arm_curve < 1 means they
+// never rise the full length) — and conservative is the safe direction
+// for a cap. Both terms scale by the one ratio (ARM_HEIGHT is a
+// fraction), so the capped extent is exact.
+inline void cactus_apply_indoor_rescale(EntityInstance& inst, float ceiling_h) {
+    const float trunk   = inst.params[CactusIdx::HEIGHT];
+    const float arm_top = trunk * inst.params[CactusIdx::ARM_HEIGHT]
+                        + inst.params[CactusIdx::ARM_LENGTH];
+    cap_to_ceiling(inst, ceiling_h, INDOOR_HEIGHT_CAP_FRACTION,
+        /*current_h*/ std::max(trunk, arm_top),
+        CACTUS_INDOOR_RESCALE_PARAMS);
+}
+
 inline void cactus_compute_solid_half(EntityInstance& inst, const TierProfile&) {
     inst.solid_half = inst.params[CactusIdx::RADIUS] + 0.5f;
     inst.burial = 0.0f;
@@ -1453,7 +1510,7 @@ inline void cactus_write_gpu(MachineCtx* c, const EntityInstance& inst, wgpu::Qu
 
 inline constexpr EntityFamilyAdapter CACTUS_ADAPTER = {
     cactus_run_gate,
-    nullptr,                              // apply_indoor_rescale → NATURAL (INDOOR_TREATMENT): keeps size
+    cactus_apply_indoor_rescale,          // CAP (INDOOR_TREATMENT) — SWEEP_1 T8
     cactus_compute_solid_half, nullptr,   // compute_colors → use generic (Q24)
     cactus_write_active, cactus_write_gpu, nullptr,
     cactus_get_tier_profile,
