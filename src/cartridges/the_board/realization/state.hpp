@@ -837,7 +837,12 @@ namespace t7 {
             float color[3];            //  48: current appearance (coupling-driven)
             float orbit_height;        //  60: base altitude above terrain
             float anchor[3];           //  64: world anchor point
-            float face_variance;       //  76: per-face color spread (monolith)
+            float face_variance;       //  76: STATUS: LATENT[cube:face-variance] — the monolith's
+                                       //      per-face BRIGHTNESS spread. Written every spawn
+                                       //      (cube_behaviors.hpp, CUBE_TIERS column 9); READ BY
+                                       //      NOTHING since T1 gave the faces hue instead. The
+                                       //      byte stays because the struct is an L3 mirror; the
+                                       //      column dies on the next cube pass.
             float base_color[3];       //  80: seed-derived rest color
             uint32_t geometry_type;    //  92: 0=sphere, 1=monolith
             uint32_t motion_type;      //  96: 0=orbit, 1=hover-bob

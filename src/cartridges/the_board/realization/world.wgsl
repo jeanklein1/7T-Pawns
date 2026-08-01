@@ -954,7 +954,12 @@ struct FloatingEntityState {
     color: vec3<f32>,          //  48: current appearance (coupling-driven)
     orbit_height: f32,         //  60: base altitude above terrain
     anchor: vec3<f32>,         //  64: world anchor point
-    face_variance: f32,        //  76: per-face color spread (monolith)
+    face_variance: f32,        //  76: STATUS: LATENT[cube:face-variance] — the monolith's
+                               //      per-face BRIGHTNESS spread. Written every spawn
+                               //      (cube_behaviors.hpp, CUBE_TIERS column 9); READ BY
+                               //      NOTHING since T1 gave the faces hue instead. The
+                               //      byte stays because the struct is an L3 mirror; the
+                               //      column dies on the next cube pass.
     base_color: vec3<f32>,     //  80: seed-derived rest color
     geometry_type: u32,        //  92: 0=sphere, 1=monolith
     motion_type: u32,          //  96: 0=orbit, 1=hover-bob
@@ -5193,7 +5198,27 @@ fn ribbon_fs(in: EntityVarying) -> @location(0) vec4<f32> {
     return vec4(shade_lit(in.world_pos, normalize(in.normal), normalize(in.normal), in.entity_color, 0.0), 1.0);
 }
 
-// --- Monolith vertex shader (imperfect cube, per-face color from seed)
+// ─── THE CUBE'S SIX HUES (SWEEP_1 T1) ────────────────────────────
+// A cube's six faces are six HUES, not six brightnesses. The spread is
+// per-cube TEMPERAMENT: most cubes read plainly polychrome, a minority
+// come out near-uniform, and which is which is the entity's own seed.
+//
+// FACE_HUE_MAX is the half-width of the per-face offset in hue TURNS at
+// full temperament — 0.22 turns is ~79 degrees each way, so a fully
+// tempered cube spreads its faces across ~158 degrees of the wheel.
+//
+// TEMPERAMENT_POW shapes the uniform draw: t = u^0.35 has mean ~0.74 and
+// puts only ~3% of cubes below t = 0.3. The exponent IS the "minority" —
+// raise it and near-uniform cubes get common. (Same idiom, same reason,
+// as MODE_BIAS_EXPONENT at mode_tendency_at_node.)
+const FACE_HUE_MAX: f32 = 0.22;      // hue turns, half-width, at t = 1
+const TEMPERAMENT_POW: f32 = 0.35;   // shapes the per-cube spread draw
+// Property salts on the entity seed. 500..505 is the per-face family
+// (one per face_id); 506 is the temperament that scales all six.
+const CUBE_PROP_FACE_HUE: u32 = 500u;
+const CUBE_PROP_TEMPERAMENT: u32 = 506u;
+
+// --- Monolith vertex shader (imperfect cube, per-face hue from seed)
 @vertex
 fn monolith_vs(@builtin(instance_index) inst: u32, in: MeshVertexInput) -> EntityVarying {
     let fe = render_floating.entities[inst];
@@ -5210,19 +5235,27 @@ fn monolith_vs(@builtin(instance_index) inst: u32, in: MeshVertexInput) -> Entit
     let world_pos = rotated + fe.pos;
     let world_normal = quat_rotate(fe.orientation, in.normal);
 
-    // Per-face color: derive face index from dominant normal axis
+    // ── face_id = 2 * argmax_axis(|n|) + (n[axis] < 0), branchless ──
+    // step/select only: the old if/else-if chain read the same three
+    // components and produced the same six ids under the opposite sign
+    // convention. Ties fall to the higher axis (z, then y), which a
+    // cube's axis-aligned face normals never reach.
     let abs_n = abs(in.normal);
-    var face_idx = 0u;
-    if (abs_n.y > abs_n.x && abs_n.y > abs_n.z) {
-        face_idx = select(2u, 3u, in.normal.y > 0.0);
-    } else if (abs_n.z > abs_n.x) {
-        face_idx = select(4u, 5u, in.normal.z > 0.0);
-    } else {
-        face_idx = select(0u, 1u, in.normal.x > 0.0);
-    }
-    let face_hash = hash_property(fe.entity_seed, 500u + face_idx);
-    let face_delta = (face_hash - 0.5) * 2.0 * fe.face_variance;
-    let face_color = clamp(fe.color + vec3(face_delta, face_delta * 0.7, face_delta * 0.5), vec3(0.0), vec3(1.0));
+    let is_z = step(abs_n.y, abs_n.z) * step(abs_n.x, abs_n.z);
+    let is_y = (1.0 - is_z) * step(abs_n.x, abs_n.y);
+    let axis_pick = vec3(1.0 - is_y - is_z, is_y, is_z);   // one-hot on the dominant axis
+    let n_axis = dot(in.normal, axis_pick);                // that component, signed
+    let neg = 1.0 - step(0.0, n_axis);                     // 1 when it points negative
+    let face_id = u32(4.0 * is_z + 2.0 * is_y + neg);
+
+    // ── temperament, then the face's own turn of the wheel ──
+    let temperament = pow(hash_property(fe.entity_seed, CUBE_PROP_TEMPERAMENT), TEMPERAMENT_POW);
+    let hue_turns = (hash_property(fe.entity_seed, CUBE_PROP_FACE_HUE + face_id) * 2.0 - 1.0)
+                  * FACE_HUE_MAX * temperament;
+    // hue_rotate takes RADIANS and rotates about the RGB gray axis, so
+    // value and the gray component ride through untouched — the face
+    // changes hue, not brightness. Clamp is the gamut, not a guard.
+    let face_color = clamp(hue_rotate(fe.color, hue_turns * 2.0 * PI), vec3(0.0), vec3(1.0));
 
     var out: EntityVarying;
     out.clip_pos = render_vp.m * vec4(world_pos, 1.0);
