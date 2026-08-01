@@ -2150,6 +2150,27 @@ struct GoLTierParams {
 
 const GOL_TIER_COUNT: u32 = 7u;
 
+// ─── THE CONWAY PERIOD SKEW (SWEEP_1 T10) ─────────────────────────
+// The Game-of-Life-RULE driver draws its period from this table, not
+// from the tier's tick_μ/σ below. FOUR BEATS IS THE FLOOR OF SPEED —
+// Pillars (8) and Monolith (12) went with the Gaussian. Mostly slow,
+// occasionally quick: ¼ @5%, ½ @10%, 1 @20%, 2 @30%, 4 @35%.
+//
+// The periods are BEATS and the beats are the transport's (SWEEP_1 T2),
+// so a grid keeps musical time with no DAW and follows the tempo with
+// one. L3 MIRROR of GOL_CONWAY_PERIOD* in bodies/gol_zones.hpp — the
+// CPU computes the tick MASK from its copy and this room derives the
+// spring transition from its own, so a divergence would run the rule
+// and the visual on different clocks. Change both rooms together.
+//
+// PULSE, the other driver, keeps its per-tier Gaussian (GOL_PULSE_TIERS
+// below: Breathe 2.0±0.5, Sparkle 0.5±0.15, Drift 4.0±1.0 beats).
+const GOL_CONWAY_PERIOD_COUNT: u32 = 5u;
+const GOL_CONWAY_PERIODS = array<f32, 5>(0.25, 0.5, 1.0, 2.0, 4.0);          // beats
+const GOL_CONWAY_PERIOD_WEIGHTS = array<f32, 5>(0.05, 0.10, 0.20, 0.30, 0.35);
+
+// The tick_μ/σ pair is READER-FREE on the Conway path since T10; the
+// columns stay because the row shape is state.hpp's L3 mirror.
 //                                                 dens_μ  σ     tick_μ  σ    spring_μ σ    trans_μ  σ     ht_μ    σ    sv    wt    no_h  cells
 // (cells column: UNIFIED_GROUND_1 U5 — authored defaults by weight
 //  order thirds, 32/24/16; Jean-tunable per row.)
@@ -6613,8 +6634,20 @@ fn zone_derive_params(@builtin(global_invocation_id) gid: vec3<u32>) {
 
         let actual_height = height_enabled && (tp.force_no_height == 0u);
 
-        zc.tick_period = max(0.1,
-            sample_gaussian(seed, ZONE_PROP_TICK_PERIOD, tp.tick_period_mean, tp.tick_period_sigma));
+        // THE PERIOD SKEW (SWEEP_1 T10) — the GoL-RULE path only. The
+        // table replaces the tier's Gaussian; L3 MIRROR of the CPU arm in
+        // bodies/gol_zones.hpp, same salt (931), same cumulative walk,
+        // same order. No floor: the table's own minimum is 0.25.
+        {
+            let period_roll = hash_property(seed, ZONE_PROP_TICK_PERIOD);
+            var pi: u32 = GOL_CONWAY_PERIOD_COUNT - 1u;
+            var pcum: f32 = 0.0;
+            for (var k: u32 = 0u; k < GOL_CONWAY_PERIOD_COUNT; k++) {
+                pcum += GOL_CONWAY_PERIOD_WEIGHTS[k];
+                if (period_roll < pcum) { pi = k; break; }
+            }
+            zc.tick_period = GOL_CONWAY_PERIODS[pi];
+        }
         zc.spring_stiffness = max(0.1,
             sample_gaussian(seed, ZONE_PROP_SPRING, tp.spring_stiffness_mean, tp.spring_stiffness_sigma));
         zc.transition_fraction = clamp(

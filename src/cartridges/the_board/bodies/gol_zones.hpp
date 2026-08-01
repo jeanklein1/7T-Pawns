@@ -173,6 +173,10 @@ struct GoLTierProfile {
 // MUST match world.wgsl's GOL_TIERS cells column (UNIFIED_GROUND_1 U5 —
 // "authored defaults by weight order thirds, 32/24/16"). Hardware
 // mirror — when tuning, change both sides.
+// The tick_μ/σ pair is READER-FREE on the Conway path since SWEEP_1 T10
+// — the period comes from GOL_CONWAY_PERIODS below. The columns stay
+// because the row shape is the L3 mirror of world.wgsl's GoLTierParams;
+// they are the tiers' authored cadence and what the skew replaced.
 //                                          dens_μ   σ    tick_μ  σ    spring_μ σ    trans_μ  σ     ht_μ    σ    sv    wt    no_h   cells
 inline constexpr GoLTierProfile GOL_TIERS[GOL_TIER_COUNT] = {
     /* 0: Pillars  */ { 0.30f, 0.05f,   8.0f, 2.0f,   0.5f, 0.1f,   0.05f, 0.01f,  30.0f, 9.0f,  0.30f,  0.10f, false, 16u },
@@ -188,6 +192,40 @@ inline constexpr const char* GOL_TIER_NAMES[] = {
     "Pillars", "Sparse", "Moderate", "Dense",
     "Flash", "Monolith", "Glacier"
 };
+
+// ═══ THE CONWAY PERIOD SKEW (SWEEP_1 T10) ════════════════════════
+//
+// The Game-of-Life-RULE driver draws its period from this table, not
+// from its tier's tick_μ/σ. FOUR BEATS IS THE FLOOR OF SPEED — the old
+// tiers ran to 8 (Pillars) and 12 (Monolith) beats, and those are gone
+// with the Gaussian. Mostly slow, occasionally quick:
+//
+//   ¼ beat   5%      ½ beat  10%      1 beat  20%
+//   2 beats 30%      4 beats 35%
+//
+// BEATS, AND THE BEATS ARE THE TRANSPORT'S (SWEEP_1 T2). The tick gate
+// is floor(time_state_.beats / period) and the GPU's spring phase rides
+// signal.t_beats — both are the program's own clock now, so a GoL grid
+// keeps musical time whether or not a DAW is listening, and follows the
+// tempo when one is.
+//
+// L3 MIRROR: world.wgsl declares the same two arrays beside
+// zone_derive_params' Conway arm. Same salt (931), same cumulative
+// walk, same order — the CPU computes the tick MASK from this period
+// and the GPU derives the zone's spring transition from its own copy,
+// so a divergence would tick the rule and the visual on different
+// clocks. Change both rooms together.
+//
+// THE OTHER DRIVER IS UNTOUCHED. Pulse keeps its per-tier Gaussian
+// (GOL_PULSE_TIERS: Breathe 2.0±0.5, Sparkle 0.5±0.15, Drift 4.0±1.0
+// beats) — it is periodic breathing, not a rule, and it was not ruled.
+inline constexpr uint32_t GOL_CONWAY_PERIOD_COUNT = 5;
+inline constexpr float GOL_CONWAY_PERIODS[GOL_CONWAY_PERIOD_COUNT] =
+    { 0.25f, 0.5f, 1.0f, 2.0f, 4.0f };            // beats
+inline constexpr float GOL_CONWAY_PERIOD_WEIGHTS[GOL_CONWAY_PERIOD_COUNT] =
+    { 0.05f, 0.10f, 0.20f, 0.30f, 0.35f };
+static_assert(GOL_CONWAY_PERIODS[GOL_CONWAY_PERIOD_COUNT - 1] == 4.0f,
+    "T10: four beats is the floor of speed — the slowest period the rule can draw");
 
 inline constexpr const char* GOL_COLOR_NAMES[] = {
     "neutral", "lens", "blackish"
@@ -437,9 +475,14 @@ inline bool select_gol_for_patch(GoLState& gs, MachineCtx* c,
                 uint32_t tier = select_tier(seed, GoLZoneProp::TIER, w, GOL_TIER_COUNT);
                 const auto& tp = GOL_TIERS[tier];
                 if (tp.force_no_height) height_enabled = false;
-                tick_period = std::max(0.1f,
-                    cpu_sample_gaussian(seed, GoLZoneProp::TICK_PERIOD,
-                        tp.tick_period_mean, tp.tick_period_sigma));
+                // THE PERIOD SKEW (SWEEP_1 T10) — the GoL-RULE path only.
+                // The table replaces the tier's Gaussian draw; L3 MIRROR of
+                // zone_derive_params' Conway arm (world.wgsl), same salt
+                // (931), same cumulative walk, same order. No floor: the
+                // table's own minimum is 0.25.
+                tick_period = GOL_CONWAY_PERIODS[
+                    select_tier(seed, GoLZoneProp::TICK_PERIOD,
+                        GOL_CONWAY_PERIOD_WEIGHTS, GOL_CONWAY_PERIOD_COUNT)];
                 initial_density = std::max(0.05f, std::min(0.9f,
                     cpu_sample_gaussian(seed, GoLZoneProp::DENSITY,
                         tp.density_mean, tp.density_sigma)));
