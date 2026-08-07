@@ -6,6 +6,8 @@
    Render:   the_board
  ========================================
  
+ The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127
+ [Device] adapter: nvidia | kepler | ? | ?
  [Device] requesting CORE DEFAULTS; exceptions carried: none (C6 cleared maxStorageBuffersPerShaderStage 9->8)
  [Device] granted vs floor: maxTextureDimension2D=8192/2048 maxStorageBuffersPerShaderStage=8/8 maxUniformBufferBindingSize=65536/65536
  [Device] modest device accepted — NO DISCARD
@@ -20,7 +22,7 @@
  [Cartridge] GPUState init:    17 ms
  [SPINE] validated: 9 update rows + 22 render rows + 12 dispatch rows name-checked; O-#/RC laws static-asserted
  Loaded shader from: ../../../src/cartridges/the_board/realization/world.wgsl
- [Renderer] Shader compile:    15 ms
+ [Renderer] Shader compile:    24 ms
    [Pipeline] update_player_agent: 0 ms
    [Pipeline] update_other_agents: 0 ms
    [Pipeline] update_camera: 0 ms
@@ -50,7 +52,7 @@
    [Pipeline] palm_mesh_gen: 0 ms
    [Pipeline] cactus_mesh_gen: 0 ms
    [Pipeline] blade_cluster_mesh_gen: 0 ms
-   [Pipeline] patch_terrain: 1 ms
+   [Pipeline] patch_terrain: 0 ms
    [Pipeline] patch_terrain_indirect: 0 ms
    [Pipeline] pawn: 0 ms
    [Pipeline] sphere: 0 ms
@@ -82,9 +84,9 @@
    [Pipeline] fade_overlay: 0 ms
  
  [Renderer] Pipelines by compile time (descending):
-          1 ms  patch_terrain
           0 ms  update_player_agent
-          0 ms  fade_overlay
+          0 ms  update_other_agents
+          0 ms  update_camera
           0 ms  update_sphere
           0 ms  update_cube
           0 ms  compute_vp
@@ -111,7 +113,7 @@
           0 ms  palm_mesh_gen
           0 ms  cactus_mesh_gen
           0 ms  blade_cluster_mesh_gen
-          0 ms  update_other_agents
+          0 ms  patch_terrain
           0 ms  patch_terrain_indirect
           0 ms  pawn
           0 ms  sphere
@@ -140,11 +142,11 @@
           0 ms  shadow_ribbon
           0 ms  shadow_gallery_frame
           0 ms  shadow_wall_painting
-          0 ms  update_camera
+          0 ms  fade_overlay
  
- [Renderer] Compute pipelines: 5 ms
- [Renderer] Render pipelines:  8 ms
- [Renderer] Total pipelines:   14 ms
+ [Renderer] Compute pipelines: 6 ms
+ [Renderer] Render pipelines:  10 ms
+ [Renderer] Total pipelines:   16 ms
  [Orbs] Configured: count=128 palette=jwst_deep drag=0.4 noise=0.3 rule=brownian rot=0.012 orbital=0.15 tiers=jwst_stars
  [Mood] Applied: open_sunset (mood=0 outdoor)
  [Agents] Spawned 10 for mood 0 around (0,0)
@@ -216,84 +218,80 @@
  [Authored] Scaled → 512x413 (aspect 1.2)
  [Authored] Loaded: assets/paintings/PAINTING_72.jpeg (1268x1280) → staging 18
  [Authored] Scaled → 507x512 (aspect 1.0)
-(index):27 [Authored] Loaded: assets/paintings/PAINTING_73.jpeg (1279x1280) → staging 19
-(index):27 [Authored] Scaled → 512x512 (aspect 1.0)
-(index):27 [Authored] Loaded: assets/paintings/PAINTING_90.jpeg (1280x506) → staging 20
-(index):27 [Authored] Scaled → 512x202 (aspect 2.5)
-(index):27 [Authored] Loaded: assets/paintings/PAINTING_92.jpeg (1280x720) → staging 21
-(index):27 [Authored] Scaled → 512x288 (aspect 1.8)
-(index):27 [Authored] Loaded: assets/paintings/PAINTING_100.jpeg (995x1028) → staging 22
-(index):27 [Authored] Scaled → 496x512 (aspect 1.0)
-(index):27 [Authored] Loaded: assets/paintings/PAINTING_101.jpeg (1554x1600) → staging 23
-(index):27 [Authored] Scaled → 497x512 (aspect 1.0)
-(index):27 [Authored] Loaded: assets/paintings/PAINTING_102.jpeg (1225x1280) → staging 24
-(index):27 [Authored] Scaled → 490x512 (aspect 1.0)
-(index):27 [Authored] Loaded: assets/paintings/PAINTING_103.jpeg (1508x1600) → staging 25
-(index):27 [Authored] Scaled → 483x512 (aspect 0.9)
-(index):27 [Authored] Loaded: assets/paintings/PAINTING_104.jpeg (1280x1169) → staging 26
-(index):27 [Authored] Scaled → 512x468 (aspect 1.1)
-(index):27 [Authored] Loaded: assets/paintings/PAINTING_105.jpeg (1280x1219) → staging 27
-(index):27 [Authored] Scaled → 512x488 (aspect 1.1)
-(index):27 [Authored] Loaded: assets/paintings/PAINTING_106.jpeg (1079x1280) → staging 28
-(index):27 [Authored] Scaled → 432x512 (aspect 0.8)
-(index):27 [Authored] Loaded: assets/paintings/PAINTING_107.jpeg (1039x1280) → staging 29
-(index):27 [Authored] Scaled → 416x512 (aspect 0.8)
-(index):27 [Authored] Loaded: assets/paintings/PAINTING_108.jpeg (1115x1132) → staging 30
-(index):27 [Authored] Scaled → 504x512 (aspect 1.0)
-(index):27 [Authored] Loaded: assets/paintings/PAINTING_109.jpeg (940x1280) → staging 31
-(index):27 [Authored] Scaled → 376x512 (aspect 0.7)
-(index):27 [Authored] Staged 32/57 images
-(index):27 [Cartridge] Renderer init:    57 ms
-(index):27 [Cartridge] Patch system:     73552 ms
-(index):27 [Cartridge] Total init:       73610 ms
-(index):27 
-(index):27 [GPU Budget] ---- allocation request, boot ----
-(index):27 [GPU Budget] buffers  13.2 MiB
-(index):27 [GPU Budget] textures 253.9 MiB
-(index):27 [GPU Budget] TOTAL    267.1 MiB
-(index):27 [GPU Budget] largest single allocations:
-(index):27 [GPU Budget]   1. 112.5 MiB  Patch Heightfield Array (225x256x256, RGBA16Float; 225 = Dim::MAX_ACTIVE_PATCHES)
-(index):27 [GPU Budget]   2. 40.0 MiB  Exhibition
-(index):27 [GPU Budget]   3. 32.0 MiB  Snapshot Staging
-(index):27 [GPU Budget]   4. 32.0 MiB  Authored Staging
-(index):27 [GPU Budget]   5. 16.0 MiB  Shadow Map
-(index):27 [GPU Budget] estimate: logical texels, uncompressed, no driver padding. Excludes the surface backbuffer and the console depth texture (host-owned).
-(index):27 
-(index):27 [Ground] zone rects in core: 0 (boot)
-(index):27 [Ground] zones active anywhere: 0 (boot)
-(index):27 [Card] live-card field: AT REST — one clearing write, then skipped (boot)
-(index):27 [Incubator] the_board renderer ready
-(index):28 [Zoetrope] ears bound: 0 of 7 (mask 0x7F)
-printErr @ (index):28
-(index):28 [SignalLayout] 12 sources unbound (no audio source)
-printErr @ (index):28
-(index):28 [the_board] fog.density base=0 valid=1 | fog.color base=1 count=3 valid=1
-printErr @ (index):28
-(index):28 [the_board] terrain.checker_mean base=10 count=3 valid=1 | terrain.checker_var base=13 valid=1
-printErr @ (index):28
-(index):27 Controls: WASD=move, Mouse=camera, 5-8=moods, Esc=quit
-(index):27 
-(index):27 [Ribbon] SPAWN slot=0 at (-22.7, -27.1) tier=0 len=562.0 near=(-1,-1) far=(1,-12)
-(index):27 [Orbs] Init dispatched: 128 orbs, 2 workgroups
-(index):1 Device lost
- - While handling unexpected error type DeviceLost when allowed errors are Validation.
-    at CheckAndUpdateCompletedSerials (..\..\third_party\dawn\src\dawn\native\d3d12\QueueD3D12.cpp:185)
-
-Backend messages:
- * Device removed reason: S_OK (0x00000000)
-
-(index):28 [Device] LOST reason=1 : Device lost
-printErr @ (index):28
-(index):28  - While handling unexpected error type DeviceLost when allowed errors are Validation.
-printErr @ (index):28
-(index):28     at CheckAndUpdateCompletedSerials (..\..\third_party\dawn\src\dawn\native\d3d12\QueueD3D12.cpp:185)
-printErr @ (index):28
-(index):28 
-printErr @ (index):28
-(index):28 Backend messages:
-printErr @ (index):28
-(index):28  * Device removed reason: S_OK (0x00000000)
-printErr @ (index):28
-(index):28 
-printErr @ (index):28
+ [Authored] Loaded: assets/paintings/PAINTING_73.jpeg (1279x1280) → staging 19
+ [Authored] Scaled → 512x512 (aspect 1.0)
+ [Authored] Loaded: assets/paintings/PAINTING_90.jpeg (1280x506) → staging 20
+ [Authored] Scaled → 512x202 (aspect 2.5)
+ [Authored] Loaded: assets/paintings/PAINTING_92.jpeg (1280x720) → staging 21
+ [Authored] Scaled → 512x288 (aspect 1.8)
+ [Authored] Loaded: assets/paintings/PAINTING_100.jpeg (995x1028) → staging 22
+ [Authored] Scaled → 496x512 (aspect 1.0)
+ [Authored] Loaded: assets/paintings/PAINTING_101.jpeg (1554x1600) → staging 23
+(index):377 [Authored] Scaled → 497x512 (aspect 1.0)
+(index):377 [Authored] Loaded: assets/paintings/PAINTING_102.jpeg (1225x1280) → staging 24
+(index):377 [Authored] Scaled → 490x512 (aspect 1.0)
+(index):377 [Authored] Loaded: assets/paintings/PAINTING_103.jpeg (1508x1600) → staging 25
+(index):377 [Authored] Scaled → 483x512 (aspect 0.9)
+(index):377 [Authored] Loaded: assets/paintings/PAINTING_104.jpeg (1280x1169) → staging 26
+(index):377 [Authored] Scaled → 512x468 (aspect 1.1)
+(index):377 [Authored] Loaded: assets/paintings/PAINTING_105.jpeg (1280x1219) → staging 27
+(index):377 [Authored] Scaled → 512x488 (aspect 1.1)
+(index):377 [Authored] Loaded: assets/paintings/PAINTING_106.jpeg (1079x1280) → staging 28
+(index):377 [Authored] Scaled → 432x512 (aspect 0.8)
+(index):377 [Authored] Loaded: assets/paintings/PAINTING_107.jpeg (1039x1280) → staging 29
+(index):377 [Authored] Scaled → 416x512 (aspect 0.8)
+(index):377 [Authored] Loaded: assets/paintings/PAINTING_108.jpeg (1115x1132) → staging 30
+(index):377 [Authored] Scaled → 504x512 (aspect 1.0)
+(index):377 [Authored] Loaded: assets/paintings/PAINTING_109.jpeg (940x1280) → staging 31
+(index):377 [Authored] Scaled → 376x512 (aspect 0.7)
+(index):377 [Authored] Staged 32/57 images
+(index):377 [Cartridge] Renderer init:    86 ms
+(index):377 [Cartridge] Patch system:     29499 ms
+(index):377 [Cartridge] Total init:       29585 ms
+(index):377 
+(index):377 [GPU Budget] ---- allocation request, boot ----
+(index):377 [GPU Budget] buffers  13.2 MiB
+(index):377 [GPU Budget] textures 253.9 MiB
+(index):377 [GPU Budget] TOTAL    267.1 MiB
+(index):377 [GPU Budget] largest single allocations:
+(index):377 [GPU Budget]   1. 112.5 MiB  Patch Heightfield Array (225x256x256, RGBA16Float; 225 = Dim::MAX_ACTIVE_PATCHES)
+(index):377 [GPU Budget]   2. 40.0 MiB  Exhibition
+(index):377 [GPU Budget]   3. 32.0 MiB  Snapshot Staging
+(index):377 [GPU Budget]   4. 32.0 MiB  Authored Staging
+(index):377 [GPU Budget]   5. 16.0 MiB  Shadow Map
+(index):377 [GPU Budget] estimate: logical texels, uncompressed, no driver padding. Excludes the surface backbuffer and the console depth texture (host-owned).
+(index):377 
+(index):377 [Ground] zone rects in core: 0 (boot)
+(index):377 [Ground] zones active anywhere: 0 (boot)
+(index):377 [Card] live-card field: AT REST — one clearing write, then skipped (boot)
+(index):377 [Incubator] the_board renderer ready
+(index):378 [Zoetrope] ears bound: 0 of 7 (mask 0x7F)
+printErr @ (index):378
+(index):378 [SignalLayout] 12 sources unbound (no audio source)
+printErr @ (index):378
+(index):378 [the_board] fog.density base=0 valid=1 | fog.color base=1 count=3 valid=1
+printErr @ (index):378
+(index):378 [the_board] terrain.checker_mean base=10 count=3 valid=1 | terrain.checker_var base=13 valid=1
+printErr @ (index):378
+(index):377 Controls: WASD=move, Mouse=camera, 5-8=moods, Esc=quit
+(index):377 
+(index):377 [Ribbon] SPAWN slot=0 at (-22.7, -27.1) tier=0 len=562.0 near=(-1,-1) far=(1,-12)
+(index):377 [Orbs] Init dispatched: 128 orbs, 2 workgroups
+(index):377 [GoL] Pulse slot=0 node=(-3,-1) corner=(-350.0,-112.5) host=(-6,-2) HEIGHT period=1.4
+(index):377 [Card] live-card field: LIVE — writer runs every frame
+(index):377 [Ground] zones active anywhere: 1
+(index):377 [GoL] Conway slot=1 node=(0,2) corner=(34.4,275.0) host=(1,6) HEIGHT period=13.9
+(index):377 [Ground] zones active anywhere: 2
+(index):377 [Agents] Respawn 1 around (9.1,-34.4)
+(index):377 [Photographer] Capture -> layer 0 (Portrait) aspect=0.7 pool=1/32
+(index):377 [Photographer] Rendering snapshot -> layer 0
+(index):377 [Agents] Respawn 1 around (18.8,-41.7)
+(index):377 [Photographer] Capture -> layer 1 (Panoramic) aspect=1.9 pool=2/32
+(index):377 [Photographer] Rendering snapshot -> layer 1
+(index):377 [Agents] Respawn 1 around (37.9,-35.0)
+(index):377 [Agents] Respawn 1 around (61.4,-42.8)
+(index):377 [Agents] Respawn 1 around (66.8,-45.8)
+(index):377 [Agents] Respawn 1 around (77.1,-42.9)
+(index):377 [Agents] Respawn 1 around (87.0,-40.1)
 [NEW] Explain Console errors by using Copilot in Edge: click  to explain an error. Learn moreDon't show again
+(index):377 [Agents] Respawn 1 around (87.0,-40.1)

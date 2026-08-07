@@ -1,196 +1,173 @@
-Claude, there is a set of handoffs at the 7t/docs/handoffs/WEB
-
-Do the best work you can possibly do and make the best judgement calls when necessary.
-
-I'll start by exploring the repository structure and finding those handoff documents.
-
-
-Ran 7 commands, read 2 files
-Found them. Let me read the governing laws and survey the tree.
-
-
-Read 2 files, ran 5 commands
-Both handoffs are largely landed already. Let me determine exactly what remains.
-
-
-Ran 2 commands, read 2 files
-Now I have the full picture. Let me anchor a few facts before fanning out.
+Claude, there are three other handoffs at the 7t/src/docs/HANDOFFS/WEB
 
 
 Ran 2 commands
-The tree already carries C6, OPT_1a, OPT_1b, and an OPT_1e that post-dates the handoff. What's outstanding is the O0 recensus, OPT_1c's conditional decision, and the campaign report. Let me run the census exhaustively.
-
-Ran workflow
-opt1-o0-recensus
-Failed
-While that runs, let me read the highest-stakes regions myself.
+Only two files here, and master hasn't moved. Let me check whether they landed somewhere else before I report back.
 
 
-Ran 4 commands, read 3 files
-Confirmed a key result already. Let me verify the wall geometry ties to the same constant.
+Ran 2 commands
+Only the two are here, and master hasn't moved. Let me search every branch before concluding.
+
+Fetched all refs and searched history for WEB handoffs
+Found them — commit 3fb8518 "New handoffs" (today), on a branch I hadn't fetched. Let me locate and read them.
+
+Located the branch carrying the new handoffs
+Jean pushed them onto my branch, on top of my work. Let me pull and read them.
+
+Pulled Jean's new handoffs
+Jean also moved my report to audit/ and added a console log. Let me read everything.
 
 
-Ran 8 commands, read 3 files
-Strong findings so far. Let me check the workflow.
-
-Checked workflow progress
-Workflow is progressing. Let me verify the C6 gates myself in parallel.
+Read 3 files
+Now the picture is clear. STREAM_0 and PIPE_0 are both PARKED by Jean's own directive — decision briefs, not execution. SHIP_0 is the live one, five units. Let me gather the evidence, starting with the console log Jean added.
 
 
-Ran 9 commands
-Found another residue. Let me sweep the whole constants block exhaustively.
+Ran 2 commands
+My witness lines are in the capture — Jean built and ran my branch. Let me set up tracking and read the full console.
+
+
+Ran a command, used 6 tools
+U5's STOP is confirmed. Now the console log — it's the evidence base for U1, U2, and U3.
 
 Read
-state.hpp
-Significant find. Let me complete the exhaustive sweep.
+THE BOARD FULL RELEASE CONSOLE.md
+(1–120, 130–279)
+Rich evidence. Let me read the rest of the capture.
+
+Read
+THE BOARD FULL RELEASE CONSOLE.md
+(279–338, 520–560)
+Now I have everything. Two captures — and a critical detail: my witness lines appear in the native capture (550-552), not the web one (261). That overturns U5's premise. Let me start executing.
 
 
-Ran 2 commands
-Let me check whether the floater/pregen relationship is a real defect, not just prose.
+Ran a command, read 2 files, used a tool
+U1's claim has two homes — LAWS.md and console.hpp. Editing only one would leave a dangling citation. Let me write both (P7) and disclose it.
 
 
-Ran 4 commands
-Let me make the residue edits while the census finishes.
+Edited 2 files, ran a command
++69
+-20
+U1 done — remaining hits are the retractions themselves. Now U2: the web adapter site.
 
 
-Edited 3 files, ran 3 commands
-+12
--9
-Now the P6 witness gap. Let me read the exact spans.
+Ran 3 commands, read and edited console.hpp, used 2 tools
++35
+-1
+U2 done. Now U3 — the heart. Let me bind the triggers to real observed lines.
 
 
-Read and edited cartridge.hpp, ran 15 commands
-+49
--6
-Let me wait for the census to land before writing the report.
+Ran 2 commands, read console.hpp, used a tool
+The C++ explicitly depends on index.html sizing the canvas by CSS — I must preserve that. Let me check the DPR cap value, then write the shell.
+
+Read the DPR cap constant
+Now the shell.
 
 
-Ran 2 commands, read patch_system.hpp, used a tool
-The OPT_1c ruling is now provable. Let me write the campaign report.
+Created index.html, used a tool
++375
+-14
+Let me review my own JS — I see two real problems: the watchdog card would stick even if the world arrives, and I hardcoded a personal email into a page destined to be public.
+
+Edited
+index.html
++36
+-18
+Let me syntax-check the JS and sweep for leftover references.
+
+Syntax-check the shell JS
+JS is clean. Now let me actually test the three states — Chromium is available, and this is the one part of SHIP_0 I can verify without building the wasm.
 
 
-Created a file, read a file, ran a command
-+465
+Ran 2 commands, created test_shell.mjs
++122
 -0
-Let me stress-test my OPT_1c ruling on the one lens that could overturn it.
+Content-type bug in my test server — / served as text/plain. Let me fix.
 
 
-Ran 5 commands, read spine_state.hpp
-Important — allow_frustum_cull is false for both indoor moods. Let me check what that gates.
+Edited test_shell.mjs, ran a command
++3
+-2
+Everything passes except one — and it exposed a real weakness in my check. 'gpu' in navigator is true even when navigator.gpu is undefined. Truthiness is the correct test.
 
 
-Ran 3 commands
-Major finding: the flag is dead. Let me verify the last piece and check the census.
+Edited index.html, ran a command
++6
+-2
+wasmFetched: false. All five pass. Let me look at what a visitor actually sees.
 
 
-Read spine_state.hpp, ran a command
-The workflow's schema was too heavy — all agents failed to satisfy it. My own census already covers every O0 item from directly-quoted source. Let me check one last branch, then run a focused refuter.
+Read 2 files
+Two IDs, one selector — #logToggle2 is falling back to the UA button style (visible grey pill in the LOST card). Let me fix.
 
 
-Ran 4 commands
-Default roster has indoor_shell = true — the ruling holds on every branch. Now the dead-flag annotation (L9).
+Ran 2 commands
+All five states pass. Committing U3.
+
+Committed U3
+U3 verified and committed. Now U4 — deploy prep.
 
 
-Edited 2 files
-+20
--3
-Now let me fold these findings into the report.
+Ran 4 commands, used a tool
+.data predicts to ~9.24 MiB. Let me write the dist tool — Python, matching the repo's tools/ convention (Jean is on Windows).
 
 
-Edited OPT_1_REPORT.md, ran 3 commands
-+53
--5
-Now let me add the third unit's section to the report and verify the whole thing reads correctly.
-
-
-Read and edited OPT_1_REPORT.md, ran a command
-+20
+Created web_dist.py, ran 2 commands, used a tool
++160
 -0
-Let me do a final compile-correctness review of the code changes before pushing.
+All three paths work. Let me make sure dist/ won't get committed, then land U4.
 
 
 Ran 2 commands
-The report says "eleven commits" — it's actually 39. Let me correct that.
+Now U5 — the recon, carefully. Let me verify each branch's merge status.
 
 
-Ran 3 commands
-Pushed to claude/web-handoffs-review-u1aalo. Here's what I found and did.
+Ran 3 commands, used a tool
+Delete failed on a network disconnect. Retrying with backoff.
 
-The situation
-Both WEB handoffs were already largely executed by earlier sessions. C6 landed (af839dd, merged), OPT_1a and OPT_1b landed, plus an OPT_1e that was invented after the handoff was written. What was missing was everything the campaign said it would produce and didn't: the O0 recensus, the ruling on the conditional unit, and the campaign report.
-
-The rulings
-OPT_1c — SKIP, the finding dissolves. Its premise is false three ways, and the third is exact. Indoors, the resident-patch footprint and the four wall planes are built from the same two expressions — bmin = -R*PATCH_EXTENT, bmax = (R+1)*PATCH_EXTENT. The wall plane is the outer edge of the outermost resident patch, on all four sides, for every R. Zero patches hidden. I stress-tested it across all four MOOD_TABLE rows and both roster columns; the branches with no shell at all give the same answer more strongly. The handoff's fallback (restore a ring test indoors) would have been actively harmful — veil_strength is 0 in finite mode by the same ruling that bypasses the ring, so it would cut floor with no fog to hide the cut.
-
-OPT_1d — not started. Stamp-gated on "Jean's explicit word in the forwarding message." Yours was a general authorisation, not the specific word that gate names — and a gate a general authorisation can open isn't a gate.
-
-What I fixed
-09838e2 — five radius-8 numbers OPT_1b left in prose. The one that mattered: the WINDOW COVENANT recorded 43.75 wu of slack where the tree now has 93.75. Rewritten as (PATCH_PREGEN_RADIUS + 1) · PATCH_EXTENT so it can't drift again. Two of the five were an L3 mirror pair, moved in one commit.
-918ed2e — P6 witnesses. OPT_1a's rest skip had no log at all: its entire claim is 819,200 invocations stopping, and nothing distinguished "the skip fires" from "the skip is inert." Since O0-d proves the predicate reduces to "any GoL zone live," that's ECONOMY_1 E1 verbatim. OPT_1e was missing its boot line.
-6e82aba — MOOD_TABLE::allow_frustum_cull is inert. Written every mood change, read by nobody since f460469 deleted its one reader. Both indoor rows say "don't cull" and their terrain is culled anyway. Tagged STATUS: LATENT rather than cut — the cut is five sites in a positionally brace-initialised table where allow_frustum_cull is currently the tail drift-probe, and that edit wants a build I can't run.
-One correction to the handoff's expectations
-O0-g is falsified. has_mode_bias is reachable — three of its four terms are driverless boot-pins, but checker_music_amount has a live per-frame writer through the visual canvas. E3 is a real cost, not a dead branch. The CLOSED/DEFERRED entry saying otherwise shouldn't be carried forward.
-
-Also worth knowing before the next radius conversation: the veil chain now holds with exactly zero margin (7·50 = 350 >= 350).
-
-Two caveats: I never built anything — glaw1 + boot is yours, per the handoffs' own law. And the Phase-0 METER tables were never captured, so those rows in the report are open, not filled; I didn't substitute structural numbers for measured ones.
-
-Background task stopped
-Wait for census agents to complete
-the task was taking too long. Did it get stuck somewhere?
-
-Yes — one thing did, and it was wasted time.
-
-What stalled: I launched a 10-agent Workflow to census the codebase in parallel. It ran 14.5 minutes and burned ~388k tokens, then failed completely — 9 of 10 agents errored. My fault: I gave them a deeply nested output schema (nested arrays of objects for evidence + anomalies), and they hit the retry cap trying to satisfy it. A flat schema would have worked. Zero usable output came back.
-
-Why the result was still complete: I didn't sit and wait on it. While it ran I was reading the tree directly, and every finding I shipped came from that — my own greps and file reads, quoted in the commits. When the failure notification arrived I had already independently established all eight O0 answers, C6's four gates, and both residue findings. So the failure cost time, not quality.
-
-What I'd do differently: for a job like this the workflow was the wrong tool anyway. The census was ~15 targeted greps against four known files — I was faster solo than the orchestration was, and I proved that by finishing first. I reached for it because the session started with ultracode on, which instructs using Workflow on every substantive task; it was switched off partway through, and I should have dropped the parallel track then instead of leaving it running.
-
-Two smaller drags worth naming: a background wait-loop I wrote had a bash integer-comparison bug and spun uselessly, and I polled the workflow journal several times before concluding it was dead.
-
-The delivered work — 5 commits, pushed — stands on direct source reads, not on anything the failed agents produced.
-
-Do you think you should try a different approach with the agents ? Or are the results we have enough?
-
-Good question — let me answer it properly, because I can already see one soft spot in my own work.
-
-The coverage is complete: every O0 item and all four C6 gates are answered from directly-quoted source. What's missing is the house's own second half — the census mandate is "one reader, one refuter," and my report has one reader (me). Let me check my weakest claim before recommending anything.
+Retried branch deletion with backoff
+Deletion is proxy-blocked — same class as the tag block the handoff already anticipates. Let me write the campaign report.
 
 
-Ran 2 commands
-That confirms my suspicion — I conflated two different resolvers. Let me nail it.
+Created SHIP_0_REPORT.md, ran a command, used a tool
++412
+-0
+Pushed. Here's where the three handoffs landed.
 
+Two of them were already parked — by Jean
+STREAM_0 and PIPE_0 both open with "PARKED per Jean's 2026-08-07 directive: no optimization before the piece runs on phones." They're decision briefs, not execution handoffs. I read them, started nothing, and summarised both in the report so the phone verdict can re-open them without a re-read.
 
-Ran 2 commands
-That's the answer — and it means my O0-g finding was wrong. Let me verify before correcting.
+SHIP_0 is the live one. Four units executed, one STOP.
 
-Verified the checker coupling gate and BeatClock layout
-Definitive: BeatClock::stat_layout() returns StatLayoutView{ nullptr, 0 }, and the checker coupling is gated if (checker_win_.valid && ...). My O0-g finding was wrong. Let me correct it.
+What landed
+U1 — the 11× limits claim is withdrawn. It rested on one bisect from a machine that has since produced native pipeline creation at 70,459 and 205,527 ms on identical code. I extended past the stated blast radius (P7, disclosed): console.hpp carried the same numbers plus "L14 carries this measurement as law", so editing LAWS.md alone would have left a comment citing a law that no longer makes the claim. Filed the WHERE A TIMER POINTS candidate for your ordinal.
+U2 — the web twin now names its silicon. powerPreference=HighPerformance and a [Device] adapter: line. Your capture reports Total pipelines 14 ms / Patch system 56,887 ms with nothing saying which GPU produced them.
+U3 — the shell. Zero wasm edits, no EM_ASM needed. Driven headless in Chromium against a stub replaying your real boot lines — five scenarios pass, including "no WebGPU ⇒ wasm never fetched".
+U4 — tools/web_dist.py. The artifacts are gitignored build output, so the inventory had to be executable rather than a table. .data predicts to ~9.24 MiB (8.65 assets + 0.59 wgsl) ⇒ Cloudflare.
+The STOP — and U5's premise was inverted
+U5 reasoned the branch "appears merged" because its witness lines print in the web captures. They don't — they print in the native capture. Your file holds two captures back to back; the web one at line 261 has the old single line and stops.
 
+So: the native build is ahead of master (this branch, 8 commits), and the web build is behind both. The web capture the standing verdict rests on predates OPT_1a's rest skip, OPT_1e's witness, and U2's adapter line.
 
-Read and edited OPT_1_REPORT.md, ran 2 commands
-+49
--15
-The self-referencing hash landed stale (pre-amend). Let me fix the pointer.
+Three things the capture settled for free
+PORT_6 U2 is answered — [Device] modest device accepted — NO DISCARD. No discard; the loss has another cause.
+C6 and OPT_1b confirmed live in a browser — 8/8 storage buffers, 225-layer heightfield at 112.5 MiB.
+My O0-g correction is corroborated — [SignalLayout] 12 sources unbound (no audio source). The log agrees with the correction, not the claim it replaced.
+One thing I noticed and deliberately did not act on: the web death line is "A valid external Instance reference no longer exists" — not the D3D12 fence signature, and the exact message PORT_4a's anchor exists to prevent. The verdict says don't spend on it, so I only recorded it.
 
-Pushed
-claude/web-handoffs-review-u1aalo
-Your question was worth asking — it found a real error.
+Needs your hands
+git push origin --delete claude/cut-1-limits-fit — verified merged, but my delete is silently dropped by the proxy (four attempts; "Everything up-to-date" after a hangup). Same class as the tag block. Also the tag, and the deploy itself.
 
-Answer: the results weren't enough, and one more pass was the right call. Not a broad re-census, but a targeted one. I went at my own weakest claim and it broke.
+Two placeholders before the URL goes public: the contact link points at repo issues rather than your email — publishing that is your call, not the file's default — and both poster slots are empty gradients.
 
-What was wrong: I reported O0-g as falsified — that has_mode_bias is reachable, E3 is a live cost, and the handoff's hypothesis was wrong. That claim was wrong. I found set_checker_color_field being called every frame and read "a writer runs" as "the value can be non-zero." The writer runs and writes 0.0. The hop I skipped is the coupling's source resolve: checker_win_ resolves against BeatClock::stat_layout(), which returns StatLayoutView{ nullptr, 0 } — empty by construction since CUT_1c — so the whole CHECKER-REBUILD block is gated off and the goal never leaves 0.
+What branch are we working on at the moment?
 
-Two different resolvers with the same shape. I checked the target one (open) and never looked at the source one (shut). Both files say so in plain words, including a witness line whose entire job is to announce it, in the same function I was reading.
+Confirmed current branch and synced state
+claude/web-handoffs-review-u1aalo — the branch designated for this session.
 
-Corrected in 25fdb5a, with the retraction written into the report itself, not just the commit — a reader who saw the first version needs to meet it where they met the claim. The handoff was right; the CLOSED/DEFERRED entry stands.
+HEAD: 68e52c2 (SHIP_0 campaign report)
+Remote: in sync, everything pushed
+vs origin/master: 13 commits ahead, 0 behind
+Working tree: clean
+The 13 commits are both campaigns: 5 from the OPT_1/C6 work, 1 is your "New handoffs" commit, and 5 from SHIP_0, plus 2 small report corrections.
 
-On whether to point agents at the rest: I'd say no, and here's the honest reasoning. The error I just found wasn't a coverage failure — it was a stopping-too-early failure on one claim. More agents doing broad sweeps wouldn't have caught it; a refuter aimed at that specific claim would have. I've now done that pass myself on the load-bearing ones:
-
-OPT_1c ruling — already stress-tested across all four MOOD_TABLE rows and both roster columns before I shipped it. The core is an arithmetic identity between two expressions I quoted verbatim.
-The inert-flag absence claim — grepped the whole tree untruncated, twice, including outside src/.
-O0-d/e — same, and the archived charter independently corroborates "DRIVERLESS."
-The remaining risk isn't in the census. It's that nothing here has been compiled or booted, and that's not something agents can fix — it's Jean's glaw1 gate.
-
-One thing I'd flag about my own record: this error survived to a pushed commit and into a report presented as settled. The house's census mandate is "one reader, one refuter," and I shipped with one reader. That's the lesson worth more than the fix.
+Worth restating since it's the open item from SHIP_0 U5: this branch is where the running native build came from, and master doesn't have any of it yet. That's the STOP — merge before the next web capture, or the numbers won't be comparable.

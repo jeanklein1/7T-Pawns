@@ -5,6 +5,9 @@
    Render:   the_board
  ========================================
  
+ The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127
+:8000/favicon.ico:1  Failed to load resource: the server responded with a status of 404 (File not found)
+ [Device] adapter: nvidia | kepler | ? | ?
  [Device] requesting CORE DEFAULTS; exceptions carried: none (C6 cleared maxStorageBuffersPerShaderStage 9->8)
  [Device] granted vs floor: maxTextureDimension2D=8192/2048 maxStorageBuffersPerShaderStage=8/8 maxUniformBufferBindingSize=65536/65536
  [Device] modest device accepted — NO DISCARD
@@ -16,10 +19,10 @@
  [GPUState] Column buffers (GPU mesh gen): 48000 vert, 192000 index capacity
  [GPUState] Shell buffers: 2048 vert, 8192 index capacity
  [GPUState] GoL zone buffers: 8 zones × 32×32 grid
- [Cartridge] GPUState init:    18 ms
+ [Cartridge] GPUState init:    16 ms
  [SPINE] validated: 9 update rows + 22 render rows + 12 dispatch rows name-checked; O-#/RC laws static-asserted
  Loaded shader from: ../../../src/cartridges/the_board/realization/world.wgsl
- [Renderer] Shader compile:    28 ms
+ [Renderer] Shader compile:    15 ms
    [Pipeline] update_player_agent: 0 ms
    [Pipeline] update_other_agents: 0 ms
    [Pipeline] update_camera: 0 ms
@@ -63,9 +66,9 @@
    [Pipeline] ribbon: 0 ms
    [Pipeline] orb: 0 ms
    [Pipeline] gallery_frame: 0 ms
-   [Pipeline] wall_painting_canvas: 0 ms
+   [Pipeline] wall_painting_canvas: 5 ms
    [Pipeline] wall_painting_frame: 0 ms
-   [Pipeline] shadow_patch_terrain: 1 ms
+   [Pipeline] shadow_patch_terrain: 0 ms
    [Pipeline] shadow_pawn: 0 ms
    [Pipeline] shadow_sphere: 0 ms
    [Pipeline] shadow_monolith: 0 ms
@@ -81,7 +84,7 @@
    [Pipeline] fade_overlay: 0 ms
  
  [Renderer] Pipelines by compile time (descending):
-          1 ms  shadow_patch_terrain
+          5 ms  wall_painting_canvas
           0 ms  update_player_agent
           0 ms  fade_overlay
           0 ms  update_sphere
@@ -124,9 +127,9 @@
           0 ms  ribbon
           0 ms  orb
           0 ms  gallery_frame
-          0 ms  wall_painting_canvas
-          0 ms  wall_painting_frame
           0 ms  update_other_agents
+          0 ms  wall_painting_frame
+          0 ms  shadow_patch_terrain
           0 ms  shadow_pawn
           0 ms  shadow_sphere
           0 ms  shadow_monolith
@@ -141,9 +144,9 @@
           0 ms  shadow_wall_painting
           0 ms  update_camera
  
- [Renderer] Compute pipelines: 5 ms
- [Renderer] Render pipelines:  14 ms
- [Renderer] Total pipelines:   20 ms
+ [Renderer] Compute pipelines: 4 ms
+ [Renderer] Render pipelines:  11 ms
+ [Renderer] Total pipelines:   16 ms
  [Orbs] Configured: count=128 palette=jwst_deep drag=0.4 noise=0.3 rule=brownian rot=0.012 orbital=0.15 tiers=jwst_stars
  [Mood] Applied: open_sunset (mood=0 outdoor)
  [Agents] Spawned 10 for mood 0 around (0,0)
@@ -240,40 +243,44 @@
  [Authored] Loaded: assets/paintings/PAINTING_108.jpeg (1115x1132) → staging 30
  [Authored] Scaled → 504x512 (aspect 1.0)
  [Authored] Loaded: assets/paintings/PAINTING_109.jpeg (940x1280) → staging 31
-(index):27 [Authored] Scaled → 376x512 (aspect 0.7)
-(index):27 [Authored] Staged 32/57 images
-(index):27 [Cartridge] Renderer init:    103 ms
-(index):27 [Cartridge] Patch system:     5525 ms
-(index):27 [Cartridge] Total init:       5628 ms
-(index):27 
-(index):27 [GPU Budget] ---- allocation request, boot ----
-(index):27 [GPU Budget] buffers  13.2 MiB
-(index):27 [GPU Budget] textures 253.9 MiB
-(index):27 [GPU Budget] TOTAL    267.1 MiB
-(index):27 [GPU Budget] largest single allocations:
-(index):27 [GPU Budget]   1. 112.5 MiB  Patch Heightfield Array (225x256x256, RGBA16Float; 225 = Dim::MAX_ACTIVE_PATCHES)
-(index):27 [GPU Budget]   2. 40.0 MiB  Exhibition
-(index):27 [GPU Budget]   3. 32.0 MiB  Snapshot Staging
-(index):27 [GPU Budget]   4. 32.0 MiB  Authored Staging
-(index):27 [GPU Budget]   5. 16.0 MiB  Shadow Map
-(index):27 [GPU Budget] estimate: logical texels, uncompressed, no driver padding. Excludes the surface backbuffer and the console depth texture (host-owned).
-(index):27 
-(index):27 [Ground] zone rects in core: 0 (boot)
-(index):27 [Ground] zones active anywhere: 0 (boot)
-(index):27 [Card] live-card field: AT REST — one clearing write, then skipped (boot)
-(index):27 [Incubator] the_board renderer ready
-(index):28 [Zoetrope] ears bound: 0 of 7 (mask 0x7F)
-printErr @ (index):28
-(index):28 [SignalLayout] 12 sources unbound (no audio source)
-printErr @ (index):28
-(index):28 [the_board] fog.density base=0 valid=1 | fog.color base=1 count=3 valid=1
-printErr @ (index):28
-(index):28 [the_board] terrain.checker_mean base=10 count=3 valid=1 | terrain.checker_var base=13 valid=1
-printErr @ (index):28
-(index):27 Controls: WASD=move, Mouse=camera, 5-8=moods, Esc=quit
-(index):27 
-(index):27 [Ribbon] SPAWN slot=0 at (-22.7, -27.1) tier=0 len=562.0 near=(-1,-1) far=(1,-12)
-(index):27 [Orbs] Init dispatched: 128 orbs, 2 workgroups
-(index):1 A valid external Instance reference no longer exists.
-(index):28 [Device] LOST reason=1 : A valid external Instance reference no longer exists.
-printErr @ (index):28
+ [Authored] Scaled → 376x512 (aspect 0.7)
+ [Authored] Staged 32/57 images
+ [Cartridge] Renderer init:    70 ms
+ [Cartridge] Patch system:     25479 ms
+(index):377 [Cartridge] Total init:       25549 ms
+(index):377 
+(index):377 [GPU Budget] ---- allocation request, boot ----
+(index):377 [GPU Budget] buffers  13.2 MiB
+(index):377 [GPU Budget] textures 253.9 MiB
+(index):377 [GPU Budget] TOTAL    267.1 MiB
+(index):377 [GPU Budget] largest single allocations:
+(index):377 [GPU Budget]   1. 112.5 MiB  Patch Heightfield Array (225x256x256, RGBA16Float; 225 = Dim::MAX_ACTIVE_PATCHES)
+(index):377 [GPU Budget]   2. 40.0 MiB  Exhibition
+(index):377 [GPU Budget]   3. 32.0 MiB  Snapshot Staging
+(index):377 [GPU Budget]   4. 32.0 MiB  Authored Staging
+(index):377 [GPU Budget]   5. 16.0 MiB  Shadow Map
+(index):377 [GPU Budget] estimate: logical texels, uncompressed, no driver padding. Excludes the surface backbuffer and the console depth texture (host-owned).
+(index):377 
+(index):377 [Ground] zone rects in core: 0 (boot)
+(index):377 [Ground] zones active anywhere: 0 (boot)
+(index):377 [Card] live-card field: AT REST — one clearing write, then skipped (boot)
+(index):377 [Incubator] the_board renderer ready
+(index):378 [Zoetrope] ears bound: 0 of 7 (mask 0x7F)
+printErr @ (index):378
+(index):378 [SignalLayout] 12 sources unbound (no audio source)
+printErr @ (index):378
+(index):378 [the_board] fog.density base=0 valid=1 | fog.color base=1 count=3 valid=1
+printErr @ (index):378
+(index):378 [the_board] terrain.checker_mean base=10 count=3 valid=1 | terrain.checker_var base=13 valid=1
+printErr @ (index):378
+(index):377 Controls: WASD=move, Mouse=camera, 5-8=moods, Esc=quit
+(index):377 
+(index):377 [Ribbon] SPAWN slot=0 at (-22.7, -27.1) tier=0 len=562.0 near=(-1,-1) far=(1,-12)
+(index):377 [Orbs] Init dispatched: 128 orbs, 2 workgroups
+(index):377 [GoL] Pulse slot=0 node=(-3,-1) corner=(-350.0,-112.5) host=(-6,-2) HEIGHT period=1.4
+(index):377 [Card] live-card field: LIVE — writer runs every frame
+(index):377 [Ground] zones active anywhere: 1
+(index):377 [GoL] Conway slot=1 node=(0,2) corner=(34.4,275.0) host=(1,6) HEIGHT period=13.9
+(index):377 [Ground] zones active anywhere: 2
+(index):377 [Agents] Respawn 1 around (0.9,-0.1)
+(index):377 [Agents] Respawn 1 around (0.9,-0.1)
