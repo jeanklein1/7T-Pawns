@@ -1,86 +1,89 @@
-Reading the tree before any edit — the recon and the three gates.
+U1 census is rich — `SHADOW_MAP_SIZE` is an explicit two-room twin, and `renderer.hpp:2118` mentions `8.192/4096`, which looks like a world-unit constant tuned against 4096². Reading both:
 
-Recon anchors — re-running with correct regex (my first pass used `-F`, which made `^` literal):
+Critical U1 finding located. Now the U2 and U3 censuses:
 
-All three gates pass. Recording and executing.
+U2's scale target may already derive from the same constant (`gallery.hpp:1521`). Confirming, and running the U3 photographer census:
 
-U2 — the preset ancestry. Note: the handoff says replacement content is "supplied alongside," but no content arrived with the message; the prose specifies the ancestry completely, so I'm authoring it from that spec and reporting it as a RESOLVE.
+U2's scale target **already derives from `Dim::PAINTING_RESOLUTION`** (gallery.hpp:1521) — one fact, one home already. Now the decisive U3 question: is the photographer driven by possession, or by a cadence?
 
-cmake 3.28.3 is present — I can run the U2 acceptance directly (listing presets only; no configure, no build):
+**U3 is decided: the photographer is REACHABLE.** It's driven by the *point's walked distance*, not possession — confirming before I STOP:
 
-Acceptance met exactly — 4 presets without EMSDK, 5 with.
+U3 confirmed reachable — `capture_snapshot` writes the staging records and the promotion path consumes them. Now executing U1:
 
-Push rejected — the remote moved. Fetching to see what landed:
+**U2.** One note first — the single constant also governs Snapshot Staging and the offscreen pair, so the saving exceeds the handoff's 216 MiB. Reading the constant's home:
 
-Jean pushed `0b07c6c "CMake json updated"` — touching the same file U2 rewrote. Reading it before I merge anything:
+The tree has already ruled this: *"ONE RESOLUTION, for everything that can land in an exhibition layer. A second, smaller one was tried and reverted."* Splitting it would recreate that exact defect — so one constant moves:
 
-Jean's commit contains the "replacement content" the handoff referenced. Comparing it against what I authored:
+**U3 → STOP.** The premise is falsified; reporting it rather than editing. Now U4's limits census — the table before any edit:
 
-My authored file is **byte-identical** to Jean's supplied replacement — the RESOLVE reconstructed it exactly. Rebasing onto his commit; U2 will go empty, so I'll keep it as the unit's binding record:
+Workgroups max at 16×16 = 256 — exactly the core default, not over. Completing the size census:
 
-U2 is retained as an empty commit. Rewriting its message to record honestly that Jean's push landed the identical content first:
+Census complete. Reading the current web device request to restructure it:
 
-# PORT_1d — THE BUILD CROSSES THE GUARD — campaign report
+Now U4. Restructuring the device request so it can be made twice:
 
-**Four units, all EXECUTE, no STOP. Pushed: `0b07c6c..7be03c7`.** Every expected line number in the handoff was wrong (the tree had moved), so everything below was bound by content.
+Now replacing the old inline device request with the call:
 
-| unit | commit | file |
-|---|---|---|
-| U1 dial above the guard | `c006e94` | `CMakeLists.txt` |
-| U2 preset ancestry | `30912ff` (empty — see below) | `CMakePresets.json` |
-| U3 artifacts ignored | `c676f71` | `.gitignore` |
-| U4 message truth | `7be03c7` | `CMakeLists.txt` |
+# PORT_5 — THE BUDGET DIET — campaign report
 
-## RECON — anchors, quoted
+**Three units landed, one STOP.** Pushed `2773f25..7e5d604`.
 
-```
-38:  if(NOT EMSCRIPTEN)
-488: endif() # NOT EMSCRIPTEN — end of the native Dawn section
-270: # ACTIVE CARTRIDGE SELECTION
-285: set(INCUBATOR_DUAL_RENDER_CARTRIDGE   "the_board"  CACHE STRING …)
-286: set(THE_BOARD_DEMO                    "full"       CACHE STRING …)
-287: set(T7_INSTRUMENTS                    "off"        CACHE STRING …)
-19:      set(DAWN_CHECK_CONFIGS Debug Release)
-29:      set(DAWN_CHECK_CONFIGS ${CMAKE_BUILD_TYPE})
-```
+| unit | commit |
+|---|---|
+| U1 shadows 2048² | `cef0903` |
+| U2 paintings 512² | `1d70726` |
+| U3 snapshot staging | **STOP — premise falsified** |
+| U4 modest limits | `7e5d604` |
 
-The premise holds exactly: the block sat at 269–293, **inside** 38…488. Your diagnosis of the failure mode is confirmed — `T7_INSTRUMENTS=` arrives defined-and-empty, `#ifndef` never fires, the paste names a nonexistent enumerator. I found **two more consumers** failing the same way, both fixed by the same move: the header `file(GLOB_RECURSE)` collapsed to `src/cartridges//*.hpp` (matching nothing), and the `source_group(TREE …)` root.
+## U1 — derived sites, and the one world-unit site
 
-## R1 — the interval read: CLEAN
+`SHADOW_MAP_SIZE` is **two homes by declared design** — an L3 mirror with no compile-time bridge (the WGSL side is runtime-loaded). Both changed: `state.hpp:256` and `world.wgsl:3759`.
 
-Reads of the three dials across the whole file: 285–287 (the sets), 291–292 (the status lines, inside the block itself), then 507, 515, 536–538, 561–563, 592 — **every one at or after the guard's `endif()` at 488**. Zero reads in the vacated interval [31, 284]. The file contains **no** `if(DEFINED …)`, no `STREQUAL`, and no `NOT`-test against any of the three, anywhere. Nothing could observe the earlier declaration; the move is inert for native.
+**Every derived site follows automatically** — that's the finding, not an assumption. All are ratios or texel-relative: `SHADOW_TEXEL_WORLD` (0.20508 → 0.41016 wu), `TEXEL_UV`, the sun normal offset (`SHADOW_TEXEL_WORLD × PCF_RADIUS_TEXELS`), `spot_texel_world`, the spot PCF `texel_size`, `TILE_W/TILE_H` (indoor tiles now 1024×2048), and both texture descriptors. No static_assert spans the seam; there cannot be one.
 
-## R2 — the web target name: AGREES, no correction needed
-
-One `add_executable(incubator_dual …)` at 518, **outside** the guard — the target is `incubator_dual` on both twins. The Emscripten branch only sets properties on it: `OUTPUT_NAME "the_board"`, `SUFFIX ".js"`. The build preset's `"targets": [ "incubator_dual" ]` was already correct, so no RESOLVE fired and build presets stayed untouched.
-
-## R3 — the output directory: U3 FIRES
-
-`RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/web"`. `web/index.html` exists, is tracked, and loads `<script src="the_board.js">`. `git check-ignore` confirmed all three artifacts were reachable by `git add` — `[Oo]ut/`, `build/`, `out/build/` never covered them.
-
-## RESOLVEs taken
-
-- **U1 insertion point** (granted): after the CONFIG AXIS `endif()`, **above** the DAWN CONFIGURATION banner — the banner documents the guard and belongs with it. Moved by byte-slicing the file, never retyped: the U+2550 runs (`e2 95 90`) are preserved, and the block travelled whole, so the web configure now prints the same `Active cartridges:` report.
-- **U2 replacement content**: the handoff said it was "supplied alongside," but nothing accompanied the message. Rather than STOP, I authored it from the prose spec (which names every preset, parent, and payload). **Mid-round you pushed `0b07c6c` carrying the real file — my version is byte-identical to yours, `diff` clean.** The rebase left U2 with nothing to apply; I kept it as an empty commit so the unit's bindings and acceptance survive, and its subject says so plainly.
-
-## Acceptance, executed here (cmake 3.28.3, listing only — no configure, no build)
+**The world-unit site, reported and deliberately not retuned:**
 
 ```
-cmake --list-presets   without EMSDK → 4 presets, the-board-web ABSENT
-cmake --list-presets   with EMSDK    → 5 presets, the-board-web present
+renderer.hpp:2171   shadowDepth.depthBiasClamp = 1.527e-3f;   // = 1.680 wu / 1100.0 wu
 ```
 
-Native presets were also resolved through the new ancestry field-by-field: all four keep exactly their previous effective cache sets. `the-board-web` is the only one that changes, by exactly the two `DAWN_*` variables it should never have had.
+Its own comment block is explicit that 1.680 wu was carried across UMBRA_5 **by texel ratio**, and that the retired per-texel form "tracked RESOLUTION" — so it was tuned at the old texel, and the texel just doubled. If you see peter-panning or acne: `1.680 × 2 = 3.360`, `3.360 / 1100.0 = **3.055e-3**`. Not applied — a ceiling too large is as real a defect as one too small, and you judge from the render. The other two instruments need nothing: `depthBiasSlopeScale` is dimensionless in resolution, and the normal-offset floor is already in texels.
 
-## Your build path, unambiguous
+## U2 — the scale target was already one home
 
-- **target** `incubator_dual` → **output** `web/the_board.js` + `.wasm` + `.data` → **ignored** by the three new `.gitignore` lines; `web/index.html` stays tracked and already loads `the_board.js`.
-- `cmake --preset the-board-web && cmake --build --preset the-board-web`, then serve `web/` and open it.
+`gallery.hpp:1521` reads `constexpr uint32_t RES = Dim::PAINTING_RESOLUTION;`, and every downstream number derives from `RES` — the fit ratio, the `dst_w/dst_h` clamps, the padded upload buffer, the `uv_scale_x/y` the quad samples with, and the `[Authored] Scaled →` log itself. **No correction needed.** No WGSL twin either (shaders sample by uv; the resolution never enters as a number) — checked, not assumed.
 
-## Recorded, not fixed
+**Divergence in our favour:** the unit scoped 216 MiB across two arrays; the constant sizes **five** textures, so the real saving is **318 MiB** (Exhibition −120, Authored Staging −96, Snapshot Staging −96, the two offscreen targets −6). I did *not* split the constant to hold Snapshot Staging at 1024, because the tree rules against it four lines above: *"ONE RESOLUTION… A second, smaller one was tried and reverted: it made promotion a PARTIAL write."* Snapshot staging is a promotion **source** — a 1024 source into a 512 destination is exactly that reverted defect.
 
-- A build preset is **not** disabled by its configure preset's condition — `--list-presets=build` shows `the-board-web` in both shells. Harmless (no binaryDir without a configure), and touching it would exceed U2's radius.
-- The CONFIG AXIS **header comment** and the `CMAKE_BUILD_TYPE` cache docstring still carry the native-only "configs Dawn provides" framing. U4's radius was the message string alone; a comment-truth pass can take all three together.
-- Preset restatement (`the-board` duplicating dials the CMakeLists now supplies to both twins) stands as you recorded it — behavior-neutral, left for a leanness pass.
+## U3 — STOP: the photographer is live
 
-One thing I did not do: **nothing here was compiled.** U1 removes the only *known* web compile-stopper, but the first real Emscripten build is still the first time this tree meets clang — `glaw1` proves native is unchanged, and the web configure+build is the gate that finds what's next.
+The premise is false. `update_photographer` (gallery.hpp:783) never reads `point_.host`; it is driven by the **point's walked distance**:
+
+```
+step = |Δ(point_.x, point_.z)| → cumulative_distance ≥ next_threshold
+  → pending_shots = sample_shot_count() → capture_snapshot(...)
+```
+
+Post-CUT_1e the pawn *is* the point, so walking the pawn triggers it. `capture_snapshot` writes `gs.snapshot_staging[layer]` (gallery.hpp:859), copies into `snapshot_staging_texture()` (gallery.hpp:1493), and the promotion path consumes those records (gallery.hpp:1309/1345) into Exhibition. `RPhase::SnapshotPass` is gated `true`; `WitnessPhotographer` rides `ROSTER.gallery`, which is on. Reporting and stopping — removing a live feature is your call.
+
+## U4 — the limits table
+
+| limit | need | core default | verdict |
+|---|---|---|---|
+| maxStorageBuffersPerShaderStage | **9** | 8 | **EXCEEDS** |
+| maxTextureArrayLayers | 225 | 256 | ok (OPT_1b) |
+| maxTextureDimension2D | 2048 | 8192 | ok (PORT_5a) |
+| maxUniformBufferBindingSize | 16,400 | 65,536 | ok |
+| maxStorageBufferBindingSize | ~3.3 MiB | 128 MiB | ok |
+| maxComputeInvocationsPerWorkgroup | 256 | 256 | ok, *at* it |
+| maxComputeWorkgroupSizeX/Y | 16 | 256 | ok |
+
+**Exactly one exceedance remains** — the one PORT_0 named. When C6 merges, the `9` becomes an `8` and this is a pure defaults request.
+
+Two nets, because a mis-census must degrade to today's behavior: (1) on failure, the reason prints verbatim and the request reissues with full passthrough; (2) on *success with limits below the censused floor*, the device is discarded and passthrough reissued — that net exists because the modest set relies on value-initialised `wgpu::Limits` meaning "undefined ⇒ default", which is the documented contract but which I cannot compile to confirm, and whose failure mode would otherwise surface at pipeline creation far from this line.
+
+## Expected `[GPU Budget]`
+
+**681.1 → ~267 MiB** (−414). Since U3 stopped, Snapshot Staging stays at 32 MiB rather than vanishing, so this lands above the handoff's ~241 projection — the 512² cut already took it from 128 to 32. New top five: **Patch Heightfield 112.5**, Exhibition 40, Snapshot Staging 32, Authored Staging 32, Shadow Map 16. Patch Heightfield becomes the largest single allocation, as projected.
+
+Nothing was compiled. Encoding clean including `world.wgsl` (L1: LF, no BOM); brace balance clean. `glaw1` gates all three — U1 and U2 are both-twin changes.
