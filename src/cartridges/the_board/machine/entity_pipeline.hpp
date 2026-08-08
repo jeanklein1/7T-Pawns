@@ -992,11 +992,6 @@ inline void arch_compute_colors(EntityInstance& inst, const EntityFamilyTraits&,
         inst.colors[1] = entity_tint(ARCH_SANDSTONE_BASE[1], inst.seed, ArchProp::COLOR_VAR_G, spread);
         inst.colors[2] = entity_tint(ARCH_SANDSTONE_BASE[2], inst.seed, ArchProp::COLOR_VAR_B, spread);
     }
-    // Mesh color defaults to base; portal override applied in write_gpu
-    // (needs ActiveArch.is_portal which is set by write_active first)
-    inst.colors[3] = inst.colors[0];
-    inst.colors[4] = inst.colors[1];
-    inst.colors[5] = inst.colors[2];
 }
 
 inline void arch_write_active(MachineCtx* c, const EntityInstance& inst) {
@@ -1078,7 +1073,13 @@ inline void arch_write_gpu(MachineCtx* c, const EntityInstance& inst, wgpu::Queu
     mp.catenary_a = solve_catenary_a(half_span, rise);
     mp.segs_u     = ARCH_TIERS[inst.tier_idx].segs_u;
     mp.segs_v     = ARCH_TIERS[inst.tier_idx].segs_v;
-    mp.color_r    = inst.colors[3]; mp.color_g = inst.colors[4]; mp.color_b = inst.colors[5];
+    // PORTAL_1: col_* is the one home — written by arch_write_active, which
+    // generic_commit calls first, and already carrying the portal override.
+    // The instance's own colours would miss that decision, and did.
+    {
+        const auto& aa = c->entities_state_.arches[inst.slot];
+        mp.color_r = aa.col_r; mp.color_g = aa.col_g; mp.color_b = aa.col_b;
+    }
     // MOSAIC_2b: the ONE home. arch_write_active (generic_commit calls it
     // first) has already written this slot's seed and zeroed it if the
     // arch is a portal, so both producers read one correct value — the

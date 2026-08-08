@@ -421,16 +421,8 @@ inline GPUArchMeshParams build_arch_mesh_params(MachineCtx* c, uint32_t slot) {
     p.catenary_a = solve_catenary_a(a.half_span, a.rise);
     p.segs_u = a.segs_u;
     p.segs_v = a.segs_v;
-    // Portal color override (mirrors spawn logic)
-    if (a.is_portal) {
-        const float* pc = a.is_back_portal
-            ? PORTAL_COLOR_BACK
-            : PORTAL_COLORS[a.destination.mood % MOOD_COUNT];
-        p.color_r = pc[0]; p.color_g = pc[1]; p.color_b = pc[2];
-    }
-    else {
-        p.color_r = a.col_r; p.color_g = a.col_g; p.color_b = a.col_b;
-    }
+    // PORTAL_1: no branch. col_* carries the portal override from the decision.
+    p.color_r = a.col_r; p.color_g = a.col_g; p.color_b = a.col_b;
     p.mosaic_seed = a.mosaic_seed;   // portals zeroed at the decision — MOSAIC_2b
     p.is_active = 1;
     return p;
