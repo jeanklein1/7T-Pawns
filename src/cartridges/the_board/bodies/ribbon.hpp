@@ -1078,6 +1078,7 @@ inline void fill_ribbon_selection_geometry(
         }
     }
 
+    sel.scale = 1.0f;   // the authored draw is unity; the indoor block overwrites
     sel.footprint_r = FOOTPRINT_RADIUS;
 }
 
@@ -1123,6 +1124,7 @@ inline bool select_ribbon_for_patch(RibbonState& rs, MachineCtx* c,
     // sampler's floors (MIN_CUBE_SIZE / MIN_ADDED_HEIGHT / 0.1 amps)
     // still hold.
     if (MOOD_TABLE[c->mood_state_.active].indoor) {
+        const float authored_cube_size = sel.cube_size;
         sel.cube_size    = std::max(MIN_CUBE_SIZE,    sel.cube_size    * RIBBON_INDOOR_SCALE);
         sel.height       = std::max(MIN_ADDED_HEIGHT, sel.height       * RIBBON_INDOOR_SCALE);
         sel.lateral_amp  = std::max(0.1f,             sel.lateral_amp  * RIBBON_INDOOR_SCALE);
@@ -1137,6 +1139,11 @@ inline bool select_ribbon_for_patch(RibbonState& rs, MachineCtx* c,
             sel.cube_size   *= s; sel.height       *= s;
             sel.lateral_amp *= s; sel.vertical_amp *= s;
         }
+        // THE MINIATURE IS A CHANGE OF RULER, NOT OF CLOCK. Every length
+        // converted above; propagation_speed is a length in disguise and
+        // converts at commit. MEASURED, not assumed — the floors and the
+        // cap both move the realized ratio away from the dial.
+        sel.scale = sel.cube_size / std::max(authored_cube_size, 1e-6f);
     }
 
     {
@@ -1183,6 +1190,7 @@ inline bool place_ribbon_from_selection(MachineCtx* c,
 
     plan.cube_count = sel.cube_count;
     plan.cube_size = sel.cube_size;
+    plan.scale = sel.scale;
     plan.height = sel.height;
     plan.orientation = sel.orientation;
     plan.lateral_amp = sel.lateral_amp;
@@ -1215,7 +1223,11 @@ inline void commit_ribbon(RibbonState& rs, MachineCtx* c,
     r.height = plan.height;
     r.orientation = plan.orientation;
     {
-        const float P = RIBBON_TIERS[plan.tier_idx].propagation_speed;
+        // P is authored per tier in OUTDOOR units/s. total_length arrives
+        // already converted (the indoor block ran at selection), so P must
+        // convert with it — or k, and the head's whole gesture, rises by
+        // 1/scale. Outdoors scale is 1.0f: bit-identical to before.
+        const float P = RIBBON_TIERS[plan.tier_idx].propagation_speed * plan.scale;
         const float total_length = (float)plan.cube_count * plan.cube_size;
         const float k = 6.2831853f * P / std::max(total_length, 1e-6f);
         r.propagation_speed = P;

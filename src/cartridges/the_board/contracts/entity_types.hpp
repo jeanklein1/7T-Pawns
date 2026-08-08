@@ -278,6 +278,7 @@ struct RibbonSelection {
     float orientation;
     float lateral_amp, lateral_cycles;
     float vertical_amp;
+    float scale;   // realized length ratio vs the authored draw (1.0 outdoors)
     // Color
     uint32_t color_mode;
     float color[3];
@@ -299,6 +300,7 @@ struct RibbonPlacement {
     float cube_size, height, orientation;
     float lateral_amp, lateral_cycles;
     float vertical_amp;
+    float scale;
     uint32_t color_mode;
     float color[3];
     float color_b[3];        // CONTRAST second median
