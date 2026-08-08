@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #include "cartridges/the_board/realization/state.hpp"                    // Dim::*, GPUPyramidArray, wgpu
-#include "cartridges/the_board/contracts/mood_constants.hpp"   // MOOD_COUNT, PortalDestination
+#include "cartridges/the_board/contracts/mood_constants.hpp"   // MOOD_COUNT, PortalDestination, PORTAL_COLORS, portal_color_for
 #include "cartridges/the_board/contracts/wgpu_fwd.hpp"   // wgpu handle fwds (lockstep insurance)
 #include "cartridges/the_board/contracts/entity_types.hpp"     // queue types (the clean three's funnel signatures)
 
@@ -565,8 +565,7 @@ void teardown_entities(MachineCtx* c, wgpu::Queue& queue);
 //
 uint32_t force_spawn_portal_arch(EntitiesState& es, MachineCtx* c, wgpu::Queue& queue,
     float cx, float cz, float rotation,
-    const PortalDestination& dest, bool is_back_portal,
-    const float portal_color[3]);
+    const PortalDestination& dest, bool is_back_portal);
 
 // ═══ IMPL:
 // bodies deref EntitiesState(own) + World/Mood/GPU via MachineCtx; no
@@ -658,8 +657,7 @@ inline bool prepare_arch_mesh_gen(EntitiesState& es, MachineCtx* c, wgpu::Queue&
 
 inline uint32_t force_spawn_portal_arch(EntitiesState& es, MachineCtx* c, wgpu::Queue& queue,
     float cx, float cz, float rotation,
-    const PortalDestination& dest, bool is_back_portal,
-    const float portal_color[3]) {
+    const PortalDestination& dest, bool is_back_portal) {
     // ROSTER-GATE portal (b) — THE SECOND DOOR. Portals force-spawn arches
     // directly (bypassing FAMILY_DISPATCH — R3), so this is the
     // single choke point every portal spawner routes through (back, finite,
@@ -675,7 +673,7 @@ inline uint32_t force_spawn_portal_arch(EntitiesState& es, MachineCtx* c, wgpu::
     // and it already claims lawfully (register_footprint below). The
     // arch's owner holds the door to the arch's storage; mood computes
     // values upstream.
-    if constexpr (!ROSTER.portal) { (void)queue; (void)cx; (void)cz; (void)rotation; (void)dest; (void)is_back_portal; (void)portal_color; return UINT32_MAX; }
+    if constexpr (!ROSTER.portal) { (void)queue; (void)cx; (void)cz; (void)rotation; (void)dest; (void)is_back_portal; return UINT32_MAX; }
 
     uint32_t slot = UINT32_MAX;
     for (uint32_t i = 0; i < Dim::MAX_ARCH_INSTANCES; i++) {
@@ -721,14 +719,17 @@ inline uint32_t force_spawn_portal_arch(EntitiesState& es, MachineCtx* c, wgpu::
     aa.burial = std::max(0.2f, pier_height * tp.burial);
     aa.segs_u = tp.segs_u;
     aa.segs_v = tp.segs_v;
-    // PORTAL_1 C4 — the one home, in this channel too. This function only
+    // PORTAL_1 C4/C5 — the one home, in this channel too. This function only
     // ever makes portals, so it is its own decision point: col_* takes the
     // destination's colour here, and meshParams below reads col_* rather
-    // than the parameter. The sandstone literal that stood here was the
+    // than a value handed in. The sandstone literal that stood here was the
     // mirrored disease — after C3c deleted the recomputing branch in
     // build_arch_mesh_params, it would have cemented every forced portal at
     // its first ring toggle.
-    aa.col_r = portal_color[0];  aa.col_g = portal_color[1];  aa.col_b = portal_color[2];
+    // Derived from the PARAMETERS, not from aa.destination / aa.is_back_portal
+    // — those are written below, at the portal-state block.
+    const float* pc = portal_color_for(dest, is_back_portal);
+    aa.col_r = pc[0];  aa.col_g = pc[1];  aa.col_b = pc[2];
 
     {
         // GPU compute_entity_placement handles ground_y from heightfield

@@ -34,8 +34,8 @@
 //   Pattern P8 visible in source.
 // SEAM[spine:portal-system] portal/transition state machine. Owns
 //   transitionPhase_ (enum type in contracts/spine_state.hpp),
-//   mood_state_.transition_timer, pendingDestination_, the
-//   PORTAL_COLORS table, the back-portal pending state, and the
+//   mood_state_.transition_timer, pendingDestination_, the back-portal
+//   pending state, and the
 //   trigger-detection hooks called by readback. direction/mood.hpp drives portal
 //   spawning (force_spawn_portal_at, force_spawn_back_portal,
 //   force_spawn_finite_portals); spine owns the request → activation
@@ -252,9 +252,12 @@ namespace t7 {
             //   (force_spawn_* functions read pendingDestination_), direction/input.hpp
             //   (keypress mood transitions request via mood.hpp's
             //   request_mood_transition), render() (readback callback drives
-            //   portal trigger detection). PORTAL_COLORS lives in mood.hpp —
-            //   portal color is mood vocabulary; the machine keeps the
-            //   pending state and the trigger hooks.
+            //   portal trigger detection). PORTAL_COLORS lives in
+            //   contracts/mood_constants.hpp, beside PortalDestination —
+            //   a portal's colour is a fact about its destination, so the
+            //   palette sits with the type that names it (PORTAL_1 C5) and
+            //   every channel derives. The machine keeps the pending state
+            //   and the trigger hooks.
 
             // enum TransitionPhase lives in contracts/spine_state.hpp;
             // the machine member stays here.

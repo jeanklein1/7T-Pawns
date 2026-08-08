@@ -41,8 +41,9 @@
 // this file keeps the portal + palette vocabulary, MoodDeps, the
 // decls, and every definition. COHORT: after ribbon/gallery/input
 // (the fan's door owners + ORB_MOOD_TABLE), before the
-// machine natives (they call pick_portal_mood / derive_finite_radius
-// and read PORTAL_COLORS).
+// machine natives (they call pick_portal_mood / derive_finite_radius;
+// the portal palette graduated to contracts/mood_constants.hpp at
+// PORTAL_1 C5, so no one waits on this file for a portal's colour).
 //
 // The impl additionally reaches the spine-resident state
 // (mood_state / transitionPhase / pendingDestination /
@@ -106,24 +107,10 @@ struct PawnState;
 // ── Portal detection ──
 inline constexpr float PORTAL_DENSITY = 1.00f;  // fraction of Doorway arches that become portals
 
-// Portal color by mood (indexed by destination.mood)
-inline constexpr float PORTAL_COLORS[MOOD_COUNT][3] = {
-    { 0.72f, 0.45f, 0.85f },  // mood 0  open_sunset     — lilac
-    { 0.95f, 0.55f, 0.15f },  // mood 1  indoor_flat     — orange
-    { 0.95f, 0.80f, 0.20f },  // mood 2  indoor_vault    — yellow
-    { 0.85f, 0.20f, 0.15f },  // mood 3  finite_outdoor  — red
-};
-inline constexpr float PORTAL_COLOR_BACK[3] = { 0.35f, 0.55f, 0.90f };  // back-portal — blue
-// PORTAL_1 — THE ONE DERIVATION. A portal's colour is a fact about its
-// DESTINATION, so it is derived from the destination and never stored twice.
-// Every producer of a portal's appearance calls this; none of them reads the
-// tables directly. Cohort: mood.hpp precedes the machine natives, which is
-// why they can. grounded.hpp precedes THIS file and therefore cannot — the
-// force-spawn channel receives the result as a parameter, computed here by
-// force_spawn_portal_at on its behalf.
-inline const float* portal_color_for(const PortalDestination& dest, bool is_back) {
-    return is_back ? PORTAL_COLOR_BACK : PORTAL_COLORS[dest.mood % MOOD_COUNT];
-}
+// The portal palette (PORTAL_COLORS, PORTAL_COLOR_BACK) and its one
+// derivation portal_color_for GRADUATED to contracts/mood_constants.hpp
+// at PORTAL_1 C5 — they live beside PortalDestination, the thing they
+// describe, so grounded.hpp derives too instead of receiving a value.
 
 // ═══ INDOOR WALL PALETTE ═════════════════════════════════════════
 //
@@ -890,10 +877,8 @@ inline uint32_t force_spawn_portal_at(MoodDeps* c, wgpu::Queue& queue,
     float cx, float cz, float rotation,
     const PortalDestination& dest, bool is_back_portal,
     MachineCtx& machine_ctx) {
-    const float* pc = portal_color_for(dest, is_back_portal);
-
     uint32_t slot = force_spawn_portal_arch(machine_ctx.entities_state_, &machine_ctx, queue,
-        cx, cz, rotation, dest, is_back_portal, pc);
+        cx, cz, rotation, dest, is_back_portal);
 
     if (slot != UINT32_MAX) c->mood_state_.portals_dirty = true;
     return slot;
