@@ -721,7 +721,14 @@ inline uint32_t force_spawn_portal_arch(EntitiesState& es, MachineCtx* c, wgpu::
     aa.burial = std::max(0.2f, pier_height * tp.burial);
     aa.segs_u = tp.segs_u;
     aa.segs_v = tp.segs_v;
-    aa.col_r = 0.75f;  aa.col_g = 0.68f;  aa.col_b = 0.60f;
+    // PORTAL_1 C4 — the one home, in this channel too. This function only
+    // ever makes portals, so it is its own decision point: col_* takes the
+    // destination's colour here, and meshParams below reads col_* rather
+    // than the parameter. The sandstone literal that stood here was the
+    // mirrored disease — after C3c deleted the recomputing branch in
+    // build_arch_mesh_params, it would have cemented every forced portal at
+    // its first ring toggle.
+    aa.col_r = portal_color[0];  aa.col_g = portal_color[1];  aa.col_b = portal_color[2];
 
     {
         // GPU compute_entity_placement handles ground_y from heightfield
@@ -764,9 +771,9 @@ inline uint32_t force_spawn_portal_arch(EntitiesState& es, MachineCtx* c, wgpu::
     meshParams.catenary_a = solve_catenary_a(half_span, rise);
     meshParams.segs_u = tp.segs_u;
     meshParams.segs_v = tp.segs_v;
-    meshParams.color_r = portal_color[0];
-    meshParams.color_g = portal_color[1];
-    meshParams.color_b = portal_color[2];
+    meshParams.color_r = aa.col_r;
+    meshParams.color_g = aa.col_g;
+    meshParams.color_b = aa.col_b;
     meshParams.is_active = 1;
     c->gpuState_.upload_arch_mesh_params_slot(queue, slot, meshParams);
     es.arch_mesh_gen_pending = true;
