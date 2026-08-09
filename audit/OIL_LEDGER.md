@@ -56,6 +56,16 @@ The `OIL_1` column on every FINDING row below carries its fate. Summary: **14 FI
 | D1 | R11 floater copy width (C3) | DEFERRED → OIL_2 (measurement-gated) |
 | D2 | R13 aura frame pair (C8) | DEFERRED → OIL_2 (layout change, below the risk floor) |
 
+### The verification pass (V1, V2)
+
+Nothing on this branch was compiled — no toolchain or Dawn headers exist in the audit container — so the batch was put through an adversarial read instead: fifteen skeptics, one per unit plus a whole-branch compile-surface sweep, each instructed to hunt compile breakage first and behavioral delta second, and to verify commit-message claims against the code rather than trust them.
+
+**Every unit came back CLEAN on both axes.** The sweep raised one BEHAVIORAL_DELTA against U9, which I then **refuted in its specifics**: it argued a finite world drains allocations over ~7 budgeted frames while the pawn walks out of the scan box, but the `fullRegen` bootstrap allocates the whole finite window *unbudgeted* on the world's first frame and nothing evicts in finite mode, so there is no drain to outrun. The structural half of the observation survived, though — the candidate set is `box(pawn cell) ∩ window(last_center)`, the box follows the pawn, and no raiser tracked it; in finite mode the window is pinned while the box is not. That unreachability rested on a conjunction of three facts in three files, so `V1` gave the box its own two-int raiser and the gate stopped depending on why box and window agree.
+
+`V1` also took the ROSTER gate onto the hoisted gallery binds (a gallery-less build was paying two binds per pass for zero draws — a cost the ROSTER doctrine forbids a disabled piece) and removed a dead group0 head bind in the main pass. `V2` wrote down the invariants the batch *created*: the BeatClock write window, the ribbon pose-width pairing invariant, the two surviving derivations of the agent weight sums, and the two raises `evict_patch` owes but leaves to its caller.
+
+Two reading artifacts of the meter itself were found and left alone, both instrument-build-only: the census frame's own blocking print lands in the fresh window as `S frame_total max`, and the first window's S means divide N−1 samples by N (every later window is exact).
+
 ### U14 — STOPPED: the pinned wrapper is not inspectable from here
 
 The unit's precondition was to verify a **non-allocating MapAsync path in the pinned Dawn wrapper**. Neither wrapper version is knowable from this container: the native twin points `DAWN_DIR` at a local path (`C:/dev/dawn`) with no tag or commit, and the web twin takes `--use-port=emdawnwebgpu`, whose version follows the installed emsdk. Writing against an unverified signature would either fail to compile for both twins or bind a different overload with different lifetime semantics — so the unit holds, per the handoff's own condition.
