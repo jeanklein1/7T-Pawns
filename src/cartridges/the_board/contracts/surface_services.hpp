@@ -61,12 +61,29 @@ struct WorldState {
     bool patch_instances_dirty  = true;   // defer LOD sort + upload_patch_instances
     bool placement_dirty        = true;   // defer dispatch_placement_correction
     // OIL_1 U9 (ledger: R3 continuous allocation, C2): the allocation
-    // scan runs only when demand can exist. Raisers (exhaustive): boot
-    // (this default), init_patch_system (reset), gridChanged (the window
-    // moved), a freed layer (the eviction block — free_layer's one
-    // caller is evict_patch, whose one caller is that block), and the
-    // budget backlog (candidates exceeded ALLOC_BUDGET_PER_FRAME).
+    // scan runs only when demand can exist. Raisers, covering every
+    // INPUT to the candidate set:
+    //   · boot (this default) and init_patch_system (reset);
+    //   · gridChanged — the render window moved (this also covers the
+    //     cross-module active_radius writer in direction/input.hpp,
+    //     which recenters through the same door);
+    //   · the scan BOX moved — last_alloc_scan_gx/gz below;
+    //   · a freed layer (the eviction block — free_layer's one caller is
+    //     evict_patch, whose one caller is that block);
+    //   · the budget backlog (candidates exceeded ALLOC_BUDGET_PER_FRAME).
     bool alloc_scan_pending     = true;   // gate on the continuous-allocation scan
+    // THE BOX IS NOT THE WINDOW, and that is why it needs its own raiser.
+    // The scan intersects box(pawn cell ± radius) with the render window
+    // around last_center. In open worlds the two share an origin, so a
+    // box move IS a gridChanged. In FINITE mode the window is pinned at
+    // (0,0) while the box still follows the pawn — so the box is an
+    // independent input, and these two ints are what make the raiser set
+    // provably complete instead of complete-by-conjunction (today the
+    // finite window is fully allocated by the fullRegen bootstrap and
+    // nothing there evicts, so the divergence is unreachable — a fact in
+    // three other places, which is one too many to lean on).
+    int32_t last_alloc_scan_gx  = INT32_MAX;   // INT32_MAX = never scanned
+    int32_t last_alloc_scan_gz  = INT32_MAX;
 
     // ── Free-layer pool ──
     uint32_t free_layer_count = Dim::MAX_ACTIVE_PATCHES;

@@ -1512,9 +1512,11 @@ inline void render_snapshot_pass(GalleryState& gs, GalleryDeps* c, wgpu::Command
     // opens is bounded — the sampled layer is already flat and resolved,
     // and R20 reads the exhibition texture before R21 writes it.
     // OIL_1 U13: the gallery pair (photographer VP window), bound ONCE
-    // for both draws.
+    // for both draws. ROSTER-GATE gallery (a') — matches the consumers.
+    if constexpr (ROSTER.gallery) {
     pass.SetBindGroup(0, c->gpuState_.gallery_photographer_entity_group());
     pass.SetBindGroup(1, c->gpuState_.gallery_texture_group());
+    }
     c->renderer_.draw_wall_paintings(
         pass,
         gs.wall_frame_count,

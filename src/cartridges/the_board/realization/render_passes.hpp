@@ -416,8 +416,14 @@ inline void draw_shadow_all(MachineCtx* c, wgpu::RenderPassEncoder& pass, bool c
     // OIL_1 U12: the gallery pair, bound ONCE for both draws (they
     // share galleryShadowLayout, and nothing draws after them in this
     // pass, so the pass-head pair above is not needed again).
+    // ROSTER-GATE gallery (a') — the gate MATCHES its consumers: both
+    // draws below open with the same if constexpr, so a gallery-less
+    // build must not pay two binds for zero draws, and the pass must
+    // not name groups a future creation-side gate could leave null.
+    if constexpr (ROSTER.gallery) {
     pass.SetBindGroup(0, c->gpuState_.gallery_entity_group());
     pass.SetBindGroup(1, c->gpuState_.gallery_texture_group());
+    }
     c->renderer_.draw_shadow_wall_paintings(
         pass,
         c->gallery_state_.wall_frame_count,
@@ -457,12 +463,13 @@ inline void render_main_pass(MachineCtx* c, wgpu::CommandEncoder& encoder,
 
     wgpu::RenderPassEncoder pass = encoder.BeginRenderPass(&desc);
 
-    // OIL_1 U13 (ledger: R19, C7) — THE PASS-HEAD BINDS. group1 (the
+    // OIL_1 U13 (ledger: R19, C7) — THE PASS-HEAD BIND. group1 (the
     // render texture group) is the same for every entity draw in this
-    // pass, plan slots included, so it is bound once here. group0 is
-    // bound here for plan slot A and re-bound per window by slots B/C,
-    // then restored before the table (see below).
-    pass.SetBindGroup(0, c->gpuState_.render_entity_group());
+    // pass, plan slots included, so it is bound once here and never
+    // again. group0 is NOT bound here: it is genuinely per-slot (the
+    // plan A/B/C windows are three different groups, each bound by its
+    // own slot) and is restored to the entity group after slot C, once,
+    // for the table draws.
     pass.SetBindGroup(1, c->gpuState_.render_texture_group());
 
     // Terrain — THE DRAW PLAN (ECONOMY_1 closing arm): the cull kernel
@@ -502,8 +509,11 @@ inline void render_main_pass(MachineCtx* c, wgpu::CommandEncoder& encoder,
 
     // Wall-mounted framed paintings (indoor)
     // OIL_1 U13: the gallery pair, bound ONCE for both draws.
+    // ROSTER-GATE gallery (a') — matches the consumers' own gate.
+    if constexpr (ROSTER.gallery) {
     pass.SetBindGroup(0, c->gpuState_.gallery_entity_group());
     pass.SetBindGroup(1, c->gpuState_.gallery_texture_group());
+    }
     c->renderer_.draw_wall_paintings(
         pass,
         c->gallery_state_.wall_frame_count,

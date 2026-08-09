@@ -663,6 +663,20 @@ inline void stream_patches(MachineCtx* c, wgpu::CommandEncoder& encoder, wgpu::Q
     // only while demand can exist (alloc_scan_pending; raiser census at
     // the flag's home in surface_services.hpp). Steady frames skip it;
     // a budget-capped pass re-arms itself below.
+    {
+        // The box raiser: the candidate set is box ∩ window, and the box
+        // follows the pawn cell — an input no other raiser tracks once
+        // the window is pinned (finite mode). Two compares, and the gate
+        // stops depending on why the box and the window agree.
+        const int32_t scanGX = (int32_t)std::floor(c->point_.x / Dim::PATCH_EXTENT);
+        const int32_t scanGZ = (int32_t)std::floor(c->point_.z / Dim::PATCH_EXTENT);
+        if (scanGX != c->world_state_.last_alloc_scan_gx ||
+            scanGZ != c->world_state_.last_alloc_scan_gz) {
+            c->world_state_.last_alloc_scan_gx = scanGX;
+            c->world_state_.last_alloc_scan_gz = scanGZ;
+            c->world_state_.alloc_scan_pending = true;
+        }
+    }
     if (c->world_state_.alloc_scan_pending) {
         int32_t pawnGX = (int32_t)std::floor(c->point_.x / Dim::PATCH_EXTENT);
         int32_t pawnGZ = (int32_t)std::floor(c->point_.z / Dim::PATCH_EXTENT);
