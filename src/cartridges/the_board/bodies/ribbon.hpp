@@ -585,6 +585,17 @@ inline void ribbon_rebuild_body_upload(RibbonState& rs, GPUState& gpuState,
     }
     // OIL_1 U3 (ledger: R7 upload width, C8): ship the FILLED prefix,
     // not the 400-ring array — 4n floats is the exact GPU read-set.
+    // THE PAIRING INVARIANT this rests on: every GPU-visible RAISE of
+    // ribbonBuffer_.cube_count must be followed, in the same queue
+    // order, by a pose write at least that wide. It holds because the
+    // one live-value upload_ribbon (the slot-switch arm of
+    // ribbon_frame_tick) is followed by ribbon_advance_head, whose tail
+    // is this writer, and this function has no early return past the
+    // n < 2 guard; the other upload_ribbon sites all ship a zeroed
+    // state (cube_count 0), which only ever shrinks the read window.
+    // The full-width write used to make this self-healing by re-zeroing
+    // the tail every frame — it no longer does, so a new upload_ribbon
+    // call site owes a pose write beside it.
     // Every reader bounds by the live cube_count: compute_ribbon_rings
     // early-outs at ring_idx >= cube_count, centerline/spine sample
     // i0,i1 <= cube_count-1, and the field's ring loop runs to

@@ -40,6 +40,12 @@ inline ActivePatch* find_patch(MachineCtx* c, int32_t gx, int32_t gz) {
 }
 
 // Hook: full eviction of a single patch.
+// OIL_1 U8/U9 — THE RAISES THIS PRIMITIVE OWES BUT DOES NOT MAKE:
+// removing a patch changes the grid set (patch_instances_dirty) and
+// frees a layer (alloc_scan_pending). Both raises live in this
+// function's ONE caller, the eviction block in stream_patches, which
+// batches them after its compaction. A second call site would have to
+// carry them itself.
 inline void evict_patch(MachineCtx* c, uint32_t pi, wgpu::Queue& queue) {
     free_layer(c, c->patch_system_state_.patches_[pi].layer);
     // Painting eviction now handled by evict_gallery (bodies/gallery.hpp) via entity_refs

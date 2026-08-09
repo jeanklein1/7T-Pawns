@@ -251,6 +251,11 @@ static_assert(sizeof(AGENT_POPULATIONS) / sizeof(AGENT_POPULATIONS[0]) == MOOD_C
 // identical float values by construction. One home, beside the table
 // they summarize; the per-frame respawn reads these instead of
 // re-summing a constexpr row every frame.
+// TWO DERIVATIONS, ONE VALUE: spawn_population_for_mood still sums its
+// own denominators inline (boot/transition cadence — outside the ledger
+// row this unit answers, so it was left alone). They must agree; both
+// feed the same normalization in populate_agent_slot_. If either the
+// table or one summation is ever edited, edit the other.
 inline constexpr std::array<float, MOOD_COUNT> AGENT_BEH_SUMS = [] {
     std::array<float, MOOD_COUNT> s{};
     for (uint32_t m = 0; m < MOOD_COUNT; m++)

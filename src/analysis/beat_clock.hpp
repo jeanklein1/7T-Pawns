@@ -44,6 +44,15 @@ struct BeatClock {
     StatLayoutView stat_layout() const { return StatLayoutView{ nullptr, 0 }; }
 
 private:
+    // THE WRITE WINDOW (OIL_1 U2). signal_ is written BETWEEN frames —
+    // update(dt), called once from frame() before render.update() — and
+    // never during it. That matters because output() now hands out a
+    // reference INTO this member rather than a per-frame copy: the whole
+    // update spine reads it live (phase_advance_clock reads t_beats
+    // twice), so a future soundtrack writer filling the stats plane must
+    // publish on the same between-frames cadence, not from an audio
+    // callback landing mid-spine. The empty layout is still the socket;
+    // this is the contract that comes with the persistent home.
     AnalysisSignal signal_{};   // zero-filled once; update() writes the 3 live floats
 };
 

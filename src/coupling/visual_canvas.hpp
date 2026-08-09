@@ -67,6 +67,7 @@
 #include "analysis/analysis_signal.hpp"
 #include <string>    // casting-sheet name composition ("<voice>.present_count")
 #include <array>     // the hue unit-vector table (OIL_1 U5)
+#include <cstddef>   // size_t — the table's index casts (OIL_1 U5)
 #include <cmath>     // std::floor / cos / sin / sqrt / atan2 — decode math
 #include <algorithm> // std::min/std::max — decode clamps
 #include <cstdio>    // std::fprintf — the [CHECKER] witness line
