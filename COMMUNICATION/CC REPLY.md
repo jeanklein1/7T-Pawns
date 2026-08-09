@@ -1,0 +1,19 @@
+Jean's GO arrives for work that's already on the branch — I executed OIL_1b in the same turn as OIL_1a, since the previous handoff carried the full unit spec. So the substantive move now is **Adjustment 1**: my branch currently carries two ledger-only commits (U16 and V3), and the ruling says the branch touches code only.
+
+Master hasn't moved. Removing the two ledger commits from the branch — but parking them first so the authored prose isn't lost, then verifying the code tree comes out byte-identical.
+
+Now the critical check: the rebuilt branch must have a byte-identical code tree to what Jean built, differing only by the absent ledger edits.
+
+Adjustment 1 applied. Both adjustments are handled, and there's one thing in your GO that I should correct rather than let stand.
+
+**OIL_1b was already executed** — I ran it in the same turn as OIL_1a, since the previous handoff carried the full unit spec and the branch law. So your GO lands on finished work rather than starting it. The branch has been sitting held at `claude/oil-1` since then; master never moved off OIL_1a, so the quarantine you're relying on for the parallel deploy has held throughout.
+
+**What executed:** U1–U13, one commit per unit, in order. **U14 and U15 stopped** under the handoff's own STOP provisions — U14 because neither Dawn wrapper is inspectable from this container (native points at `C:/dev/dawn` untagged, web follows the installed emsdk), U15 because the transition census *completed* and showed the invariant reaching a keypress door in `direction/input.hpp` and the pyramid-bake path in `entity_pipeline.hpp`. Both stops carry full reports: U14 has the conversion design and the one grep that unblocks it; U15 has the finished raiser census and the registry-epoch form that would be structurally safe once a measurement asks.
+
+**Two commits beyond your unit list**, which you should look at with that in mind. I ran an adversarial verification pass over the branch (fifteen readers, one per unit plus a compile-surface sweep) because nothing here compiles in this container. All units came back clean, but it raised a behavioral-delta claim against U9 that I refuted in its specifics and then partly conceded: the candidate set depends on the live pawn cell, no raiser tracked it, and the unreachability rested on three facts in three files. `V1` gives that its own two-int raiser, takes the ROSTER gate onto the hoisted gallery binds, and drops a dead head bind. `V2` is comments only. If you'd rather the branch be exactly U1–U13, `V1`/`V2` are the two commits to drop.
+
+**Adjustment 1, applied:** the branch carried two ledger-only commits (U16 and V3). I rebuilt it without them and force-pushed. Verified before pushing: `git diff` over `src/` between old and new head is **empty** — the code tree is byte-identical, so if you built the branch, that build still stands. The branch's diff against master now touches twelve `src/` files and **zero** `audit/` files.
+
+The U16 content was already written, so rather than delete it I parked it at **`claude/oil-1-u16-ledger-hold`** — a disposable ref holding the outcome column and the verification-pass section. At merge authorization I'll land that as a master commit, sharing it with the AFTER ms if you have them by then. Delete the ref whenever; nothing depends on it.
+
+**Adjustment 2** needs nothing from me — the ledger's `ms` column is empty and waiting, and with the S rows live that run also answers whether R3's residual CPU cost justifies U15's mechanism. On your parallel sequence: the FRAME_1 URL-bar observation is a good instinct — an absent `[FRAME_1]` line across a visible reflow is stronger evidence than any number the line could carry, since the resize branch is the only thing that prints.
