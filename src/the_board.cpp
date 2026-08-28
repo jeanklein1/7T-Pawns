@@ -87,7 +87,8 @@ constexpr const char* RENDER_NAME = STRINGIFY(INCUBATE_RENDER);
 
 // ═══ THE READY OFFER'S FLOOR (OVERTURE_0) ════════════════════════════════
 //
-// "Controls:" is the line the shell dismisses the veil on — it either
+// "Controls:" was the line the shell dismissed the veil on (AUBADE U4
+// moved that to first present; the line now arms the belt) — it either
 // presents the world or offers the door, depending on whether the visitor
 // has already tapped. The world is LIVE behind that veil, so the line is not
 // "the world is ready", it is "you may look now".
@@ -180,9 +181,20 @@ static void apply_pace_once() {
 
 // ── the offer, once the exhibition has a floor under it ────────────
 //
-// Called every frame until it fires. The line's TEXT is load-bearing at both
-// ends: web/index.html dismisses the veil on a line beginning "Controls:",
-// so the string and its position stay exactly as they were.
+// Called every frame until it fires.
+//
+// AUBADE U4 — THE VEIL NO LONGER READS THIS LINE. It used to: the shell
+// dismissed on a line beginning "Controls:", which made stdout
+// load-bearing and, worse, dismissed on a line that never claimed a frame
+// had been presented — this is the OVERTURE READY floor (six authored
+// paintings staged, or the timeout), and a world can reach it without the
+// GPU ever having finished a frame. The veil now waits for first present
+// itself (window.t7FirstPresent, armed at frame 1's submit).
+//
+// THE STRING IS STILL LOAD-BEARING, one notch weaker: the shell arms a
+// 20 s belt on it, so a browser that renders but never resolves
+// onSubmittedWorkDone still gets its world. Keep the text and its
+// position as they are.
 static void offer_controls_when_ready() {
     if (app->controls_offered) return;
     const float waited = std::chrono::duration<float>(

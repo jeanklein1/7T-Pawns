@@ -840,6 +840,57 @@
     // through here would print each one twice.
     function note(text) { console.log(text); record(text); }
 
+    // ══ AUBADE U4 — THE HANDOFF, AND THE ONE THING THAT MAY FORCE IT ══
+    //
+    // t7FirstPresent is called from the_board.cpp, inside frame 1's
+    // queue.OnSubmittedWorkDone callback (AUBADE U1 armed it). It is the
+    // program's only true first-present witness, and it is what the veil
+    // now waits for.
+    //
+    // ATMOS_0's fork is unchanged and moves here intact: a visitor who
+    // already tapped gets the world; one who has not gets the door. Only
+    // the TRIGGER moved.
+    //
+    // ── THE BELT, AND WHY IT IS NOT A SECOND TRIGGER ──────────────────
+    //
+    // A veil that waits for a callback is hostage to that callback. The
+    // third arm is not witnessed (L48) and has already been caught
+    // getting one WebGPU construct silently wrong (IOS_5), so a browser
+    // that renders perfectly but never resolves OnSubmittedWorkDone would
+    // hold a working piece behind a poster until the 240 s watchdog.
+    //
+    // So the "Controls:" line — no longer a trigger — arms a 20 s belt.
+    // It is a good moment to arm from precisely because of what it means:
+    // the READY floor, six authored paintings staged, which a world that
+    // has not been running cannot have reached. If first present has not
+    // fired 20 s after THAT, the thing that is broken is the callback and
+    // not the render.
+    //
+    // IT SAYS SO WHEN IT FIRES. A veil lifted by the belt is a different
+    // event from a veil lifted by a present, and a log that cannot tell
+    // them apart would hide exactly the browser bug the belt exists for.
+    var presented = false;
+    var beltArmed = false;
+    function handoff() {
+      if (presented) return;
+      presented = true;
+      if (entered) present(); else showReady();
+    }
+    window.t7FirstPresent = function () {
+      note('[AUBADE] veil handing off at first present');
+      handoff();
+    };
+    function armVeilBelt() {
+      if (beltArmed || presented) return;
+      beltArmed = true;
+      setTimeout(function () {
+        if (presented || terminal) return;
+        note('[AUBADE] veil BELT — the READY floor landed 20 s ago and frame 1\'s '
+           + 'onSubmittedWorkDone has not resolved; lifting anyway');
+        handoff();
+      }, 20000);
+    }
+
     // ── STATE TRANSITIONS ────────────────────────────────────────
     function present() {                    // LOADING -> the world
       if (terminal) return;                 // a real end outranks the world
@@ -1329,17 +1380,33 @@
         fallback(text); return;
       }
 
-      // DISMISSAL. "Controls:" is printed once the frame loop is live —
-      // the cleanest "world visible" moment the log offers. Boot's
-      // FADE_IN covers the rest, so the veil cross-dissolves into the
-      // fade rather than cutting to a finished frame.
+      // ══ AUBADE U4 — "Controls:" IS NO LONGER THE TRIGGER ═══════════
       //
-      // ATMOS_0 forks the destination, not the trigger: a visitor who
-      // already tapped gets the world now, exactly as before; one who
-      // has not gets the door. Either way the world is live from this
-      // line onward — the veil is the only thing still deciding.
+      // It was the cleanest moment the LOG offered, which is not the same
+      // as the cleanest moment the PIECE has. Two things were wrong with
+      // it and the second is the one that matters:
+      //
+      //   STDOUT WAS LOAD-BEARING. The veil's dismissal read a substring
+      //   of a line printed for a human, from a function whose job is
+      //   something else entirely. Renaming that line would have taken
+      //   the veil down with it.
+      //
+      //   IT NEVER MEANT "THE WORLD IS ON SCREEN". The line comes from
+      //   offer_controls_when_ready (the_board.cpp) — the OVERTURE READY
+      //   floor, six authored paintings staged or a timeout. Nothing in
+      //   it says a frame was ever presented.
+      //
+      // The veil now hands off to window.t7FirstPresent, below: the
+      // resolution of frame 1's queue.OnSubmittedWorkDone, which is the
+      // program's only true statement that the GPU finished the work the
+      // first frame described. veil -> world, never veil -> black ->
+      // world.
+      //
+      // THE LINE STILL ARMS THE BELT, though — see below — so it is
+      // handled here rather than falling through to classify(), which
+      // would file it as a status wording.
       if (text.indexOf('Controls:') === 0) {
-        if (entered) present(); else showReady();
+        armVeilBelt();
         return;
       }
 
@@ -1485,9 +1552,9 @@
     // a phone legitimately pays the whole compile storm (56.9 s observed
     // on the dev laptop's web twin) and a slow phone may pay more.
     // NOT terminal, by construction: the boot keeps running underneath,
-    // and if it finishes the "Controls:" line still calls present(),
-    // which clears this card. A slow phone that eventually makes it
-    // gets its world, not a permanent apology.
+    // and if it finishes, first present (or AUBADE U4's belt) still calls
+    // present(), which clears this card. A slow phone that eventually
+    // makes it gets its world, not a permanent apology.
     setTimeout(function () {
       if (shown || terminal) return;
       showCard(
