@@ -18,8 +18,8 @@ carry those facts, or leave them in place and patch around them.
 | source commit | `eb80c7fac9ccc83577702add2f96bd2671438320` |
 | | audit — ledger provenance converged (PURSE_0) |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
-| `src/cartridges/the_board/realization/world.wgsl` | `sha256:60565e38eec984b71e0556c41cf57b95aea92d9498ed4364e0f664c713986ecc` |
-| `src/cartridges/the_board/realization/state.hpp` | `sha256:eb4c7387978b12ef83acf4d008aa5286177f01b0b8f54c4ca8c7e944e791d5f5` |
+| `src/cartridges/the_board/realization/world.wgsl` | `sha256:f492028e9d624b68baf65dca67e9a4039ecc63d328ff449207e66f2fe9c63e63` |
+| `src/cartridges/the_board/realization/state.hpp` | `sha256:8f63e762913fd52df8ccbc95c731cc1912ef4f1e443e1a08a89bf8960ebf9cec` |
 | `src/cartridges/the_board/realization/binding_surface.gen.inc` | `sha256:463f1d4f323e50439bc83ce20b35830a32356c33350adfbe425b773712de4661` |
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:96e257106083f7934340cf4d2563c2ac9263cac2024d57e16f8f1771e84ac54b` |
 | `tools/binding_ledger.py` | `sha256:8c5e3abcdfcc80826535e7f50b0b3f6ea3f0eb445447419ffc442b9cac1a211a` |
@@ -138,13 +138,13 @@ Boundary: the 98 module-scope binding declarations (witness 0b-0 proves the boun
 
 | idiom | what it is | instances | exemplar (verbatim, site is a line hint) |
 |---|---|---|---|
-| `W-u` | `var<uniform>` declaration | 17 | `@group(2) @binding(200) var<uniform> scene_constants: SceneConstants;` — world.wgsl:1035 |
-| `W-sr` | `var<storage, read>` declaration | 19 | `@group(2) @binding(5) var<storage, read> render_agents: array<AgentState, 32>;` — world.wgsl:7103 |
-| `W-srw` | `var<storage, read_write>` declaration | 31 | `@group(2) @binding(10) var<storage, read_write> field_forces : array<vec4<f32>, FIELD_SUBSCRIBERS>;` — world.wgsl:2717 |
+| `W-u` | `var<uniform>` declaration | 17 | `@group(2) @binding(200) var<uniform> scene_constants: SceneConstants;` — world.wgsl:1046 |
+| `W-sr` | `var<storage, read>` declaration | 19 | `@group(2) @binding(5) var<storage, read> render_agents: array<AgentState, 32>;` — world.wgsl:7114 |
+| `W-srw` | `var<storage, read_write>` declaration | 31 | `@group(2) @binding(10) var<storage, read_write> field_forces : array<vec4<f32>, FIELD_SUBSCRIBERS>;` — world.wgsl:2728 |
 | `W-s0` | bare `var<storage>` (access defaulted) | 0 | — |
-| `W-h` | handle declaration (no address space clause) | 21 | `@group(3) @binding(81) var entity_ground_atlas: texture_2d<f32>;` — world.wgsl:7133 |
+| `W-h` | handle declaration (no address space clause) | 21 | `@group(3) @binding(81) var entity_ground_atlas: texture_2d<f32>;` — world.wgsl:7144 |
 
-Instances: 88 over 4 idioms. Ordering observed: file order is NOT (group, binding) order — first inversion: field_forces @(2,10) at line 2717 follows scene_constants @(2,200) at line 1035; the scatter is the fact M2 maps
+Instances: 88 over 4 idioms. Ordering observed: file order is NOT (group, binding) order — first inversion: field_forces @(2,10) at line 2728 follows scene_constants @(2,200) at line 1046; the scatter is the fact M2 maps
 
 ### M1.L — layout entry arrays + descriptors (`state.hpp`)
 
@@ -152,24 +152,24 @@ Boundary: every `;`-terminated statement inside the 25 creation blocks, array de
 
 | idiom | what it is | instances | exemplar (verbatim, site is a line hint) |
 |---|---|---|---|
-| `L-arr` | the entries array declaration | 30 | `std::array<wgpu::BindGroupLayoutEntry, 2> entries{};` — state.hpp:5347 |
-| `L-bind` | seat -> slot: registry constant, never a literal | 116 | `entries[0].binding = bind::g0::config;` — state.hpp:5358 |
-| `L-vis` | visibility mask (Vertex/Fragment/Compute joined by \|) | 116 | `entries[0].visibility = wgpu::ShaderStage::Vertex \| wgpu::ShaderStage::Fragment \| wgpu::ShaderStage::Compute;` — state.hpp:5359 |
-| `L-buf` | buffer binding type | 76 | `entries[0].buffer.type = wgpu::BufferBindingType::Uniform;` — state.hpp:5360 |
-| `L-dyn` | dynamic-offset flag | 1 | `entries[3].buffer.hasDynamicOffset = true;` — state.hpp:5416 |
-| `L-min` | minBindingSize — a named constant or the size of a named struct (COMPAT_1's two dynamic-offset seats write sizeof) | 2 | `entries[3].buffer.minBindingSize = sizeof(uint32_t);` — state.hpp:5417 |
-| `L-smp` | sampler binding type | 11 | `entries[1].sampler.type = wgpu::SamplerBindingType::Filtering;` — state.hpp:5404 |
-| `L-txs` | texture sample type | 23 | `entries[0].texture.sampleType = wgpu::TextureSampleType::Float;` — state.hpp:5528 |
-| `L-txd` | texture view dimension | 23 | `entries[0].texture.viewDimension = wgpu::TextureViewDimension::e2D;` — state.hpp:5529 |
-| `L-sta` | storage texture access | 6 | `entries[0].storageTexture.access = wgpu::StorageTextureAccess::WriteOnly;` — state.hpp:5585 |
-| `L-stf` | storage texture format | 6 | `entries[0].storageTexture.format = wgpu::TextureFormat::RGBA16Float;` — state.hpp:5586 |
-| `L-std` | storage texture view dimension | 6 | `entries[0].storageTexture.viewDimension = wgpu::TextureViewDimension::e2D;` — state.hpp:5587 |
-| `L-desc` | descriptor declaration (always named desc) | 30 | `wgpu::BindGroupLayoutDescriptor desc{};` — state.hpp:5368 |
-| `L-lbl` | layout label, string literal | 30 | `desc.label = "World Layout";` — state.hpp:5369 |
-| `L-cnt` | entryCount from the array, never a literal | 30 | `desc.entryCount = entries.size();` — state.hpp:5370 |
-| `L-ent` | entries pointer | 30 | `desc.entries = entries.data();` — state.hpp:5371 |
-| `L-new` | creation into the state member | 30 | `worldLayout_ = device_.CreateBindGroupLayout(&desc);` — state.hpp:5372 |
-| `L-chk` | boot check on the member just created | 30 | `if (!worldLayout_) return false;` — state.hpp:5373 |
+| `L-arr` | the entries array declaration | 30 | `std::array<wgpu::BindGroupLayoutEntry, 2> entries{};` — state.hpp:5364 |
+| `L-bind` | seat -> slot: registry constant, never a literal | 116 | `entries[0].binding = bind::g0::config;` — state.hpp:5375 |
+| `L-vis` | visibility mask (Vertex/Fragment/Compute joined by \|) | 116 | `entries[0].visibility = wgpu::ShaderStage::Vertex \| wgpu::ShaderStage::Fragment \| wgpu::ShaderStage::Compute;` — state.hpp:5376 |
+| `L-buf` | buffer binding type | 76 | `entries[0].buffer.type = wgpu::BufferBindingType::Uniform;` — state.hpp:5377 |
+| `L-dyn` | dynamic-offset flag | 1 | `entries[3].buffer.hasDynamicOffset = true;` — state.hpp:5433 |
+| `L-min` | minBindingSize — a named constant or the size of a named struct (COMPAT_1's two dynamic-offset seats write sizeof) | 2 | `entries[3].buffer.minBindingSize = sizeof(uint32_t);` — state.hpp:5434 |
+| `L-smp` | sampler binding type | 11 | `entries[1].sampler.type = wgpu::SamplerBindingType::Filtering;` — state.hpp:5421 |
+| `L-txs` | texture sample type | 23 | `entries[0].texture.sampleType = wgpu::TextureSampleType::Float;` — state.hpp:5545 |
+| `L-txd` | texture view dimension | 23 | `entries[0].texture.viewDimension = wgpu::TextureViewDimension::e2D;` — state.hpp:5546 |
+| `L-sta` | storage texture access | 6 | `entries[0].storageTexture.access = wgpu::StorageTextureAccess::WriteOnly;` — state.hpp:5602 |
+| `L-stf` | storage texture format | 6 | `entries[0].storageTexture.format = wgpu::TextureFormat::RGBA16Float;` — state.hpp:5603 |
+| `L-std` | storage texture view dimension | 6 | `entries[0].storageTexture.viewDimension = wgpu::TextureViewDimension::e2D;` — state.hpp:5604 |
+| `L-desc` | descriptor declaration (always named desc) | 30 | `wgpu::BindGroupLayoutDescriptor desc{};` — state.hpp:5385 |
+| `L-lbl` | layout label, string literal | 30 | `desc.label = "World Layout";` — state.hpp:5386 |
+| `L-cnt` | entryCount from the array, never a literal | 30 | `desc.entryCount = entries.size();` — state.hpp:5387 |
+| `L-ent` | entries pointer | 30 | `desc.entries = entries.data();` — state.hpp:5388 |
+| `L-new` | creation into the state member | 30 | `worldLayout_ = device_.CreateBindGroupLayout(&desc);` — state.hpp:5389 |
+| `L-chk` | boot check on the member just created | 30 | `if (!worldLayout_) return false;` — state.hpp:5390 |
 
 Instances: 596 over 18 idioms. Ordering observed: entry indices ascend 0..N-1 in 30 of 30 blocks; each index appears exactly once everywhere. Field order within a seat: binding, visibility, then type-specific fields. Descriptor tail: desc, label, entryCount, entries, create, boot check. One visibility mask reverses operand order — none found.
 
@@ -179,23 +179,23 @@ Boundary: every `;`-terminated statement inside the 27 creation blocks, plus the
 
 | idiom | what it is | instances | exemplar (verbatim, site is a line hint) |
 |---|---|---|---|
-| `G-arr` | the entries array declaration | 35 | `std::array<wgpu::BindGroupEntry, 2> entries{};` — state.hpp:6384 |
-| `G-bind` | seat -> slot: registry constant, never a literal | 140 | `entries[0].binding = bind::g0::config;` — state.hpp:6386 |
-| `G-buf` | buffer backing member | 98 | `entries[0].buffer = configBuffer_;` — state.hpp:6387 |
+| `G-arr` | the entries array declaration | 35 | `std::array<wgpu::BindGroupEntry, 2> entries{};` — state.hpp:6401 |
+| `G-bind` | seat -> slot: registry constant, never a literal | 140 | `entries[0].binding = bind::g0::config;` — state.hpp:6403 |
+| `G-buf` | buffer backing member | 98 | `entries[0].buffer = configBuffer_;` — state.hpp:6404 |
 | `G-off` | buffer window offset (free expression) | 0 | — |
-| `G-siz` | buffer window size (free expression) | 98 | `entries[0].size = sizeof(GPUDesignConfig);` — state.hpp:6388 |
-| `G-txv` | texture view backing member | 29 | `entries[0].textureView = pawnAuraReadView_;` — state.hpp:6536 |
-| `G-smp` | sampler backing member | 13 | `entries[1].sampler = bilinearSampler_;` — state.hpp:6413 |
-| `G-cst` | in-block constant (Entity Placement's plant count) | 1 | `static constexpr uint32_t PLANT_GROUND_COUNT = Dim::MAX_PALM_INSTANCES + Dim::MAX_CACTUS_INSTANCES + Dim::MAX_BLADE_INSTANCES;` — state.hpp:7037 |
-| `G-desc` | descriptor declaration, one per block | 35 | `wgpu::BindGroupDescriptor desc{};` — state.hpp:6394 |
-| `G-lbl` | group label, string literal | 35 | `desc.label = "World BindGroup";` — state.hpp:6395 |
+| `G-siz` | buffer window size (free expression) | 98 | `entries[0].size = sizeof(GPUDesignConfig);` — state.hpp:6405 |
+| `G-txv` | texture view backing member | 29 | `entries[0].textureView = pawnAuraReadView_;` — state.hpp:6553 |
+| `G-smp` | sampler backing member | 13 | `entries[1].sampler = bilinearSampler_;` — state.hpp:6430 |
+| `G-cst` | in-block constant (Entity Placement's plant count) | 1 | `static constexpr uint32_t PLANT_GROUND_COUNT = Dim::MAX_PALM_INSTANCES + Dim::MAX_CACTUS_INSTANCES + Dim::MAX_BLADE_INSTANCES;` — state.hpp:7054 |
+| `G-desc` | descriptor declaration, one per block | 35 | `wgpu::BindGroupDescriptor desc{};` — state.hpp:6411 |
+| `G-lbl` | group label, string literal | 35 | `desc.label = "World BindGroup";` — state.hpp:6412 |
 | `G-lblp` | group label from the builder's parameter | 0 | — |
-| `G-lay` | the layout this group instantiates | 35 | `desc.layout = worldLayout_;` — state.hpp:6396 |
-| `G-cnt` | entryCount from the array, never a literal | 35 | `desc.entryCount = entries.size();` — state.hpp:6397 |
-| `G-ent` | entries pointer | 35 | `desc.entries = entries.data();` — state.hpp:6398 |
-| `G-new` | creation into the state member | 35 | `worldGroup_ = device_.CreateBindGroup(&desc);` — state.hpp:6399 |
+| `G-lay` | the layout this group instantiates | 35 | `desc.layout = worldLayout_;` — state.hpp:6413 |
+| `G-cnt` | entryCount from the array, never a literal | 35 | `desc.entryCount = entries.size();` — state.hpp:6414 |
+| `G-ent` | entries pointer | 35 | `desc.entries = entries.data();` — state.hpp:6415 |
+| `G-new` | creation into the state member | 35 | `worldGroup_ = device_.CreateBindGroup(&desc);` — state.hpp:6416 |
 | `G-ret` | creation returned from the builder | 0 | — |
-| `G-chk` | boot check, single member | 35 | `if (!worldGroup_) return false;` — state.hpp:6400 |
+| `G-chk` | boot check, single member | 35 | `if (!worldGroup_) return false;` — state.hpp:6417 |
 | `G-bldr` | the builder lambda header (label + IB window as parameters) | 0 | — |
 | `G-call` | builder invocation (three: plans A / B / C) | 0 | — |
 | `G-chk3` | boot check over the three built groups | 0 | — |
@@ -234,126 +234,126 @@ emit-one-block vs patch-in-place — that call is LOOM_1's.
 
 | run | lines | decls | first symbol | last symbol |
 |---|---|---|---|---|
-| 1 | 1035–1035 | 1 | `scene_constants` | `scene_constants` |
-| 2 | 2717–2717 | 1 | `field_forces` | `field_forces` |
-| 3 | 2736–2736 | 1 | `field_bus` | `field_bus` |
-| 4 | 3115–3115 | 1 | `pyramid_instances` | `pyramid_instances` |
-| 5 | 7032–7040 | 4 | `signal` | `agent_state` |
-| 6 | 7073–7077 | 4 | `agent_room` | `ribbon_state` |
-| 7 | 7103–7107 | 2 | `render_agents` | `render_floating` |
-| 8 | 7131–7133 | 2 | `render_ring_xforms` | `entity_ground_atlas` |
-| 9 | 7146–7152 | 4 | `ring_xforms` | `ribbon_body_read` |
-| 10 | 7179–7192 | 2 | `frame_r` | `shadow_slot` |
-| 11 | 7208–7234 | 12 | `bilinear_sampler` | `patch_cell_color_array_read` |
-| 12 | 7523–7538 | 11 | `zone_config` | `live_card_write` |
-| 13 | 7565–7565 | 1 | `zone_derive_requests` | `zone_derive_requests` |
-| 14 | 11371–11376 | 6 | `photographer_config` | `photo_sampler` |
-| 15 | 11388–11388 | 1 | `arch_ground` | `arch_ground` |
-| 16 | 11400–11400 | 1 | `column_ground` | `column_ground` |
-| 17 | 11410–11413 | 2 | `plant_ground` | `entity_ground_atlas_write` |
-| 18 | 11427–11427 | 1 | `patch_grid` | `patch_grid` |
-| 19 | 11777–11781 | 5 | `fc_config` | `fc_indirect` |
-| 20 | 11799–11799 | 1 | `fc_draw_plan` | `fc_draw_plan` |
-| 21 | 11956–11958 | 3 | `painting_slots` | `painting_sampler_filt` |
-| 22 | 12550–12552 | 3 | `amg_params` | `amg_indices` |
-| 23 | 12929–12936 | 5 | `cmg_params` | `cmg_column_ground` |
-| 24 | 13486–13488 | 3 | `palmg_params` | `palmg_indices` |
-| 25 | 13847–13849 | 3 | `cactusg_params` | `cactusg_indices` |
-| 26 | 14246–14248 | 3 | `bladeg_params` | `bladeg_indices` |
-| 27 | 14712–14724 | 5 | `orb_state` | `orb_state_prev_rw` |
+| 1 | 1046–1046 | 1 | `scene_constants` | `scene_constants` |
+| 2 | 2728–2728 | 1 | `field_forces` | `field_forces` |
+| 3 | 2747–2747 | 1 | `field_bus` | `field_bus` |
+| 4 | 3126–3126 | 1 | `pyramid_instances` | `pyramid_instances` |
+| 5 | 7043–7051 | 4 | `signal` | `agent_state` |
+| 6 | 7084–7088 | 4 | `agent_room` | `ribbon_state` |
+| 7 | 7114–7118 | 2 | `render_agents` | `render_floating` |
+| 8 | 7142–7144 | 2 | `render_ring_xforms` | `entity_ground_atlas` |
+| 9 | 7157–7163 | 4 | `ring_xforms` | `ribbon_body_read` |
+| 10 | 7190–7203 | 2 | `frame_r` | `shadow_slot` |
+| 11 | 7219–7245 | 12 | `bilinear_sampler` | `patch_cell_color_array_read` |
+| 12 | 7534–7549 | 11 | `zone_config` | `live_card_write` |
+| 13 | 7576–7576 | 1 | `zone_derive_requests` | `zone_derive_requests` |
+| 14 | 11382–11387 | 6 | `photographer_config` | `photo_sampler` |
+| 15 | 11399–11399 | 1 | `arch_ground` | `arch_ground` |
+| 16 | 11411–11411 | 1 | `column_ground` | `column_ground` |
+| 17 | 11421–11424 | 2 | `plant_ground` | `entity_ground_atlas_write` |
+| 18 | 11438–11438 | 1 | `patch_grid` | `patch_grid` |
+| 19 | 11788–11792 | 5 | `fc_config` | `fc_indirect` |
+| 20 | 11810–11810 | 1 | `fc_draw_plan` | `fc_draw_plan` |
+| 21 | 11967–11969 | 3 | `painting_slots` | `painting_sampler_filt` |
+| 22 | 12561–12563 | 3 | `amg_params` | `amg_indices` |
+| 23 | 12940–12947 | 5 | `cmg_params` | `cmg_column_ground` |
+| 24 | 13497–13499 | 3 | `palmg_params` | `palmg_indices` |
+| 25 | 13858–13860 | 3 | `cactusg_params` | `cactusg_indices` |
+| 26 | 14257–14259 | 3 | `bladeg_params` | `bladeg_indices` |
+| 27 | 14723–14735 | 5 | `orb_state` | `orb_state_prev_rw` |
 
 Line numbers are non-authoritative hints; cite symbols.
 
 | wgsl symbol | line (hint) | run | attached comment | Table H defended |
 |---|---|---|---|---|
-| `scene_constants` | 1035 | 1 | — | — |
-| `field_forces` | 2717 | 2 | yes | **yes** |
-| `field_bus` | 2736 | 3 | — | — |
-| `pyramid_instances` | 3115 | 4 | — | — |
-| `signal` | 7032 | 5 | yes | **yes** |
-| `config` | 7033 | 5 | — | **yes** |
-| `vp_data` | 7034 | 5 | — | — |
-| `agent_state` | 7040 | 5 | yes | **yes** |
-| `agent_room` | 7073 | 6 | — | — |
-| `camera_state` | 7075 | 6 | — | **yes** |
-| `floating_entities` | 7076 | 6 | — | **yes** |
-| `ribbon_state` | 7077 | 6 | — | — |
-| `render_agents` | 7103 | 7 | yes | — |
-| `render_floating` | 7107 | 7 | yes | — |
-| `render_ring_xforms` | 7131 | 8 | yes | — |
-| `entity_ground_atlas` | 7133 | 8 | yes | — |
-| `ring_xforms` | 7146 | 9 | yes | — |
-| `ribbon_spine` | 7148 | 9 | yes | — |
-| `ribbon_body_rw` | 7150 | 9 | yes | — |
-| `ribbon_body_read` | 7152 | 9 | yes | — |
-| `frame_r` | 7179 | 10 | — | **yes** |
-| `shadow_slot` | 7192 | 10 | yes | — |
-| `bilinear_sampler` | 7208 | 11 | yes | — |
-| `nearest_sampler` | 7209 | 11 | — | — |
-| `shadow_map` | 7210 | 11 | — | — |
-| `shadow_sampler` | 7211 | 11 | yes | — |
-| `spot_shadow_map` | 7212 | 11 | — | — |
-| `patch_params_batch` | 7225 | 11 | yes | — |
-| `patch_heightfield_array_write` | 7227 | 11 | yes | — |
-| `tile_grid` | 7228 | 11 | — | — |
-| `patch_cell_color_array_write` | 7229 | 11 | — | — |
-| `patch_instances` | 7232 | 11 | yes | — |
-| `patch_heightfield_array_read` | 7233 | 11 | — | — |
-| `patch_cell_color_array_read` | 7234 | 11 | — | — |
-| `zone_config` | 7523 | 12 | yes | **yes** |
-| `zone_life` | 7524 | 12 | — | — |
-| `zone_life_tex_write` | 7525 | 12 | — | — |
-| `zone_life_read` | 7528 | 12 | yes | — |
-| `zone_params` | 7529 | 12 | — | — |
-| `pawn_aura_read` | 7530 | 12 | — | — |
-| `live_card_read` | 7531 | 12 | — | — |
-| `pawn_aura_cfg` | 7535 | 12 | yes | **yes** |
-| `pawn_aura_cells` | 7536 | 12 | — | — |
-| `pawn_aura_tex_write` | 7537 | 12 | — | — |
-| `live_card_write` | 7538 | 12 | — | — |
-| `zone_derive_requests` | 7565 | 13 | — | — |
-| `photographer_config` | 11371 | 14 | — | — |
-| `photographer_vp` | 11372 | 14 | — | — |
-| `photographer_camera_out` | 11373 | 14 | — | — |
-| `photo_painting_slots` | 11374 | 14 | — | — |
-| `photo_heightfield` | 11375 | 14 | — | — |
-| `photo_sampler` | 11376 | 14 | — | — |
-| `arch_ground` | 11388 | 15 | — | — |
-| `column_ground` | 11400 | 16 | — | — |
-| `plant_ground` | 11410 | 17 | yes | — |
-| `entity_ground_atlas_write` | 11413 | 17 | yes | — |
-| `patch_grid` | 11427 | 18 | — | — |
-| `fc_config` | 11777 | 19 | yes | — |
-| `fc_vp` | 11778 | 19 | — | — |
-| `fc_patches` | 11779 | 19 | — | — |
-| `fc_visible` | 11780 | 19 | — | **yes** |
-| `fc_indirect` | 11781 | 19 | — | **yes** |
-| `fc_draw_plan` | 11799 | 20 | — | — |
-| `painting_slots` | 11956 | 21 | yes | — |
-| `painting_array` | 11957 | 21 | — | — |
-| `painting_sampler_filt` | 11958 | 21 | — | — |
-| `amg_params` | 12550 | 22 | yes | — |
-| `amg_vertices` | 12551 | 22 | — | — |
-| `amg_indices` | 12552 | 22 | — | — |
-| `cmg_params` | 12929 | 23 | yes | — |
-| `cmg_vertices` | 12930 | 23 | — | — |
-| `cmg_indices` | 12931 | 23 | — | — |
-| `cmg_config` | 12935 | 23 | yes | — |
-| `cmg_column_ground` | 12936 | 23 | — | — |
-| `palmg_params` | 13486 | 24 | — | — |
-| `palmg_vertices` | 13487 | 24 | — | — |
-| `palmg_indices` | 13488 | 24 | — | — |
-| `cactusg_params` | 13847 | 25 | — | — |
-| `cactusg_vertices` | 13848 | 25 | — | — |
-| `cactusg_indices` | 13849 | 25 | — | — |
-| `bladeg_params` | 14246 | 26 | — | — |
-| `bladeg_vertices` | 14247 | 26 | — | — |
-| `bladeg_indices` | 14248 | 26 | — | — |
-| `orb_state` | 14712 | 27 | — | **yes** |
-| `orb_config` | 14713 | 27 | — | — |
-| `orb_state_prev` | 14717 | 27 | yes | **yes** |
-| `orb_state_ro` | 14723 | 27 | yes | — |
-| `orb_state_prev_rw` | 14724 | 27 | — | — |
+| `scene_constants` | 1046 | 1 | — | — |
+| `field_forces` | 2728 | 2 | yes | **yes** |
+| `field_bus` | 2747 | 3 | — | — |
+| `pyramid_instances` | 3126 | 4 | — | — |
+| `signal` | 7043 | 5 | yes | **yes** |
+| `config` | 7044 | 5 | — | **yes** |
+| `vp_data` | 7045 | 5 | — | — |
+| `agent_state` | 7051 | 5 | yes | **yes** |
+| `agent_room` | 7084 | 6 | — | — |
+| `camera_state` | 7086 | 6 | — | **yes** |
+| `floating_entities` | 7087 | 6 | — | **yes** |
+| `ribbon_state` | 7088 | 6 | — | — |
+| `render_agents` | 7114 | 7 | yes | — |
+| `render_floating` | 7118 | 7 | yes | — |
+| `render_ring_xforms` | 7142 | 8 | yes | — |
+| `entity_ground_atlas` | 7144 | 8 | yes | — |
+| `ring_xforms` | 7157 | 9 | yes | — |
+| `ribbon_spine` | 7159 | 9 | yes | — |
+| `ribbon_body_rw` | 7161 | 9 | yes | — |
+| `ribbon_body_read` | 7163 | 9 | yes | — |
+| `frame_r` | 7190 | 10 | — | **yes** |
+| `shadow_slot` | 7203 | 10 | yes | — |
+| `bilinear_sampler` | 7219 | 11 | yes | — |
+| `nearest_sampler` | 7220 | 11 | — | — |
+| `shadow_map` | 7221 | 11 | — | — |
+| `shadow_sampler` | 7222 | 11 | yes | — |
+| `spot_shadow_map` | 7223 | 11 | — | — |
+| `patch_params_batch` | 7236 | 11 | yes | — |
+| `patch_heightfield_array_write` | 7238 | 11 | yes | — |
+| `tile_grid` | 7239 | 11 | — | — |
+| `patch_cell_color_array_write` | 7240 | 11 | — | — |
+| `patch_instances` | 7243 | 11 | yes | — |
+| `patch_heightfield_array_read` | 7244 | 11 | — | — |
+| `patch_cell_color_array_read` | 7245 | 11 | — | — |
+| `zone_config` | 7534 | 12 | yes | **yes** |
+| `zone_life` | 7535 | 12 | — | — |
+| `zone_life_tex_write` | 7536 | 12 | — | — |
+| `zone_life_read` | 7539 | 12 | yes | — |
+| `zone_params` | 7540 | 12 | — | — |
+| `pawn_aura_read` | 7541 | 12 | — | — |
+| `live_card_read` | 7542 | 12 | — | — |
+| `pawn_aura_cfg` | 7546 | 12 | yes | **yes** |
+| `pawn_aura_cells` | 7547 | 12 | — | — |
+| `pawn_aura_tex_write` | 7548 | 12 | — | — |
+| `live_card_write` | 7549 | 12 | — | — |
+| `zone_derive_requests` | 7576 | 13 | — | — |
+| `photographer_config` | 11382 | 14 | — | — |
+| `photographer_vp` | 11383 | 14 | — | — |
+| `photographer_camera_out` | 11384 | 14 | — | — |
+| `photo_painting_slots` | 11385 | 14 | — | — |
+| `photo_heightfield` | 11386 | 14 | — | — |
+| `photo_sampler` | 11387 | 14 | — | — |
+| `arch_ground` | 11399 | 15 | — | — |
+| `column_ground` | 11411 | 16 | — | — |
+| `plant_ground` | 11421 | 17 | yes | — |
+| `entity_ground_atlas_write` | 11424 | 17 | yes | — |
+| `patch_grid` | 11438 | 18 | — | — |
+| `fc_config` | 11788 | 19 | yes | — |
+| `fc_vp` | 11789 | 19 | — | — |
+| `fc_patches` | 11790 | 19 | — | — |
+| `fc_visible` | 11791 | 19 | — | **yes** |
+| `fc_indirect` | 11792 | 19 | — | **yes** |
+| `fc_draw_plan` | 11810 | 20 | — | — |
+| `painting_slots` | 11967 | 21 | yes | — |
+| `painting_array` | 11968 | 21 | — | — |
+| `painting_sampler_filt` | 11969 | 21 | — | — |
+| `amg_params` | 12561 | 22 | yes | — |
+| `amg_vertices` | 12562 | 22 | — | — |
+| `amg_indices` | 12563 | 22 | — | — |
+| `cmg_params` | 12940 | 23 | yes | — |
+| `cmg_vertices` | 12941 | 23 | — | — |
+| `cmg_indices` | 12942 | 23 | — | — |
+| `cmg_config` | 12946 | 23 | yes | — |
+| `cmg_column_ground` | 12947 | 23 | — | — |
+| `palmg_params` | 13497 | 24 | — | — |
+| `palmg_vertices` | 13498 | 24 | — | — |
+| `palmg_indices` | 13499 | 24 | — | — |
+| `cactusg_params` | 13858 | 25 | — | — |
+| `cactusg_vertices` | 13859 | 25 | — | — |
+| `cactusg_indices` | 13860 | 25 | — | — |
+| `bladeg_params` | 14257 | 26 | — | — |
+| `bladeg_vertices` | 14258 | 26 | — | — |
+| `bladeg_indices` | 14259 | 26 | — | — |
+| `orb_state` | 14723 | 27 | — | **yes** |
+| `orb_config` | 14724 | 27 | — | — |
+| `orb_state_prev` | 14728 | 27 | yes | **yes** |
+| `orb_state_ro` | 14734 | 27 | yes | — |
+| `orb_state_prev_rw` | 14735 | 27 | — | — |
 
 ## M3 — the fifth-home grep
 
@@ -451,7 +451,7 @@ provenance commit.
 | hasDynamicOffset | SEATS.hasDynamicOffset | `entries[14] shadow_slot` |
 | buffer/sampler/texture/storageTexture type facts | SLOTS.kind + accesses + texture sample/format/dimension (per-slot, where seats agree) | `TextureSampleType::Float` |
 | seat access type where an aliased slot's seats DISAGREE (1 slot) | **RESIDUE** — SEATS needs an access column (or the slot ref must name the alias) | `bind::g2::vp_data` |
-| buffer.minBindingSize (2 sites) | **RESIDUE** — no SEATS column holds it | `state.hpp:5417` |
+| buffer.minBindingSize (2 sites) | **RESIDUE** — no SEATS column holds it | `state.hpp:5434` |
 | entry statement order (0 blocks out of index order) | **RESIDUE** — ordering | `(none found)` |
 | descriptor boilerplate, boot checks, blank-line rhythm | **RESIDUE** — idiom template | `desc.entryCount = entries.size();` |
 | attached comment prose (defended seats) | **RESIDUE** — attached prose | `Render Entity Layout entries[16]/[17]` |
@@ -468,7 +468,7 @@ provenance commit.
 | buffer window .size expressions (one per buffer seat) | **RESIDUE** — no GROUPS column holds them; enumerated in M6 | `entries[3].size = Dim::MAX_AGENTS * sizeof(GPUAgentState)` |
 | buffer window .offset expressions (3 sites) | **RESIDUE** — no GROUPS column holds them; enumerated in M6 | `entries[11].offset = listOff` |
 | the builder: one block minting three groups (A/B/C IB windows) | **RESIDUE** — creation-site multiplicity | `(none)` |
-| the exhibition rebuild (a bind group re-made after boot) | **RESIDUE** — creation cadence — a bind group re-made after boot | `state.hpp:7364 Gallery Textures BindGroup` |
+| the exhibition rebuild (a bind group re-made after boot) | **RESIDUE** — creation cadence — a bind group re-made after boot | `state.hpp:7381 Gallery Textures BindGroup` |
 | in-block constant (PLANT_GROUND_COUNT) | **RESIDUE** — idiom template | `Entity Placement Compute BindGroup block` |
 | entry statement order (0 blocks out of index order) | **RESIDUE** — ordering | `(none found)` |
 | descriptor boilerplate, boot checks, entry prose | **RESIDUE** — idiom template / attached prose | `desc.entries = entries.data();` |
@@ -506,7 +506,7 @@ place and patch around.
 | 8 | W | column-aligned padding (7 decls) and pre-colon spacing (1 decls) | `@binding(0)   var<uniform>             signal` |
 | 9 | L | visibility mask OPERAND ORDER (1 reversed site) | `(none found)` |
 | 10 | L | seat access type where an aliased slot's seats DISAGREE (1 slot) | `bind::g2::vp_data` |
-| 11 | L | buffer.minBindingSize (2 sites) | `state.hpp:5417` |
+| 11 | L | buffer.minBindingSize (2 sites) | `state.hpp:5434` |
 | 12 | L | entry statement order (0 blocks out of index order) | `(none found)` |
 | 13 | L | descriptor boilerplate, boot checks, blank-line rhythm | `desc.entryCount = entries.size();` |
 | 14 | L | attached comment prose (defended seats) | `Render Entity Layout entries[16]/[17]` |
@@ -515,7 +515,7 @@ place and patch around.
 | 17 | G | buffer window .size expressions (one per buffer seat) | `entries[3].size = Dim::MAX_AGENTS * sizeof(GPUAgentState)` |
 | 18 | G | buffer window .offset expressions (3 sites) | `entries[11].offset = listOff` |
 | 19 | G | the builder: one block minting three groups (A/B/C IB windows) | `(none)` |
-| 20 | G | the exhibition rebuild (a bind group re-made after boot) | `state.hpp:7364 Gallery Textures BindGroup` |
+| 20 | G | the exhibition rebuild (a bind group re-made after boot) | `state.hpp:7381 Gallery Textures BindGroup` |
 | 21 | G | in-block constant (PLANT_GROUND_COUNT) | `Entity Placement Compute BindGroup block` |
 | 22 | G | entry statement order (0 blocks out of index order) | `(none found)` |
 | 23 | G | descriptor boilerplate, boot checks, entry prose | `desc.entries = entries.data();` |
@@ -540,101 +540,101 @@ is LOOM_1 / panel work.
 
 | wgsl struct | def (line hint) | named by slots | C++ twin | twin site | static_asserts |
 |---|---|---|---|---|---|
-| `AgentRoomConstants` | 7066 | `agent_room` | `GPUAgentRoomConstants` | `src/cartridges/the_board/realization/state.hpp:2049` | 6 |
-| `AgentState` | 896 | `agent_state`, `render_agents` | `GPUAgentState` | `src/cartridges/the_board/realization/state.hpp:940` | 2 |
-| `ArchGroundEntry` | 11378 | `arch_ground` | `GPUArchGroundEntry` | `src/cartridges/the_board/realization/state.hpp:1307` | 1 |
-| `ArchMeshParams` | 12523 | `amg_params` | `GPUArchMeshParams` | `src/cartridges/the_board/realization/state.hpp:1358` | 1 |
-| `BladeClusterMeshParams` | 14228 | `bladeg_params` | `GPUBladeClusterMeshParams` | `src/cartridges/the_board/realization/state.hpp:1496` | 1 |
-| `CactusMeshParams` | 13825 | `cactusg_params` | `GPUCactusMeshParams` | `src/cartridges/the_board/realization/state.hpp:1463` | 1 |
-| `CameraState` | 1041 | `camera_state`, `photographer_camera_out` | `GPUCameraState` | `src/cartridges/the_board/realization/state.hpp:1119` | 1 |
-| `ColumnGroundEntry` | 11390 | `cmg_column_ground`, `column_ground` | `GPUColumnGroundEntry` | `src/cartridges/the_board/realization/state.hpp:1321` | 1 |
-| `ColumnMeshParams` | 12897 | `cmg_params` | `GPUColumnMeshParams` | `src/cartridges/the_board/realization/state.hpp:1391` | 1 |
-| `DesignConfig` | 1654 | `cmg_config`, `config`, `fc_config` | `GPUDesignConfig` | `src/cartridges/the_board/realization/state.hpp:600` | 3 |
-| `DrawPlanParams` | 11792 | `fc_draw_plan` | `GPUDrawPlanParams` | `src/cartridges/the_board/realization/state.hpp:1861` | 2 |
-| `FieldBus` | 2732 | `field_bus` | `GPUFieldBus` | `src/cartridges/the_board/realization/state.hpp:2101` | 2 |
-| `FloatingEntityArray` | 1109 | `floating_entities`, `render_floating` | **none found** under the prescribed names | — | 0 |
-| `FrameR` | 7172 | `frame_r` | `GPUFrameR` | `src/cartridges/the_board/realization/state.hpp:2126` | 4 |
-| `FrameSignal` | 862 | `signal` | `GPUFrameSignal` | `src/cartridges/the_board/realization/state.hpp:544` | 2 |
-| `GoLZoneArray` | 7423 | `zone_config`, `zone_params` | `GPUGoLZoneArray` | `src/cartridges/the_board/realization/state.hpp:1550` | 1 |
-| `OrbConfig` | 14550 | `orb_config` | `GPUOrbConfig` | `src/cartridges/the_board/realization/state.hpp:1641` | 2 |
-| `OrbState` | 14535 | `orb_state`, `orb_state_prev`, `orb_state_prev_rw`, `orb_state_ro` | `GPUOrbState` | `src/cartridges/the_board/realization/state.hpp:1625` | 1 |
-| `PalmGroundEntry` | 11402 | `plant_ground` | `GPUPalmGroundEntry` | `src/cartridges/the_board/realization/state.hpp:1448` | 1 |
-| `PalmMeshParams` | 13460 | `palmg_params` | `GPUPalmMeshParams` | `src/cartridges/the_board/realization/state.hpp:1427` | 1 |
-| `PatchGrid` | 11420 | `patch_grid` | `GPUPatchGrid` | `src/cartridges/the_board/realization/state.hpp:1963` | 1 |
-| `PatchInstance` | 1164 | `fc_patches`, `patch_instances` | `GPUPatchInstance` | `src/cartridges/the_board/realization/state.hpp:1953` | 1 |
-| `PatchParams` | 1156 | `patch_params_batch` | `GPUPatchParams` | `src/cartridges/the_board/realization/state.hpp:1947` | 1 |
-| `PawnAuraCell` | 7506 | `pawn_aura_cells` | `GPUPawnAuraCell` | `src/cartridges/the_board/realization/state.hpp:1606` | 1 |
-| `PawnAuraConfig` | 7437 | `pawn_aura_cfg` | `GPUPawnAuraConfig` | `src/cartridges/the_board/realization/state.hpp:1585` | 1 |
-| `PhotographerConfig` | 11358 | `photographer_config` | `GPUPhotographerConfig` | `src/cartridges/the_board/realization/state.hpp:2220` | 1 |
-| `PyramidArray` | 3107 | `pyramid_instances` | `GPUPyramidArray` | `src/cartridges/the_board/realization/state.hpp:1345` | 1 |
-| `RibbonBody` | 6070 | `ribbon_body_read`, `ribbon_body_rw` | `GPURibbonBody` | `src/cartridges/the_board/realization/state.hpp:1290` | 4 |
-| `RibbonRingTransform` | 1142 | `render_ring_xforms`, `ring_xforms` | `GPURibbonRingTransform` | `src/cartridges/the_board/realization/state.hpp:1255` | 1 |
-| `RibbonState` | 1115 | `ribbon_state` | `GPURibbonState` | `src/cartridges/the_board/realization/state.hpp:1227` | 5 |
-| `SceneConstants` | 1030 | `scene_constants` | `GPUSceneConstants` | `src/cartridges/the_board/realization/state.hpp:2154` | 3 |
-| `TileGrid` | 1184 | `tile_grid` | `GPUTileGrid` | `src/cartridges/the_board/realization/state.hpp:929` | 1 |
-| `UnifiedPaintingSlot` | 11922 | `painting_slots`, `photo_painting_slots` | **none found** under the prescribed names; name cited at `src/cartridges/the_board/realization/state.hpp:2178` | — | 0 |
-| `VPMatrix` | 4032 | `fc_vp`, `photographer_vp`, `vp_data` | `GPUVPMatrix` | `src/cartridges/the_board/realization/state.hpp:1782` | 1 |
-| `ZoneDeriveRequestArray` | 7557 | `zone_derive_requests` | `GPUZoneDeriveRequestArray` | `src/cartridges/the_board/realization/state.hpp:1572` | 1 |
+| `AgentRoomConstants` | 7077 | `agent_room` | `GPUAgentRoomConstants` | `src/cartridges/the_board/realization/state.hpp:2066` | 6 |
+| `AgentState` | 907 | `agent_state`, `render_agents` | `GPUAgentState` | `src/cartridges/the_board/realization/state.hpp:957` | 2 |
+| `ArchGroundEntry` | 11389 | `arch_ground` | `GPUArchGroundEntry` | `src/cartridges/the_board/realization/state.hpp:1324` | 1 |
+| `ArchMeshParams` | 12534 | `amg_params` | `GPUArchMeshParams` | `src/cartridges/the_board/realization/state.hpp:1375` | 1 |
+| `BladeClusterMeshParams` | 14239 | `bladeg_params` | `GPUBladeClusterMeshParams` | `src/cartridges/the_board/realization/state.hpp:1513` | 1 |
+| `CactusMeshParams` | 13836 | `cactusg_params` | `GPUCactusMeshParams` | `src/cartridges/the_board/realization/state.hpp:1480` | 1 |
+| `CameraState` | 1052 | `camera_state`, `photographer_camera_out` | `GPUCameraState` | `src/cartridges/the_board/realization/state.hpp:1136` | 1 |
+| `ColumnGroundEntry` | 11401 | `cmg_column_ground`, `column_ground` | `GPUColumnGroundEntry` | `src/cartridges/the_board/realization/state.hpp:1338` | 1 |
+| `ColumnMeshParams` | 12908 | `cmg_params` | `GPUColumnMeshParams` | `src/cartridges/the_board/realization/state.hpp:1408` | 1 |
+| `DesignConfig` | 1665 | `cmg_config`, `config`, `fc_config` | `GPUDesignConfig` | `src/cartridges/the_board/realization/state.hpp:617` | 3 |
+| `DrawPlanParams` | 11803 | `fc_draw_plan` | `GPUDrawPlanParams` | `src/cartridges/the_board/realization/state.hpp:1878` | 2 |
+| `FieldBus` | 2743 | `field_bus` | `GPUFieldBus` | `src/cartridges/the_board/realization/state.hpp:2118` | 2 |
+| `FloatingEntityArray` | 1120 | `floating_entities`, `render_floating` | **none found** under the prescribed names | — | 0 |
+| `FrameR` | 7183 | `frame_r` | `GPUFrameR` | `src/cartridges/the_board/realization/state.hpp:2143` | 4 |
+| `FrameSignal` | 873 | `signal` | `GPUFrameSignal` | `src/cartridges/the_board/realization/state.hpp:561` | 2 |
+| `GoLZoneArray` | 7434 | `zone_config`, `zone_params` | `GPUGoLZoneArray` | `src/cartridges/the_board/realization/state.hpp:1567` | 1 |
+| `OrbConfig` | 14561 | `orb_config` | `GPUOrbConfig` | `src/cartridges/the_board/realization/state.hpp:1658` | 2 |
+| `OrbState` | 14546 | `orb_state`, `orb_state_prev`, `orb_state_prev_rw`, `orb_state_ro` | `GPUOrbState` | `src/cartridges/the_board/realization/state.hpp:1642` | 1 |
+| `PalmGroundEntry` | 11413 | `plant_ground` | `GPUPalmGroundEntry` | `src/cartridges/the_board/realization/state.hpp:1465` | 1 |
+| `PalmMeshParams` | 13471 | `palmg_params` | `GPUPalmMeshParams` | `src/cartridges/the_board/realization/state.hpp:1444` | 1 |
+| `PatchGrid` | 11431 | `patch_grid` | `GPUPatchGrid` | `src/cartridges/the_board/realization/state.hpp:1980` | 1 |
+| `PatchInstance` | 1175 | `fc_patches`, `patch_instances` | `GPUPatchInstance` | `src/cartridges/the_board/realization/state.hpp:1970` | 1 |
+| `PatchParams` | 1167 | `patch_params_batch` | `GPUPatchParams` | `src/cartridges/the_board/realization/state.hpp:1964` | 1 |
+| `PawnAuraCell` | 7517 | `pawn_aura_cells` | `GPUPawnAuraCell` | `src/cartridges/the_board/realization/state.hpp:1623` | 1 |
+| `PawnAuraConfig` | 7448 | `pawn_aura_cfg` | `GPUPawnAuraConfig` | `src/cartridges/the_board/realization/state.hpp:1602` | 1 |
+| `PhotographerConfig` | 11369 | `photographer_config` | `GPUPhotographerConfig` | `src/cartridges/the_board/realization/state.hpp:2237` | 1 |
+| `PyramidArray` | 3118 | `pyramid_instances` | `GPUPyramidArray` | `src/cartridges/the_board/realization/state.hpp:1362` | 1 |
+| `RibbonBody` | 6081 | `ribbon_body_read`, `ribbon_body_rw` | `GPURibbonBody` | `src/cartridges/the_board/realization/state.hpp:1307` | 4 |
+| `RibbonRingTransform` | 1153 | `render_ring_xforms`, `ring_xforms` | `GPURibbonRingTransform` | `src/cartridges/the_board/realization/state.hpp:1272` | 1 |
+| `RibbonState` | 1126 | `ribbon_state` | `GPURibbonState` | `src/cartridges/the_board/realization/state.hpp:1244` | 5 |
+| `SceneConstants` | 1041 | `scene_constants` | `GPUSceneConstants` | `src/cartridges/the_board/realization/state.hpp:2171` | 3 |
+| `TileGrid` | 1195 | `tile_grid` | `GPUTileGrid` | `src/cartridges/the_board/realization/state.hpp:946` | 1 |
+| `UnifiedPaintingSlot` | 11933 | `painting_slots`, `photo_painting_slots` | **none found** under the prescribed names; name cited at `src/cartridges/the_board/realization/state.hpp:2195` | — | 0 |
+| `VPMatrix` | 4043 | `fc_vp`, `photographer_vp`, `vp_data` | `GPUVPMatrix` | `src/cartridges/the_board/realization/state.hpp:1799` | 1 |
+| `ZoneDeriveRequestArray` | 7568 | `zone_derive_requests` | `GPUZoneDeriveRequestArray` | `src/cartridges/the_board/realization/state.hpp:1589` | 1 |
 
 The static_asserts, cited verbatim:
 
-- `AgentRoomConstants`: `src/cartridges/the_board/realization/state.hpp:2056: static_assert(sizeof(GPUAgentRoomConstants) == 6960)`
-- `AgentRoomConstants`: `src/cartridges/the_board/realization/state.hpp:2057: static_assert(offsetof(GPUAgentRoomConstants, behaviors) == 1040)`
-- `AgentRoomConstants`: `src/cartridges/the_board/realization/state.hpp:2058: static_assert(offsetof(GPUAgentRoomConstants, tier_gains) == 1392)`
-- `AgentRoomConstants`: `src/cartridges/the_board/realization/state.hpp:2059: static_assert(offsetof(GPUAgentRoomConstants, occupier_cmg) == 1584)`
-- `AgentRoomConstants`: `src/cartridges/the_board/realization/state.hpp:2060: static_assert(offsetof(GPUAgentRoomConstants, occupier_amg) == 5680)`
-- `AgentRoomConstants`: `src/cartridges/the_board/realization/state.hpp:2063: static_assert(offsetof(GPUAgentRoomConstants, behaviors) + sizeof(GPUAgentBehaviorDef) * GPU_AGENT_BEHAVIOR_COUNT == offsetof(GPUAgentRoomConstants, tier_gains), "behaviors and tier_gains must stay adjacent — the registr`
-- `AgentState`: `src/cartridges/the_board/realization/state.hpp:2067: static_assert(sizeof(GPUAgentState) == 96, "GPUAgentState must be 96 bytes")`
-- `AgentState`: `src/cartridges/the_board/realization/state.hpp:2068: static_assert(sizeof(GPUAgentState) % 16 == 0, "GPUAgentState must be 16-byte aligned")`
-- `ArchGroundEntry`: `src/cartridges/the_board/realization/state.hpp:1317: static_assert(sizeof(GPUArchGroundEntry) == 32, "GPUArchGroundEntry must be 32 bytes")`
-- `ArchMeshParams`: `src/cartridges/the_board/realization/state.hpp:1384: static_assert(sizeof(GPUArchMeshParams) == 80, "GPUArchMeshParams must be 80 bytes — keep in sync with world.wgsl::ArchMeshParams (MOSAIC_1: 64 → 80)")`
-- `BladeClusterMeshParams`: `src/cartridges/the_board/realization/state.hpp:1508: static_assert(sizeof(GPUBladeClusterMeshParams) == 80, "GPUBladeClusterMeshParams must be 80 bytes — keep in sync with world.wgsl::BladeClusterMeshParams")`
-- `CactusMeshParams`: `src/cartridges/the_board/realization/state.hpp:1479: static_assert(sizeof(GPUCactusMeshParams) == 128, "GPUCactusMeshParams must be 128 bytes — keep in sync with world.wgsl::CactusMeshParams")`
-- `CameraState`: `src/cartridges/the_board/realization/state.hpp:2075: static_assert(sizeof(GPUCameraState) == 48, "GPUCameraState must be 48 bytes")`
-- `ColumnGroundEntry`: `src/cartridges/the_board/realization/state.hpp:1331: static_assert(sizeof(GPUColumnGroundEntry) == 32, "GPUColumnGroundEntry must be 32 bytes")`
-- `ColumnMeshParams`: `src/cartridges/the_board/realization/state.hpp:1419: static_assert(sizeof(GPUColumnMeshParams) == 128, "GPUColumnMeshParams must be 128 bytes — keep in sync with world.wgsl::ColumnMeshParams")`
-- `DesignConfig`: `src/cartridges/the_board/realization/state.hpp:1984: static_assert(sizeof(GPUDesignConfig) == 720, "GPUDesignConfig must be 720 bytes. PRUNING_1 P3 removed nine " "zero-read fields (44 B) and added 12 B of DECLARED PAD: WGSL " "aligns vec3 to 16 while C++ packs float[3] at`
-- `DesignConfig`: `src/cartridges/the_board/realization/state.hpp:2009: static_assert(offsetof(GPUDesignConfig, sun_direction) % 16 == 0 && offsetof(GPUDesignConfig, fog_color) % 16 == 0 && offsetof(GPUDesignConfig, fade_color) % 16 == 0 && offsetof(GPUDesignConfig, checker_resultant) % 16 =`
-- `DesignConfig`: `src/cartridges/the_board/realization/state.hpp:2764: static_assert(offsetof(GPUDesignConfig, lod_point_x) == 352, "lod_point_x offset must be 384 for targeted upload")`
-- `DrawPlanParams`: `src/cartridges/the_board/realization/state.hpp:1868: static_assert(sizeof(GPUDrawPlanParams) == 16 + 8 * 16, "draw plan: header + 8 vec4 rects — mirror of WGSL DrawPlanParams")`
-- `DrawPlanParams`: `src/cartridges/the_board/realization/state.hpp:3648: static_assert(sizeof(GPUDrawPlanParams) == 4 * sizeof(uint32_t) + sizeof(float) * 8 * 4, "draw plan must be padding-free for the memcmp gate")`
-- `FieldBus`: `src/cartridges/the_board/realization/state.hpp:2105: static_assert(sizeof(GPUFieldBus) == 256)`
-- `FieldBus`: `src/cartridges/the_board/realization/state.hpp:2106: static_assert(offsetof(GPUFieldBus, authored) == 112)`
-- `FrameR`: `src/cartridges/the_board/realization/state.hpp:2133: static_assert(sizeof(GPUFrameR) == 1040)`
-- `FrameR`: `src/cartridges/the_board/realization/state.hpp:2134: static_assert(offsetof(GPUFrameR, vp) == 848)`
-- `FrameR`: `src/cartridges/the_board/realization/state.hpp:2135: static_assert(offsetof(GPUFrameR, camera) == 976)`
-- `FrameR`: `src/cartridges/the_board/realization/state.hpp:2136: static_assert(offsetof(GPUFrameR, sphere_pos) == 1024)`
-- `FrameSignal`: `src/cartridges/the_board/realization/state.hpp:1971: static_assert(sizeof(GPUFrameSignal) == 80, "GPUFrameSignal must be 80 bytes (CUT_1f: the 256 B dead stats mirror left both rooms)")`
-- `FrameSignal`: `src/cartridges/the_board/realization/state.hpp:1972: static_assert(offsetof(GPUFrameSignal, mount_phase) == 48, "RIBBON_1: the mount block took the sky block's trailing 32 bytes, " "same total, same boundary — the WGSL twin mirrors it field for field")`
-- `GoLZoneArray`: `src/cartridges/the_board/realization/state.hpp:1557: static_assert(sizeof(GPUGoLZoneArray) == 16 + Dim::MAX_GOL_ZONES * 80, "GPUGoLZoneArray must match WGSL layout")`
-- `OrbConfig`: `src/cartridges/the_board/realization/state.hpp:1780: static_assert(sizeof(GPUOrbConfig) == 480, "GPUOrbConfig must be 480 bytes")`
-- `OrbConfig`: `src/cartridges/the_board/realization/state.hpp:3899: static_assert(offsetof(GPUOrbConfig, t_seconds) == offsetof(GPUOrbConfig, dt) + 4, "orb frame pair: t_seconds must ride dt for the coalesced write")`
-- `OrbState`: `src/cartridges/the_board/realization/state.hpp:1639: static_assert(sizeof(GPUOrbState) == 80, "GPUOrbState must be 80 bytes")`
-- `PalmGroundEntry`: `src/cartridges/the_board/realization/state.hpp:1455: static_assert(sizeof(GPUPalmGroundEntry) == 32, "GPUPalmGroundEntry must be 32 bytes")`
-- `PalmMeshParams`: `src/cartridges/the_board/realization/state.hpp:1445: static_assert(sizeof(GPUPalmMeshParams) == 128, "GPUPalmMeshParams must be 128 bytes — keep in sync with world.wgsl::PalmMeshParams")`
-- `PatchGrid`: `src/cartridges/the_board/realization/state.hpp:2175: static_assert(sizeof(GPUPatchGrid) == 16 + Dim::MAX_ACTIVE_PATCHES * 4, "GPUPatchGrid must be 16 bytes header + 4 bytes/entry")`
-- `PatchInstance`: `src/cartridges/the_board/realization/state.hpp:2174: static_assert(sizeof(GPUPatchInstance) == 16, "GPUPatchInstance must be 16 bytes")`
-- `PatchParams`: `src/cartridges/the_board/realization/state.hpp:2173: static_assert(sizeof(GPUPatchParams) == 16, "LATTICE_1: the twin is 16 bytes")`
-- `PawnAuraCell`: `src/cartridges/the_board/realization/state.hpp:1620: static_assert(sizeof(GPUPawnAuraCell) == 48, "GPUPawnAuraCell must be 48 bytes")`
-- `PawnAuraConfig`: `src/cartridges/the_board/realization/state.hpp:1604: static_assert(sizeof(GPUPawnAuraConfig) == 64, "GPUPawnAuraConfig must be 64 bytes")`
-- `PhotographerConfig`: `src/cartridges/the_board/realization/state.hpp:2232: static_assert(sizeof(GPUPhotographerConfig) == 48, "GPUPhotographerConfig must be 48 bytes")`
-- `PyramidArray`: `src/cartridges/the_board/realization/state.hpp:1350: static_assert(sizeof(GPUPyramidArray) == 16 + Dim::MAX_PYRAMID_INSTANCES * 32, "GPUPyramidArray must match WGSL layout")`
-- `RibbonBody`: `src/cartridges/the_board/realization/state.hpp:1302: static_assert(sizeof(GPURibbonBody) == 28896)`
-- `RibbonBody`: `src/cartridges/the_board/realization/state.hpp:1303: static_assert(offsetof(GPURibbonBody, saddle) == 64)`
-- `RibbonBody`: `src/cartridges/the_board/realization/state.hpp:1304: static_assert(offsetof(GPURibbonBody, emit) == 96)`
-- `RibbonBody`: `src/cartridges/the_board/realization/state.hpp:1305: static_assert(offsetof(GPURibbonBody, deform) == 3296)`
-- `RibbonRingTransform`: `src/cartridges/the_board/realization/state.hpp:1260: static_assert(sizeof(GPURibbonRingTransform) == 48, "GPURibbonRingTransform must be 48 bytes")`
-- `RibbonState`: `src/cartridges/the_board/realization/state.hpp:2079: static_assert(sizeof(GPURibbonState) == 112, "GPURibbonState must be 112 bytes")`
-- `RibbonState`: `src/cartridges/the_board/realization/state.hpp:2080: static_assert(offsetof(GPURibbonState, checker_scatter) == 28, "checker_scatter must sit at twist_amp's retired slot (28)")`
-- `RibbonState`: `src/cartridges/the_board/realization/state.hpp:2081: static_assert(offsetof(GPURibbonState, seed) == 60, "seed must sit at twist_freq's retired slot (60)")`
-- `RibbonState`: `src/cartridges/the_board/realization/state.hpp:2082: static_assert(offsetof(GPURibbonState, color_b) == 96, "color_b must sit 16-aligned at the old struct end (96)")`
-- `RibbonState`: `src/cartridges/the_board/realization/state.hpp:2083: static_assert(offsetof(GPURibbonState, hue_spread) == 108, "hue_spread must sit at CB-1's retired tail pad (108)")`
-- `SceneConstants`: `src/cartridges/the_board/realization/state.hpp:2159: static_assert(sizeof(GPUSceneConstants) == 4336)`
-- `SceneConstants`: `src/cartridges/the_board/realization/state.hpp:2160: static_assert(offsetof(GPUSceneConstants, figure_profiles) == 192)`
-- `SceneConstants`: `src/cartridges/the_board/realization/state.hpp:2161: static_assert(offsetof(GPUSceneConstants, ribbon) == 4224)`
-- `TileGrid`: `src/cartridges/the_board/realization/state.hpp:938: static_assert(sizeof(GPUTileGrid) == 16 + Dim::TILE_GRID_CAPACITY * 16, "GPUTileGrid must match WGSL layout")`
-- `VPMatrix`: `src/cartridges/the_board/realization/state.hpp:2084: static_assert(sizeof(GPUVPMatrix) == 128, "GPUVPMatrix must be 128 bytes")`
-- `ZoneDeriveRequestArray`: `src/cartridges/the_board/realization/state.hpp:1579: static_assert(sizeof(GPUZoneDeriveRequestArray) == 16 + Dim::MAX_GOL_ZONES * 32, "GPUZoneDeriveRequestArray must match WGSL layout")`
+- `AgentRoomConstants`: `src/cartridges/the_board/realization/state.hpp:2073: static_assert(sizeof(GPUAgentRoomConstants) == 6960)`
+- `AgentRoomConstants`: `src/cartridges/the_board/realization/state.hpp:2074: static_assert(offsetof(GPUAgentRoomConstants, behaviors) == 1040)`
+- `AgentRoomConstants`: `src/cartridges/the_board/realization/state.hpp:2075: static_assert(offsetof(GPUAgentRoomConstants, tier_gains) == 1392)`
+- `AgentRoomConstants`: `src/cartridges/the_board/realization/state.hpp:2076: static_assert(offsetof(GPUAgentRoomConstants, occupier_cmg) == 1584)`
+- `AgentRoomConstants`: `src/cartridges/the_board/realization/state.hpp:2077: static_assert(offsetof(GPUAgentRoomConstants, occupier_amg) == 5680)`
+- `AgentRoomConstants`: `src/cartridges/the_board/realization/state.hpp:2080: static_assert(offsetof(GPUAgentRoomConstants, behaviors) + sizeof(GPUAgentBehaviorDef) * GPU_AGENT_BEHAVIOR_COUNT == offsetof(GPUAgentRoomConstants, tier_gains), "behaviors and tier_gains must stay adjacent — the registr`
+- `AgentState`: `src/cartridges/the_board/realization/state.hpp:2084: static_assert(sizeof(GPUAgentState) == 96, "GPUAgentState must be 96 bytes")`
+- `AgentState`: `src/cartridges/the_board/realization/state.hpp:2085: static_assert(sizeof(GPUAgentState) % 16 == 0, "GPUAgentState must be 16-byte aligned")`
+- `ArchGroundEntry`: `src/cartridges/the_board/realization/state.hpp:1334: static_assert(sizeof(GPUArchGroundEntry) == 32, "GPUArchGroundEntry must be 32 bytes")`
+- `ArchMeshParams`: `src/cartridges/the_board/realization/state.hpp:1401: static_assert(sizeof(GPUArchMeshParams) == 80, "GPUArchMeshParams must be 80 bytes — keep in sync with world.wgsl::ArchMeshParams (MOSAIC_1: 64 → 80)")`
+- `BladeClusterMeshParams`: `src/cartridges/the_board/realization/state.hpp:1525: static_assert(sizeof(GPUBladeClusterMeshParams) == 80, "GPUBladeClusterMeshParams must be 80 bytes — keep in sync with world.wgsl::BladeClusterMeshParams")`
+- `CactusMeshParams`: `src/cartridges/the_board/realization/state.hpp:1496: static_assert(sizeof(GPUCactusMeshParams) == 128, "GPUCactusMeshParams must be 128 bytes — keep in sync with world.wgsl::CactusMeshParams")`
+- `CameraState`: `src/cartridges/the_board/realization/state.hpp:2092: static_assert(sizeof(GPUCameraState) == 48, "GPUCameraState must be 48 bytes")`
+- `ColumnGroundEntry`: `src/cartridges/the_board/realization/state.hpp:1348: static_assert(sizeof(GPUColumnGroundEntry) == 32, "GPUColumnGroundEntry must be 32 bytes")`
+- `ColumnMeshParams`: `src/cartridges/the_board/realization/state.hpp:1436: static_assert(sizeof(GPUColumnMeshParams) == 128, "GPUColumnMeshParams must be 128 bytes — keep in sync with world.wgsl::ColumnMeshParams")`
+- `DesignConfig`: `src/cartridges/the_board/realization/state.hpp:2001: static_assert(sizeof(GPUDesignConfig) == 720, "GPUDesignConfig must be 720 bytes. PRUNING_1 P3 removed nine " "zero-read fields (44 B) and added 12 B of DECLARED PAD: WGSL " "aligns vec3 to 16 while C++ packs float[3] at`
+- `DesignConfig`: `src/cartridges/the_board/realization/state.hpp:2026: static_assert(offsetof(GPUDesignConfig, sun_direction) % 16 == 0 && offsetof(GPUDesignConfig, fog_color) % 16 == 0 && offsetof(GPUDesignConfig, fade_color) % 16 == 0 && offsetof(GPUDesignConfig, checker_resultant) % 16 =`
+- `DesignConfig`: `src/cartridges/the_board/realization/state.hpp:2781: static_assert(offsetof(GPUDesignConfig, lod_point_x) == 352, "lod_point_x offset must be 384 for targeted upload")`
+- `DrawPlanParams`: `src/cartridges/the_board/realization/state.hpp:1885: static_assert(sizeof(GPUDrawPlanParams) == 16 + 8 * 16, "draw plan: header + 8 vec4 rects — mirror of WGSL DrawPlanParams")`
+- `DrawPlanParams`: `src/cartridges/the_board/realization/state.hpp:3665: static_assert(sizeof(GPUDrawPlanParams) == 4 * sizeof(uint32_t) + sizeof(float) * 8 * 4, "draw plan must be padding-free for the memcmp gate")`
+- `FieldBus`: `src/cartridges/the_board/realization/state.hpp:2122: static_assert(sizeof(GPUFieldBus) == 256)`
+- `FieldBus`: `src/cartridges/the_board/realization/state.hpp:2123: static_assert(offsetof(GPUFieldBus, authored) == 112)`
+- `FrameR`: `src/cartridges/the_board/realization/state.hpp:2150: static_assert(sizeof(GPUFrameR) == 1040)`
+- `FrameR`: `src/cartridges/the_board/realization/state.hpp:2151: static_assert(offsetof(GPUFrameR, vp) == 848)`
+- `FrameR`: `src/cartridges/the_board/realization/state.hpp:2152: static_assert(offsetof(GPUFrameR, camera) == 976)`
+- `FrameR`: `src/cartridges/the_board/realization/state.hpp:2153: static_assert(offsetof(GPUFrameR, sphere_pos) == 1024)`
+- `FrameSignal`: `src/cartridges/the_board/realization/state.hpp:1988: static_assert(sizeof(GPUFrameSignal) == 80, "GPUFrameSignal must be 80 bytes (CUT_1f: the 256 B dead stats mirror left both rooms)")`
+- `FrameSignal`: `src/cartridges/the_board/realization/state.hpp:1989: static_assert(offsetof(GPUFrameSignal, mount_phase) == 48, "RIBBON_1: the mount block took the sky block's trailing 32 bytes, " "same total, same boundary — the WGSL twin mirrors it field for field")`
+- `GoLZoneArray`: `src/cartridges/the_board/realization/state.hpp:1574: static_assert(sizeof(GPUGoLZoneArray) == 16 + Dim::MAX_GOL_ZONES * 80, "GPUGoLZoneArray must match WGSL layout")`
+- `OrbConfig`: `src/cartridges/the_board/realization/state.hpp:1797: static_assert(sizeof(GPUOrbConfig) == 480, "GPUOrbConfig must be 480 bytes")`
+- `OrbConfig`: `src/cartridges/the_board/realization/state.hpp:3916: static_assert(offsetof(GPUOrbConfig, t_seconds) == offsetof(GPUOrbConfig, dt) + 4, "orb frame pair: t_seconds must ride dt for the coalesced write")`
+- `OrbState`: `src/cartridges/the_board/realization/state.hpp:1656: static_assert(sizeof(GPUOrbState) == 80, "GPUOrbState must be 80 bytes")`
+- `PalmGroundEntry`: `src/cartridges/the_board/realization/state.hpp:1472: static_assert(sizeof(GPUPalmGroundEntry) == 32, "GPUPalmGroundEntry must be 32 bytes")`
+- `PalmMeshParams`: `src/cartridges/the_board/realization/state.hpp:1462: static_assert(sizeof(GPUPalmMeshParams) == 128, "GPUPalmMeshParams must be 128 bytes — keep in sync with world.wgsl::PalmMeshParams")`
+- `PatchGrid`: `src/cartridges/the_board/realization/state.hpp:2192: static_assert(sizeof(GPUPatchGrid) == 16 + Dim::MAX_ACTIVE_PATCHES * 4, "GPUPatchGrid must be 16 bytes header + 4 bytes/entry")`
+- `PatchInstance`: `src/cartridges/the_board/realization/state.hpp:2191: static_assert(sizeof(GPUPatchInstance) == 16, "GPUPatchInstance must be 16 bytes")`
+- `PatchParams`: `src/cartridges/the_board/realization/state.hpp:2190: static_assert(sizeof(GPUPatchParams) == 16, "LATTICE_1: the twin is 16 bytes")`
+- `PawnAuraCell`: `src/cartridges/the_board/realization/state.hpp:1637: static_assert(sizeof(GPUPawnAuraCell) == 48, "GPUPawnAuraCell must be 48 bytes")`
+- `PawnAuraConfig`: `src/cartridges/the_board/realization/state.hpp:1621: static_assert(sizeof(GPUPawnAuraConfig) == 64, "GPUPawnAuraConfig must be 64 bytes")`
+- `PhotographerConfig`: `src/cartridges/the_board/realization/state.hpp:2249: static_assert(sizeof(GPUPhotographerConfig) == 48, "GPUPhotographerConfig must be 48 bytes")`
+- `PyramidArray`: `src/cartridges/the_board/realization/state.hpp:1367: static_assert(sizeof(GPUPyramidArray) == 16 + Dim::MAX_PYRAMID_INSTANCES * 32, "GPUPyramidArray must match WGSL layout")`
+- `RibbonBody`: `src/cartridges/the_board/realization/state.hpp:1319: static_assert(sizeof(GPURibbonBody) == 28896)`
+- `RibbonBody`: `src/cartridges/the_board/realization/state.hpp:1320: static_assert(offsetof(GPURibbonBody, saddle) == 64)`
+- `RibbonBody`: `src/cartridges/the_board/realization/state.hpp:1321: static_assert(offsetof(GPURibbonBody, emit) == 96)`
+- `RibbonBody`: `src/cartridges/the_board/realization/state.hpp:1322: static_assert(offsetof(GPURibbonBody, deform) == 3296)`
+- `RibbonRingTransform`: `src/cartridges/the_board/realization/state.hpp:1277: static_assert(sizeof(GPURibbonRingTransform) == 48, "GPURibbonRingTransform must be 48 bytes")`
+- `RibbonState`: `src/cartridges/the_board/realization/state.hpp:2096: static_assert(sizeof(GPURibbonState) == 112, "GPURibbonState must be 112 bytes")`
+- `RibbonState`: `src/cartridges/the_board/realization/state.hpp:2097: static_assert(offsetof(GPURibbonState, checker_scatter) == 28, "checker_scatter must sit at twist_amp's retired slot (28)")`
+- `RibbonState`: `src/cartridges/the_board/realization/state.hpp:2098: static_assert(offsetof(GPURibbonState, seed) == 60, "seed must sit at twist_freq's retired slot (60)")`
+- `RibbonState`: `src/cartridges/the_board/realization/state.hpp:2099: static_assert(offsetof(GPURibbonState, color_b) == 96, "color_b must sit 16-aligned at the old struct end (96)")`
+- `RibbonState`: `src/cartridges/the_board/realization/state.hpp:2100: static_assert(offsetof(GPURibbonState, hue_spread) == 108, "hue_spread must sit at CB-1's retired tail pad (108)")`
+- `SceneConstants`: `src/cartridges/the_board/realization/state.hpp:2176: static_assert(sizeof(GPUSceneConstants) == 4336)`
+- `SceneConstants`: `src/cartridges/the_board/realization/state.hpp:2177: static_assert(offsetof(GPUSceneConstants, figure_profiles) == 192)`
+- `SceneConstants`: `src/cartridges/the_board/realization/state.hpp:2178: static_assert(offsetof(GPUSceneConstants, ribbon) == 4224)`
+- `TileGrid`: `src/cartridges/the_board/realization/state.hpp:955: static_assert(sizeof(GPUTileGrid) == 16 + Dim::TILE_GRID_CAPACITY * 16, "GPUTileGrid must match WGSL layout")`
+- `VPMatrix`: `src/cartridges/the_board/realization/state.hpp:2101: static_assert(sizeof(GPUVPMatrix) == 128, "GPUVPMatrix must be 128 bytes")`
+- `ZoneDeriveRequestArray`: `src/cartridges/the_board/realization/state.hpp:1596: static_assert(sizeof(GPUZoneDeriveRequestArray) == 16 + Dim::MAX_GOL_ZONES * 32, "GPUZoneDeriveRequestArray must match WGSL layout")`
 
 ## M6 — the backing map
 
@@ -645,7 +645,7 @@ because no relation column holds them (M4 residue).
 
 ### `World BindGroup`
 
-layout `worldLayout_` → member `worldGroup_` (state.hpp:6384, descriptor `desc`)
+layout `worldLayout_` → member `worldGroup_` (state.hpp:6401, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -654,7 +654,7 @@ layout `worldLayout_` → member `worldGroup_` (state.hpp:6384, descriptor `desc
 
 ### `Frame R BindGroup`
 
-layout `frameRLayout_` → member `frameRGroup_` (state.hpp:6406, descriptor `desc`)
+layout `frameRLayout_` → member `frameRGroup_` (state.hpp:6423, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -665,7 +665,7 @@ layout `frameRLayout_` → member `frameRGroup_` (state.hpp:6406, descriptor `de
 
 ### `Frame C BindGroup`
 
-layout `frameCLayout_` → member `frameCGroup_` (state.hpp:6435, descriptor `desc`)
+layout `frameCLayout_` → member `frameCGroup_` (state.hpp:6452, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -675,7 +675,7 @@ layout `frameCLayout_` → member `frameCGroup_` (state.hpp:6435, descriptor `de
 
 ### `Frame BindGroup (Photographer)`
 
-layout `frameRLayout_` → member `framePhotographerGroup_` (state.hpp:6458, descriptor `desc`)
+layout `frameRLayout_` → member `framePhotographerGroup_` (state.hpp:6475, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -686,7 +686,7 @@ layout `frameRLayout_` → member `framePhotographerGroup_` (state.hpp:6458, des
 
 ### `Agents State BindGroup`
 
-layout `agentsStateLayout_` → member `agentsStateGroup_` (state.hpp:6488, descriptor `desc`)
+layout `agentsStateLayout_` → member `agentsStateGroup_` (state.hpp:6505, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -701,7 +701,7 @@ layout `agentsStateLayout_` → member `agentsStateGroup_` (state.hpp:6488, desc
 
 ### `Agents Textures BindGroup`
 
-layout `agentsTexturesLayout_` → member `agentsTexturesGroup_` (state.hpp:6533, descriptor `desc`)
+layout `agentsTexturesLayout_` → member `agentsTexturesGroup_` (state.hpp:6550, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -712,7 +712,7 @@ layout `agentsTexturesLayout_` → member `agentsTexturesGroup_` (state.hpp:6533
 
 ### `Aura State BindGroup`
 
-layout `auraStateLayout_` → member `auraStateGroup_` (state.hpp:6558, descriptor `desc`)
+layout `auraStateLayout_` → member `auraStateGroup_` (state.hpp:6575, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -722,7 +722,7 @@ layout `auraStateLayout_` → member `auraStateGroup_` (state.hpp:6558, descript
 
 ### `Aura Textures BindGroup`
 
-layout `auraTexturesLayout_` → member `auraTexturesGroup_` (state.hpp:6583, descriptor `desc`)
+layout `auraTexturesLayout_` → member `auraTexturesGroup_` (state.hpp:6600, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -730,7 +730,7 @@ layout `auraTexturesLayout_` → member `auraTexturesGroup_` (state.hpp:6583, de
 
 ### `Cull State BindGroup`
 
-layout `cullStateLayout_` → member `cullStateGroup_` (state.hpp:6599, descriptor `desc`)
+layout `cullStateLayout_` → member `cullStateGroup_` (state.hpp:6616, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -742,7 +742,7 @@ layout `cullStateLayout_` → member `cullStateGroup_` (state.hpp:6599, descript
 
 ### `Frame K State BindGroup`
 
-layout `frameKStateLayout_` → member `frameKStateGroup_` (state.hpp:6632, descriptor `desc`)
+layout `frameKStateLayout_` → member `frameKStateGroup_` (state.hpp:6649, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -755,7 +755,7 @@ layout `frameKStateLayout_` → member `frameKStateGroup_` (state.hpp:6632, desc
 
 ### `Frame K Textures BindGroup`
 
-layout `frameKTexturesLayout_` → member `frameKTexturesGroup_` (state.hpp:6669, descriptor `desc`)
+layout `frameKTexturesLayout_` → member `frameKTexturesGroup_` (state.hpp:6686, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -766,7 +766,7 @@ layout `frameKTexturesLayout_` → member `frameKTexturesGroup_` (state.hpp:6669
 
 ### `Gallery State BindGroup`
 
-layout `galleryStateLayout_` → member `galleryStateGroup_` (state.hpp:6694, descriptor `desc`)
+layout `galleryStateLayout_` → member `galleryStateGroup_` (state.hpp:6711, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -774,7 +774,7 @@ layout `galleryStateLayout_` → member `galleryStateGroup_` (state.hpp:6694, de
 
 ### `Photo K State BindGroup`
 
-layout `photoKStateLayout_` → member `photoKStateGroup_` (state.hpp:6713, descriptor `desc`)
+layout `photoKStateLayout_` → member `photoKStateGroup_` (state.hpp:6730, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -787,7 +787,7 @@ layout `photoKStateLayout_` → member `photoKStateGroup_` (state.hpp:6713, desc
 
 ### `Photo K Textures BindGroup`
 
-layout `photoKTexturesLayout_` → member `photoKTexturesGroup_` (state.hpp:6751, descriptor `desc`)
+layout `photoKTexturesLayout_` → member `photoKTexturesGroup_` (state.hpp:6768, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -796,7 +796,7 @@ layout `photoKTexturesLayout_` → member `photoKTexturesGroup_` (state.hpp:6751
 
 ### `Meshgen State BindGroup`
 
-layout `meshgenStateLayout_` → member `meshgenStateGroup_` (state.hpp:6770, descriptor `desc`)
+layout `meshgenStateLayout_` → member `meshgenStateGroup_` (state.hpp:6787, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -808,7 +808,7 @@ layout `meshgenStateLayout_` → member `meshgenStateGroup_` (state.hpp:6770, de
 
 ### `Meshgen State BindGroup (Column)`
 
-layout `meshgenStateLayout_` → member `meshgenStateColumnGroup_` (state.hpp:6805, descriptor `desc`)
+layout `meshgenStateLayout_` → member `meshgenStateColumnGroup_` (state.hpp:6822, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -820,7 +820,7 @@ layout `meshgenStateLayout_` → member `meshgenStateColumnGroup_` (state.hpp:68
 
 ### `Meshgen State BindGroup (Palm)`
 
-layout `meshgenStateLayout_` → member `meshgenStatePalmGroup_` (state.hpp:6838, descriptor `desc`)
+layout `meshgenStateLayout_` → member `meshgenStatePalmGroup_` (state.hpp:6855, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -832,7 +832,7 @@ layout `meshgenStateLayout_` → member `meshgenStatePalmGroup_` (state.hpp:6838
 
 ### `Meshgen State BindGroup (Cactus)`
 
-layout `meshgenStateLayout_` → member `meshgenStateCactusGroup_` (state.hpp:6873, descriptor `desc`)
+layout `meshgenStateLayout_` → member `meshgenStateCactusGroup_` (state.hpp:6890, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -844,7 +844,7 @@ layout `meshgenStateLayout_` → member `meshgenStateCactusGroup_` (state.hpp:68
 
 ### `Meshgen State BindGroup (Blade)`
 
-layout `meshgenStateLayout_` → member `meshgenStateBladeGroup_` (state.hpp:6908, descriptor `desc`)
+layout `meshgenStateLayout_` → member `meshgenStateBladeGroup_` (state.hpp:6925, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -856,7 +856,7 @@ layout `meshgenStateLayout_` → member `meshgenStateBladeGroup_` (state.hpp:690
 
 ### `Orbs A State BindGroup`
 
-layout `orbsAStateLayout_` → member `orbsAStateGroup_` (state.hpp:6944, descriptor `desc`)
+layout `orbsAStateLayout_` → member `orbsAStateGroup_` (state.hpp:6961, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -866,7 +866,7 @@ layout `orbsAStateLayout_` → member `orbsAStateGroup_` (state.hpp:6944, descri
 
 ### `Orbs B State BindGroup`
 
-layout `orbsBStateLayout_` → member `orbsBStateGroup_` (state.hpp:6970, descriptor `desc`)
+layout `orbsBStateLayout_` → member `orbsBStateGroup_` (state.hpp:6987, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -876,7 +876,7 @@ layout `orbsBStateLayout_` → member `orbsBStateGroup_` (state.hpp:6970, descri
 
 ### `Patchgen State BindGroup`
 
-layout `patchgenStateLayout_` → member `patchgenStateGroup_` (state.hpp:6995, descriptor `desc`)
+layout `patchgenStateLayout_` → member `patchgenStateGroup_` (state.hpp:7012, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -885,7 +885,7 @@ layout `patchgenStateLayout_` → member `patchgenStateGroup_` (state.hpp:6995, 
 
 ### `Patchgen Textures BindGroup`
 
-layout `patchgenTexturesLayout_` → member `patchgenTexturesGroup_` (state.hpp:7016, descriptor `desc`)
+layout `patchgenTexturesLayout_` → member `patchgenTexturesGroup_` (state.hpp:7033, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -894,7 +894,7 @@ layout `patchgenTexturesLayout_` → member `patchgenTexturesGroup_` (state.hpp:
 
 ### `Place State BindGroup`
 
-layout `placeStateLayout_` → member `placeStateGroup_` (state.hpp:7035, descriptor `desc`)
+layout `placeStateLayout_` → member `placeStateGroup_` (state.hpp:7052, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -906,7 +906,7 @@ layout `placeStateLayout_` → member `placeStateGroup_` (state.hpp:7035, descri
 
 ### `Place Textures BindGroup`
 
-layout `placeTexturesLayout_` → member `placeTexturesGroup_` (state.hpp:7070, descriptor `desc`)
+layout `placeTexturesLayout_` → member `placeTexturesGroup_` (state.hpp:7087, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -917,7 +917,7 @@ layout `placeTexturesLayout_` → member `placeTexturesGroup_` (state.hpp:7070, 
 
 ### `Ribbon Textures BindGroup`
 
-layout `ribbonTexturesLayout_` → member `ribbonTexturesGroup_` (state.hpp:7097, descriptor `desc`)
+layout `ribbonTexturesLayout_` → member `ribbonTexturesGroup_` (state.hpp:7114, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -926,7 +926,7 @@ layout `ribbonTexturesLayout_` → member `ribbonTexturesGroup_` (state.hpp:7097
 
 ### `Ribbon State BindGroup`
 
-layout `ribbonStateLayout_` → member `ribbonStateGroup_` (state.hpp:7116, descriptor `desc`)
+layout `ribbonStateLayout_` → member `ribbonStateGroup_` (state.hpp:7133, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -942,7 +942,7 @@ layout `ribbonStateLayout_` → member `ribbonStateGroup_` (state.hpp:7116, desc
 
 ### `Scene State BindGroup`
 
-layout `sceneStateLayout_` → member `sceneStateGroup_` (state.hpp:7165, descriptor `desc`)
+layout `sceneStateLayout_` → member `sceneStateGroup_` (state.hpp:7182, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -955,7 +955,7 @@ layout `sceneStateLayout_` → member `sceneStateGroup_` (state.hpp:7165, descri
 
 ### `Scene Textures BindGroup`
 
-layout `sceneTexturesLayout_` → member `sceneTexturesGroup_` (state.hpp:7202, descriptor `desc`)
+layout `sceneTexturesLayout_` → member `sceneTexturesGroup_` (state.hpp:7219, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -971,7 +971,7 @@ layout `sceneTexturesLayout_` → member `sceneTexturesGroup_` (state.hpp:7202, 
 
 ### `Shadow State BindGroup`
 
-layout `shadowStateLayout_` → member `shadowStateGroup_` (state.hpp:7242, descriptor `desc`)
+layout `shadowStateLayout_` → member `shadowStateGroup_` (state.hpp:7259, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -984,7 +984,7 @@ layout `shadowStateLayout_` → member `shadowStateGroup_` (state.hpp:7242, desc
 
 ### `Shadow Textures BindGroup`
 
-layout `shadowTexturesLayout_` → member `shadowTexturesGroup_` (state.hpp:7279, descriptor `desc`)
+layout `shadowTexturesLayout_` → member `shadowTexturesGroup_` (state.hpp:7296, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -994,7 +994,7 @@ layout `shadowTexturesLayout_` → member `shadowTexturesGroup_` (state.hpp:7279
 
 ### `Zones State BindGroup`
 
-layout `zonesStateLayout_` → member `zonesStateGroup_` (state.hpp:7301, descriptor `desc`)
+layout `zonesStateLayout_` → member `zonesStateGroup_` (state.hpp:7318, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -1004,7 +1004,7 @@ layout `zonesStateLayout_` → member `zonesStateGroup_` (state.hpp:7301, descri
 
 ### `Zones Textures BindGroup`
 
-layout `zonesTexturesLayout_` → member `zonesTexturesGroup_` (state.hpp:7326, descriptor `desc`)
+layout `zonesTexturesLayout_` → member `zonesTexturesGroup_` (state.hpp:7343, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
@@ -1013,14 +1013,14 @@ layout `zonesTexturesLayout_` → member `zonesTexturesGroup_` (state.hpp:7326, 
 
 ### `Empty BindGroup`
 
-layout `emptyLayout_` → member `emptyGroup_` (state.hpp:7345, descriptor `desc`)
+layout `emptyLayout_` → member `emptyGroup_` (state.hpp:7362, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|
 
 ### `Gallery Textures BindGroup`
 
-layout `galleryTexturesLayout_` → member `galleryTexturesGroup_` (state.hpp:7364, descriptor `desc`)
+layout `galleryTexturesLayout_` → member `galleryTexturesGroup_` (state.hpp:7381, descriptor `desc`)
 
 | entry | slot | backing | member expression | window |
 |---|---|---|---|---|

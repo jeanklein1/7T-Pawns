@@ -123,6 +123,23 @@ namespace t7 {
             // names, same values, both rooms change together.
             constexpr uint32_t LIVE_CARD_SIZE   = 640;
             constexpr float    LIVE_CARD_EXTENT = 1000.0f;
+            // IOS_3 A — THE MIRROR OF world.wgsl's const_assert, and it
+            // guards a UB hazard rather than a size. write_live_card is
+            // @workgroup_size(16, 16); 640 = 40 x 16 exactly, so no
+            // workgroup is partial and its bounds guard never fires. The
+            // bake earns this line by counter-example: PATCH_HEIGHTFIELD_N
+            // is 65 = 4 x 16 + 1, its last workgroup row and column carry
+            // one valid lane in sixteen, and its guard therefore sits BELOW
+            // both workgroupBarrier() calls. A barrier reached by only some
+            // lanes is undefined behaviour in WGSL — permissive desktop
+            // compilers accept it, a strict one need not. If this assert
+            // ever fires, the card kernel's guard must move below its three
+            // barriers before the size changes.
+            static_assert(LIVE_CARD_SIZE % 16 == 0,
+                "LIVE_CARD_SIZE must be a multiple of write_live_card's 16x16 "
+                "workgroup: a partial workgroup makes the bounds guard "
+                "load-bearing, and it currently sits above no barrier only "
+                "because it never fires");
 
             // THE WINDOW COVENANT, stated with the numbers that hold.
             // The origin snaps DOWN to the PATCH_CELL_SIZE grid, so the

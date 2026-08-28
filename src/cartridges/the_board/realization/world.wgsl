@@ -258,6 +258,17 @@ const PATCH_CELL_SIZE: f32 = PATCH_EXTENT / f32(PATCH_CELL_N);   // 3.125
 
 // ── THE LIVE CARD (GROUND_CARD_1; C++ room: Dim::LIVE_CARD_*) ──
 const LIVE_CARD_SIZE: u32 = 640u;
+// IOS_3 A — THE GUARD MUST NEVER BECOME LOAD-BEARING. write_live_card is
+// @workgroup_size(16, 16) and 640 = 40 x 16 EXACTLY, so its
+// `if (ix >= LIVE_CARD_SIZE …) { return; }` never fires and no workgroup
+// is partial. The bake is the counter-example that earns this line:
+// PATCH_HEIGHTFIELD_N is 65 = 4 x 16 + 1, so its last workgroup row and
+// column carry ONE valid lane in sixteen, and its guard sits BELOW both
+// barriers for exactly that reason. If this ever stops holding, partial
+// workgroups appear here too and the same rule binds: a barrier reached
+// by only some lanes is undefined behaviour in WGSL — tolerated by
+// permissive desktop compilers, fatal on a strict one.
+const_assert LIVE_CARD_SIZE % 16u == 0u;
 const LIVE_CARD_EXTENT: f32 = 1000.0;
 const SHELL_RING_WIDTH: f32 = 0.35;   // wu, half-width of a ring band (DEBUG_VIEW 6)
 fn live_card_origin() -> vec2<f32> {
