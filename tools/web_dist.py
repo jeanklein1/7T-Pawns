@@ -189,6 +189,30 @@ IMMUTABLE_PATHS = ["the_board.js", "the_board.wasm", "the_board.data",
                    "organ_panel.js"]
 IMMUTABLE_RULE = "public, max-age=31536000, immutable"
 
+# ── AUBADE U7/U8 (RUL-E) — THE MUSIC LAW IS A SIZE LAW ──────────────
+#
+# Ruled 28 Aug 2026: codec and bitrate stay as authored — no re-encode,
+# no listening tests. What is law is the SIZE, and it is one number: a
+# tune ships as ONE file under this ceiling, and a tune projected past it
+# splits at a movement boundary at export time.
+#
+# 20 MiB against Cloudflare's 25 MiB per-file limit (CF_LIMIT below), so
+# the margin is five whole MiB rather than a rounding error — the point
+# of a soft ceiling is that hitting it is a conversation and not a failed
+# deploy. R12: one tune exists, samsara.mp3 at 4.0 MiB, so tripling the
+# library still clears it.
+AUDIO_CEILING = 20 * 1024 * 1024
+
+# ── AUBADE U7 — THE BOOT SET, NAMED ─────────────────────────────────
+#
+# What a visitor fetches before the world is on screen: the page, the
+# glue, the wasm, the package, the veil's poster, and the exhibition
+# manifest. Nothing sized O(catalogue) and nothing sized O(library) is in
+# it, and the asserts below are what keep it that way — a claim nobody
+# checks is a claim that stops being true on the commit that breaks it.
+BOOT_SET = ["index.html", "the_board.js", "the_board.wasm", "the_board.data",
+            "veil_poster.jpg", EXHIBITION_JSON]
+
 CF_LIMIT = 25 * 1024 * 1024        # Cloudflare Pages per-file
 GH_LIMIT = 100 * 1024 * 1024       # GitHub Pages per-file (soft, ~100 MiB)
 
@@ -300,6 +324,96 @@ def assert_painting_cap(paths):
         if max(w, h) > PAINTING_CAP:
             bad.append((p, "%dx%d — long edge %d over the %d cap"
                         % (w, h, max(w, h), PAINTING_CAP)))
+    return bad
+
+
+# ═══ AUBADE U7 — THE PACKAGE HOLDS THE SHADER AND NOTHING ELSE ═══════
+#
+# R11 found the package already lawful: one --preload-file, world.wgsl
+# only (CMakeLists, T7_WEB_SHADER). So this unit does not evict anything
+# — it makes the fact CHECKED, because "already lawful" is a property of
+# today's link line and not of the repository.
+#
+# HOW, WITHOUT KNOWING EMSCRIPTEN'S METADATA FORMAT. file_packager writes
+# the packed files back-to-back into the .data as raw bytes and keeps the
+# offsets in the generated JS; with exactly one file and no compression
+# (neither is requested), the_board.data IS world.wgsl, byte for byte.
+# So the assert is a digest comparison against bytes this script already
+# reads for the boot's shader witness — no format parsing, nothing to
+# drift when the toolchain changes its metadata shape, and it catches
+# EVERY intruder at once: a second preload-file, an audio file, a
+# painting, a stray asset. Any of them moves the digest.
+def assert_package_is_shader_only(data_path, shader_bytes):
+    """Returns a reason string, or None when the package is exactly the shader."""
+    try:
+        with open(data_path, "rb") as fh:
+            packed = fh.read()
+    except OSError as e:
+        return "cannot be read (%s)" % e
+    if len(packed) != len(shader_bytes):
+        return ("%d bytes packed against a %d-byte world.wgsl — the package "
+                "holds something besides the shader" % (len(packed), len(shader_bytes)))
+    if hashlib.sha256(packed).hexdigest() != hashlib.sha256(shader_bytes).hexdigest():
+        return ("same length as world.wgsl but a different digest — the package "
+                "holds the wrong bytes (a stale link, or a substitution)")
+    return None
+
+
+# ═══ AUBADE U7/U8 — NOTHING THE PAGE CAN FETCH IS THE EXHIBITION ═════
+#
+# THE LAW IS ABOUT FETCHING, NOT NAMING, and the distinction is the whole
+# function. The page DOES name a tune —
+#
+#     <audio id="music" loop preload="none" data-src="music/samsara.mp3">
+#
+# — and that is lawful and deliberate: `data-src` is not a source, and
+# `preload="none"` tells the browser to fetch nothing until something
+# asks. The audio element is armed by the entry gesture and not before.
+# A guard that refused on the STRING would refuse the shape the law
+# actually wants, and the first person to hit it would delete the guard.
+#
+# So the two rules are stated as what they are:
+#
+#   (a) no src= or href= anywhere in the page resolves under paintings/
+#       or music/ — those are the attributes a browser acts on;
+#   (b) every <audio> and <video> carries preload="none", so an element
+#       that gains a real src later still fetches nothing at boot.
+#
+# Rule (b) is the one that matters for the future: (a) is a fact about
+# today's page, (b) is the property that keeps it true.
+AUDIO_PRELOAD_RULE = 'preload="none"'
+
+
+def boot_set_violations(shell_text):
+    """Reasons the shipped page would fetch exhibition bytes at boot."""
+    bad = []
+    # (a) THE ATTRIBUTES A BROWSER ACTS ON, over the WHOLE page — a URL
+    #     built inside a script string is as real a fetch as one in
+    #     markup. The lookbehind is what keeps `data-src` lawful: it is a
+    #     dataset key, not a source, and the audio element uses it
+    #     precisely so nothing is fetched until the gesture.
+    for attr in ("src", "href"):
+        for m in re.finditer(r'(?<![-\w])' + attr + r'\s*=\s*"([^"]*)"', shell_text):
+            url = m.group(1).strip()
+            while url.startswith("./"):
+                url = url[2:]
+            for folder, what in (("paintings/", "a painting"),
+                                 ("music/", "an audio file")):
+                if url.startswith(folder):
+                    bad.append('index.html has %s="%s" — %s, fetched at boot'
+                               % (attr, m.group(1), what))
+    # (b) THE MEDIA ELEMENTS, over the MARKUP ONLY. The page's own
+    #     comments discuss `<video>` in prose twice, inside the stylesheet,
+    #     and a guard that cannot tell an element from a sentence about one
+    #     is a guard someone deletes. Style blocks and HTML comments come
+    #     out first; script blocks stay, because a media element built
+    #     there would be a real one.
+    markup = re.sub(r"<style\b[^>]*>.*?</style>", "", shell_text, flags=re.S | re.I)
+    markup = re.sub(r"<!--.*?-->", "", markup, flags=re.S)
+    for m in re.finditer(r"<(audio|video)(\s[^>]*)?>", markup, re.I):
+        if AUDIO_PRELOAD_RULE not in (m.group(2) or ""):
+            bad.append("index.html has a <%s> without %s — it may fetch at boot"
+                       % (m.group(1).lower(), AUDIO_PRELOAD_RULE))
     return bad
 
 
@@ -798,6 +912,54 @@ def main():
     shader_sha = shader_sha_full[:SHADER_SHA_LEN]
     shell_out = shell_src.replace(BUILD_ID_PLACEHOLDER, build_id)
     shell_out = shell_out.replace(SHADER_SHA_PLACEHOLDER, shader_sha)
+
+    # ── AUBADE U7 — FIRST LIGHT STARTS AT HTML PARSE ────────────────
+    #
+    # The glue is appended to <body> by the inline boot script, and the
+    # wasm and the package are fetched by the glue after IT has parsed.
+    # So the browser's preload scanner — which runs ahead of the parser
+    # and exists precisely to start long fetches early — never saw any of
+    # them. Three <link rel=preload> in the head and it does.
+    #
+    # INJECTED HERE, NOT WRITTEN INTO web/index.html, and the reason is a
+    # law two blocks up: the build-id placeholder appears EXACTLY ONCE in
+    # the source page so the substitution has one target and the
+    # refusal-to-ship check has one thing to count. Two of these hrefs
+    # carry the id, so they cannot live in a file that holds the token
+    # once. (web/index.html does not boot anyway — it is a source file.)
+    #
+    # THE URLS MUST MATCH THE REAL REQUESTS EXACTLY, query included, or
+    # the browser warns and fetches twice. They are built from the same
+    # build_id the page is built with, in the same instant, which is the
+    # only way to be sure.
+    #
+    # THE VEIL'S POSTER IS FIRST because it is the only one of the three
+    # a visitor can SEE. It is unversioned (POSTER_0: the page names
+    # veil_poster.jpg and nothing else), so no id here.
+    #
+    # THE PAGE IS READ WITH newline="" — no translation — so a CRLF
+    # checkout arrives with CRLF and an injection hard-coded to \n would
+    # both miss its anchor and leave one mixed line behind. The line
+    # ending is taken from the file itself.
+    head_at = shell_out.find("<head>")
+    if head_at < 0:
+        print("")
+        print("REFUSING TO SHIP A PAGE WITH NOWHERE TO PUT THE PRELOADS.")
+        print("  web/index.html has no `<head>`, so the injection point this")
+        print("  build depends on is gone. Restore it, or move the preload block")
+        print("  to wherever the head now opens.")
+        return 7
+    eol_at = shell_out.find("\n", head_at)
+    if eol_at < 0:
+        print("")
+        print("REFUSING: `<head>` is on the page's last line — nowhere to inject.")
+        return 7
+    eol = "\r\n" if shell_out[max(0, eol_at - 1)] == "\r" else "\n"
+    preloads = (
+        '  <link rel="preload" as="image" href="veil_poster.jpg">' + eol +
+        '  <link rel="preload" as="script" href="the_board.js?v=%s">' % build_id + eol +
+        '  <link rel="preload" as="fetch" crossorigin href="the_board.wasm?v=%s">' % build_id + eol)
+    shell_out = shell_out[:eol_at + 1] + preloads + shell_out[eol_at + 1:]
     with open(os.path.join(DIST, "index.html"), "w", encoding="utf-8", newline="") as fh:
         fh.write(shell_out)
 
@@ -824,6 +986,56 @@ def main():
     print("EXHIBITION — assembling %d painting(s), %d track(s)"
           % (len(paintings), len(music)))
     painting_paths = write_paintings(paintings)
+
+    # ── AUBADE U7 — THE THREE ASSERTS, BEFORE ANYTHING ELSE IS WRITTEN ──
+    #
+    # THE PACKAGE. One --preload-file, world.wgsl, nothing beside it.
+    why = assert_package_is_shader_only(
+        os.path.join(DIST, "the_board.data"), shader_bytes)
+    if why:
+        print("")
+        print("REFUSING TO SHIP A POLLUTED PACKAGE.")
+        print("  the_board.data %s" % why)
+        print("  The package is fetched BEFORE first light, in full, by every")
+        print("  visitor on every cold load. It carries the shader because the")
+        print("  shader is first light; anything else in it is a byte the dawn")
+        print("  pays for. Check CMakeLists' --preload-file list (T7_WEB_SHADER).")
+        print("  dist/ is part-written and NOT deployable.")
+        return 7
+
+    # THE BOOT SET. No painting, no audio, anywhere the page can FETCH
+    # from before the world is on screen. index.html is the one that can
+    # go wrong quietly — a poster re-pointed at a hung canvas, an <audio
+    # src> added for a splash — so it is read, not assumed.
+    boot_bad = boot_set_violations(shell_out)
+    if boot_bad:
+        print("")
+        print("REFUSING TO SHIP A BOOT SET WITH THE EXHIBITION IN IT.")
+        for b in boot_bad:
+            print("  %s" % b)
+        print("  The boot payload is O(first light) and must stay invariant as the")
+        print("  catalogue and the library grow. A painting or a tune named by the")
+        print("  page is fetched before the world, by everyone, forever.")
+        print("  dist/ is part-written and NOT deployable.")
+        return 7
+
+    # THE MUSIC CEILING (RUL-E). One file per tune, under AUDIO_CEILING.
+    over_ceiling = [(f, os.path.getsize(os.path.join(SRC_MUSIC, f)))
+                    for f in music
+                    if os.path.getsize(os.path.join(SRC_MUSIC, f)) > AUDIO_CEILING]
+    if over_ceiling:
+        print("")
+        print("REFUSING TO SHIP A TUNE OVER THE CEILING.")
+        for f, b in over_ceiling:
+            print("  music/%-32s %d bytes (%.2f MiB) over the %.0f MiB ceiling"
+                  % (f, b, mib(b), mib(AUDIO_CEILING)))
+        print("  RUL-E: the music law is a SIZE law, not a codec migration. Codec")
+        print("  and bitrate stay as authored; a tune projected past the ceiling")
+        print("  SPLITS at a movement boundary at export time. The ceiling sits")
+        print("  five MiB under Cloudflare's per-file limit so hitting it is a")
+        print("  conversation, not a failed deploy.")
+        print("  dist/ is part-written and NOT deployable.")
+        return 7
 
     # AUBADE U5c — the cap, on what landed, on every path.
     over_cap = assert_painting_cap(painting_paths)
