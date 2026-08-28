@@ -14,8 +14,10 @@ what lets this be a close and not a claim.
 | Laptop (2012 Kepler, 689x607) | -3.0 … -5.4 | **-0.45 … -0.84** | 38-43 -> 50-53 |
 
 The floor holds. THE LAPTOP'S RESIDUAL STUTTER IS THREE THINGS, AND THE ROUND
-TOOK TWO OF THEM: (1) a baseline purse just under zero — the `kepler` preset's
-to close, by settings and not by code; (2) the photographer's +10 ms capture
+TOOK TWO OF THEM: (1) a baseline purse just under zero — NOT CLOSED, and
+PURSE_1 ruled it will not be: the three dials cost definition, not fat, and a
+machine one refresh short is not a machine the work is reshaped for (see THE
+SETTINGS ARE THE SHIPPED DEFAULTS below); (2) the photographer's +10 ms capture
 every 1-2 s — TAKEN by PURSE_0 B, which defers a capture to a frame the
 presentation law says made its refresh, with a 4 s ceiling so a slow machine
 still fills its pool; (3) portal transitions at 60-75 ms CPU — the PRINT half
@@ -47,16 +49,39 @@ now say they are INHERITED; the rules were struck at PIVOT_0 and live in
 `docs/FXC_LAWS_RECORD.md`, whose first line is "Do not honor these as live
 constraints."
 
+### THE SETTINGS ARE THE SHIPPED DEFAULTS (PURSE_1)
+
+**No `kepler` preset. The shelf stays clean.** The dial session is HELD, not
+skipped — it was run to the point of knowing what the three dials cost, and
+what they cost is DEFINITION, not fat:
+
+| dial | value, unchanged | why it is not turned |
+|---|---|---|
+| `veil_ring` | **325** | It sets where the world ends. Shrinking it moves the horizon inward, and the subject of the piece is an ever-expanding board — a nearer edge is a smaller world, visible to everyone and not only to the machine that needed it. |
+| `lod0_radius` | **175** | It sets where the mesh halves its density. At 120 the seam sits inside the walking eye's range on a machine with poor vertex throughput, so the trade lands exactly where it shows. |
+| `shadow_pcf_taps` | **16** | 16 -> 4 narrows every penumbra everywhere. The sun's softness is authored, not incidental. |
+
+A 2012 Kepler at -0.6 ms is A MACHINE ONE REFRESH SHORT, not a machine the
+work should be reshaped for. The floor device holds at +4.4 with clean 1x
+presents, and the exhibition machines are chosen. A preset committed to the
+shelf now would be a permanent answer to a temporary machine.
+
+**THE DIALS ARE THE FIELD INSTRUMENT, AND THAT IS WHY THEY STAY LIVE.** They
+remain enrolled, exported and importable as an installation tool: if a
+gallery's hardware misses budget on the day, the operator opens `?organ=1`,
+turns `veil_ring` / `lod0_radius` / `shadow_pcf_taps` one at a time, and reads
+the purse off the `[METER]` window's budget line — one dial, one window, one
+reading. All three round-trip through the shelf (verified at PURSE_0 R-D), so
+a settled answer CAN be exported and named on the day it is needed, by someone
+standing in the room. It is not committed here because nobody is standing in
+that room yet.
+
+The audience build ships from the `the-board-web` preset through
+`web_dist.py` with no `--lab`, and that artifact is the only one on
+everexpandingboard.com.
+
 ## STILL OPEN OUT OF PURSE_0
 
-- THE `kepler` PRESET IS JEAN'S DIAL SESSION, NOT CODE. `veil_ring` 325 -> 300
-  -> 265; `lod0_radius` 175 -> 120; `shadow_pcf_taps` 16 -> 4. One dial at a
-  time, one meter window each, read the purse; keep what the eye forgives on
-  that machine; export, name it `kepler`, commit it to the shelf; the laptop
-  boots `?preset=kepler` and the floor device never loads it. All three dials
-  round-trip through the shelf (verified at PURSE_0 R-D). When the purse reads
-  >= 0 with the photographer rule in, the laptop is closed BY SETTINGS, which
-  is what a control panel is for. Unblocked by the session.
 - W4 IS A `full` WITNESS NOW, NOT A `meter` ONE. PURSE_0 C gated the
   `[Photographer] … pool=N/32` line on `stream_witness`, which the meter
   column drops by the dial's own doctrine (per-event blocking writes stay out
