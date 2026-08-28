@@ -436,7 +436,14 @@ inline void render_shadow_pass(MachineCtx* c, wgpu::CommandEncoder& encoder,
                 // THE SPOT CASTER CUT (UMBRA_4) — terrain does not cast into
                 // a spot tile. This is the whole of the edit: one argument,
                 // one site, and the revert is this word.
-                draw_shadow_all(c, pass, /*cast_terrain=*/false);
+                //
+                // AUBADE U3 — the indoor half of the sun pass's gate, and
+                // it takes the same shape for the same reason: the tile is
+                // cleared either way, so a spot whose casters have not all
+                // compiled lights its room evenly rather than casting three
+                // shadows out of thirteen.
+                if (c->renderer_.shadow_pipelines_ready())
+                    draw_shadow_all(c, pass, /*cast_terrain=*/false);
             }
             pass.End();
         }
@@ -488,7 +495,21 @@ inline void render_shadow_pass(MachineCtx* c, wgpu::CommandEncoder& encoder,
         // `?bundles=0` already ran on the iPad and rendered; it is now the
         // only path. ?sunpass=0 still removes the draws and keeps the
         // clear, for the reason above.
-        const bool sun_draws = t7::boot_params().sunpass;
+        //
+        // AUBADE U3 — AND THE SAME SHAPE CARRIES THE PIPELINE GATE. The
+        // shadow pipelines resolve asynchronously now, and shadows must
+        // land as ONE event: a sun pass drawing three of thirteen bodies
+        // would put a world under partial shadow, which reads as an
+        // authored decision and is not one. So the pass waits for the
+        // whole group — and it waits BY SKIPPING THE DRAWS, NOT THE PASS,
+        // for the reason stated at length above. Skipping the pass would
+        // leave the map at its zero-init 0.0, PCF would call every sample
+        // occluded, and the world would go nearly black: the exact
+        // symptom this campaign's predecessor spent four reloads chasing.
+        // Until the group lands, the map clears to 1.0 and nothing
+        // occludes — one dawn, no damage.
+        const bool sun_draws = t7::boot_params().sunpass
+                               && c->renderer_.shadow_pipelines_ready();
         if (!sun_draws) {
             // the cleared depth is the whole content of the pass
         } else {

@@ -2828,6 +2828,17 @@ namespace t7 {
                 // frame — that is the whole point. The ledger is flushed
                 // first because a bundle must capture a buffer that exists;
                 // its CONTENTS are read at execution, not at recording.
+                //
+                // AUBADE U3 — A BUNDLE IS IMMUTABLE, SO AN ARRIVAL DIRTIES
+                // IT. Pipelines resolve asynchronously; a bundle recorded
+                // while a row's pipeline was still null has that row
+                // missing FOREVER, because Finish() seals the recording.
+                // take_pipeline_arrival is one integer compare a frame and
+                // returns true once per successful arrival, so the bundle
+                // is re-recorded exactly as often as the world gains a row
+                // and not once more.
+                if (renderer_.take_pipeline_arrival())
+                    gpuState_.raise_bundles_dirty();
                 if (gpuState_.bundles_dirty())
                     record_bundles(&machine_ctx_, orbs_state_, orbs_deps_);
 

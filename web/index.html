@@ -464,7 +464,11 @@
         reported = true;
         m.net = net();
         var say = (typeof out === 'function') ? out : console.log;
-        var k = ['net', 'wasm', 'device', 'init', 'present', 'authored6', 'ready'];
+        // AUBADE U3 — `firstlight` joins the waterfall between init and
+        // present: it is the moment the loop was ALLOWED to draw, so
+        // init->firstlight is the compile the campaign went looking for and
+        // firstlight->present is everything after it.
+        var k = ['net', 'wasm', 'device', 'init', 'firstlight', 'present', 'authored6', 'ready'];
         var line = '[AUBADE] waterfall';
         for (var i = 0; i < k.length; i++)
           line += ' ' + k[i] + '=' + (m[k[i]] === undefined ? '-' : m[k[i]]);

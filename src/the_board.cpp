@@ -226,6 +226,29 @@ static void frame() {
         }
     }
 
+    // ══ AUBADE U3 — FIRST LIGHT GATES THE LOOP, AND ONLY FIRST LIGHT ═══
+    //
+    // Every pipeline is now created asynchronously (renderer.hpp), so
+    // init_world returns with sixty compiles still outstanding. Most of
+    // them may: a row whose pipeline has not arrived skips, and the world
+    // assembles in view over a handful of frames exactly as its entities
+    // already do. FIRST LIGHT is the set without which frame 1's shot is
+    // visibly incomplete — the terrain and what writes it, and the
+    // population at the centre of an open field — and the loop waits for
+    // that and nothing else.
+    //
+    // THE FLAG IS FALSE UNTIL THE RENDERER SETS IT, so this gate is safe
+    // before the renderer exists and safe if it never does. A first-light
+    // pipeline that FAILS to compile counts as resolved, deliberately: a
+    // dead row is a missing body, and a gate that never opens is a black
+    // screen — which is the thing this campaign exists to end.
+    //
+    // RETURNING HERE SKIPS begin_frame FOR A FEW TURNS. Nothing is lost:
+    // the veil is up, no input is live, and the pipeline callbacks are
+    // AllowSpontaneous — they fire from the browser's event loop between
+    // rAF turns and need no pump of ours to arrive.
+    if (!t7::g_first_light_ready) return;
+
     // THE METRONOME (WRAP_0 U2) — armed from inside the loop, once, because
     // the registration that would have cleared it never returns.
     apply_pace_once();

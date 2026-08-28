@@ -1900,9 +1900,15 @@ def parse_pipelines(w, src, spans, handles, layouts_by_member):
     pipelines = []
 
     # ─── Compute: every one goes through makeComputePipeline. ─────────
+    #     AUBADE U3 added an OPTIONAL sixth argument — the PipeGroup that
+    #     says whether the row gates the frame loop. The tail is therefore
+    #     `member)` or `member, PipeGroup::X)`, and the census reads both:
+    #     four rows carry the tag today and a silent regex miss would drop
+    #     them from the ledger without failing anything until ML-0.
     for m in re.finditer(
             r"makeComputePipeline\(\s*\"([^\"]*)\"\s*,\s*\"([^\"]*)\"\s*,\s*"
-            r"(\w+)\s*,\s*Entry::(\w+)\s*,\s*(\w+)\s*\)", src, re.S):
+            r"(\w+)\s*,\s*Entry::(\w+)\s*,\s*(\w+)\s*(?:,\s*PipeGroup::\w+\s*)?\)",
+            src, re.S):
         pipelines.append(Pipeline(
             label=m.group(2), member=m.group(5), kind="compute",
             cs_entry=m.group(4), group_layouts=layouts_at(m.group(3), m.start()),
@@ -1996,8 +2002,15 @@ def parse_pipelines(w, src, spans, handles, layouts_by_member):
         nxt = re.search(r"wgpu::(?:Render|Compute)PipelineDescriptor\s+\w+\s*\{\s*\}\s*;",
                         src[m.end():])
         stop = m.end() + (nxt.start() if nxt else len(src) - m.end())
-        cm = re.search(r"(\w+)\s*=\s*device_\.CreateRenderPipeline\(\s*&%s\s*\)" % re.escape(d),
-                       src[m.end():stop])
+        # AUBADE U3 — THE SPELLING CHANGED AND THE MEMBER MOVED. It was
+        # `member = device_.CreateRenderPipeline(&desc)`; every render
+        # pipeline in the program is now issued asynchronously through
+        # `issue_render_("label", desc, member, PipeGroup::X)`. The member
+        # is still the thing this arm is here to learn — it is now the
+        # third argument rather than the assignment's left side. The
+        # descriptor is passed BY REFERENCE, so there is no `&`.
+        cm = re.search(r"issue_render_\(\s*\"[^\"]*\"\s*,\s*%s\s*,\s*(\w+)\s*,"
+                       % re.escape(d), src[m.end():stop], re.S)
         if not cm:
             continue
         # The FragmentState, ColorTargetState and VertexBufferLayout a

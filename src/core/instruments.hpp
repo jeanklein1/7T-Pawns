@@ -223,6 +223,19 @@ namespace t7 {
     // true.
     inline uint32_t g_served_k = 0;
 
+    // AUBADE U3 — FIRST LIGHT, crossing the console/cartridge boundary the
+    // same way, and for the same reason the fade alpha did in U1: the fact
+    // is decided deep in the renderer (the last first-light pipeline
+    // resolves) and read at the very top of the frame loop, and a virtual
+    // on RenderCartridge would widen a contract every cartridge must
+    // implement for one boolean one caller reads once.
+    //
+    // FALSE UNTIL THE RENDERER SAYS OTHERWISE, which is the safe default:
+    // the loop does not draw a frame whose shot cannot be complete. It is
+    // set exactly once, from the resolve that satisfies the group, and
+    // never cleared — first light does not un-happen.
+    inline bool g_first_light_ready = false;
+
     // ── WIT_2b — AND IT GETS ITS OWN LINE ─────────────────────────────
     //
     // WIT_2 appended the count to the [METER] window header and it was

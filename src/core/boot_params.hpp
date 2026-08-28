@@ -75,6 +75,16 @@ namespace t7 {
         // it must decide before the wasm exists.
         bool adopt    = true;   // Module['preinitializedWebGPUDevice']
 
+        // AUBADE U3 — the sixth switch, and the second that removes a
+        // stage of the BOOT. 0 = create every pipeline synchronously, the
+        // shape every build before that unit had: the loop waits for all
+        // sixty, and the compile-time table measures the call again.
+        // Same ground as the rest — the device that most needs bisecting
+        // has no console, and asynchronous pipeline creation is exactly
+        // the kind of mechanism a browser can get wrong quietly (L48: the
+        // third arm is not witnessed).
+        bool pipeline_async = true;   // ?async=0
+
         // ?bootinfo=1 shows the identity block on the page itself.
         // ?failboot=1 asks the device for a feature that does not exist,
         // so the failure path can be WITNESSED on a machine that works.
@@ -115,7 +125,8 @@ namespace t7 {
         // on: silence must mean "the piece entire". A stage removed
         // without a line in the log is a diagnosis nobody can reproduce.
         const bool any_switch = !p.bake || !p.card || !p.sunpass || !p.bundles
-                                || !p.adopt || p.bootinfo || p.failboot;
+                                || !p.adopt || !p.pipeline_async
+                                || p.bootinfo || p.failboot;
         if (p.has_seed || p.has_mood || p.has_cap || p.has_msaa || p.has_pace
                 || any_switch) {
             std::cout << "[Params]";
@@ -129,6 +140,7 @@ namespace t7 {
             if (!p.sunpass) std::cout << " sunpass=0";
             if (!p.bundles) std::cout << " bundles=0";
             if (!p.adopt)   std::cout << " adopt=0";
+            if (!p.pipeline_async) std::cout << " async=0";
             if (p.bootinfo) std::cout << " bootinfo=1";
             if (p.failboot) std::cout << " failboot=1";
             std::cout << "\n";
@@ -140,7 +152,7 @@ namespace t7 {
     // NaN = absent-or-malformed; integer/range checks land on the C++
     // side so the rule has one spelling per twin.
     inline void parse_boot_params(int, char**) {
-        double vals[12];
+        double vals[13];
         EM_ASM({
             var q = new URLSearchParams(location.search);
             var o = $0 >> 3;
@@ -165,6 +177,7 @@ namespace t7 {
             HEAPF64[o + 9] = num('bootinfo');
             HEAPF64[o + 10] = num('failboot');
             HEAPF64[o + 11] = num('adopt');   // AUBADE U2
+            HEAPF64[o + 12] = num('async');   // AUBADE U3
         }, vals);
         BootParams& p = boot_params();
         if (!std::isnan(vals[0]) && vals[0] >= 0.0 && vals[0] <= 4294967295.0
@@ -196,6 +209,7 @@ namespace t7 {
         p.sunpass  = !(vals[7] == 0.0);
         p.bundles  = !(vals[8] == 0.0);
         p.adopt    = !(vals[11] == 0.0);   // AUBADE U2 — the same rule
+        p.pipeline_async = !(vals[12] == 0.0);   // AUBADE U3 — the same rule
         p.bootinfo = (vals[9] == 1.0);
         p.failboot = (vals[10] == 1.0);
         boot_params_announce_();

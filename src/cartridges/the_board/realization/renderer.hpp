@@ -6,6 +6,8 @@
 #include "cartridges/the_board/realization/state.hpp"
 #include "core/sha256.hpp"   // PROBATE_SEAL2 — the serve witness's digest
 #include "core/boot_card.hpp"   // IOS_3 B2 — the build stamp and shader sha reach the page
+#include "core/boot_params.hpp"  // AUBADE U3 — ?async=0, the synchronous bisect
+#include "core/aubade.hpp"       // AUBADE U3 — the firstlight mark
 #include <webgpu/webgpu_cpp.h>
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>      // EM_ASM — reads the baked shader digest
@@ -166,19 +168,263 @@ namespace t7 {
             size_t shaderBytes_ = 0;
             bool serveWitnessed_ = false;
 
-            struct PipelineTiming { std::string label; long long ms; };
+            // ═══ AUBADE U3 — THE PIPELINES RESOLVE, THEY DO NOT BLOCK ════
+            //
+            // WHAT WAS WRONG WITH THE OLD TABLE, and it is the reason this
+            // whole unit exists. WebGPU §10: immediate pipeline creation
+            // hands back a usable handle AT ONCE and stalls the DEVICE
+            // timeline between that handle and the first submit that uses
+            // it. So `tPipe` — a wall clock around
+            // device_.CreateRenderPipeline — was timing the CALL, and the
+            // call is free. Sixty rows of "0 ms" followed by a boot that
+            // took seconds was not a contradiction; it was the instrument
+            // naming where the wait SURFACED instead of where the cost
+            // lived, which is the timer law this program has written down
+            // twice already.
+            //
+            // The async variants are the spec's own remedy: the promise
+            // resolves when the pipeline is COMPILED. Two consequences,
+            // and both are the unit:
+            //
+            //   THE TABLE BECOMES TRUE. `done - call` is the compile. The
+            //   old `ms` is kept beside it, unrenamed, because it is still
+            //   the honest measure of the call and the pair is what says
+            //   the call was never the cost.
+            //
+            //   THE LOOP STOPS WAITING FOR ALL OF THEM. A row whose
+            //   pipeline has not arrived skips; the world assembles in
+            //   view over a handful of frames, which is what entities
+            //   already do (the born census, t=0.1). Only FIRST LIGHT — the
+            //   set without which frame 1's shot is visibly incomplete —
+            //   gates the loop at all.
+            //
+            // ── THE THREE GROUPS, AND WHY READINESS IS A COUNT ──────────
+            //
+            // A wgpu::RenderPipeline member IS its own ready bit: null
+            // before the promise resolves, live after. That is the whole
+            // per-row mechanism and it needed no new state.
+            //
+            // The two GROUP gates cannot be conjunctions of those members,
+            // and the reason is the ROSTER: `if constexpr (ROSTER.arch)`
+            // means shadowArchPipeline_ is never created in a reduced
+            // build and stays null for the life of the program. A
+            // conjunction over handles would hold the shadow pass shut
+            // forever in exactly the builds that removed the work. So each
+            // group counts what it ISSUED against what has RESOLVED, and a
+            // row that was never issued is not waited for.
+            //
+            // ── A FAILURE MUST NOT BE A HANG ────────────────────────────
+            //
+            // A first-light pipeline that fails validation would, on a
+            // naive counter, leave the loop gated forever — a black screen
+            // strictly worse than the one this campaign is here to end. So
+            // a FAILURE COUNTS AS RESOLVED. The row is dead (its member
+            // stays null and it skips), the reason prints, and the boot
+            // card carries it, because the device that needs this has no
+            // console.
+            enum class PipeGroup : uint8_t {
+                ORDINARY = 0,     // gates its own row and nothing else
+                FIRST_LIGHT = 1,  // gates the frame loop (RUL-B's set)
+                SHADOW = 2,       // gates the sun pass — shadows land as one event
+            };
+            static constexpr uint32_t PIPE_GROUP_COUNT = 3;
+
+            struct PipelineTiming {
+                std::string label;
+                long long ms;        // the CALL, as the old table measured it
+                double call = 0.0;   // ms from the first issue
+                double done = -1.0;  // ms from the first issue; < 0 = outstanding
+                PipeGroup group = PipeGroup::ORDINARY;
+                bool failed = false;
+            };
             std::vector<PipelineTiming> pipelineTimings_;
 
-            template <typename F>
-            bool tPipe(const char* label, F&& fn) {
-                auto t0 = std::chrono::high_resolution_clock::now();
-                bool ok = fn();
-                auto t1 = std::chrono::high_resolution_clock::now();
-                auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
-                std::cout << "  [Pipeline] " << label << ": " << ms << " ms\n";
-                pipelineTimings_.push_back({label, ms});
-                return ok;
+            uint32_t pipeIssued_[PIPE_GROUP_COUNT]     = {0, 0, 0};
+            uint32_t pipeResolved_[PIPE_GROUP_COUNT]   = {0, 0, 0};
+            uint32_t pipelinesFailed_ = 0;
+            // Bumped on every SUCCESSFUL arrival. The bundles are recorded
+            // from a pipeline list, so a bundle recorded before a row
+            // arrived is missing that row forever — bundles are immutable.
+            // The frame boundary compares this against what it last saw and
+            // re-records. One integer compare a frame.
+            uint32_t pipelineEpoch_ = 0;
+            bool     firstLightAnnounced_ = false;
+            bool     pipelineTablePrinted_ = false;
+            std::chrono::high_resolution_clock::time_point pipeT0_{};
+            bool     pipeT0Set_ = false;
+
+            double pipe_now_ms_() {
+                return std::chrono::duration<double, std::milli>(
+                    std::chrono::high_resolution_clock::now() - pipeT0_).count();
             }
+
+            // Open a row. Returns its index; the resolve closes it.
+            size_t begin_pipe_(const char* label, PipeGroup group) {
+                if (!pipeT0Set_) {
+                    pipeT0_ = std::chrono::high_resolution_clock::now();
+                    pipeT0Set_ = true;
+                }
+                pipeIssued_[static_cast<uint32_t>(group)]++;
+                pipelineTimings_.push_back(
+                    PipelineTiming{ label, 0, pipe_now_ms_(), -1.0, group, false });
+                return pipelineTimings_.size() - 1;
+            }
+
+            void end_pipe_(size_t idx, bool ok, std::string_view message) {
+                PipelineTiming& t = pipelineTimings_[idx];
+                t.done = pipe_now_ms_();
+                t.ms = static_cast<long long>(t.done - t.call);
+                t.failed = !ok;
+                const uint32_t g = static_cast<uint32_t>(t.group);
+                pipeResolved_[g]++;      // a FAILURE RESOLVES — see the banner
+                if (ok) {
+                    pipelineEpoch_++;
+                } else {
+                    pipelinesFailed_++;
+                    std::cerr << "  [Pipeline] FAILED " << t.label << ": "
+                              << message << "\n";
+                    // IOS_3 B3's surface. A pipeline that will not compile is
+                    // a permanently missing row, and on the device with no
+                    // console this line is the only thing that can say which.
+                    t7::card_err("pipeline", t.label + ": " + std::string(message));
+                }
+                std::cout << "  [Pipeline] " << t.label << ": " << t.ms
+                          << " ms compile (call at " << static_cast<long long>(t.call)
+                          << " ms)\n";
+                if (!firstLightAnnounced_ && first_light_ready()) {
+                    firstLightAnnounced_ = true;
+                    t7::g_first_light_ready = true;   // the loop's gate
+                    t7::aubade_mark("firstlight");
+                    std::cout << "[AUBADE] pipelines firstlight="
+                              << pipeIssued_[static_cast<uint32_t>(PipeGroup::FIRST_LIGHT)]
+                              << " ready@" << static_cast<long long>(t.done)
+                              << "ms — the loop may run\n";
+                }
+                if (!pipelineTablePrinted_ && all_pipelines_resolved())
+                    print_pipeline_table_();
+            }
+
+            // ── THE ISSUERS ─────────────────────────────────────────────
+            //
+            // THE DESCRIPTOR MAY BE A STACK LOCAL, and that is not an
+            // accident of this port — it is how the port is built.
+            // emwgpuDeviceCreate{Render,Compute}PipelineAsync calls
+            // WebGPU.makeRenderPipelineDesc(descriptor) SYNCHRONOUSLY, on
+            // the calling side of the promise, exactly as the device
+            // request serialises its descriptor. Nothing the caller owns
+            // outlives the call. (The one comment in this file that said
+            // otherwise — makeShadow's "CreateRenderPipelineAsync is absent
+            // repo-wide" — is corrected at its site.)
+            //
+            // CAPTURING `&out` IS SAFE for the same reason Console's
+            // callbacks capture `this`: App is heap-allocated on the web
+            // path and never deleted, so the Renderer and every pipeline
+            // member outlive every callback the boot arms.
+            //
+            // ?async=0 KEEPS THE OLD SHAPE. Every switch has a witness, and
+            // a mechanism that cannot be turned off cannot be bisected on
+            // the device where it fails (L49's reasoning, one campaign
+            // over). The synchronous branch is the program exactly as it
+            // was: create, time the call, resolve the row at once.
+            bool issue_render_(const char* label,
+                               const wgpu::RenderPipelineDescriptor& desc,
+                               wgpu::RenderPipeline& out,
+                               PipeGroup group) {
+                const size_t idx = begin_pipe_(label, group);
+                if (!t7::boot_params().pipeline_async) {
+                    out = device_.CreateRenderPipeline(&desc);
+                    end_pipe_(idx, out != nullptr, "synchronous creation returned null");
+                    return out != nullptr;
+                }
+                device_.CreateRenderPipelineAsync(&desc, wgpu::CallbackMode::AllowSpontaneous,
+                    [this, idx, slot = &out](wgpu::CreatePipelineAsyncStatus status,
+                                             wgpu::RenderPipeline pipeline,
+                                             wgpu::StringView message) {
+                        const bool ok = (status == wgpu::CreatePipelineAsyncStatus::Success)
+                                        && (pipeline != nullptr);
+                        if (ok) *slot = std::move(pipeline);
+                        end_pipe_(idx, ok, std::string_view(message.data, message.length));
+                    });
+                // The ISSUE succeeded. Whether the pipeline compiles is the
+                // callback's news, and a failure there is a dead row, never
+                // a failed boot: the loop must reach the screen.
+                return true;
+            }
+
+            bool issue_compute_(const char* label,
+                                const wgpu::ComputePipelineDescriptor& desc,
+                                wgpu::ComputePipeline& out,
+                                PipeGroup group) {
+                const size_t idx = begin_pipe_(label, group);
+                if (!t7::boot_params().pipeline_async) {
+                    out = device_.CreateComputePipeline(&desc);
+                    end_pipe_(idx, out != nullptr, "synchronous creation returned null");
+                    return out != nullptr;
+                }
+                device_.CreateComputePipelineAsync(&desc, wgpu::CallbackMode::AllowSpontaneous,
+                    [this, idx, slot = &out](wgpu::CreatePipelineAsyncStatus status,
+                                             wgpu::ComputePipeline pipeline,
+                                             wgpu::StringView message) {
+                        const bool ok = (status == wgpu::CreatePipelineAsyncStatus::Success)
+                                        && (pipeline != nullptr);
+                        if (ok) *slot = std::move(pipeline);
+                        end_pipe_(idx, ok, std::string_view(message.data, message.length));
+                    });
+                return true;
+            }
+
+            void print_pipeline_table_() {
+                pipelineTablePrinted_ = true;
+                auto sorted = pipelineTimings_;
+                std::sort(sorted.begin(), sorted.end(),
+                    [](const PipelineTiming& a, const PipelineTiming& b) { return a.ms > b.ms; });
+                std::cout << "\n[Renderer] Pipelines by compile time (descending)"
+                             " — resolve minus call, the compile itself:\n";
+                for (const auto& t : sorted) {
+                    std::cout << "  " << std::setw(8) << t.ms << " ms  " << t.label
+                              << (t.group == PipeGroup::FIRST_LIGHT ? "  [first light]"
+                                  : t.group == PipeGroup::SHADOW ? "  [shadow]" : "")
+                              << (t.failed ? "  FAILED" : "") << "\n";
+                }
+                double last = 0.0;
+                for (const auto& t : pipelineTimings_) if (t.done > last) last = t.done;
+                std::cout << "\n[AUBADE] pipelines firstlight="
+                          << pipeIssued_[static_cast<uint32_t>(PipeGroup::FIRST_LIGHT)]
+                          << " rest ready@" << static_cast<long long>(last) << "ms"
+                          << " total=" << pipelineTimings_.size()
+                          << " failed=" << pipelinesFailed_ << "\n\n";
+            }
+
+        public:
+            // ── THE THREE GATES THE REST OF THE PROGRAM READS ───────────
+            //
+            // FIRST LIGHT gates the frame loop (the_board.cpp). SHADOW
+            // gates the sun pass, so shadows land as one event — dawn, not
+            // damage. Every other row gates only itself, at its own
+            // SetPipeline.
+            bool first_light_ready() const {
+                const uint32_t g = static_cast<uint32_t>(PipeGroup::FIRST_LIGHT);
+                return pipeResolved_[g] >= pipeIssued_[g];
+            }
+            bool shadow_pipelines_ready() const {
+                const uint32_t g = static_cast<uint32_t>(PipeGroup::SHADOW);
+                return pipeResolved_[g] >= pipeIssued_[g];
+            }
+            bool all_pipelines_resolved() const {
+                for (uint32_t g = 0; g < PIPE_GROUP_COUNT; g++)
+                    if (pipeResolved_[g] < pipeIssued_[g]) return false;
+                return true;
+            }
+            // The frame boundary's one integer compare. Returns true once
+            // per new arrival, so the caller can raise the bundles dirty.
+            bool take_pipeline_arrival() {
+                if (pipelineEpoch_ == seenPipelineEpoch_) return false;
+                seenPipelineEpoch_ = pipelineEpoch_;
+                return true;
+            }
+
+        private:
+            uint32_t seenPipelineEpoch_ = 0;
 
             // THE SHARED BUILDERS (cable management): the two collapses every compute pipeline shared.
             // strataLayoutFor wraps the four LOOM_2 strata (WORLD fixed, then frame /
@@ -188,7 +434,7 @@ namespace t7 {
             // descriptor carried no other per-pipeline state. The FORKS stay at the call
             // site: which layout, which entry string (passed VERBATIM — the sole C++->shader
             // link), which member, and the ROSTER gate. (The layout-build moves just outside
-            // the tPipe timing block; the boot-leaderboard ms now excludes the trivial layout
+            // the per-pipeline timing block; the boot-leaderboard ms now excludes the trivial layout
             // creation — no behavior/pixel effect.)
             // DOMESDAY_2 F2-b1 (label law, second enforcement): every
             // caller names its layout — the error log's own
@@ -206,16 +452,16 @@ namespace t7 {
             }
             bool makeComputePipeline(const char* label, const char* dbgLabel,
                                      wgpu::PipelineLayout layout, const char* entry,
-                                     wgpu::ComputePipeline& out) {
-                return tPipe(label, [&]() {
-                    wgpu::ComputePipelineDescriptor desc{};
-                    desc.label = dbgLabel;
-                    desc.layout = layout;
-                    desc.compute.module = shaderModule_;
-                    desc.compute.entryPoint = entry;
-                    out = device_.CreateComputePipeline(&desc);
-                    return out != nullptr;
-                });
+                                     wgpu::ComputePipeline& out,
+                                     PipeGroup group = PipeGroup::ORDINARY) {
+                wgpu::ComputePipelineDescriptor desc{};
+                desc.label = dbgLabel;
+                desc.layout = layout;
+                desc.compute.module = shaderModule_;
+                desc.compute.entryPoint = entry;
+                // AUBADE U3 — the descriptor is a stack local and stays one:
+                // the port serialises it on the calling side of the promise.
+                return issue_compute_(label, desc, out, group);
             }
 
             // Compute pipelines -- per-frame (split world update)
@@ -439,28 +685,61 @@ namespace t7 {
                 if (!createRenderPipelines()) return false;
                 auto t2 = std::chrono::high_resolution_clock::now();
 
-                // Sorted bottleneck leaderboard
-                {
-                    auto sorted = pipelineTimings_;
-                    std::sort(sorted.begin(), sorted.end(),
-                        [](const PipelineTiming& a, const PipelineTiming& b) { return a.ms > b.ms; });
-                    std::cout << "\n[Renderer] Pipelines by compile time (descending):\n";
-                    for (const auto& t : sorted) {
-                        std::cout << "  " << std::setw(8) << t.ms << " ms  " << t.label << "\n";
-                    }
-                    std::cout << "\n";
-                }
-
-                std::cout << "[Renderer] Compute pipelines: "
+                // AUBADE U3 — THE LEADERBOARD CANNOT PRINT HERE ANY MORE, and
+                // that is the point. Every row above has been ISSUED, not
+                // compiled; the compile lands in a callback minutes of
+                // wall-clock later on a cold phone. print_pipeline_table_
+                // fires from the last resolve instead, which is the first
+                // moment the numbers exist. If ?async=0 is set the resolves
+                // are synchronous and the table prints from the last of them
+                // — the same place, one instant later than it used to.
+                //
+                // THESE THREE LINES NOW MEASURE THE ISSUE, and they are kept
+                // because that is worth knowing: a boot that spends real time
+                // here is a boot spending it on layouts and descriptor
+                // assembly, which no async call defers. They are RENAMED so
+                // no reader can mistake them for the old ones — the old ones
+                // claimed to be compiles and were not.
+                std::cout << "[Renderer] Compute pipelines issued: "
                     << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count() << " ms\n";
-                std::cout << "[Renderer] Render pipelines:  "
+                std::cout << "[Renderer] Render pipelines issued:  "
                     << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " ms\n";
-                std::cout << "[Renderer] Total pipelines:   "
-                    << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t0).count() << " ms\n";
+                std::cout << "[Renderer] Total pipelines issued:   "
+                    << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t0).count() << " ms"
+                    << " (" << pipelineTimings_.size() << " pipelines, "
+                    << (t7::boot_params().pipeline_async ? "compiling asynchronously"
+                                                         : "async=0: compiled above")
+                    << ")\n";
 
                 return true;
             }
 
+            // ═══ AUBADE U3 — EVERY ROW BELOW SKIPS UNTIL ITS PIPELINE LANDS
+            //
+            // One line at the head of each helper, and it is the whole
+            // per-row mechanism: a wgpu pipeline handle IS its own ready
+            // bit — null while its promise is outstanding, live after. No
+            // parallel table of flags, nothing to keep in step.
+            //
+            // THE GUARD IS AT THE HEAD, NEVER MID-BODY, and that is not
+            // tidiness. Bind-group state is STICKY within a pass (the
+            // contract stated just below), so a helper that set a group
+            // and then bailed would leave the next row's binds silently
+            // wrong. Returning before touching the encoder leaves the pass
+            // exactly as it was.
+            //
+            // A ROW THAT SKIPS IS A ROW THAT ARRIVES LATE, not one that
+            // fails: entities already arrive over frames (the born census,
+            // t=0.1), and their pipelines now arrive the same way. The two
+            // exceptions are the two GROUP gates — first light gates the
+            // loop, so no frame is drawn until frame 1's shot can be
+            // complete; and the sun pass gates on all of its own, so
+            // shadows land as one event rather than one body at a time.
+            // The guards on first-light rows are therefore unreachable in
+            // an ordinary boot and deliberately kept: a first-light
+            // pipeline that FAILS to compile counts as resolved (the loop
+            // must reach the screen), and then these are the lines that
+            // keep a dead row from taking the frame down with it.
             // ═══ OIL_1 U11 (ledger: R10, C7) — THE PASS-HEAD CONTRACT ═══
             // The six kernel helpers below ride binds set ONCE by
             // dispatch_compute at the pass head: group0 = the compute
@@ -475,12 +754,14 @@ namespace t7 {
             // contract — it binds its own group0 and runs BEFORE the
             // pass-head binds.
             void dispatch_update_player_agent(wgpu::ComputePassEncoder& pass) {
+                if (!updatePlayerAgentPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(updatePlayerAgentPipeline_);
                 pass.DispatchWorkgroups(1, 1, 1);         // 1 workgroup × 1 thread = the possessed slot
             }
 
             void dispatch_update_other_agents(wgpu::ComputePassEncoder& pass) {
                 if constexpr (!(ROSTER.wanderers)) return;  // ROSTER-GATE wanderers (a') — pipeline never created; the holder tolerates
+                if (!updateOtherAgentsPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(updateOtherAgentsPipeline_);
                 // ONE THREAD PER FIELD LANE (PANORAMA_0 RIDE_0): 5 x 64 = 320
                 // covers FIELD_SUBSCRIBER_CAP 296. Lanes 0..31 are the agent
@@ -496,6 +777,7 @@ namespace t7 {
             void dispatch_update_camera_vp(wgpu::ComputePassEncoder& pass,
                 wgpu::BindGroup stateGroup,
                 wgpu::BindGroup texGroup) {
+                if (!cameraVPPipeline_) return;   // AUBADE U3 — not yet
                 // FRAME_K (A3): the rw faces ride this family's own strata.
                 pass.SetBindGroup(2, stateGroup);
                 pass.SetBindGroup(3, texGroup);
@@ -505,12 +787,14 @@ namespace t7 {
 
             void dispatch_update_sphere(wgpu::ComputePassEncoder& pass) {
                 if constexpr (!(ROSTER.sphere)) return;  // ROSTER-GATE sphere (a') — pipeline never created; the holder tolerates
+                if (!updateSpherePipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(updateSpherePipeline_);
                 pass.DispatchWorkgroups(1, 1, 1);
             }
 
             void dispatch_update_cube(wgpu::ComputePassEncoder& pass) {
                 if constexpr (!(ROSTER.cube)) return;  // ROSTER-GATE cube (a') — pipeline never created; the holder tolerates
+                if (!updateCubePipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(updateCubePipeline_);
                 // ONE LANE PER CUBE (PANORAMA_0 RIDE_0): 4 x 64 = 256 =
                 // Dim::CUBE_SLOT_COUNT exactly. Derived, not written as 4, so
@@ -532,6 +816,7 @@ namespace t7 {
                 uint32_t workgroups,
                 uint32_t count
             ) {
+                if (!bakePatchPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(bakePatchPipeline_);
                 pass.SetBindGroup(2, stateGroup);
                 pass.SetBindGroup(3, texGroup);
@@ -545,6 +830,7 @@ namespace t7 {
                 uint32_t workgroups,
                 uint32_t count
             ) {
+                if (!generatePatchCellsPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(generatePatchCellsPipeline_);
                 pass.SetBindGroup(2, stateGroup);
                 pass.SetBindGroup(3, texGroup);
@@ -561,6 +847,7 @@ namespace t7 {
                 uint32_t body_workgroups
             ) {
                 if constexpr (!(ROSTER.ribbon)) return;  // ROSTER-GATE ribbon (a') — pipelines never created; the holder tolerates
+                if (!ribbonHeadPipeline_ || !ribbonBodyPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetBindGroup(2, stateGroup);
                 pass.SetBindGroup(3, texGroup);
                 pass.SetPipeline(ribbonHeadPipeline_);
@@ -575,6 +862,7 @@ namespace t7 {
                 wgpu::BindGroup texGroup
             ) {
                 if constexpr (!(ROSTER.gallery)) return;  // ROSTER-GATE gallery (a') — pipeline never created; the holder tolerates
+                if (!photographerVPPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(photographerVPPipeline_);
                 pass.SetBindGroup(2, stateGroup);
                 pass.SetBindGroup(3, texGroup);
@@ -586,6 +874,7 @@ namespace t7 {
                 wgpu::BindGroup stateGroup,
                 wgpu::BindGroup texGroup
             ) {
+                if (!entityPlacementPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(entityPlacementPipeline_);
                 pass.SetBindGroup(2, stateGroup);
                 pass.SetBindGroup(3, texGroup);
@@ -597,6 +886,7 @@ namespace t7 {
                 wgpu::BindGroup stateGroup,
                 wgpu::BindGroup texGroup
             ) {
+                if (!frustumCullPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(frustumCullPipeline_);
                 pass.SetBindGroup(2, stateGroup);
                 pass.SetBindGroup(3, texGroup);
@@ -613,6 +903,7 @@ namespace t7 {
                 uint32_t workgroups
             ) {
                 if constexpr (!(ROSTER.pawn_aura)) return;  // ROSTER-GATE pawn_aura (a') — pipeline never created; the holder tolerates
+                if (!pawnAuraPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(pawnAuraPipeline_);
                 pass.SetBindGroup(2, stateGroup);
                 pass.SetBindGroup(3, texGroup);
@@ -622,6 +913,7 @@ namespace t7 {
             void dispatch_live_card_write(wgpu::ComputePassEncoder& pass,
                                           wgpu::BindGroup stateGroup,
                 wgpu::BindGroup texGroup) {
+                if (!liveCardPipeline_) return;   // AUBADE U3 — not yet
                 // ONE PASS, ONE DISPATCH (LATTICE_4). It was a pair: heights
                 // into a scratch buffer, then a resolve that read the
                 // neighbourhood back. Each workgroup now evaluates its own
@@ -641,6 +933,7 @@ namespace t7 {
                 uint32_t workgroups
             ) {
                 if constexpr (!(ROSTER.orbs)) return;  // ROSTER-GATE orbs (a') — pipeline never created; the holder tolerates
+                if (!orbInitPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(orbInitPipeline_);
                 pass.SetBindGroup(2, stateGroup);
                 pass.SetBindGroup(3, texGroup);
@@ -654,6 +947,7 @@ namespace t7 {
                 uint32_t workgroups
             ) {
                 if constexpr (!(ROSTER.orbs)) return;  // ROSTER-GATE orbs (a') — pipeline never created; the holder tolerates
+                if (!orbDynamicsPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(orbDynamicsPipeline_);
                 pass.SetBindGroup(2, stateGroup);
                 pass.SetBindGroup(3, texGroup);
@@ -667,6 +961,7 @@ namespace t7 {
                 uint32_t workgroups
             ) {
                 if constexpr (!(ROSTER.orbs)) return;  // ROSTER-GATE orbs (a') — pipeline never created; the holder tolerates
+                if (!orbRecolorPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(orbRecolorPipeline_);
                 pass.SetBindGroup(2, stateGroup);
                 pass.SetBindGroup(3, texGroup);
@@ -680,6 +975,7 @@ namespace t7 {
                 uint32_t workgroups
             ) {
                 if constexpr (!(ROSTER.orbs)) return;  // ROSTER-GATE orbs (a') — pipeline never created; the holder tolerates
+                if (!orbCopyPrevPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(orbCopyPrevPipeline_);
                 pass.SetBindGroup(2, stateGroup);
                 pass.SetBindGroup(3, texGroup);
@@ -696,6 +992,7 @@ namespace t7 {
                 uint64_t ledgerOffset
             ) {
                 if constexpr (!(ROSTER.orbs)) return;  // ROSTER-GATE orbs (a') — pipeline never created; the holder tolerates
+                if (!orbRenderPipeline_) return;   // AUBADE U3 — not yet
                 // The count and the `os.active` guard are the record's
                 // (BUNDLE_1): zero instances draw nothing.
                 pass.SetPipeline(orbRenderPipeline_);
@@ -716,6 +1013,7 @@ namespace t7 {
                 uint32_t zone_count
             ) {
                 if constexpr (!(ROSTER.gol)) return;  // ROSTER-GATE gol (a') — pipeline never created; the holder tolerates
+                if (!zoneGolSyncPipeline_) return;   // AUBADE U3 — not yet
                 if (zone_count == 0) return;
                 pass.SetPipeline(zoneGolSyncPipeline_);
                 pass.SetBindGroup(2, stateGroup);
@@ -735,6 +1033,7 @@ namespace t7 {
                 uint32_t zone_count
             ) {
                 if constexpr (!(ROSTER.gol)) return;  // ROSTER-GATE gol (a') — pipeline never created; the holder tolerates
+                if (!zoneGolEvolvePipeline_) return;   // AUBADE U3 — not yet
                 if (zone_count == 0) return;
                 pass.SetPipeline(zoneGolEvolvePipeline_);
                 pass.SetBindGroup(2, stateGroup);
@@ -750,6 +1049,7 @@ namespace t7 {
                 uint32_t request_count
             ) {
                 if constexpr (!(ROSTER.gol)) return;  // ROSTER-GATE gol (a') — pipeline never created; the holder tolerates
+                if (!zoneDeriveParamsPipeline_) return;   // AUBADE U3 — not yet
                 if (request_count == 0) return;
                 pass.SetPipeline(zoneDeriveParamsPipeline_);
                 pass.SetBindGroup(2, stateGroup);
@@ -764,6 +1064,7 @@ namespace t7 {
                 uint32_t request_count
             ) {
                 if constexpr (!(ROSTER.gol)) return;  // ROSTER-GATE gol (a') — pipeline never created; the holder tolerates
+                if (!zoneSeedMaskPipeline_) return;   // AUBADE U3 — not yet
                 if (request_count == 0) return;
                 pass.SetPipeline(zoneSeedMaskPipeline_);
                 pass.SetBindGroup(2, stateGroup);
@@ -785,6 +1086,7 @@ namespace t7 {
                 wgpu::BindGroup texGroup
             ) {
                 if constexpr (!(ROSTER.arch)) return;  // ROSTER-GATE arch (a') — pipeline never created; the holder tolerates
+                if (!archMeshGenPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(archMeshGenPipeline_);
                 pass.SetBindGroup(2, stateGroup);
                 pass.SetBindGroup(3, texGroup);
@@ -799,6 +1101,7 @@ namespace t7 {
                 wgpu::BindGroup texGroup
             ) {
                 if constexpr (!(ROSTER.column || ROSTER.antenna)) return;  // ROSTER-GATE column+antenna (shared pipelines) (a') — pipeline never created; the holder tolerates
+                if (!columnMeshGenPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(columnMeshGenPipeline_);
                 pass.SetBindGroup(2, stateGroup);
                 pass.SetBindGroup(3, texGroup);
@@ -811,6 +1114,7 @@ namespace t7 {
                 wgpu::BindGroup texGroup
             ) {
                 if constexpr (!(ROSTER.palm)) return;  // ROSTER-GATE palm (a') — pipeline never created; the holder tolerates
+                if (!palmMeshGenPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(palmMeshGenPipeline_);
                 pass.SetBindGroup(2, stateGroup);
                 pass.SetBindGroup(3, texGroup);
@@ -823,6 +1127,7 @@ namespace t7 {
                 wgpu::BindGroup texGroup
             ) {
                 if constexpr (!(ROSTER.cactus)) return;  // ROSTER-GATE cactus (a') — pipeline never created; the holder tolerates
+                if (!cactusMeshGenPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(cactusMeshGenPipeline_);
                 pass.SetBindGroup(2, stateGroup);
                 pass.SetBindGroup(3, texGroup);
@@ -835,6 +1140,7 @@ namespace t7 {
                 wgpu::BindGroup texGroup
             ) {
                 if constexpr (!(ROSTER.blade)) return;  // ROSTER-GATE blade (a') — pipeline never created; the holder tolerates
+                if (!bladeMeshGenPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(bladeMeshGenPipeline_);
                 pass.SetBindGroup(2, stateGroup);
                 pass.SetBindGroup(3, texGroup);
@@ -856,6 +1162,7 @@ namespace t7 {
             // slot as before.
             template <class Enc>
             void begin_patch_terrain_plan(Enc& pass) {
+                if (!patchTerrainIndirectPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(patchTerrainIndirectPipeline_);
             }
             template <class Enc>
@@ -869,6 +1176,11 @@ namespace t7 {
                 wgpu::Buffer indirectArgs,
                 uint64_t indirectOffset
             ) {
+                // AUBADE U3 — THE ONE ROW WITH NO SetPipeline OF ITS OWN. It
+                // rides the pipeline begin_patch_terrain_plan set, so it must
+                // answer to the same guard: without it, a slot would draw
+                // against whatever pipeline happened to be bound last.
+                if (!patchTerrainIndirectPipeline_) return;
                 pass.SetBindGroup(2, stateGroup);
                 pass.SetVertexBuffer(0, visibleList, visibleOffset, visibleBytes);
                 // LATTICE_3: the three patch IBs are uint16. The indirect args
@@ -896,6 +1208,7 @@ namespace t7 {
                 uint32_t instanceCount,
                 uint32_t firstInstance = 0
             ) {
+                if (!patchTerrainPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(patchTerrainPipeline_);
                 pass.SetBindGroup(2, stateGroup);
                 pass.SetBindGroup(3, texGroup);
@@ -963,6 +1276,7 @@ namespace t7 {
                 wgpu::Buffer ledger,
                 uint64_t ledgerOffset
             ) {
+                if (!pipeline) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(pipeline);
                 pass.SetVertexBuffer(0, vertexBuffer);
                 pass.SetIndexBuffer(indexBuffer, wgpu::IndexFormat::Uint32);
@@ -979,6 +1293,7 @@ namespace t7 {
                 uint32_t instanceCount = 1,
                 uint32_t firstInstance = 0
             ) {
+                if (!pipeline) return;   // AUBADE U3 — not yet
                 if (indexCount == 0) return;
                 pass.SetPipeline(pipeline);
                 pass.SetVertexBuffer(0, vertexBuffer);
@@ -991,6 +1306,7 @@ namespace t7 {
                 Enc& pass,
                 uint32_t vertexCount
             ) {
+                if (!pawnPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(pawnPipeline_);
                 // One instance per agent slot. Inactive slots collapse via a
                 // zero-scale local mesh in pawn_vs (see is_active branch).
@@ -1035,6 +1351,7 @@ namespace t7 {
                 uint64_t ledgerOffset
             ) {
                 if constexpr (!(ROSTER.ribbon)) return;  // ROSTER-GATE ribbon (a') — pipeline never created; the holder tolerates
+                if (!ribbonPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(ribbonPipeline_);
                 pass.DrawIndirect(ledger, ledgerOffset);
             }
@@ -1137,6 +1454,7 @@ namespace t7 {
                 uint64_t ledgerOffset
             ) {
                 if constexpr (!(ROSTER.gallery)) return;  // ROSTER-GATE gallery (a') — pipeline never created; the holder tolerates
+                if (!galleryFramePipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(galleryFramePipeline_);
                 pass.DrawIndirect(ledger, ledgerOffset);
             }
@@ -1156,6 +1474,7 @@ namespace t7 {
                 uint64_t ledgerOffset
             ) {
                 if constexpr (!(ROSTER.gallery)) return;  // ROSTER-GATE gallery (a') — pipeline never created; the holder tolerates
+                if (!wallPaintingCanvasPipeline_ || !wallPaintingFramePipeline_) return;   // AUBADE U3 — not yet
                 // Canvas pass (textured surface)
                 pass.SetPipeline(wallPaintingCanvasPipeline_);
                 pass.DrawIndirect(ledger, ledgerOffset);
@@ -1182,6 +1501,7 @@ namespace t7 {
                 float fadeAlpha
             ) {
                 if constexpr (!(ROSTER.transitions)) return;  // ROSTER-GATE transitions (a') — pipeline never created; the holder tolerates
+                if (!fadeOverlayPipeline_) return;   // AUBADE U3 — not yet
                 if (fadeAlpha < 0.5f / 255.0f) return;
                 pass.SetPipeline(fadeOverlayPipeline_);
                 pass.Draw(3);  // fullscreen triangle from vertex ID
@@ -1214,6 +1534,7 @@ namespace t7 {
                 wgpu::Buffer ledger,
                 uint64_t ledgerOffset
             ) {
+                if (!pipeline) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(pipeline);
                 pass.SetVertexBuffer(0, vertexBuffer);
                 pass.SetIndexBuffer(indexBuffer, wgpu::IndexFormat::Uint32);
@@ -1230,6 +1551,7 @@ namespace t7 {
                 uint32_t instanceCount = 1,
                 uint32_t firstInstance = 0
             ) {
+                if (!pipeline) return;   // AUBADE U3 — not yet
                 if (indexCount == 0) return;
                 pass.SetPipeline(pipeline);
                 pass.SetVertexBuffer(0, vertexBuffer);
@@ -1253,6 +1575,7 @@ namespace t7 {
                 wgpu::Buffer ledger,
                 uint64_t ledgerOffset
             ) {
+                if (!shadowPatchTerrainPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(shadowPatchTerrainPipeline_);
                 // LATTICE_3 — the LOD1 ring IB, uint16 since the patch IBs
                 // crossed together.
@@ -1265,6 +1588,7 @@ namespace t7 {
                 Enc& pass,
                 uint32_t vertexCount
             ) {
+                if (!shadowPawnPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(shadowPawnPipeline_);
                 pass.Draw(vertexCount, /*instanceCount=*/ Dim::MAX_AGENTS);
             }
@@ -1302,6 +1626,7 @@ namespace t7 {
                 uint64_t ledgerOffset
             ) {
                 if constexpr (!(ROSTER.ribbon)) return;  // ROSTER-GATE ribbon (a') — pipeline never created; the holder tolerates
+                if (!shadowRibbonPipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(shadowRibbonPipeline_);
                 pass.DrawIndirect(ledger, ledgerOffset);
             }
@@ -1397,6 +1722,7 @@ namespace t7 {
                 uint64_t ledgerOffset
             ) {
                 if constexpr (!(ROSTER.gallery)) return;
+                if (!shadowGalleryFramePipeline_) return;   // AUBADE U3 — not yet
                 pass.SetPipeline(shadowGalleryFramePipeline_);
                 pass.DrawIndirect(ledger, ledgerOffset);
             }
@@ -1408,6 +1734,7 @@ namespace t7 {
                 uint64_t ledgerOffset
             ) {
                 if constexpr (!(ROSTER.gallery)) return;
+                if (!shadowWallPaintingPipeline_) return;   // AUBADE U3 — not yet
                 // ONE draw where the color pass needs two: with no fragment
                 // stage the canvas/frame split has nothing to distinguish.
                 // Same record as the colour pass — one vertex count.
@@ -1440,6 +1767,27 @@ namespace t7 {
 
             bool reload() {
                 if (!loadShader()) return false;
+                // AUBADE U3 — THE CENSUS RESETS, or a second pass through the
+                // creators would leave every counter at twice its truth: 114
+                // rows in the table, first light "outstanding" against a set
+                // that already landed, and the loop stalled on a gate that can
+                // never close. STATUS: LATENT — reload_shaders() is overridden
+                // (cartridge.hpp) and called by nobody since SUNSET_0 retired
+                // the native hot-reload key. Written anyway, because the cost
+                // of being wrong here is a hang and the cost of being right is
+                // four lines.
+                pipelineTimings_.clear();
+                for (uint32_t g = 0; g < PIPE_GROUP_COUNT; g++) {
+                    pipeIssued_[g] = 0;
+                    pipeResolved_[g] = 0;
+                }
+                pipelinesFailed_ = 0;
+                pipelineTablePrinted_ = false;
+                pipeT0Set_ = false;
+                // firstLightAnnounced_ and t7::g_first_light_ready are NOT
+                // reset: first light does not un-happen, and a reload must
+                // not put the world back behind a gate the visitor already
+                // came through.
                 if (!createComputePipelines()) return false;
                 if (!createRenderPipelines()) return false;
                 std::cout << "[Hot Reload] Shader reloaded successfully\n";
@@ -1784,8 +2132,13 @@ namespace t7 {
                 // Live-contributor layout — the camera clamp uses a walker-style
                 // policy that reads the aura texture (sample_pawn_aura); the VP
                 // half needs the same strata, which is why they fuse cleanly.
+                // FIRST LIGHT. The frame's view-projection is WRITTEN BY THIS
+                // KERNEL and by nothing else; without it frame 1 draws against
+                // an unwritten matrix and nothing on screen is correct. There
+                // is no ambiguity to send async.
                 if (!makeComputePipeline("update_camera_vp", "Update Camera + VP (0D, one lane)",
-                    frameKComputeLayout, Entry::UPDATE_CAMERA_VP, cameraVPPipeline_)) return false;
+                    frameKComputeLayout, Entry::UPDATE_CAMERA_VP, cameraVPPipeline_,
+                    PipeGroup::FIRST_LIGHT)) return false;
 
                 // Pipeline: update_sphere (0D)
                 // Room layout (FIELD_2 tenancy) — coupling_terrain_to_sphere_orbit_height
@@ -1811,7 +2164,8 @@ namespace t7 {
                     wgpu::PipelineLayout pl = strataLayoutFor("patchgenComputeLayout", frameCLayout_, patchgenStateLayout_, patchgenTexturesLayout_);
                     if (!pl) return false;
                     if (!makeComputePipeline("bake_patch", "Patch Bake (fused, batched)",
-                        pl, Entry::BAKE_PATCH_HEIGHTFIELD, bakePatchPipeline_)) return false;
+                        pl, Entry::BAKE_PATCH_HEIGHTFIELD, bakePatchPipeline_,
+                        PipeGroup::FIRST_LIGHT)) return false;
                 }
 
                 // Pipeline: generate_patch_cells (2D, on demand)
@@ -1819,7 +2173,8 @@ namespace t7 {
                     wgpu::PipelineLayout pl = strataLayoutFor("patchgenComputeLayout", frameCLayout_, patchgenStateLayout_, patchgenTexturesLayout_);
                     if (!pl) return false;
                     if (!makeComputePipeline("gen_patch_cells", "Generate Patch Cells (2D, on demand)",
-                        pl, Entry::GENERATE_PATCH_CELLS, generatePatchCellsPipeline_)) return false;
+                        pl, Entry::GENERATE_PATCH_CELLS, generatePatchCellsPipeline_,
+                        PipeGroup::FIRST_LIGHT)) return false;
                 }
 
                 // Pipelines: the ribbon room's two kernels (RIBBON_1) — the head
@@ -1860,7 +2215,8 @@ namespace t7 {
                     wgpu::PipelineLayout pl = strataLayoutFor("cullComputeLayout", frameCLayout_, cullStateLayout_, emptyLayout_);
                     if (!pl) return false;
                     if (!makeComputePipeline("frustum_cull_patches", "Frustum Cull Patches",
-                        pl, Entry::FRUSTUM_CULL_PATCHES, frustumCullPipeline_)) return false;
+                        pl, Entry::FRUSTUM_CULL_PATCHES, frustumCullPipeline_,
+                        PipeGroup::FIRST_LIGHT)) return false;
                 }
 
                 // Pawn aura compute pipeline (dedicated layout)
@@ -1994,7 +2350,8 @@ namespace t7 {
                 // (byte-identical result). Captures renderLayout/depthStencil/colorTarget.
                 auto makeEntity = [&](const char* label, const char* dbgLabel, const char* vsEntry,
                                       const wgpu::VertexBufferLayout* vbl, wgpu::CullMode cull,
-                                      wgpu::RenderPipeline& out) -> bool {
+                                      wgpu::RenderPipeline& out,
+                                      PipeGroup group = PipeGroup::ORDINARY) -> bool {
                     wgpu::FragmentState fragment{};
                     fragment.module = shaderModule_;
                     fragment.entryPoint = Entry::ENTITY_FS;
@@ -2014,10 +2371,7 @@ namespace t7 {
                     desc.depthStencil = &depthStencil;
                     desc.fragment = &fragment;
                     desc.multisample.count = effective_msaa();   // B10: 1 = the default, byte-identical descriptor
-                    return tPipe(label, [&]() {
-                        out = device_.CreateRenderPipeline(&desc);
-                        return out != nullptr;
-                    });
+                    return issue_render_(label, desc, out, group);
                 };
 
                 // Patch terrain pipeline -- instanced. DOMESDAY_0 B3: one
@@ -2057,10 +2411,8 @@ namespace t7 {
                     desc.fragment = &fragment;
                     desc.multisample.count = effective_msaa();   // B10: 1 = the default, byte-identical descriptor
 
-                    if (!tPipe("patch_terrain", [&]() {
-                        patchTerrainPipeline_ = device_.CreateRenderPipeline(&desc);
-                        return patchTerrainPipeline_ != nullptr;
-                    })) return false;
+                    if (!issue_render_("patch_terrain", desc, patchTerrainPipeline_,
+                                       PipeGroup::FIRST_LIGHT)) return false;
                 }
 
                 // Indirect terrain variant — USE_PATCH_INDIRECTION=true.
@@ -2105,15 +2457,15 @@ namespace t7 {
                     desc.fragment = &fragment;
                     desc.multisample.count = effective_msaa();   // B10: 1 = the default, byte-identical descriptor
 
-                    if (!tPipe("patch_terrain_indirect", [&]() {
-                        patchTerrainIndirectPipeline_ = device_.CreateRenderPipeline(&desc);
-                        return patchTerrainIndirectPipeline_ != nullptr;
-                    })) return false;
+                    if (!issue_render_("patch_terrain_indirect", desc,
+                                       patchTerrainIndirectPipeline_,
+                                       PipeGroup::FIRST_LIGHT)) return false;
                 }
 
                 // Pawn pipeline -- chess pawn, GPU-generated from vertex_index (bufferless, cull None)
                 if (!makeEntity("pawn", "Pawn Entity (Chess Pawn)", Entry::PAWN_VS,
-                    nullptr, wgpu::CullMode::None, pawnPipeline_)) return false;
+                    nullptr, wgpu::CullMode::None, pawnPipeline_,
+                    PipeGroup::FIRST_LIGHT)) return false;
 
                 // Sphere pipeline -- sphere entity, MeshVertex (pos+normal)
                 {
@@ -2244,10 +2596,8 @@ namespace t7 {
                     desc.multisample.count = effective_msaa();   // B10: 1 = the default, byte-identical descriptor
 
                     if constexpr (ROSTER.ribbon) {  // ROSTER-GATE ribbon (a') — shader compile skipped when disabled
-                    if (!tPipe("ribbon", [&]() {
-                        ribbonPipeline_ = device_.CreateRenderPipeline(&desc);
-                        return ribbonPipeline_ != nullptr;
-                    })) return false;
+                    if (!issue_render_("ribbon", desc, ribbonPipeline_,
+                                       PipeGroup::ORDINARY)) return false;
                     }
                 }
 
@@ -2360,10 +2710,8 @@ namespace t7 {
                     desc.multisample.count = effective_msaa();   // B10: 1 = the default, byte-identical descriptor
 
                     if constexpr (ROSTER.orbs) {  // ROSTER-GATE orbs (a') — shader compile skipped when disabled
-                    if (!tPipe("orb", [&]() {
-                        orbRenderPipeline_ = device_.CreateRenderPipeline(&desc);
-                        return orbRenderPipeline_ != nullptr;
-                    })) return false;
+                    if (!issue_render_("orb", desc, orbRenderPipeline_,
+                                       PipeGroup::ORDINARY)) return false;
                     }
                 }
 
@@ -2410,10 +2758,8 @@ namespace t7 {
                     desc.multisample.count = effective_msaa();   // B10: 1 = the default, byte-identical descriptor
 
                     if constexpr (ROSTER.gallery) {  // ROSTER-GATE gallery (a') — shader compile skipped when disabled
-                    if (!tPipe("gallery_frame", [&]() {
-                        galleryFramePipeline_ = device_.CreateRenderPipeline(&desc);
-                        return galleryFramePipeline_ != nullptr;
-                    })) return false;
+                    if (!issue_render_("gallery_frame", desc, galleryFramePipeline_,
+                                       PipeGroup::ORDINARY)) return false;
                     }
 
                     // Shadow Gallery Frame lives in the shadow block below, on a
@@ -2457,10 +2803,9 @@ namespace t7 {
                         desc.multisample.count = effective_msaa();   // B10: 1 = the default, byte-identical descriptor
 
                         if constexpr (ROSTER.gallery) {  // ROSTER-GATE gallery (a') — shader compile skipped when disabled
-                        if (!tPipe("wall_painting_canvas", [&]() {
-                            wallPaintingCanvasPipeline_ = device_.CreateRenderPipeline(&desc);
-                            return wallPaintingCanvasPipeline_ != nullptr;
-                        })) return false;
+                        if (!issue_render_("wall_painting_canvas", desc,
+                                           wallPaintingCanvasPipeline_,
+                                           PipeGroup::ORDINARY)) return false;
                         }
                     }
 
@@ -2486,10 +2831,9 @@ namespace t7 {
                         desc.multisample.count = effective_msaa();   // B10: 1 = the default, byte-identical descriptor
 
                         if constexpr (ROSTER.gallery) {  // ROSTER-GATE gallery (a') — shader compile skipped when disabled
-                        if (!tPipe("wall_painting_frame", [&]() {
-                            wallPaintingFramePipeline_ = device_.CreateRenderPipeline(&desc);
-                            return wallPaintingFramePipeline_ != nullptr;
-                        })) return false;
+                        if (!issue_render_("wall_painting_frame", desc,
+                                           wallPaintingFramePipeline_,
+                                           PipeGroup::ORDINARY)) return false;
                         }
                     }
 
@@ -2733,10 +3077,16 @@ namespace t7 {
                                           BiasProfile profile = BiasProfile::GRAZING,
                                           wgpu::PipelineLayout layout = nullptr) -> bool {
                         // Body-local, so its address is valid for exactly as long as
-                        // `desc`'s is — and CreateRenderPipeline is SYNCHRONOUS here
-                        // (tPipe invokes its closure immediately;
-                        // CreateRenderPipelineAsync is absent repo-wide), so nothing
-                        // outlives this call. Starts from the shared state, so the
+                        // `desc`'s is — and that is still long enough after AUBADE
+                        // U3 made this creation ASYNCHRONOUS. The earlier note here
+                        // said CreateRenderPipelineAsync was absent repo-wide; it is
+                        // now the only creation this file makes. The lifetime
+                        // argument survives unchanged for a better reason than
+                        // synchrony: the port serialises the descriptor on the
+                        // CALLING side of the promise
+                        // (emwgpuDeviceCreateRenderPipelineAsync ->
+                        // WebGPU.makeRenderPipelineDesc), so nothing here outlives
+                        // the call either way. Starts from the shared state, so the
                         // format/write/compare triple has one home still.
                         wgpu::DepthStencilState ds = shadowDepth;
                         if (profile == BiasProfile::GRAZING) {
@@ -2761,10 +3111,10 @@ namespace t7 {
                         desc.primitive.frontFace = wgpu::FrontFace::CCW;
                         desc.depthStencil = &ds;
                         desc.fragment = nullptr;
-                        return tPipe(label, [&]() {
-                            out = device_.CreateRenderPipeline(&desc);
-                            return out != nullptr;
-                        });
+                        // EVERY shadow pipeline rides this lambda, so the group tag
+                        // is stated once here and no caller can forget it — which is
+                        // what makes shadow_pipelines_ready() an exact count.
+                        return issue_render_(label, desc, out, PipeGroup::SHADOW);
                     };
 
                     // MeshVertex layout (pos+normal) for sphere shadow
@@ -2975,10 +3325,15 @@ namespace t7 {
                     desc.depthStencil = &fadeDepth;
 
                     if constexpr (ROSTER.transitions) {  // ROSTER-GATE transitions (a') — shader compile skipped when disabled
-                    if (!tPipe("fade_overlay", [&]() {
-                        fadeOverlayPipeline_ = device_.CreateRenderPipeline(&desc);
-                        return fadeOverlayPipeline_ != nullptr;
-                    })) return false;
+                    // NOT FIRST LIGHT, against RUL-B's start set, and the
+                    // reason is a fact the set assumed the other way:
+                    // MoodState::transition_fade_alpha initialises to 0.0f
+                    // (spine_state.hpp), so the boot's fade covers NOTHING and
+                    // its absence at frame 1 is invisible. The safety net over
+                    // frame 1 is the VEIL (U4), not the fade. Ambiguity goes
+                    // async; this one is not even ambiguous.
+                    if (!issue_render_("fade_overlay", desc, fadeOverlayPipeline_,
+                                       PipeGroup::ORDINARY)) return false;
                     }
                 }
 
