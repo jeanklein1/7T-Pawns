@@ -399,6 +399,69 @@
   </style>
 </head>
 <body>
+  <!-- ══ IOS_3 B1 — THE PROGRAM'S LAST WORDS ═════════════════════════
+       A black screen in a gallery, on a device with no console, is the
+       exhibition's worst failure mode: the piece has failed AND cannot
+       say so. This div is the program's own surface for saying what it
+       is and what went wrong.
+
+       IT IS FIRST IN THE BODY, ahead of the canvas and ahead of the
+       organ panel's injected DOM, so nothing can paint over it. Styles
+       are INLINE and depend on no stylesheet, because the failure it
+       reports may be the one that stopped the stylesheet loading.
+       -webkit-user-select is not redundant with user-select: iOS Safari
+       still wants the prefixed form, and a message that cannot be
+       copied off a phone is a message that has to be retyped from a
+       photograph.
+
+       It ships in EVERY build. This is not instrumentation; the
+       instruments dial governs measurement, and this is the piece
+       telling the room it is broken. -->
+  <div id="t7card" style="display:none;position:fixed;top:0;left:0;right:0;
+    z-index:99999;background:rgba(0,0,0,.88);color:#cfc;font:11px/1.45 monospace;
+    padding:10px;max-height:60vh;overflow:auto;white-space:pre-wrap;
+    -webkit-user-select:text;user-select:text"></div>
+  <script>
+    // TWO DOORS, ONE SURFACE. t7card is the identity block (quiet, green);
+    // t7err is a failure (loud, red, and it turns the whole card red so a
+    // photograph reads at a glance). Both are plain globals so the C++
+    // side reaches them with one EM_ASM and no module plumbing.
+    //
+    // THE CAP IS NOT POLITENESS. WebKit emits an uncaptured error PER
+    // FRAME for a persistent fault; without a cap the first useful
+    // message scrolls out of a phone-sized card in under a second, and
+    // the DOM grows without bound behind it.
+    (function () {
+      var LINE_CAP = 20, lines = 0, capped = false;
+      function card() { return document.getElementById('t7card'); }
+      function put(text, red) {
+        var e = card();
+        if (!e) return;
+        if (capped) return;
+        if (lines >= LINE_CAP) {
+          capped = true;
+          e.textContent += '\u2026 (further errors suppressed)\n';
+          return;
+        }
+        lines++;
+        e.style.display = 'block';
+        if (red) e.style.color = '#f88';
+        e.textContent += text + '\n';
+      }
+      window.t7card = function (line) { put(line, false); };
+      window.t7err  = function (tag, msg) { put('[' + tag + '] ' + msg, true); };
+      // The two browser-side failures the C++ never sees: a wasm abort
+      // surfaces as an error event, and a rejected device request as an
+      // unhandled rejection. Both are black screens with nothing said.
+      window.addEventListener('error', function (ev) {
+        window.t7err('js', ev.message || String(ev.error || 'error'));
+      });
+      window.addEventListener('unhandledrejection', function (ev) {
+        window.t7err('promise', String(ev.reason));
+      });
+    })();
+  </script>
+
   <!-- FRAME_0 — the canvas's size comes from this container, not from a
        CSS rule on the canvas the library overrides. See #frame above. -->
   <div id="frame"><canvas id="canvas"></canvas></div>

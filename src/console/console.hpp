@@ -27,6 +27,7 @@
 
 #include "core/input_event.hpp"
 #include "core/boot_params.hpp"   // DOMESDAY_1 B9 — ?cap= / --cap= (effective_pixel_cap below)
+#include "core/boot_card.hpp"     // IOS_3 B — the program's own surface: facts, and last words
 #include "core/instruments.hpp"  // WIT_2 — t7::g_dropped_submits, the frame-validity witness
 
 #include <webgpu/webgpu_cpp.h>
@@ -554,6 +555,12 @@ namespace t7 {
                     std::cerr << "WebGPU Error (" << static_cast<int>(type) << "): "
                         << text << std::endl;
                     note_if_dropped_submit(type, text);   // WIT_2
+                    // IOS_3 B3 — AND ONTO THE PAGE. std::cerr reaches a
+                    // console; the device that needs this has none. The
+                    // message is the one thing no switch in the ladder can
+                    // reproduce — validation NAMES what it refused.
+                    card_err("gpu", "(" + std::to_string(static_cast<int>(type))
+                                    + ") " + std::string(text));
                 });
             // PORT_3a — the loss door. AllowSpontaneous so it fires from
             // the browser event loop without a pump. `this` is safe to
@@ -565,6 +572,14 @@ namespace t7 {
                     deviceLost_ = true;
                     std::cerr << "[Device] LOST reason=" << static_cast<int>(reason)
                         << " : " << std::string_view(msg.data, msg.length) << std::endl;
+                    // IOS_3 B3 — THE DISTINCTION THE LADDER CANNOT DRAW.
+                    // A black screen with [lost] means the device DIED — a
+                    // hang or a watchdog. A black screen with [gpu] means
+                    // validation refused something. Nothing else we can
+                    // build tells those two apart, and they point at
+                    // opposite halves of the investigation.
+                    card_err("lost", std::to_string(static_cast<int>(reason))
+                                     + ": " + std::string(msg.data, msg.length));
                 });
 
             wgpu::Limits limits{};
@@ -625,6 +640,26 @@ namespace t7 {
                 deviceDesc.requiredFeatureCount = askedFeatureCount;
             }
 
+            // IOS_3 B5 — THE WITNESS FOR THE FAILURE PATH. A last-words
+            // surface nobody has seen fail is a surface nobody knows is
+            // wired, so ?failboot=1 demands a feature this adapter was
+            // just observed NOT to offer. requestDevice rejects an
+            // unofferable required feature, which is exactly the shape
+            // the iPad may be failing in — and here it is reproducible on
+            // a machine that works.
+            //
+            // IT DELIBERATELY DEFEATS THE FILTER ABOVE. That filter is the
+            // program's protection (L14: never reissue as passthrough);
+            // this switch is a rehearsal of what happens when protection
+            // is not enough, and it exists only behind an explicit flag.
+            static wgpu::FeatureName failFeature = wgpu::FeatureName::ShaderF16;
+            if (boot_params().failboot && !adapter_.HasFeature(failFeature)) {
+                std::cout << "[Params] failboot=1 — demanding an unofferable "
+                             "feature so the failure path can be witnessed\n";
+                deviceDesc.requiredFeatures = &failFeature;
+                deviceDesc.requiredFeatureCount = 1;
+            }
+
             adapter_.RequestDevice(&deviceDesc, wgpu::CallbackMode::AllowSpontaneous,
                 [this, passthrough](wgpu::RequestDeviceStatus status, wgpu::Device device,
                        wgpu::StringView message) {
@@ -634,6 +669,11 @@ namespace t7 {
                     if (status != wgpu::RequestDeviceStatus::Success) {
                         std::cerr << "RequestDevice failed (" << which << "): "
                             << std::string_view(message.data, message.length) << "\n";
+                        // IOS_3 B3 — the earliest black screen there is: no
+                        // device, so no callback above will ever fire and
+                        // nothing downstream runs to notice.
+                        card_err("device", std::string(which) + ": "
+                                 + std::string(message.data, message.length));
                         if (!passthrough) {
                             // PORT_6a (4) — the reissue, failure branch.
                             std::cerr << "[Device] REISSUING request with full adapter"
@@ -912,6 +952,8 @@ namespace t7 {
                                 ? std::string_view(s.data, s.length)
                                 : std::string_view("?");
                         };
+                        card_fact("adapter " + std::string(sv(info.vendor))
+                                  + " | " + std::string(sv(info.architecture)));
                         std::cout << "[Device] adapter: " << sv(info.vendor)
                                   << " | " << sv(info.architecture)
                                   << " | " << sv(info.device)

@@ -5,6 +5,7 @@
 
 #include "cartridges/the_board/realization/state.hpp"
 #include "core/sha256.hpp"   // PROBATE_SEAL2 — the serve witness's digest
+#include "core/boot_card.hpp"   // IOS_3 B2 — the build stamp and shader sha reach the page
 #include <webgpu/webgpu_cpp.h>
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>      // EM_ASM — reads the baked shader digest
@@ -1563,6 +1564,13 @@ namespace t7 {
                 // reads. `unknown` where the stamp did not generate: the one
                 // thing this line may never do is lie.
                 std::cout << "[Build] " << t7::BUILD_STAMP << "\n";
+                // IOS_3 B2 — the same two provenance facts onto the page.
+                // A photograph of a broken iPad is the only instrument in
+                // that room, and it is worthless if it cannot name the
+                // build it photographed.
+                t7::card_fact(std::string("build  ") + t7::BUILD_STAMP);
+                t7::card_fact("shader " + got + "  ("
+                              + std::to_string(shaderSource_.size()) + " bytes)");
 
                 if (expected.empty()) {
                     // A SKIP THAT SAYS ITS NAME. Serving web/ directly —

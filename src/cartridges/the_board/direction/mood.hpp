@@ -8,6 +8,7 @@
 #include <algorithm>   // std::max, std::min, std::clamp   // (impl, merged)
 #include <cmath>       // std::sqrt, std::sin, std::cos, std::cosh, std::floor, std::abs   // (impl, merged)
 #include <iostream>    // mood / lighting / shell / portal logs   // (impl, merged)
+#include "core/boot_card.hpp"   // IOS_3 B2 — the mood and the world shape reach the page
 #include <iomanip>     // std::fixed, std::setprecision — the arc's facing witness (ATRIUM_5)   // (impl, merged)
 #include <vector>      // shell mesh staging   // (impl, merged)
 
@@ -982,6 +983,18 @@ inline void apply_mood(MoodDeps* c, uint32_t mood, wgpu::Queue& queue,
         configure_orbs(orbs_state, &orbs_deps, ORB_MOOD_LIVE[mood], queue,
             /*reseed=*/true);
 
+    // IOS_3 B2 — the mood, and the world's SHAPE with it. Jean's lead is
+    // that the boot falls through to an indoor state when the outdoor world
+    // never forms, so "which shape am I in, and how big" is the first
+    // question the card has to answer — and READ 4 showed the room's rolled
+    // radius decides how many patches the bake is asked for (9/25/49/49
+    // against the open world's fixed 49).
+    t7::card_fact(std::string("mood   ") + std::to_string(mood) + " " + mood_name(mood)
+                  + (c->world_state_.finite_mode
+                        ? "  finite "
+                          + std::to_string(2u * c->world_state_.finite_radius + 1u) + "x"
+                          + std::to_string(2u * c->world_state_.finite_radius + 1u)
+                        : "  open"));
     std::cout << "[Mood] Applied: " << mood_name(mood)
         << " (mood=" << mood
         << (m.shape.indoor ? " INDOOR" : " outdoor")

@@ -49,6 +49,7 @@
 #include "render/render_cartridge.hpp"
 #include "core/input_event.hpp"
 #include "core/boot_params.hpp"                                    // DOMESDAY_1 B9 — ?seed= / ?mood= boot overrides (ctor, the one authoring site)
+#include "core/boot_card.hpp"                                      // IOS_3 B2 — the world, the switches and the patch counters reach the page
 #include "core/instruments.hpp"                                    // THE INSTRUMENTS DIAL: INSTRUMENTS.frame_meter / .periodic_census gate the recurring self-measurement (compile-time, T7_INSTRUMENTS; default off)
 #include "cartridges/the_board/contracts/roster.hpp"
 #include "cartridges/the_board/demos/demo.hpp"             // THE SELECTED SENTENCE: DEMO + ROSTER (compile-time, INCUBATE_DEMO; default full)
@@ -563,6 +564,18 @@ namespace t7 {
                 // what keeps a randomized world reportable.
                 std::cout << "[World] Boot seed=" << world_state_.active_seed
                           << " (" << seed_origin << ")\n";
+                // IOS_3 B2 — and onto the page. The switches ride this line
+                // because a diagnosis is reproducible only if the photograph
+                // says which switches were set when it was taken.
+                {
+                    const auto& bp = t7::boot_params();
+                    t7::card_fact("world  seed=" + std::to_string(world_state_.active_seed)
+                                  + " (" + seed_origin + ")");
+                    t7::card_fact(std::string("switch bake=") + (bp.bake ? "1" : "0")
+                                  + " card=" + (bp.card ? "1" : "0")
+                                  + " sunpass=" + (bp.sunpass ? "1" : "0")
+                                  + " bundles=" + (bp.bundles ? "1" : "0"));
+                }
                 mood_state_.active = DEMO.boot_mood;
                 // B9 — a mood present at boot (?mood= / --mood=) forces the
                 // boot mood at this one authoring site; an out-of-range
@@ -1737,7 +1750,45 @@ namespace t7 {
             // R6 — CENSUS DUMPS (wall-clock interval, diagnostic). GoL residue
             // proof (G3, constexpr-gated intra-movement) + entity census.
             // Autonomous stdout (P6: every switch has a witness).
+            // IOS_3 B2 — THE LINE JEAN'S LEAD ASKS FOR, and the only one
+            // that can answer it. The hypothesis is that on WebKit the
+            // outdoor world never FORMS — no patch ever lands — and a black
+            // canvas cannot be told apart from a world that formed and
+            // failed to draw. These three counters tell them apart:
+            //
+            //   allocated  a layer was assigned (the CPU got that far)
+            //   baked      the heightfield dispatch ran for it
+            //   landed     it is drawable
+            //
+            // allocated > 0 with baked == 0 says the bake is where it stops.
+            // All three healthy on a black screen says the world formed and
+            // the RENDER is at fault. Nothing else in the program tells
+            // those two apart on a device with no console.
+            //
+            // ONE EM_ASM PER SECOND, and only with ?bootinfo=1 — it rides
+            // the census phase's cadence rather than growing one, and
+            // card_live rewrites a single div rather than appending.
+            float lastCardTick_ = -1.0f;
+
+            void card_patch_tick_() {
+                if (!t7::boot_params().bootinfo) return;
+                if (time_state_.seconds - lastCardTick_ < 1.0f) return;
+                lastCardTick_ = time_state_.seconds;
+                uint32_t baked = 0, landed = 0;
+                const uint32_t n = world_state_.active_patch_count;
+                for (uint32_t i = 0; i < n; i++) {
+                    const auto& p_ = patch_system_state_.patches_[i];
+                    if (!p_.valid) continue;
+                    if (p_.phase == PatchPhase::GENERATED) { baked++; landed++; }
+                    else if (p_.phase == PatchPhase::SPAWNED) { baked++; }
+                }
+                t7::card_live("patches: allocated " + std::to_string(n)
+                              + "  baked " + std::to_string(baked)
+                              + "  landed " + std::to_string(landed));
+            }
+
             void phase_census_dumps(RenderCtx&) {
+                card_patch_tick_();
                 // ROSTER-RESIDUE gol (2e) — residue recipe. When gol is
                 // disabled it is never selected (b), so zone_count stays 0 and
                 // the sole writer of the zone GPU buffers (the compute block
