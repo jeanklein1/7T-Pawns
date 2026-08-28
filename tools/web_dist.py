@@ -177,6 +177,18 @@ POSTER_QUALITY = 78
 # reserved for the PWA web manifest.
 EXHIBITION_JSON = "exhibition.json"
 
+# ── AUBADE U6 — THE VERSIONED SET, AND ONLY IT ──────────────────────
+#
+# Every path here is fetched with `?v=<build id>` appended, so its URL —
+# which is what the HTTP cache keys on — changes whenever its bytes do.
+# index.html is NOT in this list and must never be: it is the page that
+# hands out the keys, and it keeps the `no-cache` rule the header
+# writer's banner argues for. Nor are paintings/ or music/, which are
+# named without a version and can change under a constant name.
+IMMUTABLE_PATHS = ["the_board.js", "the_board.wasm", "the_board.data",
+                   "organ_panel.js"]
+IMMUTABLE_RULE = "public, max-age=31536000, immutable"
+
 CF_LIMIT = 25 * 1024 * 1024        # Cloudflare Pages per-file
 GH_LIMIT = 100 * 1024 * 1024       # GitHub Pages per-file (soft, ~100 MiB)
 
@@ -874,10 +886,41 @@ def main():
     # Written HERE, after everything else, on the refusal-safe path —
     # like the rest of dist/, so a run that cannot complete never costs
     # the previous deploy.
+    # ── AUBADE U6 — AND THE OTHER HALF: THE SECOND DAWN IS FREE ──────
+    #
+    # The rule above ADDS; it does not move. The index keeps `no-cache`
+    # verbatim, for exactly the reason its own banner gives — a fresh
+    # index always names fresh keys — and the four versioned artifacts
+    # gain `immutable` beneath it.
+    #
+    # WHY THIS IS SAFE, and it is the one thing worth checking before
+    # believing it: the HTTP cache is keyed on the FULL URL, query string
+    # included. Every one of these four is fetched as `<path>?v=<build
+    # id>` (index.html's script tags for the two .js, Module.locateFile
+    # for the .wasm and the .data), and the build id is
+    # sha256(the_board.wasm)[:12]. A new build is a new key, so
+    # `immutable` can never pin a stale artifact: it pins a URL that will
+    # never be asked for again.
+    #
+    # WHAT IT BUYS. A returning visitor pays no network for the glue, the
+    # wasm or the package — and, more than that, keeps what the browser
+    # built FROM them: Chrome's wasm code cache and the implementation's
+    # own pipeline cache both key off unchanged bytes, and a
+    # revalidation, even a 304, is a chance to lose that. `immutable`
+    # says do not even ask.
+    #
+    # WHAT IS DELIBERATELY ABSENT. paintings/ and music/ are NOT versioned
+    # — the manifest names bare filenames and the exhibition changes
+    # without the build id moving. `immutable` there would pin a painting
+    # for a year past its replacement. They keep default caching, which is
+    # revalidation, which is correct for content that can change under a
+    # constant name.
     with open(os.path.join(DIST, "_headers"), "w",
               encoding="utf-8", newline="\n") as fh:
         fh.write("/\n  Cache-Control: no-cache\n"
                  "/index.html\n  Cache-Control: no-cache\n")
+        for versioned in IMMUTABLE_PATHS:
+            fh.write("/%s\n  Cache-Control: %s\n" % (versioned, IMMUTABLE_RULE))
 
     file_count = (len(ARTIFACTS) + len(painting_paths) + len(music_paths)
                   + len(poster_paths) + len(presets) + 2)
@@ -960,6 +1003,8 @@ def main():
     print("")
     print("WROTE %s  (%d files)" % (DIST, file_count))
     print("  _headers           index is no-cache; a plain reload now fetches the current build")
+    print("                     %d versioned path(s) immutable for a year — the second dawn is free"
+          % len(IMMUTABLE_PATHS))
 
     print("")
     print("DEPLOY — exact commands")
