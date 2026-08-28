@@ -218,6 +218,79 @@ def list_paintings():
     return names
 
 
+# ═══ AUBADE U5c — THE LONG EDGE, MEASURED AT DIST TIME ═══════════════
+#
+# The runtime decodes a painting on the main thread (there is no browser
+# decode anywhere in the program) and pads it to Dim::PAINTING_RESOLUTION.
+# PAINTING_CAP is the number that keeps that decode small — but it was
+# only ever ENFORCED by write_paintings' Pillow arm, and that arm has a
+# documented fallback: no Pillow, copy verbatim, uncapped. A deploy from a
+# machine without Pillow therefore shipped full-size sources and the
+# runtime decoded texels it would immediately throw away, once per
+# painting, on the main thread, in the frames right after first light.
+#
+# So the cap is asserted on what actually LANDED IN dist/, on every path,
+# by reading the JPEG's own frame header. No dependency: a JPEG's size is
+# five bytes into any SOFn marker, and the marker walk is twenty lines.
+#
+# It REFUSES rather than warns, for the same reason write_posters
+# refuses: a painting past the cap is a cost the visitor pays in the one
+# window this campaign is here to empty.
+def jpeg_dimensions(path):
+    """(width, height) from a JPEG's SOFn marker, or None if unreadable.
+
+    The walk: SOI, then a chain of length-prefixed segments. Any SOFn
+    except the four that are not frame headers (DHT C4, JPG C8, DAC CC)
+    carries height and width as big-endian u16 at offsets 3 and 5 of its
+    payload. Entropy-coded data begins at SOS (DA) and no SOF follows it."""
+    try:
+        with open(path, "rb") as fh:
+            b = fh.read()
+    except OSError:
+        return None
+    if len(b) < 4 or b[0] != 0xFF or b[1] != 0xD8:
+        return None
+    i = 2
+    while i + 3 < len(b):
+        if b[i] != 0xFF:
+            i += 1
+            continue
+        m = b[i + 1]
+        if m in (0xD8, 0x01) or 0xD0 <= m <= 0xD7:   # no payload
+            i += 2
+            continue
+        if m == 0xDA:                                 # scan: no SOF after this
+            return None
+        seg = (b[i + 2] << 8) | b[i + 3]
+        if seg < 2:
+            return None
+        if 0xC0 <= m <= 0xCF and m not in (0xC4, 0xC8, 0xCC):
+            if i + 9 >= len(b):
+                return None
+            h = (b[i + 5] << 8) | b[i + 6]
+            w = (b[i + 7] << 8) | b[i + 8]
+            return (w, h)
+        i += 2 + seg
+    return None
+
+
+def assert_painting_cap(paths):
+    """Every shipped painting is at or under PAINTING_CAP on its long edge.
+
+    Returns a list of (path, reason) — empty is the pass."""
+    bad = []
+    for p in paths:
+        dims = jpeg_dimensions(p)
+        if dims is None:
+            bad.append((p, "not a readable JPEG frame header"))
+            continue
+        w, h = dims
+        if max(w, h) > PAINTING_CAP:
+            bad.append((p, "%dx%d — long edge %d over the %d cap"
+                        % (w, h, max(w, h), PAINTING_CAP)))
+    return bad
+
+
 def list_music():
     if not os.path.isdir(SRC_MUSIC):
         return []
@@ -739,6 +812,22 @@ def main():
     print("EXHIBITION — assembling %d painting(s), %d track(s)"
           % (len(paintings), len(music)))
     painting_paths = write_paintings(paintings)
+
+    # AUBADE U5c — the cap, on what landed, on every path.
+    over_cap = assert_painting_cap(painting_paths)
+    if over_cap:
+        print("")
+        print("REFUSING TO SHIP A PAINTING OVER THE DECODE CAP.")
+        for p, why in over_cap:
+            print("  %-44s %s" % (os.path.relpath(p, DIST), why))
+        print("  The runtime decodes each of these on the MAIN THREAD and pads the")
+        print("  result to PAINTING_RESOLUTION, so every texel over the cap is paid")
+        print("  for and thrown away — in the frames right after first light, which")
+        print("  is the window this build is trying to keep clear. Install Pillow so")
+        print("  write_paintings can requantize, or cap the sources by hand.")
+        print("  dist/ is part-written and NOT deployable.")
+        return 6
+
     os.makedirs(DIST_MUSIC, exist_ok=True)
     for f in music:
         shutil.copy2(os.path.join(SRC_MUSIC, f), os.path.join(DIST_MUSIC, f))

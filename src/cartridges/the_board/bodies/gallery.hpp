@@ -824,6 +824,33 @@ struct GalleryState {
     };
     std::vector<AuthoredFetchRequest> authored_fetch_queue;
     uint32_t authored_fetch_inflight = 0;
+
+    // ── AUBADE U5c — THE VALVE'S HOLDING PEN ────────────────────────
+    //
+    // A painting that has ARRIVED but has not yet been decoded, padded
+    // and uploaded. Everything downstream of the fetch used to happen
+    // inside the fetch's own completion callback — a browser event, not
+    // a frame — which put a stb_image decode and a ~1 MiB WriteTexture
+    // wherever the network happened to land them, first present very
+    // much included.
+    //
+    // They wait here instead, and drain at ONE PER FRAME once the world
+    // has actually been seen (pump_authored_valve). The bytes are the
+    // COMPRESSED file: emscripten_fetch owns its buffer and frees it at
+    // close, so holding it means copying it.
+    //
+    // THE COST, stated: at most STAGING_LAYERS (32) files at once, and
+    // in practice only those that land before first present. At the 512
+    // long-edge cap web_dist asserts, a painting is a few hundred KiB,
+    // so the pen's ceiling is single-digit MiB and its steady state is
+    // empty.
+    struct AuthoredHeld {
+        uint32_t staging_layer;
+        uint32_t disk_index;
+        std::string url;
+        std::vector<unsigned char> bytes;
+    };
+    std::vector<AuthoredHeld> authored_held;
     // The manifest is requested once per session, at the earliest
     // instant a GalleryState exists (the cartridge constructor).
     bool authored_manifest_requested = false;
@@ -904,7 +931,7 @@ void place_wall_paintings(GalleryState& gs, GalleryDeps* c, wgpu::Queue& queue,
 // the poster the frame ATRIUM_0 lands, the walls when the folder settles.
 void clear_wall_paintings(GalleryState& gs, GalleryDeps* c, wgpu::Queue& queue);
 // Authored image loading
-void load_authored_textures(GalleryState& gs, GPUState& gpu, wgpu::Queue& queue);  // GPUState& deps-form: context-agnostic dual-entry door
+void load_authored_textures(GalleryState& gs);   // AUBADE U5b — fetch only; no device, so it may run before one exists
 void rotate_authored_staging(GalleryState& gs, GalleryDeps* c, wgpu::Queue& queue);
 void tick_gallery_deferred_hang(MachineCtx* c, wgpu::Queue& queue);
 void teardown_gallery(GalleryState& gs, GalleryDeps* c, wgpu::Queue& queue);
@@ -2040,22 +2067,26 @@ inline constexpr uint32_t AUTHORED_FETCH_INFLIGHT_CAP = 4;
 // fetching a half-megabyte JPEG is the normal case this must not kill.
 inline constexpr unsigned long AUTHORED_FETCH_TIMEOUT_MS = 30000;
 
-// The fetch's own copy of everything the answer will need. The two
-// pointers outlive every fetch by construction: GalleryState and
-// GPUState are members of the Cartridge, which is a member of App,
-// heap-allocated in main() and never destroyed on this twin. The queue
-// is a REFERENCE, not a pointer — wgpu handles are refcounted, so this
-// copy keeps the queue alive on its own account.
+// The fetch's own copy of everything the answer will need. The pointer
+// outlives every fetch by construction: GalleryState is a member of the
+// Cartridge, which is a member of App, heap-allocated in main() and never
+// destroyed on this twin.
+//
+// AUBADE U5b — THE GPU IS NO LONGER IN HERE, and that absence is the
+// unit. The fetch used to carry a GPUState* and a queue because its
+// completion callback decoded and uploaded on the spot; U5c moved that
+// downstream of first present, so nothing on this path touches the
+// device — which is what lets the whole path START BEFORE THE DEVICE
+// EXISTS, at manifest scan, so the bytes travel during the device and
+// init window instead of after it.
 struct AuthoredFetchCtx {
     GalleryState* gs;
-    GPUState*     gpu;
-    wgpu::Queue   queue;
     uint32_t      staging_layer;
     uint32_t      disk_index;
     std::string   url;
 };
 
-inline void pump_authored_fetches(GalleryState& gs, GPUState& gpu, wgpu::Queue& queue);
+inline void pump_authored_fetches(GalleryState& gs);
 
 // authored_staged_count is a tally of valid records, and on this twin
 // records become valid at arrival time rather than at call time — so
@@ -2106,66 +2137,58 @@ inline void authored_fetch_release_slot(GalleryState& gs, uint32_t staging_layer
 // One exit for both outcomes: the lane is freed, the context is
 // destroyed, and the queue is pumped so the next painting starts the
 // instant this one is done with its lane.
+// AUBADE U5c — `pending` NOW SPANS THE WHOLE JOURNEY, fetch AND valve,
+// so this function no longer clears it. It used to, because this was
+// where a painting finished; with the valve the picture is still owed
+// until the upload lands, and a slot cleared early is a slot the fill
+// and the rotation would both hand to a second painting. Every caller
+// clears `pending` at the point where the journey really is over: the
+// two failure paths here and now, the valve when the texture is up.
 inline void authored_fetch_finish(AuthoredFetchCtx* ctx) {
     GalleryState& gs = *ctx->gs;
-    GPUState& gpu = *ctx->gpu;
-    wgpu::Queue queue = ctx->queue;
-    gs.authored_staging[ctx->staging_layer].pending = false;
     if (gs.authored_fetch_inflight > 0) gs.authored_fetch_inflight--;
-    recount_authored_staged(gs);
     delete ctx;
-    pump_authored_fetches(gs, gpu, queue);
+    recount_authored_staged(gs);
+    pump_authored_fetches(gs);
 }
 
 inline void authored_image_onsuccess(emscripten_fetch_t* fetch) {
     AuthoredFetchCtx* ctx = (AuthoredFetchCtx*)fetch->userData;
-    int width = 0, height = 0, channels = 0;
-    // stb allocates its own pixels, so the fetch buffer is dead the
-    // moment the decode returns — closed here rather than later, so no
-    // path below can leak it.
-    unsigned char* data = stbi_load_from_memory(
-        (const stbi_uc*)fetch->data, (int)fetch->numBytes, &width, &height, &channels, 4);
-    emscripten_fetch_close(fetch);
 
-    if (!data) {
-        std::cerr << "[Authored] Failed to load: " << ctx->url << "\n";
-        authored_fetch_release_slot(*ctx->gs, ctx->staging_layer);
+    // ══ AUBADE U5c — THE VALVE: THE BYTES ARRIVE, NOTHING ELSE HAPPENS ══
+    //
+    // What used to happen here, inside a browser event: stbi_load_from_memory
+    // (a main-thread decode, R6 — there is no browser decode anywhere in this
+    // program), a pad to RES, and a ~1 MiB queue WriteTexture. All of it at
+    // whatever instant the network chose, first present very much included.
+    // U1's `stb` probe exists precisely because that cost was unattributed.
+    //
+    // Now the file is COPIED into the holding pen and the lane is freed.
+    // pump_authored_valve does the rest, one painting a frame, after the
+    // world has been seen.
+    //
+    // THE COPY IS NOT AVOIDABLE. emscripten_fetch owns fetch->data and frees
+    // it at close, and closing late would hold the lane. One memcpy of a few
+    // hundred KiB against a decode and an upload is the cheap half.
+    if (fetch->data && fetch->numBytes > 0) {
+        GalleryState& gs = *ctx->gs;
+        gs.authored_held.push_back(GalleryState::AuthoredHeld{
+            ctx->staging_layer, ctx->disk_index, ctx->url,
+            std::vector<unsigned char>(
+                (const unsigned char*)fetch->data,
+                (const unsigned char*)fetch->data + (size_t)fetch->numBytes) });
+        std::cout << "[Authored] Fetched: " << ctx->url
+            << " (" << (unsigned long)fetch->numBytes << " B) → held for staging "
+            << ctx->staging_layer << "\n";
+        emscripten_fetch_close(fetch);
         authored_fetch_finish(ctx);
         return;
     }
 
-    std::cout << "[Authored] Loaded: " << ctx->url
-        << " (" << width << "x" << height << ") → staging " << ctx->staging_layer << "\n";
-
-    // ── THE DEVICE-LOST EXEMPTION, NAMED ─────────────────────────
-    // The call below ends in a queue WriteTexture, and this is the one
-    // GPU write in the program that does NOT sit under the frame gate
-    // (pawn.cpp: `if (app->console.device_lost()) return;`).
-    // A fetch completion is a browser event, not a frame, so a painting
-    // that lands after the device is lost writes through a dead queue.
-    //
-    // That is allowed here, deliberately, and the reasoning is the
-    // whole comment:
-    //   · The gate's own warning is about NATIVE Dawn, where the loss
-    //     destroys the objects and driving them afterwards is heap
-    //     corruption. This program does not run on native Dawn at all
-    //     (SUNSET_1) and cannot reach that case.
-    //   · On this twin the queue is a JS WebGPU handle. Per the spec,
-    //     work submitted to a lost device is dropped — a no-op, not a
-    //     fault.
-    //   · By the time it could happen the visitor is already looking at
-    //     the LOST card: console.hpp's loss callback prints
-    //     "[Device] LOST", and web/index.html treats that line as
-    //     terminal and replaces the world with the card.
-    //   · The exposure is bounded by AUTHORED_FETCH_INFLIGHT_CAP — at
-    //     most that many uploads, once, into a page that is already over.
-    //
-    // So: NO SIGNAL, NO PLUMBING. Carrying a device-lost flag down to
-    // this callback would add a second source of truth about the
-    // device's health to buy nothing a dead page can spend.
-    authored_stage_decoded_image(*ctx->gs, *ctx->gpu, ctx->queue,
-        ctx->staging_layer, ctx->disk_index, data, width, height);
-    stbi_image_free(data);
+    std::cerr << "[Authored] Failed to load: " << ctx->url << " (empty body)\n";
+    emscripten_fetch_close(fetch);
+    authored_fetch_release_slot(*ctx->gs, ctx->staging_layer);
+    ctx->gs->authored_staging[ctx->staging_layer].pending = false;
     authored_fetch_finish(ctx);
 }
 
@@ -2175,15 +2198,18 @@ inline void authored_image_onerror(emscripten_fetch_t* fetch) {
         << " (HTTP " << fetch->status << ")\n";
     emscripten_fetch_close(fetch);
     // The record stays invalid, and it is handed back to the rotation
-    // rather than abandoned — see authored_fetch_release_slot.
+    // rather than abandoned — see authored_fetch_release_slot. The
+    // journey really is over here, so this path clears `pending` itself
+    // (AUBADE U5c moved the ordinary clear into the valve).
     authored_fetch_release_slot(*ctx->gs, ctx->staging_layer);
+    ctx->gs->authored_staging[ctx->staging_layer].pending = false;
     authored_fetch_finish(ctx);
 }
 
-inline void start_authored_fetch(GalleryState& gs, GPUState& gpu, wgpu::Queue& queue,
+inline void start_authored_fetch(GalleryState& gs,
     const GalleryState::AuthoredFetchRequest& req) {
     AuthoredFetchCtx* ctx = new AuthoredFetchCtx{
-        &gs, &gpu, queue, req.staging_layer, req.disk_index, req.url
+        &gs, req.staging_layer, req.disk_index, req.url
     };
 
     emscripten_fetch_attr_t attr;
@@ -2215,7 +2241,7 @@ inline void start_authored_fetch(GalleryState& gs, GPUState& gpu, wgpu::Queue& q
     }
 }
 
-inline void pump_authored_fetches(GalleryState& gs, GPUState& gpu, wgpu::Queue& queue) {
+inline void pump_authored_fetches(GalleryState& gs) {
     // Front-erase on a vector, deliberately: the queue is bounded by
     // STAGING_LAYERS (32), so the copy is a rounding error next to a
     // container choice that would need its own include.
@@ -2223,7 +2249,7 @@ inline void pump_authored_fetches(GalleryState& gs, GPUState& gpu, wgpu::Queue& 
         && !gs.authored_fetch_queue.empty()) {
         GalleryState::AuthoredFetchRequest req = gs.authored_fetch_queue.front();
         gs.authored_fetch_queue.erase(gs.authored_fetch_queue.begin());
-        start_authored_fetch(gs, gpu, queue, req);
+        start_authored_fetch(gs, req);
     }
 }
 
@@ -2233,7 +2259,7 @@ inline void pump_authored_fetches(GalleryState& gs, GPUState& gpu, wgpu::Queue& 
 // already reads the slot through `valid`, so the weakening is invisible
 // to all of them — a not-yet-arrived painting is the no-content case
 // they have always handled.
-inline void load_authored_image_to_staging(GalleryState& gs, GPUState& gpu, wgpu::Queue& queue, uint32_t staging_layer, uint32_t disk_index, const char* path) {
+inline void load_authored_image_to_staging(GalleryState& gs, uint32_t staging_layer, uint32_t disk_index, const char* path) {
     if (staging_layer >= Dim::STAGING_LAYERS) return;
     auto& rec = gs.authored_staging[staging_layer];
     if (rec.pending) return;   // already spoken for; a second request would race its own slot
@@ -2259,9 +2285,66 @@ inline void load_authored_image_to_staging(GalleryState& gs, GPUState& gpu, wgpu
     rec.disk_index = disk_index;   // the slot advertises its claim to the rotation cursor
 
     gs.authored_fetch_queue.push_back({ staging_layer, disk_index, std::string(path) });
-    pump_authored_fetches(gs, gpu, queue);
+    pump_authored_fetches(gs);
 }
 
+
+// ══ AUBADE U5c — THE VALVE ══════════════════════════════════════════
+//
+// Everything downstream of the fetch — decode, pad, upload — happens
+// here and nowhere else, one painting per frame, and not one of them
+// before the world has been seen.
+//
+// WHY IT WAITS. The work is a stb_image decode on the main thread (R6:
+// there is no browser decode anywhere in this program), a pad to RES,
+// and a ~1 MiB WriteTexture. Left in the fetch's completion callback it
+// landed wherever the network put it — including inside the window
+// between init and first present, which is the window this whole
+// campaign exists to empty. U1's `stb` probe was built to measure
+// exactly that, and this is what it measures now: zero.
+//
+// WHY ONE A FRAME. The staging set is 32 slots and a settling frame
+// absorbs one decode-and-upload without hitching; thirty-two in one turn
+// is a stall with a visitor already looking at it. At 60 Hz the whole
+// set completes inside a second, which is below the READY floor's own
+// timeout, so the floor is met by paintings that are actually up.
+//
+// AND ONE THING GOES AWAY. The upload used to be the single GPU write in
+// the program outside the frame's device-lost gate — a browser event is
+// not a frame, so a painting landing after a loss wrote through a dead
+// queue, and the old call site carried a thirty-line comment explaining
+// why that was survivable. It is a frame now. The exemption is gone, not
+// argued.
+inline void pump_authored_valve(GalleryState& gs, GPUState& gpu, wgpu::Queue& queue) {
+    if (gs.authored_held.empty()) return;
+    // FIRST PRESENT, and the flag is the same latch the waterfall reads
+    // (core/aubade.hpp) — one fact about the boot, one home, no second
+    // opinion about whether the world has been seen.
+    if (!t7::aubade_presented()) return;
+
+    GalleryState::AuthoredHeld h = std::move(gs.authored_held.front());
+    gs.authored_held.erase(gs.authored_held.begin());
+
+    int width = 0, height = 0, channels = 0;
+    unsigned char* data = stbi_load_from_memory(
+        h.bytes.data(), (int)h.bytes.size(), &width, &height, &channels, 4);
+    if (!data) {
+        std::cerr << "[Authored] Failed to decode: " << h.url << "\n";
+        authored_fetch_release_slot(gs, h.staging_layer);
+        gs.authored_staging[h.staging_layer].pending = false;
+        recount_authored_staged(gs);
+        return;
+    }
+    std::cout << "[Authored] Loaded: " << h.url
+        << " (" << width << "x" << height << ") → staging " << h.staging_layer << "\n";
+    authored_stage_decoded_image(gs, gpu, queue, h.staging_layer, h.disk_index,
+                                 data, width, height);
+    stbi_image_free(data);
+    // The journey is over: the slot holds a picture, so `pending` — which
+    // U5c widened to span fetch AND valve — comes down here.
+    gs.authored_staging[h.staging_layer].pending = false;
+    recount_authored_staged(gs);
+}
 
 // ── Paintings folder scan ──
 
@@ -2325,6 +2408,36 @@ inline void exhibition_manifest_onsuccess(emscripten_fetch_t* fetch) {
 
     std::cout << "[Authored] Scanned " << EXHIBITION_MANIFEST_URL
         << " — found " << paintings.size() << " paintings\n";
+
+    // ══ AUBADE U5b — THE BYTES LEAVE NOW ════════════════════════════
+    //
+    // The fill used to run from the conductor's deferred-hang head — the
+    // first frame of a live world, which is after the device, after the
+    // pipelines, after init. Every painting therefore travelled in the
+    // window AFTER the one this campaign is emptying, and the boot's
+    // longest single wait had the network sitting idle beside it.
+    //
+    // It runs here instead, the instant the manifest is parsed. On this
+    // twin that is inside main(), before console.init asks the browser
+    // for an adapter (the manifest fetch's own banner says so), so the
+    // paintings travel during the device request and the pipeline
+    // compiles — dead time, spent.
+    //
+    // THIS IS ONLY POSSIBLE BECAUSE THE PATH LOST THE DEVICE (U5b) AND
+    // THE WORK LOST ITS PLACE (U5c). Nothing between here and the
+    // holding pen touches a queue, a texture or a GPUState, so there is
+    // nothing to wait for.
+    //
+    // THE COUNT WAS ALREADY INVARIANT, and it is worth saying because
+    // the campaign's charge is that the boot payload is O(first light):
+    // the fill asks for min(manifest, STAGING_LAYERS) = at most 32
+    // paintings, and has since OVERTURE_0. A catalogue of 57 or 500
+    // sends the same 32. What changes here is WHEN, not how many.
+    //
+    // The conductor still calls load_authored_textures every frame and
+    // still finds its latch set; that call is what makes a manifest
+    // arriving LATE fill at all, and it stays for that.
+    load_authored_textures(*gs);
 }
 
 inline void exhibition_manifest_onerror(emscripten_fetch_t* fetch) {
@@ -2384,7 +2497,7 @@ inline void scan_paintings_folder(GalleryState& gs) {
 }
 
 
-inline void load_authored_textures(GalleryState& gs, GPUState& gpu, wgpu::Queue& queue) {
+inline void load_authored_textures(GalleryState& gs) {
     // Scan folder on first load
     if (gs.authored_disk_manifest.empty()) {
         scan_paintings_folder(gs);
@@ -2440,7 +2553,7 @@ inline void load_authored_textures(GalleryState& gs, GPUState& gpu, wgpu::Queue&
         if (rec.valid && !rec.consumed) continue;
         while (disk < manifest_size && disk < 256 && disk_in_use[disk]) disk++;
         if (disk >= manifest_size) break;
-        load_authored_image_to_staging(gs, gpu, queue, i, disk, gs.authored_disk_manifest[disk].c_str());
+        load_authored_image_to_staging(gs, i, disk, gs.authored_disk_manifest[disk].c_str());
         if (disk < 256) disk_in_use[disk] = true;
         disk++;
         filled++;
@@ -2530,7 +2643,7 @@ inline void rotate_authored_staging(GalleryState& gs, GalleryDeps* c, wgpu::Queu
                 continue;
             }
             // Load this image into the vacated staging slot
-            load_authored_image_to_staging(gs, c->gpuState_, queue, i, disk_idx,
+            load_authored_image_to_staging(gs, i, disk_idx,
                 gs.authored_disk_manifest[disk_idx].c_str());
             // Refreshed: this slot is asking for a picture the visitor has
             // not seen, so its debt to the rotation is paid (OVERTURE_0).
@@ -3110,7 +3223,12 @@ inline void dispatch_commit_gallery(MachineCtx* self,
 // for run_spawn_preamble.
 inline void tick_gallery_deferred_hang(MachineCtx* c, wgpu::Queue& queue) {
     auto& gs = c->gallery_state_;
-    load_authored_textures(gs, c->gpuState_, queue);
+    // AUBADE U5c — the valve, first and unconditionally: every early
+    // return below is about the HANGING, and a painting waiting to be
+    // decoded must not be held hostage to a room that has nowhere to put
+    // it yet. One painting, this frame, and only after first present.
+    pump_authored_valve(gs, c->gpuState_, queue);
+    load_authored_textures(gs);
     if (gallery_available_staging(gs, GallerySiteType::MIXED) == 0) return;   // the pool's sum
     PatchCandidate cands[Dim::MAX_ACTIVE_PATCHES];
     const uint32_t n = collect_sorted_patches(c, cands, c->point_.x, c->point_.z,
