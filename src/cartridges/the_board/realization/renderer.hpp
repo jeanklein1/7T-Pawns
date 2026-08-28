@@ -156,7 +156,6 @@ namespace t7 {
 
             // ═══ THE BUNDLES (BUNDLE_1) — storage; the API is public below.
             wgpu::RenderBundle mainBundle_;
-            wgpu::RenderBundle shadowSunBundle_;
 
             wgpu::ShaderModule shaderModule_;
             std::string shaderSource_;
@@ -336,13 +335,39 @@ namespace t7 {
             // depthFormat_ and effective_msaa() are all boot-read and cannot
             // move afterwards (the surface reconfigure keeps the format), so
             // no format change can invalidate a bundle without a reboot.
+            // ═══ ONE BUNDLE, NOT TWO (IOS_5) ════════════════════════════
+            //
+            // THE SUN'S BUNDLE IS GONE, AND IT IS NOT COMING BACK WITHOUT AN
+            // iPad IN THE LOOP. It was a DEPTH-ONLY bundle —
+            // colorFormatCount = 0, a depth-stencil format, executed in a
+            // depth-only pass — and WebKit's WebGPU does not handle that
+            // construct correctly. The shadow map came out wrong; the world
+            // rendered black on every iOS device.
+            //
+            // HOW WE KNOW, and it is the intersection of two switches rather
+            // than a guess. On the iPad: `?sunpass=0` (the sun pass opens and
+            // clears but issues no draws) RENDERED — with the main bundle
+            // still executing, so bundles as such are fine. `?bundles=0` (both
+            // passes encode direct) RENDERED — with the sun's draws still
+            // issued, so the draws, the pipelines, the indirect records and
+            // the uint16 index buffers are all fine. The ONLY thing both
+            // switches remove is ExecuteBundles on this bundle. No [gpu] error
+            // and no [lost] line appeared: it is not refused at validation and
+            // the device does not die. It executes, and the depth is wrong.
+            //
+            // DELETED ON EVERY BROWSER, no per-browser fork and no capability
+            // probe. This bundle carried about a dozen calls where the main
+            // one carries sixty; a dozen CPU calls do not buy a second code
+            // path that exactly one implementation would ever exercise.
+            //
+            // The main bundle STANDS, and this same evidence confirms it good
+            // on WebKit — along with the draw ledger, the indirect draws and
+            // the encoder-generic verbs. BUNDLE_1's other half is intact.
             bool main_bundle_ready() const { return mainBundle_ != nullptr; }
-            bool shadow_sun_bundle_ready() const { return shadowSunBundle_ != nullptr; }
             wgpu::RenderBundle main_bundle() const { return mainBundle_; }
-            wgpu::RenderBundle shadow_sun_bundle() const { return shadowSunBundle_; }
 
-            // The two encoders, made where the formats live. The pass that
-            // executes a bundle must agree with these exactly — the census
+            // The encoder, made where the formats live. The pass that
+            // executes a bundle must agree with this exactly — the census
             // holds that (R5), and Dawn rejects a mismatch at ExecuteBundles.
             wgpu::RenderBundleEncoder make_main_bundle_encoder() {
                 wgpu::RenderBundleEncoderDescriptor d{};
@@ -353,17 +378,7 @@ namespace t7 {
                 d.sampleCount = effective_msaa();
                 return device_.CreateRenderBundleEncoder(&d);
             }
-            wgpu::RenderBundleEncoder make_shadow_sun_bundle_encoder() {
-                wgpu::RenderBundleEncoderDescriptor d{};
-                d.label = "Shadow Sun Bundle";
-                d.colorFormatCount = 0;          // depth-only, as the pass is
-                d.colorFormats = nullptr;
-                d.depthStencilFormat = kShadowDepthFormat;
-                d.sampleCount = 1;
-                return device_.CreateRenderBundleEncoder(&d);
-            }
             void set_main_bundle(wgpu::RenderBundle b) { mainBundle_ = b; }
-            void set_shadow_sun_bundle(wgpu::RenderBundle b) { shadowSunBundle_ = b; }
 
 
             Renderer() = default;

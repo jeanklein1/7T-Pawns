@@ -10,8 +10,8 @@ Last commit touching any scanned file: `892de606b834328cb101b56b280b8523ea78dea1
 
 | file scanned | sha256 |
 |---|---|
-| `src/cartridges/the_board/realization/render_passes.hpp` | `sha256:2ea84b80d95f3700cafc135f7a268175740fa715b34e8e058cb2636a6e1318a8` |
-| `src/cartridges/the_board/realization/renderer.hpp` | `sha256:825addacbd4b440f443ba3a49104a07be7a8fb440fc1bf5a2e0f5dde516a48cf` |
+| `src/cartridges/the_board/realization/render_passes.hpp` | `sha256:abd1589b48c00742573929a723b66cc3ff490adcfae4ad1333a6aa1314440846` |
+| `src/cartridges/the_board/realization/renderer.hpp` | `sha256:c757b970c29aa9896ce32e60fdcbfe7c6fc85a76a17df39f3e9f53a26b00f02a` |
 | `src/cartridges/the_board/cartridge.hpp` | `sha256:bf842b78fb3074c4d3175a636b724509e098fc8e376cd0657308f2a9cb633d79` |
 | `src/cartridges/the_board/surface/patch_system.hpp` | `sha256:a0ca287c9590726e87956c9d30ba7eeb09e984e89e0eb80648e83f5df0fb4bdf` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:71102db67a59d2bf904f3fc0554d04e9bca834f958079d052c78d7c06cba1f39` |
@@ -38,7 +38,7 @@ in `console.hpp`.
 | 3 | Frustum Cull Patches | compute | `dispatch_frustum_cull` | `src/cartridges/the_board/realization/render_passes.hpp:341` | — | — | — |
 | 4 | Shadow Atlas | render | `render_shadow_pass` | `src/cartridges/the_board/realization/render_passes.hpp:414` | (none: depth-only) | Clear/Store, readOnly (absent) → `(tex == 0) ? c->gpuState_.shadow_map_view() : c->gpuState_.spot_shadow_map_view()` | (no stencil aspect) |
 | 5 | Shadow Pass | render | `render_shadow_pass` | `src/cartridges/the_board/realization/render_passes.hpp:458` | (none: depth-only) | Clear/Store, readOnly (absent) → `c->gpuState_.shadow_map_view()` | (no stencil aspect) |
-| 6 | Rasterized Scene | render | `render_main_pass` | `src/cartridges/the_board/realization/render_passes.hpp:813` | Clear/Store or Discard → `backbuffer or msaaColor` resolve → `backbuffer` | Clear/Discard, readOnly (absent) → `depth` | (no stencil aspect) |
+| 6 | Rasterized Scene | render | `render_main_pass` | `src/cartridges/the_board/realization/render_passes.hpp:805` | Clear/Store or Discard → `backbuffer or msaaColor` resolve → `backbuffer` | Clear/Discard, readOnly (absent) → `depth` | (no stencil aspect) |
 | 7 | Entity Mesh Gen | compute | `phase_entity_mesh_gen` | `src/cartridges/the_board/cartridge.hpp:2158` | — | — | — |
 | 8 | Patch Bake (fused) | compute | `generate_patch_batch` | `src/cartridges/the_board/surface/patch_system.hpp:186` | — | — | — |
 | 9 | Zone Derive Params | compute | `flush_zone_derive_requests` | `src/cartridges/the_board/bodies/gol_zones.hpp:822` | — | — | — |
@@ -76,8 +76,7 @@ console.hpp's depth buffer, neither of which this census reads.
 
 | # | label | colour | depth | samples | recorded in | site |
 |---|---|---|---|---|---|---|
-| 1 | `"Main Bundle"` | 1 x `&colorFormat_` | `depthFormat_` | `effective_msaa()` | `make_main_bundle_encoder` | `src/cartridges/the_board/realization/renderer.hpp:354` |
-| 2 | `"Shadow Sun Bundle"` | 0 x `nullptr` | `kShadowDepthFormat` | `1` | `make_shadow_sun_bundle_encoder` | `src/cartridges/the_board/realization/renderer.hpp:363` |
+| 1 | `"Main Bundle"` | 1 x `&colorFormat_` | `depthFormat_` | `effective_msaa()` | `make_main_bundle_encoder` | `src/cartridges/the_board/realization/renderer.hpp:379` |
 
 ### Encoder-creation sites (the label law, DOMESDAY_1 A9)
 
@@ -161,5 +160,5 @@ carries the same op (PASS_0 F2, `gallery.hpp`
 | `C-5` | **PASS** | exactly one main scene pass row (label 'Rasterized Scene'): found 1 |
 | `C-6` | **PASS** | (a) no depth LoadOp::Load anywhere (0), no other pass names the main depth view (none); (b) Table A depth bindings are shadow_map/spot_shadow_map and the console depth usage is wgpu::TextureUsage::RenderAttachment |
 | `C-7` | **PASS** | label law: every encoder-creation site (2) and pass-begin site (18) carries a label |
-| `C-8a` | **PASS** | every render-bundle encoder states colorFormatCount, depthStencilFormat and sampleCount, and carries a label (2 site(s)) |
-| `C-8b` | **PASS** | every bundle's colour declaration is internally consistent (2 site(s); the pass-format equality is textual — a pass names views, whose formats this census cannot resolve) |
+| `C-8a` | **PASS** | every render-bundle encoder states colorFormatCount, depthStencilFormat and sampleCount, and carries a label (1 site(s)) |
+| `C-8b` | **PASS** | every bundle's colour declaration is internally consistent (1 site(s); the pass-format equality is textual — a pass names views, whose formats this census cannot resolve) |

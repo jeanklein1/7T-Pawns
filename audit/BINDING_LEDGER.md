@@ -19,7 +19,7 @@ merge rows the API charges separately.
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:8f63e762913fd52df8ccbc95c731cc1912ef4f1e443e1a08a89bf8960ebf9cec` |
 | `src/cartridges/the_board/realization/binding_surface.gen.inc` | `sha256:463f1d4f323e50439bc83ce20b35830a32356c33350adfbe425b773712de4661` |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
-| `src/cartridges/the_board/realization/renderer.hpp` | `sha256:825addacbd4b440f443ba3a49104a07be7a8fb440fc1bf5a2e0f5dde516a48cf` |
+| `src/cartridges/the_board/realization/renderer.hpp` | `sha256:c757b970c29aa9896ce32e60fdcbfe7c6fc85a76a17df39f3e9f53a26b00f02a` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:f492028e9d624b68baf65dca67e9a4039ecc63d328ff449207e66f2fe9c63e63` |
 
 
@@ -36,7 +36,7 @@ only — `draw_orbs` is called from `bodies/orbs.hpp`, not from
 | `src/cartridges/the_board/cartridge.hpp` | `bf842b78fb3074c4d3175a636b724509e098fc8e376cd0657308f2a9cb633d79` |
 | `src/cartridges/the_board/contracts/spine_state.hpp` | `1e797a5ae1f0d34e7e57a865c14f1401ed9a6204e6d6d3496fef8d3542d5534e` |
 | `src/cartridges/the_board/direction/mood.hpp` | `a53858722ef67b23c06885e6ea6b550dfd7fe1b53c25132fa52aa5be7e1e0aa6` |
-| `src/cartridges/the_board/realization/render_passes.hpp` | `2ea84b80d95f3700cafc135f7a268175740fa715b34e8e058cb2636a6e1318a8` |
+| `src/cartridges/the_board/realization/render_passes.hpp` | `abd1589b48c00742573929a723b66cc3ff490adcfae4ad1333a6aa1314440846` |
 | `src/cartridges/the_board/surface/patch_system.hpp` | `a0ca287c9590726e87956c9d30ba7eeb09e984e89e0eb80648e83f5df0fb4bdf` |
 
 The source commit is the last commit touching any of the four primary
@@ -1073,8 +1073,8 @@ one column that can.
 |---|---|---|---|---|---|
 | `(file banner)` | file | `src/cartridges/the_board/realization/binding_registry.hpp` | 1 | `law-ref`, `witness` | banner |
 | `patch_instances` | registry constant | `src/cartridges/the_board/realization/binding_registry.hpp` | 80 | `law-ref` | A:proximity |
-| `shadowPatchTerrainPipeline_` | pipeline | `src/cartridges/the_board/realization/renderer.hpp` | 2772 | `measured` | A:proximity |
-| `shadowPawnPipeline_` | pipeline | `src/cartridges/the_board/realization/renderer.hpp` | 2775 | `measured` | A:proximity |
+| `shadowPatchTerrainPipeline_` | pipeline | `src/cartridges/the_board/realization/renderer.hpp` | 2787 | `measured` | A:proximity |
+| `shadowPawnPipeline_` | pipeline | `src/cartridges/the_board/realization/renderer.hpp` | 2790 | `measured` | A:proximity |
 | `(file banner)` | file | `src/cartridges/the_board/realization/state.hpp` | 1 | `law-ref` | banner |
 | `Frame R Layout` | layout | `src/cartridges/the_board/realization/state.hpp` | 5437 | `law-ref` | A:proximity, B:named |
 | `Agents State Layout entries[7]` | layout entry | `src/cartridges/the_board/realization/state.hpp` | 5527 | `law-ref` | A:proximity |

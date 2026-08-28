@@ -484,13 +484,13 @@ inline void render_shadow_pass(MachineCtx* c, wgpu::CommandEncoder& encoder,
         // ?bundles=0 sits beside it: the direct arm below is not a
         // fallback that can drift — it calls the SAME draw_shadow_all the
         // recorder called (BUNDLE_1 R3).
+        // IOS_5 — THE SUN ENCODES DIRECT, ALWAYS. This is the path
+        // `?bundles=0` already ran on the iPad and rendered; it is now the
+        // only path. ?sunpass=0 still removes the draws and keeps the
+        // clear, for the reason above.
         const bool sun_draws = t7::boot_params().sunpass;
         if (!sun_draws) {
             // the cleared depth is the whole content of the pass
-        } else if (c->renderer_.shadow_sun_bundle_ready()
-                   && t7::boot_params().bundles) {
-            wgpu::RenderBundle b = c->renderer_.shadow_sun_bundle();
-            pass.ExecuteBundles(1, &b);
         } else {
             pass.SetBindGroup(0, c->gpuState_.world_group());
             pass.SetBindGroup(1, c->gpuState_.frame_r_group(), 1, &kFrameSlotZero);
@@ -743,20 +743,12 @@ inline void record_bundles(MachineCtx* c, OrbsState& orbs_state_, OrbsDeps& orbs
         bd.label = "Main Bundle";
         c->renderer_.set_main_bundle(e.Finish(&bd));
     }
-    {   // SHADOW SUN — cast_terrain = true, which is the outdoor arm's word.
-        // The indoor spot atlas is NOT bundled: it sets a viewport and a
-        // scissor per tile and rebinds group 1 at each light's record, and
-        // a bundle can carry none of those.
-        wgpu::RenderBundleEncoder e = c->renderer_.make_shadow_sun_bundle_encoder();
-        e.SetBindGroup(0, c->gpuState_.world_group());
-        e.SetBindGroup(1, c->gpuState_.frame_r_group(), 1, &kFrameSlotZero);
-        e.SetBindGroup(2, c->gpuState_.shadow_state_group());
-        e.SetBindGroup(3, c->gpuState_.shadow_textures_group());
-        draw_shadow_all(c, e, /*cast_terrain=*/true);
-        wgpu::RenderBundleDescriptor bd{};
-        bd.label = "Shadow Sun Bundle";
-        c->renderer_.set_shadow_sun_bundle(e.Finish(&bd));
-    }
+    // THE SUN'S BUNDLE IS NOT RECORDED (IOS_5). A depth-only bundle —
+    // colorFormatCount = 0 — is the construct WebKit gets wrong, and the
+    // sun pass encodes direct on every browser now. renderer.hpp's banner
+    // carries the diagnosis. The indoor spot atlas was never bundled
+    // anyway: it sets a viewport and a scissor per tile and rebinds group
+    // 1 at each light's record, and a bundle can carry none of those.
     c->gpuState_.clear_bundles_dirty();
 }
 
