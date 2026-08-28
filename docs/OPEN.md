@@ -80,6 +80,43 @@ The audience build ships from the `the-board-web` preset through
 `web_dist.py` with no `--lab`, and that artifact is the only one on
 everexpandingboard.com.
 
+### THE CENSUS TABLES ARE TRANSITION WITNESSES (PURSE_1, the PURSE_0 residue)
+
+The bucket is **P6 transition witness**, not "already behind the dial" — and
+only PART of the census answers to the dial. Four call sites, three of them
+UNGATED in the shipped build:
+
+| trigger | site | gated? |
+|---|---|---|
+| `boot` | `Cartridge::initialize` — agent + entity | no |
+| `mood-transition` | `phase_transition_machine` — agent + entity | **no** |
+| `born` | `stream_patches`, the fullRegen arm | **no** |
+| `periodic` | `phase_census_dumps` | YES — `INSTRUMENTS.census_entity_dump` |
+
+A PORTAL CROSSING PAYS THREE PRINTS, NOT ONE, and the third is the one a
+reader would miss: `reset_surface` sets `last_center_x = INT32_MAX`, which
+re-arms `fullRegen` on the next frame, which fires the `born` census. So a
+crossing prints the mood-transition agent census, the mood-transition entity
+census, and then the born entity census — all of them in the audience build.
+
+THIS IS NOT A DEFECT TO FIX BY GATING. P6 protects them and the tree's own
+banner rules it: "The census at 'boot' and 'mood-transition' stays; only the
+PERIODIC one answers to the dial." The mood-transition entity census is
+load-bearing beyond witness — its own comment calls it "a
+teardown-completeness assertion, not an observation": both columns must read
+0 for all twelve, and a silent teardown leak is exactly what it catches.
+
+SO THE THIRD STUTTER STAYS OPEN AND UNPRICED. Portal transitions at 60-75 ms
+CPU; PURSE_0 C took the STEADY-STATE print half and this is not that half.
+The tree's only measured census number is a BOOT reading in a `full` build
+(`census_dumps` max 1051 ms, 2026-08-13, instruments.hpp) — it does not price
+a crossing, and no reading of a crossing exists. Unblocked by one, and the
+instrument is already built: the meter clocks the phases that pay, so
+`[METER] U transition_machine` and `[METER] R stream_patches` on a `meter`
+build across a keyed crossing give the number directly. Until then the honest
+statement is that the shipped build pays three census tables per crossing and
+nobody has measured what that costs.
+
 ## STILL OPEN OUT OF PURSE_0
 
 - W4 IS A `full` WITNESS NOW, NOT A `meter` ONE. PURSE_0 C gated the
@@ -89,8 +126,12 @@ everexpandingboard.com.
   `-DT7_INSTRUMENTS=full`; read the purse on `meter`. Unblocked by Jean ruling
   otherwise, in which case the line moves to `frame_meter`.
 - THE THIRD STUTTER IS UNTAKEN: portal transitions at 60-75 ms CPU. PURSE_0 C
-  removed the print half; the teardown/respawn work itself is untouched and
-  unpriced. Origin: the post-campaign laptop capture.
+  removed the STEADY-STATE print half and this is not that half — a crossing
+  still prints three census tables in the shipped build, and the teardown /
+  respawn work under them is untouched. The mechanism and what would price it
+  are in "THE CENSUS TABLES ARE TRANSITION WITNESSES" above; this line is the
+  register's pointer at it, not a second copy. Origin: the post-campaign
+  laptop capture.
 
 - THE FRAME'S COMPUTE IS TWO PASSES, NOT ONE, AND THE REST OF THE RUN IS
   UNRULED. SPINE_2 B asked for four passes in one — card, placement, compute,
