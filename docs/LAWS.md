@@ -1061,3 +1061,43 @@ what.
 
 *Paid for by:* ORGAN_6. `rejected 19` printed for two campaigns and carried no
 information; `organ_last_reject` is the cure.
+
+## L48 — THE THIRD ARM IS NOT WITNESSED
+
+naga validates the module. Chrome/DXC and Chrome/SPIR-V are exercised every
+session by the two machines in the loop. **WebKit's WGSL→Metal compiler is
+exercised by nothing in the gate set and by no machine in the loop** until
+Jean opens the iPad — and it is the strictest of the three.
+
+So a round that touches shader entry points, bind group layouts, pipeline
+construction or the render path **is not landed until an iOS witness has
+run**. Every gate can be green and the piece can be black on a third of the
+devices that matter.
+
+Until that witness is habit, the iPad is not a device this program supports.
+It is a device this program hopes about.
+
+*Paid for by:* the optimization arc's iOS black screen. Eleven gates green,
+two browsers rendering, one construct — a depth-only render bundle — wrong on
+the arm nothing tested, for four rounds.
+
+## L49 — A BUNDLE IS AN OPTIMIZATION, SO IT KEEPS ITS DIRECT PATH
+
+Every bundled pass retains the direct encode AND a boot switch that reaches
+it. The two roads call the SAME encode function, so they cannot drift.
+
+**A recording that cannot be turned off is a change that cannot be bisected
+on the device where it fails.** That is the whole of the law: not that
+bundles are dangerous, but that an optimization which erases its own
+alternative erases the only cheap way to test it.
+
+The corollary is what made IOS_5 solvable in four reloads: the switch's
+picture must be UNAMBIGUOUS. `?sunpass=0` skips the sun's draws and keeps
+the pass's clear, because skipping the pass would leave the shadow map at
+its zero-init — a world entirely in shadow, nearly black, and
+indistinguishable from the fault being chased. A diagnostic that can be
+mistaken for the disease is worse than none.
+
+*Paid for by:* IOS_5. `?bundles=0` and `?sunpass=0` intersected to name a
+single `ExecuteBundles` call on a device with no console, no inspector and
+no cable.
