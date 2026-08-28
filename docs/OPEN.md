@@ -2,6 +2,34 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## THE FIELD DIAGNOSTIC SET — PERMANENT (IOS_5)
+
+Five switches, in EVERY build, forever. They found the iOS black screen
+in four reloads on a device with no console, and they are the only
+instrument that works in a gallery: no inspector, no log, no cable — a
+picture and a photograph of it.
+
+| switch | removes | the picture it must produce |
+|---|---|---|
+| `?bootinfo=1` | nothing — opens the card | the identity block, and `patches: allocated / baked / landed` once a second |
+| `?bake=0` | the heightfield bake dispatch (cells still run) | **flat but VISIBLE** — the texture's zero-init is a flat world, not garbage |
+| `?card=0` | `write_live_card` | no zone lift, no live delta |
+| `?sunpass=0` | the sun pass's DRAW LIST — **never the pass** | the world with **no sun shadows** |
+| `?bundles=0` | `ExecuteBundles` on the main bundle; encode direct | **identical** |
+
+THE PICTURE IS WHAT MAKES A SWITCH READABLE, and `?sunpass=0` is the
+example of what a switch must never be. Skipping the whole pass would
+leave the shadow map at its zero-init, which the PCF compare reads as
+everything occluded — a world entirely in shadow, nearly black, and
+therefore INDISTINGUISHABLE FROM THE FAULT WE WERE CHASING. A diagnostic
+that can be mistaken for the disease is worse than none. It skips the
+draws and keeps the clear, and that is why IOS_5's diagnosis was
+unambiguous on the first reading instead of costing another round.
+
+Only an explicit `0` removes a stage; absent or malformed leaves the
+piece entire, and the `[Params]` line names any switch that is off, so
+silence means the piece whole and a diagnosis stays reproducible.
+
 ## THE OPTIMIZATION ARC — CLOSED 2026-08-28 (PURSE_0)
 
 LATTICE_0-5, SPINE_2, BUNDLE_1, PURSE_0. Both bookend captures are on file
