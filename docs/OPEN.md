@@ -101,27 +101,12 @@ word** (RUL-A). Jean's gate is one sitting.
 | U6 | the four versioned artifacts are immutable for a year |
 | U7 | the package holds the shader and nothing else; three preloads start first light at HTML parse |
 
-### CONSEQUENCE — THE READY FLOOR IS NO LONGER A COUNT
-
-OVERTURE_0 U9 put six staged paintings in front of the veil so the
-visitor met a furnished world. U4 moves the veil to first present, which
-is EARLIER — ahead of that floor. The floor's promise is kept by U5c
-instead: the valve parks every painting until first light and then feeds
-one a frame, so the six still land, in view, which is where this campaign
-wants them. **READY stops being a count and becomes a fact: the first
-reachable room is real.** The 5 s timeout becomes the rare path.
-
-The `Controls:` line is not retired. It no longer lifts the veil; it arms
-a 20 s belt, so a browser that renders but never resolves
-`onSubmittedWorkDone` still gets its world (and says which path lifted
-it). Its text stays load-bearing, one notch weaker.
-
-### OPEN — U5a's PREMISE DOES NOT HOLD IN THIS TREE
+### U5a — STRUCK AT BUILD (ruled 28 Aug 2026)
 
 U5a asked for the world's hung set to resolve at manifest scan as a pure
 function of (seed, record), ordered by the guaranteed door and then by
-gallery spawn distance. It is **not built**, and the reason is three
-facts rather than a difficulty:
+gallery spawn distance. It is **struck**, on three facts checked in the
+tree rather than on a difficulty:
 
 - Galleries are not a world-level quantity. They are spawned per TILE,
   through `compose_spawn_chance(c, gx, gz, PopFamily::GALLERY)`, as tiles
@@ -136,31 +121,130 @@ facts rather than a difficulty:
   the staging pool holds when it is built; `disk_index` comes from the
   fill's linear walk of the manifest.
 
-Building the ordering means authoring a seed-determined exhibition map —
-which painting hangs in which room. That is a change to what the piece
-IS, not a resequencing of when its bytes move, and the campaign's frame
-is that nothing new is built. **Unblocks on:** Jean's ruling on whether
-the piece wants a seed-determined exhibition at all.
+Ordering the fetch would therefore mean **authoring a seed-determined
+exhibition** — which painting hangs in which room. That is a change to
+what the piece IS, not a resequencing of when its bytes move, and the
+campaign's frame is that nothing new is built.
 
-What U5a was FOR is partly delivered anyway: the bytes leave at scan
-(U5b), and the boot fetch count was **already** invariant to catalogue
-size — the fill asks for `min(manifest, STAGING_LAYERS)` = at most 32 and
-has since OVERTURE_0. A catalogue of 57 or 500 sends the same 32.
+**AND THE GOAL ARRIVES WITHOUT IT, BY A BETTER ROUTE.** Because rooms
+dress from the POOL, *any* six staged are the right six: no byte needs to
+know its wall, because the walls take what has arrived. With the bytes
+leaving at scan (U5b) and the valve filling fast (U5c), the first
+reachable room is dressed by construction. The boot fetch count was
+already invariant — the fill has asked `min(manifest, 32)` since
+OVERTURE_0, so a catalogue of 57 or 500 sends the same 32.
 
-### OWED
+If a curated exhibition ever appeals artistically, it is its own future
+campaign and not a boot unit. **Not open, and not owed.**
 
+### SUPERSEDED — OVERTURE_0 U9's SIX-PAINTING FLOOR
+
+Recorded once, here, so OVERTURE_0's history stays one fact in one home.
+
+U9 put six staged paintings in front of the veil so the visitor met a
+furnished world. **U4 moves the veil to first present, which is EARLIER —
+ahead of that floor.** The floor's promise is kept by the valve instead:
+six stage within frames of present, rooms dress at spawn, and no room is
+reachable before they do. **READY stops being a count and becomes a fact:
+the first reachable room is real.**
+
+Two OVERTURE_0 items die with it:
+
+- *"The READY offer holds a gallery-less build for the full timeout."*
+  U9's floor could never rise with `ROSTER.gallery` off, so such a build
+  always paid the 5 s. It costs the visitor nothing now — the veil is
+  already up, and the only thing the timeout still governs is when the
+  `Controls:` line arms U4's belt.
+- The 5 s timeout as a live path. It becomes the rare one.
+
+The `Controls:` line is NOT retired. It no longer lifts the veil; it arms
+a 20 s belt, so a browser that renders but never resolves
+`onSubmittedWorkDone` still gets its world — and the log names which path
+lifted it, present or belt. Its text stays load-bearing, one notch
+weaker.
+
+### THE TWO WATERFALL PASTES — OWED, Jean's sitting
+
+The campaign's before-photo and after-photo, side by side, from the two
+preview URLs. **Not yet taken:** the tip has never met emscripten — every
+witness this campaign ran was headless — so the build itself is the first
+true gate.
+
+    preview-A  (tag aubade-preview-a, U1 only)
+    [AUBADE] waterfall …
+    [AUBADE] window …
+
+    preview-B  (branch head, U1-U7) — cold
+    [AUBADE] waterfall …
+    [AUBADE] window …
+
+    preview-B — warm (U6's proof)
+    [AUBADE] waterfall …
+    [AUBADE] window …
+
+A closes R2 by instrument: many cheap `ticks` against a late `present` is
+a device-side wait — compiles — and high `cpu` is our own work. B against
+A is the campaign's whole claim.
+
+### PARKED, WITH THE CONDITION THAT REOPENS IT
+
+- **Off-thread browser decode** (`createImageBitmap` ->
+  `copyExternalImageToTexture`). It moves fetch and pixel ownership
+  across the wasm boundary and into the port's texture interop —
+  machinery unjustified for now. **Reopens if** the post-present trace
+  shows U5c's valve still hitching.
+- **Music prefetch-next.** The mechanism is deliberately not built: one
+  tune exists (`samsara.mp3`, 4.0 MiB) and machinery for a library must
+  not precede the library. The design, for the one-commit follow-up: on
+  the gesture fetch tune 1, decode, bind the ears; during tune k prefetch
+  tune k+1, logged `[AUBADE] tune k+1 resident`, so a change never waits
+  on the network. **Reopens when** tune 2 lands. R12 stands for CHORD:
+  analysis is not live, so a whole-tune sidecar riding with its audio
+  gives the Playhead unbounded look-ahead — the pre-modulation hint's
+  natural home.
+
+### REJECTED — recorded so they stay rejected
+
+- **Shell cache-warm.** 8.8 MiB of exhibition is not fat, and U5b already
+  starts true fetches at scan; no second mechanism for one fact. RUL-D.
+- **Atlas packing.** Fights aspect variety; HTTP/2 multiplexes already.
+- **Thumbnail LQIP.** Galleries dress after first present and beyond
+  arm's reach; blur-to-sharp is a material change the piece doesn't
+  believe in.
+- **BC-compressed paintings.** `texture-compression-bc` sits vaulted by
+  the feature wallet; the wallet doesn't reopen for 40 MiB of RGBA that
+  already fits.
+- **Splitting `world.wgsl`.** Once compile leaves the critical path (U3),
+  its duration stops mattering; the single-module sha discipline stays.
+- **Service worker.** U6 covers repeat visits; heavier machinery buys
+  nothing here.
+
+### OWED — the single sitting, and what it is a gate on
+
+The deploy gate is Jean's by standing law, and CC's container can produce
+no wasm. **The tip has never met emscripten** — every witness this
+campaign ran was headless — so the build is the first true gate, and a
+compile failure is a paste to CC rather than a fault.
+
+- **The tag.** CC's proxy 403s tag pushes; branch pushes are fine.
+  `git fetch origin claude/aubade && git tag aubade-preview-a 0ee6bc90
+  && git push origin aubade-preview-a`
+- **Two previews, two photos.** `aubade-preview-a` (U1 only) for the
+  before-photo; `claude/aubade` for the after, cold and warm. Every
+  `wrangler pages deploy` prints a UNIQUE per-deployment URL — open
+  those, never the branch alias: the alias moves with each deploy, the
+  unique URLs are permanent, and each is cold by construction on first
+  open.
 - **The iOS witness (L48).** This campaign touched pipeline construction
-  and the render path; L48 says no such round lands without one. RUL-A's
-  land gate already puts that witness at Jean's single sitting, which is
-  where it belongs. `?async=0` and `?adopt=0` are the bisect if it finds
-  a fault.
+  and the render path; L48 says no such round lands without one. It sits
+  at step 3 of the sitting: open preview-B's URL on the iOS device and
+  watch one full boot. If anything looks wrong the bisect is two switches
+  — `?adopt=0` (U2 out), `?async=0` (U3 out) — from the seven-switch set
+  above.
 - **The WebKit bug is drafted, not filed** (`docs/reference/
   WEBKIT_BUNDLE_BUG.md`). Filing is Jean's — it is an outward-facing post
   under the project's name. Its URL goes into that file and into
   renderer.hpp's `main_bundle_ready` banner.
-- **The preview deploys.** CC's container has no EMSDK and cannot produce
-  a wasm; every `wrangler pages deploy` prints its own per-deployment
-  URL, and those are the ones to open — never the branch alias.
 
 ## THE OPTIMIZATION ARC — CLOSED 2026-08-28 (PURSE_0)
 
@@ -865,12 +949,10 @@ follows is what the campaign measured and left.
   Above ~13 dressed galleries `find_free_exhibition_layer` fails at commit and
   a fan ends short. Inert at `MIN_GALLERY_DISTANCE` 110; binding below ~94, so
   it is the density dial's companion and must move with it.
-- THE READY OFFER HOLDS A GALLERY-LESS BUILD FOR THE FULL TIMEOUT. U9's floor
-  is `authored_staged_count >= 6` OR 5 s; with `ROSTER.gallery` off the count
-  can never rise, so such a build always pays the 5 s. Ruled acceptable at
-  R-I ("no third arm"), recorded because a demo roster is the one shape where
-  the timeout is the only arm. Unblocked by a demo build wanting its seconds
-  back.
+- U9's SIX-PAINTING FLOOR IS SUPERSEDED by AUBADE U4/U5c — see the AUBADE
+  stanza above, which is its one home. The gallery-less-build item that sat
+  here dies with it: the veil no longer waits on the floor, so the 5 s costs
+  the visitor nothing.
 
 ## PORTAL_3 — the even field (E1/E2 landed at `ee90a85`, E3 open)
 
