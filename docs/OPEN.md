@@ -2,6 +2,51 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## THE iOS BLACK SCREEN — CLOSED 2026-08-28 (IOS_5)
+
+**A render bundle with `colorFormatCount = 0` — depth-only, a
+depth-stencil format, executed in a depth-only pass — is not handled
+correctly by WebKit's WebGPU.** The shadow map came out wrong and every
+iOS device rendered the world black. The sun's bundle is deleted on all
+browsers; the pass encodes direct. See L48, L49.
+
+THE INTERSECTION THAT NAMED IT, on the iPad, four reloads:
+
+| switch | what it removes | iPad |
+|---|---|---|
+| `?sunpass=0` | the sun pass's DRAW LIST (pass opens and clears) | **renders** — with the main bundle still executing |
+| `?bundles=0` | `ExecuteBundles` in both passes; encode direct | **renders** — with the sun's draws still issued |
+| `?bake=0`, `?card=0`, defaults | — | black |
+
+The only thing both remove is `ExecuteBundles(shadowSunBundle_)`. No
+`[gpu]` and no `[lost]` appeared: not refused at validation, and the
+device did not die. It executed, and the depth was wrong. Black rather
+than bright is a map ending near 0.0, which the PCF compare reads as
+everything occluded.
+
+THE BOOT CARD SETTLED THE REST BY OBSERVATION, verbatim:
+
+    seed 1984484084 (drawn)
+    mood 0 open_sunset open
+    patches allocated 225 baked 225 landed 225
+
+So: the seed varies, the world builds COMPLETELY, and an outdoor roll
+stays outdoors. **There is no OPEN→ROOM fallback** — the "indoors" boots
+were honest indoor rolls of the mood, and they render correctly. IOS_4's
+R-1, R-2 and R-3 are answered by observation and closed; R-4 is moot.
+The recon that predicted a fully-formed world (225/225/225) and a black
+screen meaning "the pass did not run" was right on the first count and
+wrong on the second — it ran, and produced bad depth.
+
+WHAT STANDS FROM BUNDLE_1, confirmed good on WebKit by this same
+evidence: the draw ledger, the indirect draws, the encoder-generic verbs
+and the MAIN bundle. Only the depth-only recording is retired.
+
+OWED — THE WEBKIT BUG IS NOT YET FILED. A draft report is at
+`docs/reference/WEBKIT_BUNDLE_BUG.md`; filing it is Jean's (it is an
+outward-facing post under the project's name). Link it from renderer.hpp's
+banner once it has a URL. Unblocked by the filing.
+
 ## THE FIELD DIAGNOSTIC SET — PERMANENT (IOS_5)
 
 Five switches, in EVERY build, forever. They found the iOS black screen

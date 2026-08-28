@@ -5,13 +5,13 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `892de606b834328cb101b56b280b8523ea78dea1`
-(IOS_3 C — the four switches, and the one that could not be a pure skip)
+Last commit touching any scanned file: `85970103ee5cba1d5133b9d812402bf41277c014`
+(IOS_5 A — the sun pass encodes direct; the depth-only bundle is deleted)
 
 | file scanned | sha256 |
 |---|---|
 | `src/cartridges/the_board/realization/render_passes.hpp` | `sha256:abd1589b48c00742573929a723b66cc3ff490adcfae4ad1333a6aa1314440846` |
-| `src/cartridges/the_board/realization/renderer.hpp` | `sha256:c757b970c29aa9896ce32e60fdcbfe7c6fc85a76a17df39f3e9f53a26b00f02a` |
+| `src/cartridges/the_board/realization/renderer.hpp` | `sha256:0632176bf68fcb96669c8a703eb885b60555ad0be931c3be4b7f697c6e900115` |
 | `src/cartridges/the_board/cartridge.hpp` | `sha256:bf842b78fb3074c4d3175a636b724509e098fc8e376cd0657308f2a9cb633d79` |
 | `src/cartridges/the_board/surface/patch_system.hpp` | `sha256:a0ca287c9590726e87956c9d30ba7eeb09e984e89e0eb80648e83f5df0fb4bdf` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:71102db67a59d2bf904f3fc0554d04e9bca834f958079d052c78d7c06cba1f39` |
@@ -76,7 +76,7 @@ console.hpp's depth buffer, neither of which this census reads.
 
 | # | label | colour | depth | samples | recorded in | site |
 |---|---|---|---|---|---|---|
-| 1 | `"Main Bundle"` | 1 x `&colorFormat_` | `depthFormat_` | `effective_msaa()` | `make_main_bundle_encoder` | `src/cartridges/the_board/realization/renderer.hpp:379` |
+| 1 | `"Main Bundle"` | 1 x `&colorFormat_` | `depthFormat_` | `effective_msaa()` | `make_main_bundle_encoder` | `src/cartridges/the_board/realization/renderer.hpp:384` |
 
 ### Encoder-creation sites (the label law, DOMESDAY_1 A9)
 

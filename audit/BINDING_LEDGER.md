@@ -14,12 +14,12 @@ merge rows the API charges separately.
 | field | value |
 |---|---|
 | demo column censused | `full` |
-| source commit | `22b15bd5be6de7ffa3c9954041ced610cbac1d33` |
-| | IOS_3 B — the failure speaks, and the boot says what it is |
+| source commit | `85970103ee5cba1d5133b9d812402bf41277c014` |
+| | IOS_5 A — the sun pass encodes direct; the depth-only bundle is deleted |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:8f63e762913fd52df8ccbc95c731cc1912ef4f1e443e1a08a89bf8960ebf9cec` |
 | `src/cartridges/the_board/realization/binding_surface.gen.inc` | `sha256:463f1d4f323e50439bc83ce20b35830a32356c33350adfbe425b773712de4661` |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
-| `src/cartridges/the_board/realization/renderer.hpp` | `sha256:c757b970c29aa9896ce32e60fdcbfe7c6fc85a76a17df39f3e9f53a26b00f02a` |
+| `src/cartridges/the_board/realization/renderer.hpp` | `sha256:0632176bf68fcb96669c8a703eb885b60555ad0be931c3be4b7f697c6e900115` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:f492028e9d624b68baf65dca67e9a4039ecc63d328ff449207e66f2fe9c63e63` |
 
 
@@ -1073,8 +1073,8 @@ one column that can.
 |---|---|---|---|---|---|
 | `(file banner)` | file | `src/cartridges/the_board/realization/binding_registry.hpp` | 1 | `law-ref`, `witness` | banner |
 | `patch_instances` | registry constant | `src/cartridges/the_board/realization/binding_registry.hpp` | 80 | `law-ref` | A:proximity |
-| `shadowPatchTerrainPipeline_` | pipeline | `src/cartridges/the_board/realization/renderer.hpp` | 2787 | `measured` | A:proximity |
-| `shadowPawnPipeline_` | pipeline | `src/cartridges/the_board/realization/renderer.hpp` | 2790 | `measured` | A:proximity |
+| `shadowPatchTerrainPipeline_` | pipeline | `src/cartridges/the_board/realization/renderer.hpp` | 2792 | `measured` | A:proximity |
+| `shadowPawnPipeline_` | pipeline | `src/cartridges/the_board/realization/renderer.hpp` | 2795 | `measured` | A:proximity |
 | `(file banner)` | file | `src/cartridges/the_board/realization/state.hpp` | 1 | `law-ref` | banner |
 | `Frame R Layout` | layout | `src/cartridges/the_board/realization/state.hpp` | 5437 | `law-ref` | A:proximity, B:named |
 | `Agents State Layout entries[7]` | layout entry | `src/cartridges/the_board/realization/state.hpp` | 5527 | `law-ref` | A:proximity |

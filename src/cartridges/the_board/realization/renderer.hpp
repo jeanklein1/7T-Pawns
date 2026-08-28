@@ -363,6 +363,11 @@ namespace t7 {
             // The main bundle STANDS, and this same evidence confirms it good
             // on WebKit — along with the draw ledger, the indirect draws and
             // the encoder-generic verbs. BUNDLE_1's other half is intact.
+            //
+            // THE REPORT: docs/reference/WEBKIT_BUNDLE_BUG.md — drafted, and
+            // Jean files it (an outward-facing post under the project's
+            // name). Its URL is recorded there once it exists. L48 and L49
+            // are the laws this bought.
             bool main_bundle_ready() const { return mainBundle_ != nullptr; }
             wgpu::RenderBundle main_bundle() const { return mainBundle_; }
 

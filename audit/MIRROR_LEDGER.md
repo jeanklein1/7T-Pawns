@@ -15,15 +15,15 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `892de606b834328cb101b56b280b8523ea78dea1` |
-| | IOS_3 C — the four switches, and the one that could not be a pure skip |
+| source commit | `85970103ee5cba1d5133b9d812402bf41277c014` |
+| | IOS_5 A — the sun pass encodes direct; the depth-only bundle is deleted |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:f492028e9d624b68baf65dca67e9a4039ecc63d328ff449207e66f2fe9c63e63` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:8f63e762913fd52df8ccbc95c731cc1912ef4f1e443e1a08a89bf8960ebf9cec` |
 | `src/cartridges/the_board/realization/binding_surface.gen.inc` | `sha256:463f1d4f323e50439bc83ce20b35830a32356c33350adfbe425b773712de4661` |
-| `src/cartridges/the_board/realization/renderer.hpp` | `sha256:c757b970c29aa9896ce32e60fdcbfe7c6fc85a76a17df39f3e9f53a26b00f02a` |
+| `src/cartridges/the_board/realization/renderer.hpp` | `sha256:0632176bf68fcb96669c8a703eb885b60555ad0be931c3be4b7f697c6e900115` |
 | `tools/binding_ledger.py` | `sha256:8c5e3abcdfcc80826535e7f50b0b3f6ea3f0eb445447419ffc442b9cac1a211a` |
-| `audit/BINDING_LEDGER.md` | `sha256:48cd6ef1cfe7cbd94b2ebde6e7f7f6d9c3078894a1dcf8446e5434b37d1e7dcb` |
+| `audit/BINDING_LEDGER.md` | `sha256:9542a702adb7c7dc409d22b020c93325d69dac0ba63a1c99de726a7145754508` |
 
 `tools/binding_ledger.py` is an input because its parsers are IMPORTED,
 not copied — one parse, two artifacts, no drift between instruments.
@@ -210,11 +210,11 @@ Boundary: every occurrence of a pipeline-layout token (`std::array<wgpu::BindGro
 |---|---|---|---|
 | `P-help` | strataLayoutFor — the shared four-strata wrapper (LOOM_2: WORLD implicit, then frame / state / textures; DOMESDAY_2 F2-b1 named it, so the label leads; its inner statements are censused as part of this idiom) | 1 | `wgpu::PipelineLayout strataLayoutFor(const char* label, wgpu::BindGroupLayout frame, wgpu::BindGroupLayout state, wgpu::BindGroupLayout tex) { ...` — renderer.hpp:196 |
 | `P-arr` | the ordered layout list | 0 | — |
-| `P-desc` | pipeline layout descriptor declaration | 3 | `wgpu::PipelineLayoutDescriptor pld{};` — renderer.hpp:2369 |
+| `P-desc` | pipeline layout descriptor declaration | 3 | `wgpu::PipelineLayoutDescriptor pld{};` — renderer.hpp:2374 |
 | `P-cnt` | bindGroupLayoutCount from the array, never a literal | 0 | — |
 | `P-dat` | bindGroupLayouts pointer | 0 | — |
 | `P-new` | pipeline layout creation, named local | 0 | — |
-| `P-for` | pipeline layout via the shared wrapper, named at creation | 26 | `wgpu::PipelineLayout frameKComputeLayout = strataLayoutFor("frameKComputeLayout", frameCLayout_, frameKStateLayout_, frameKTexturesLayout_);` — renderer.hpp:1747 |
+| `P-for` | pipeline layout via the shared wrapper, named at creation | 26 | `wgpu::PipelineLayout frameKComputeLayout = strataLayoutFor("frameKComputeLayout", frameCLayout_, frameKStateLayout_, frameKTexturesLayout_);` — renderer.hpp:1752 |
 | `P-prm` | PipelineLayout as a builder parameter (makeComputePipeline; makeShadow's nullptr-sentinel default) | 2 | `wgpu::PipelineLayout layout,` — renderer.hpp:208 |
 
 Instances: 32 over 4 idioms. Ordering observed: array, descriptor, count, layouts-pointer, create, check — except 0 block(s) declare the descriptor before the array, and 0 create(s) carry no boot check (none). Count always precedes the data pointer. Shared lists are built before any pipeline; dedicated lists sit inline beside their pipelines.
@@ -1108,53 +1108,53 @@ wrapper, 18 wrapper calls) and are not recounted here.
 | `render_passes.hpp:846` | `render_main_pass` | 1 | `emptyGroup_` | — |
 | `render_passes.hpp:847` | `render_main_pass` | 2 | `emptyGroup_` | — |
 | `render_passes.hpp:848` | `render_main_pass` | 3 | `emptyGroup_` | — |
-| `renderer.hpp:495` | `dispatch_update_camera_vp` | 2 | `frameKStateGroup_` | — |
-| `renderer.hpp:496` | `dispatch_update_camera_vp` | 3 | `frameKTexturesGroup_` | — |
-| `renderer.hpp:531` | `dispatch_bake_patches` | 2 | `patchgenStateGroup_` | — |
-| `renderer.hpp:532` | `dispatch_bake_patches` | 3 | `patchgenTexturesGroup_` | — |
-| `renderer.hpp:544` | `dispatch_generate_patch_cells` | 2 | `patchgenStateGroup_` | — |
-| `renderer.hpp:545` | `dispatch_generate_patch_cells` | 3 | `patchgenTexturesGroup_` | — |
-| `renderer.hpp:559` | `dispatch_ribbon` | 2 | `ribbonStateGroup_` | — |
-| `renderer.hpp:560` | `dispatch_ribbon` | 3 | `ribbonTexturesGroup_` | — |
-| `renderer.hpp:574` | `dispatch_compute_photographer_vp` | 2 | `photoKStateGroup_` | — |
-| `renderer.hpp:575` | `dispatch_compute_photographer_vp` | 3 | `photoKTexturesGroup_` | — |
-| `renderer.hpp:585` | `dispatch_entity_placement` | 2 | `placeStateGroup_` | — |
-| `renderer.hpp:586` | `dispatch_entity_placement` | 3 | `placeTexturesGroup_` | — |
-| `renderer.hpp:596` | `dispatch_frustum_cull` | 2 | `cullStateGroup_` | — |
-| `renderer.hpp:597` | `dispatch_frustum_cull` | 3 | `emptyGroup_` | — |
-| `renderer.hpp:612` | `dispatch_compute_pawn_aura` | 2 | `auraStateGroup_` | — |
-| `renderer.hpp:613` | `dispatch_compute_pawn_aura` | 3 | `auraTexturesGroup_` | — |
-| `renderer.hpp:626` | `dispatch_live_card_write` | 2 | `zonesStateGroup_` | — |
-| `renderer.hpp:627` | `dispatch_live_card_write` | 3 | `zonesTexturesGroup_` | — |
-| `renderer.hpp:640` | `dispatch_orb_init` | 2 | `orbsAStateGroup_` | — |
-| `renderer.hpp:641` | `dispatch_orb_init` | 3 | `emptyGroup_` | — |
-| `renderer.hpp:653` | `dispatch_orb_dynamics` | 2 | `orbsAStateGroup_` | — |
-| `renderer.hpp:654` | `dispatch_orb_dynamics` | 3 | `emptyGroup_` | — |
-| `renderer.hpp:666` | `dispatch_orb_recolor` | 2 | `orbsAStateGroup_` | — |
-| `renderer.hpp:667` | `dispatch_orb_recolor` | 3 | `emptyGroup_` | — |
-| `renderer.hpp:679` | `dispatch_orb_copy_prev` | 2 | `orbsBStateGroup_` | — |
-| `renderer.hpp:680` | `dispatch_orb_copy_prev` | 3 | `emptyGroup_` | — |
-| `renderer.hpp:716` | `dispatch_zone_gol_sync` | 2 | `zonesStateGroup_` | — |
-| `renderer.hpp:717` | `dispatch_zone_gol_sync` | 3 | `zonesTexturesGroup_` | — |
-| `renderer.hpp:735` | `dispatch_zone_gol_evolve` | 2 | `zonesStateGroup_` | — |
-| `renderer.hpp:736` | `dispatch_zone_gol_evolve` | 3 | `zonesTexturesGroup_` | — |
-| `renderer.hpp:750` | `dispatch_zone_derive_params` | 2 | `zonesStateGroup_` | — |
-| `renderer.hpp:751` | `dispatch_zone_derive_params` | 3 | `zonesTexturesGroup_` | — |
-| `renderer.hpp:764` | `dispatch_zone_seed_mask` | 2 | `zonesStateGroup_` | — |
-| `renderer.hpp:765` | `dispatch_zone_seed_mask` | 3 | `zonesTexturesGroup_` | — |
-| `renderer.hpp:784` | `dispatch_arch_mesh_gen` | 2 | `meshgenStateGroup_` | — |
-| `renderer.hpp:785` | `dispatch_arch_mesh_gen` | 3 | `emptyGroup_` | — |
-| `renderer.hpp:798` | `dispatch_column_mesh_gen` | 2 | `meshgenStateColumnGroup_` | — |
-| `renderer.hpp:799` | `dispatch_column_mesh_gen` | 3 | `emptyGroup_` | — |
-| `renderer.hpp:810` | `dispatch_palm_mesh_gen` | 2 | `meshgenStatePalmGroup_` | — |
-| `renderer.hpp:811` | `dispatch_palm_mesh_gen` | 3 | `emptyGroup_` | — |
-| `renderer.hpp:822` | `dispatch_cactus_mesh_gen` | 2 | `meshgenStateCactusGroup_` | — |
-| `renderer.hpp:823` | `dispatch_cactus_mesh_gen` | 3 | `emptyGroup_` | — |
-| `renderer.hpp:834` | `dispatch_blade_mesh_gen` | 2 | `meshgenStateBladeGroup_` | — |
-| `renderer.hpp:835` | `dispatch_blade_mesh_gen` | 3 | `emptyGroup_` | — |
-| `renderer.hpp:867` | `draw_patch_terrain_plan_slot` | 2 | `sceneStateGroup_` | — |
-| `renderer.hpp:895` | `draw_patch_terrain_direct` | 2 | `sceneStateGroup_` | — |
-| `renderer.hpp:896` | `draw_patch_terrain_direct` | 3 | `sceneTexturesGroup_` | — |
+| `renderer.hpp:500` | `dispatch_update_camera_vp` | 2 | `frameKStateGroup_` | — |
+| `renderer.hpp:501` | `dispatch_update_camera_vp` | 3 | `frameKTexturesGroup_` | — |
+| `renderer.hpp:536` | `dispatch_bake_patches` | 2 | `patchgenStateGroup_` | — |
+| `renderer.hpp:537` | `dispatch_bake_patches` | 3 | `patchgenTexturesGroup_` | — |
+| `renderer.hpp:549` | `dispatch_generate_patch_cells` | 2 | `patchgenStateGroup_` | — |
+| `renderer.hpp:550` | `dispatch_generate_patch_cells` | 3 | `patchgenTexturesGroup_` | — |
+| `renderer.hpp:564` | `dispatch_ribbon` | 2 | `ribbonStateGroup_` | — |
+| `renderer.hpp:565` | `dispatch_ribbon` | 3 | `ribbonTexturesGroup_` | — |
+| `renderer.hpp:579` | `dispatch_compute_photographer_vp` | 2 | `photoKStateGroup_` | — |
+| `renderer.hpp:580` | `dispatch_compute_photographer_vp` | 3 | `photoKTexturesGroup_` | — |
+| `renderer.hpp:590` | `dispatch_entity_placement` | 2 | `placeStateGroup_` | — |
+| `renderer.hpp:591` | `dispatch_entity_placement` | 3 | `placeTexturesGroup_` | — |
+| `renderer.hpp:601` | `dispatch_frustum_cull` | 2 | `cullStateGroup_` | — |
+| `renderer.hpp:602` | `dispatch_frustum_cull` | 3 | `emptyGroup_` | — |
+| `renderer.hpp:617` | `dispatch_compute_pawn_aura` | 2 | `auraStateGroup_` | — |
+| `renderer.hpp:618` | `dispatch_compute_pawn_aura` | 3 | `auraTexturesGroup_` | — |
+| `renderer.hpp:631` | `dispatch_live_card_write` | 2 | `zonesStateGroup_` | — |
+| `renderer.hpp:632` | `dispatch_live_card_write` | 3 | `zonesTexturesGroup_` | — |
+| `renderer.hpp:645` | `dispatch_orb_init` | 2 | `orbsAStateGroup_` | — |
+| `renderer.hpp:646` | `dispatch_orb_init` | 3 | `emptyGroup_` | — |
+| `renderer.hpp:658` | `dispatch_orb_dynamics` | 2 | `orbsAStateGroup_` | — |
+| `renderer.hpp:659` | `dispatch_orb_dynamics` | 3 | `emptyGroup_` | — |
+| `renderer.hpp:671` | `dispatch_orb_recolor` | 2 | `orbsAStateGroup_` | — |
+| `renderer.hpp:672` | `dispatch_orb_recolor` | 3 | `emptyGroup_` | — |
+| `renderer.hpp:684` | `dispatch_orb_copy_prev` | 2 | `orbsBStateGroup_` | — |
+| `renderer.hpp:685` | `dispatch_orb_copy_prev` | 3 | `emptyGroup_` | — |
+| `renderer.hpp:721` | `dispatch_zone_gol_sync` | 2 | `zonesStateGroup_` | — |
+| `renderer.hpp:722` | `dispatch_zone_gol_sync` | 3 | `zonesTexturesGroup_` | — |
+| `renderer.hpp:740` | `dispatch_zone_gol_evolve` | 2 | `zonesStateGroup_` | — |
+| `renderer.hpp:741` | `dispatch_zone_gol_evolve` | 3 | `zonesTexturesGroup_` | — |
+| `renderer.hpp:755` | `dispatch_zone_derive_params` | 2 | `zonesStateGroup_` | — |
+| `renderer.hpp:756` | `dispatch_zone_derive_params` | 3 | `zonesTexturesGroup_` | — |
+| `renderer.hpp:769` | `dispatch_zone_seed_mask` | 2 | `zonesStateGroup_` | — |
+| `renderer.hpp:770` | `dispatch_zone_seed_mask` | 3 | `zonesTexturesGroup_` | — |
+| `renderer.hpp:789` | `dispatch_arch_mesh_gen` | 2 | `meshgenStateGroup_` | — |
+| `renderer.hpp:790` | `dispatch_arch_mesh_gen` | 3 | `emptyGroup_` | — |
+| `renderer.hpp:803` | `dispatch_column_mesh_gen` | 2 | `meshgenStateColumnGroup_` | — |
+| `renderer.hpp:804` | `dispatch_column_mesh_gen` | 3 | `emptyGroup_` | — |
+| `renderer.hpp:815` | `dispatch_palm_mesh_gen` | 2 | `meshgenStatePalmGroup_` | — |
+| `renderer.hpp:816` | `dispatch_palm_mesh_gen` | 3 | `emptyGroup_` | — |
+| `renderer.hpp:827` | `dispatch_cactus_mesh_gen` | 2 | `meshgenStateCactusGroup_` | — |
+| `renderer.hpp:828` | `dispatch_cactus_mesh_gen` | 3 | `emptyGroup_` | — |
+| `renderer.hpp:839` | `dispatch_blade_mesh_gen` | 2 | `meshgenStateBladeGroup_` | — |
+| `renderer.hpp:840` | `dispatch_blade_mesh_gen` | 3 | `emptyGroup_` | — |
+| `renderer.hpp:872` | `draw_patch_terrain_plan_slot` | 2 | `sceneStateGroup_` | — |
+| `renderer.hpp:900` | `draw_patch_terrain_direct` | 2 | `sceneStateGroup_` | — |
+| `renderer.hpp:901` | `draw_patch_terrain_direct` | 3 | `sceneTexturesGroup_` | — |
 | `patch_system.hpp:188` | `generate_patch_batch` | 0 | `worldGroup_` | — |
 | `patch_system.hpp:189` | `generate_patch_batch` | 1 | `frameCGroup_` | — |
 
