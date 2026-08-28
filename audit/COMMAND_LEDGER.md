@@ -5,20 +5,20 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `60b73cec07ea8403c4646be979bba4e582f53ae0`
-(AUBADE U2: device overlaps wasm — adoption verified by the same census)
+Last commit touching any scanned file: `32c0a7040cf09da0afe06472e835201961d8375b`
+(AUBADE U3: first-light pipelines gate the loop, the rest resolve async — rows skip until ready, shadows land as one event)
 
 | file scanned | sha256 |
 |---|---|
-| `src/cartridges/the_board/realization/render_passes.hpp` | `sha256:abd1589b48c00742573929a723b66cc3ff490adcfae4ad1333a6aa1314440846` |
-| `src/cartridges/the_board/realization/renderer.hpp` | `sha256:0632176bf68fcb96669c8a703eb885b60555ad0be931c3be4b7f697c6e900115` |
-| `src/cartridges/the_board/cartridge.hpp` | `sha256:16b88cf131bc4be54db43d459b0f81ccc254fd3faa1433e4f1967f2f85942c4d` |
+| `src/cartridges/the_board/realization/render_passes.hpp` | `sha256:e4d6b62cb1d1936d57322d2c4ef4372bbc27dd1404a29117d9431938e9c84149` |
+| `src/cartridges/the_board/realization/renderer.hpp` | `sha256:de9eef1f00cc44ae9565008f858e441075318fe8554375cffbf40486b18b88b8` |
+| `src/cartridges/the_board/cartridge.hpp` | `sha256:0171c1d13bca6dbc7cc51a6e79282e6125bc360339d5e0b34ffada4dc0977ea6` |
 | `src/cartridges/the_board/surface/patch_system.hpp` | `sha256:a0ca287c9590726e87956c9d30ba7eeb09e984e89e0eb80648e83f5df0fb4bdf` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:71102db67a59d2bf904f3fc0554d04e9bca834f958079d052c78d7c06cba1f39` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
 | `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:27e3be4562b179bdfc3e89fe291aa6a99b42e547b33df111f17034376f6279e0` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:a3bde8f506af81f67844572f51e88f2f0cb9336b9cfbddbc946883faef8d4a0c` |
-| `src/the_board.cpp` | `sha256:b40b2fc6bf092aa1ff77971a04493047d60dd1cf97cc05eae14700b5ced5d450` |
+| `src/the_board.cpp` | `sha256:f54258a0874f271b7aa4afd95af77d40567081ffcad460630b8c14c96a9f9554` |
 | `src/console/console.hpp` | `sha256:796056de623105b068c59d8c44b30734b4aa55c12e1bb7713808f8d4ac655679` |
 
 The handoff named `render_passes.hpp` and `renderer.hpp`; the
@@ -37,8 +37,8 @@ in `console.hpp`.
 | 2 | Compute Phase | compute | `dispatch_compute` | `src/cartridges/the_board/realization/render_passes.hpp:249` | — | — | — |
 | 3 | Frustum Cull Patches | compute | `dispatch_frustum_cull` | `src/cartridges/the_board/realization/render_passes.hpp:341` | — | — | — |
 | 4 | Shadow Atlas | render | `render_shadow_pass` | `src/cartridges/the_board/realization/render_passes.hpp:414` | (none: depth-only) | Clear/Store, readOnly (absent) → `(tex == 0) ? c->gpuState_.shadow_map_view() : c->gpuState_.spot_shadow_map_view()` | (no stencil aspect) |
-| 5 | Shadow Pass | render | `render_shadow_pass` | `src/cartridges/the_board/realization/render_passes.hpp:458` | (none: depth-only) | Clear/Store, readOnly (absent) → `c->gpuState_.shadow_map_view()` | (no stencil aspect) |
-| 6 | Rasterized Scene | render | `render_main_pass` | `src/cartridges/the_board/realization/render_passes.hpp:805` | Clear/Store or Discard → `backbuffer or msaaColor` resolve → `backbuffer` | Clear/Discard, readOnly (absent) → `depth` | (no stencil aspect) |
+| 5 | Shadow Pass | render | `render_shadow_pass` | `src/cartridges/the_board/realization/render_passes.hpp:465` | (none: depth-only) | Clear/Store, readOnly (absent) → `c->gpuState_.shadow_map_view()` | (no stencil aspect) |
+| 6 | Rasterized Scene | render | `render_main_pass` | `src/cartridges/the_board/realization/render_passes.hpp:826` | Clear/Store or Discard → `backbuffer or msaaColor` resolve → `backbuffer` | Clear/Discard, readOnly (absent) → `depth` | (no stencil aspect) |
 | 7 | Entity Mesh Gen | compute | `phase_entity_mesh_gen` | `src/cartridges/the_board/cartridge.hpp:2169` | — | — | — |
 | 8 | Patch Bake (fused) | compute | `generate_patch_batch` | `src/cartridges/the_board/surface/patch_system.hpp:186` | — | — | — |
 | 9 | Zone Derive Params | compute | `flush_zone_derive_requests` | `src/cartridges/the_board/bodies/gol_zones.hpp:822` | — | — | — |
@@ -59,7 +59,7 @@ in `console.hpp`.
 | # | receiver | enclosing function | site |
 |---|---|---|---|
 | 1 | `queue.Submit` | `flush_zone_derive_requests` | `src/cartridges/the_board/bodies/gol_zones.hpp:839` |
-| 2 | `app->queue.Submit` | `frame` | `src/the_board.cpp:294` |
+| 2 | `app->queue.Submit` | `frame` | `src/the_board.cpp:317` |
 
 2 submit sites. The frame's one submit rides the pawn's
 render tick; the GoL derive flush issues its own (the cartridge
@@ -76,7 +76,7 @@ console.hpp's depth buffer, neither of which this census reads.
 
 | # | label | colour | depth | samples | recorded in | site |
 |---|---|---|---|---|---|---|
-| 1 | `"Main Bundle"` | 1 x `&colorFormat_` | `depthFormat_` | `effective_msaa()` | `make_main_bundle_encoder` | `src/cartridges/the_board/realization/renderer.hpp:384` |
+| 1 | `"Main Bundle"` | 1 x `&colorFormat_` | `depthFormat_` | `effective_msaa()` | `make_main_bundle_encoder` | `src/cartridges/the_board/realization/renderer.hpp:630` |
 
 ### Encoder-creation sites (the label law, DOMESDAY_1 A9)
 
@@ -87,7 +87,7 @@ every landing.
 | # | label | enclosing function | site |
 |---|---|---|---|
 | 1 | `"flush_zone_derive_requests"` | `flush_zone_derive_requests` | `src/cartridges/the_board/bodies/gol_zones.hpp:815` |
-| 2 | `"frame"` | `frame` | `src/the_board.cpp:285` |
+| 2 | `"frame"` | `frame` | `src/the_board.cpp:308` |
 
 ## §3 — the swapchain reconfigure trigger
 

@@ -14,12 +14,12 @@ merge rows the API charges separately.
 | field | value |
 |---|---|
 | demo column censused | `full` |
-| source commit | `df00779f400da78f77cddf65987bd4b9401d126e` |
-| | IOS_5 D — the record, and the arc closes |
+| source commit | `32c0a7040cf09da0afe06472e835201961d8375b` |
+| | AUBADE U3: first-light pipelines gate the loop, the rest resolve async — rows skip until ready, shadows land as one event |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:8f63e762913fd52df8ccbc95c731cc1912ef4f1e443e1a08a89bf8960ebf9cec` |
 | `src/cartridges/the_board/realization/binding_surface.gen.inc` | `sha256:463f1d4f323e50439bc83ce20b35830a32356c33350adfbe425b773712de4661` |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
-| `src/cartridges/the_board/realization/renderer.hpp` | `sha256:0632176bf68fcb96669c8a703eb885b60555ad0be931c3be4b7f697c6e900115` |
+| `src/cartridges/the_board/realization/renderer.hpp` | `sha256:de9eef1f00cc44ae9565008f858e441075318fe8554375cffbf40486b18b88b8` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:f492028e9d624b68baf65dca67e9a4039ecc63d328ff449207e66f2fe9c63e63` |
 
 
@@ -33,10 +33,10 @@ only — `draw_orbs` is called from `bodies/orbs.hpp`, not from
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `71102db67a59d2bf904f3fc0554d04e9bca834f958079d052c78d7c06cba1f39` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `a3bde8f506af81f67844572f51e88f2f0cb9336b9cfbddbc946883faef8d4a0c` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
-| `src/cartridges/the_board/cartridge.hpp` | `16b88cf131bc4be54db43d459b0f81ccc254fd3faa1433e4f1967f2f85942c4d` |
+| `src/cartridges/the_board/cartridge.hpp` | `0171c1d13bca6dbc7cc51a6e79282e6125bc360339d5e0b34ffada4dc0977ea6` |
 | `src/cartridges/the_board/contracts/spine_state.hpp` | `1e797a5ae1f0d34e7e57a865c14f1401ed9a6204e6d6d3496fef8d3542d5534e` |
 | `src/cartridges/the_board/direction/mood.hpp` | `a53858722ef67b23c06885e6ea6b550dfd7fe1b53c25132fa52aa5be7e1e0aa6` |
-| `src/cartridges/the_board/realization/render_passes.hpp` | `abd1589b48c00742573929a723b66cc3ff490adcfae4ad1333a6aa1314440846` |
+| `src/cartridges/the_board/realization/render_passes.hpp` | `e4d6b62cb1d1936d57322d2c4ef4372bbc27dd1404a29117d9431938e9c84149` |
 | `src/cartridges/the_board/surface/patch_system.hpp` | `a0ca287c9590726e87956c9d30ba7eeb09e984e89e0eb80648e83f5df0fb4bdf` |
 
 The source commit is the last commit touching any of the four primary
@@ -106,7 +106,7 @@ matters only where a binding is a window onto a shared buffer.
 | `W3-3` | **PASS** | every render pipeline's instanceCount resolves to a literal, a named constant or a call-site expression — none is left as a parameter name (9 caller files scanned) |
 | `W3-2` | **PASS** | @workgroup_size(1) entry points: 7 (compute_entity_placement, compute_photographer_vp, ribbon_head, update_camera_vp, update_player_agent, update_sphere, zone_derive_params). Dispatches issuing ONE workgroup: 6 (compute_entity_placement, compute_photographer_vp, ribbon_head, update_camera_vp, update_player_agent, update_sphere). The 1 that differ: zone_derive_params (wg1=True, single-dispatch=False). |
 | `W4-1` | **PASS** | 12 trigger tokens, emitted verbatim into the artifact: time-cost, FXC, law-ref, measured, witness, hangs, compile-time, landed-at, regressed, budget, per-stage, slot-cap |
-| `W4-3` | **PASS** | no trigger is overfitted to the control — site counts: time-cost 6 (sole trigger at 0), FXC 19 (sole trigger at 4), law-ref 57 (sole trigger at 26), measured 17 (sole trigger at 3), witness 30 (sole trigger at 9), hangs 0 (sole trigger at 0), compile-time 15 (sole trigger at 0), landed-at 0 (sole trigger at 0), regressed 0 (sole trigger at 0), budget 15 (sole trigger at 1), per-stage 5 (sole trigger at 0), slot-cap 3 (sole trigger at 0) |
+| `W4-3` | **PASS** | no trigger is overfitted to the control — site counts: time-cost 7 (sole trigger at 1), FXC 19 (sole trigger at 4), law-ref 57 (sole trigger at 26), measured 17 (sole trigger at 3), witness 30 (sole trigger at 9), hangs 0 (sole trigger at 0), compile-time 15 (sole trigger at 0), landed-at 0 (sole trigger at 0), regressed 0 (sole trigger at 0), budget 15 (sole trigger at 1), per-stage 5 (sole trigger at 0), slot-cap 3 (sole trigger at 0) |
 | `W4-2` | **PASS** | positive control, keyed by symbol and by binding: all 5 known-defended sites found with a non-empty trigger set — update_player_agent [FXC, budget, compile-time, law-ref, measured]; update_other_agents [budget, compile-time, law-ref, witness]; (file banner) [FXC, budget, compile-time, law-ref, per-stage, witness]; pawn_ground_resolve [FXC, compile-time, law-ref, measured, witness]; bind::g2::scene_constants [budget, per-stage, slot-cap] |
 | `G2-eol` | **PASS** | artifact writer pins `encoding="utf-8", newline="\n"`, so no host can translate the terminator; a byte-level read-back runs after the write |
 | `E1-identity` | **PASS** | the room family resolves to 4 (pipeline, stage) rows over 4 layouts, from all 4 entry points by name |
@@ -208,7 +208,7 @@ intersection is 6. `update_other_agents` dispatches ONE workgroup at
 `@workgroup_size(32)` — which is exactly the shape the kernel-split banner
 prices at 48 seconds of FXC.
 
-**11. 80 defended sites.** Table H marks where the program already paid to
+**11. 81 defended sites.** Table H marks where the program already paid to
 learn something. It cites and does not quote, so it cannot go stale against
 the prose it points at.
 
@@ -216,7 +216,7 @@ the prose it points at.
 campaign's (as of BUDGET_1; the control re-keyed at LOOM_2).** BUDGET_1 removed two layout seats and renumbered the
 survivors, and `W4-2` failed — not because the sweep was wrong, and not
 because the instrument stopped finding the defended prose. It found all
-80 sites with identical trigger sets. What broke was the CONTROL'S KEY:
+81 sites with identical trigger sets. What broke was the CONTROL'S KEY:
 it named two defended sites `Render Entity Layout entries[16]` and
 `entries[17]`, and a campaign whose job is removing layout entries
 renumbers the survivors.
@@ -1012,7 +1012,7 @@ stale.
 A proposal that touches a row here is a proposal that must read the prose
 at that site before it argues with it.
 
-80 sites at this run. The index's history — every rebase, with causes
+81 sites at this run. The index's history — every rebase, with causes
 — lives in docs/FXC_LAWS_RECORD.md §index-history; a regenerated
 artifact carries no hand-carried number (P5, one home).
 
@@ -1021,7 +1021,7 @@ comment matches any of:
 
 | trigger | pattern | sites | sole trigger at |
 |---|---|---|---|
-| `time-cost` | `\b\d+(?:\.\d+)?\s*(?:ms\|s\|sec\|secs\|second\|seconds\|min\|minute\|minutes)\b` | 6 | 0 |
+| `time-cost` | `\b\d+(?:\.\d+)?\s*(?:ms\|s\|sec\|secs\|second\|seconds\|min\|minute\|minutes)\b` | 7 | 1 |
 | `FXC` | `\bFXC\b` | 19 | 4 |
 | `law-ref` | `\bL\d+\b\|\b[A-Z_]{3,} LAW\b\|docs/LAWS\.md` | 57 | 26 |
 | `measured` | `\bmeasured\b\|\bmeasurement\b` | 17 | 3 |
@@ -1051,7 +1051,7 @@ stay, marked, so the zero reads as intended rather than as a defect.
 Two readings worth keeping in view. `FXC` contributes 19 sites and is the
 sole trigger at 4 of them — that is where this program's expensive lessons
 actually cluster, and it is a map of the real risk surface. `time-cost`
-contributes 6 sites and is the sole trigger at 0, meaning every comment
+contributes 7 sites and is the sole trigger at 1, meaning every comment
 that records a measured duration also carries another trigger — the prose
 conventions are internally consistent.
 
@@ -1073,8 +1073,9 @@ one column that can.
 |---|---|---|---|---|---|
 | `(file banner)` | file | `src/cartridges/the_board/realization/binding_registry.hpp` | 1 | `law-ref`, `witness` | banner |
 | `patch_instances` | registry constant | `src/cartridges/the_board/realization/binding_registry.hpp` | 80 | `law-ref` | A:proximity |
-| `shadowPatchTerrainPipeline_` | pipeline | `src/cartridges/the_board/realization/renderer.hpp` | 2792 | `measured` | A:proximity |
-| `shadowPawnPipeline_` | pipeline | `src/cartridges/the_board/realization/renderer.hpp` | 2795 | `measured` | A:proximity |
+| `shadowPatchTerrainPipeline_` | pipeline | `src/cartridges/the_board/realization/renderer.hpp` | 3142 | `measured` | A:proximity |
+| `shadowPawnPipeline_` | pipeline | `src/cartridges/the_board/realization/renderer.hpp` | 3145 | `measured` | A:proximity |
+| `shadowArchPipeline_` | pipeline | `src/cartridges/the_board/realization/renderer.hpp` | 3184 | `time-cost` | A:proximity, B:named |
 | `(file banner)` | file | `src/cartridges/the_board/realization/state.hpp` | 1 | `law-ref` | banner |
 | `Frame R Layout` | layout | `src/cartridges/the_board/realization/state.hpp` | 5437 | `law-ref` | A:proximity, B:named |
 | `Agents State Layout entries[7]` | layout entry | `src/cartridges/the_board/realization/state.hpp` | 5527 | `law-ref` | A:proximity |
