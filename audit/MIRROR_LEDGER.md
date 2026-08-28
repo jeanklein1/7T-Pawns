@@ -15,15 +15,15 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `22b15bd5be6de7ffa3c9954041ced610cbac1d33` |
-| | IOS_3 B — the failure speaks, and the boot says what it is |
+| source commit | `892de606b834328cb101b56b280b8523ea78dea1` |
+| | IOS_3 C — the four switches, and the one that could not be a pure skip |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:f492028e9d624b68baf65dca67e9a4039ecc63d328ff449207e66f2fe9c63e63` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:8f63e762913fd52df8ccbc95c731cc1912ef4f1e443e1a08a89bf8960ebf9cec` |
 | `src/cartridges/the_board/realization/binding_surface.gen.inc` | `sha256:463f1d4f323e50439bc83ce20b35830a32356c33350adfbe425b773712de4661` |
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:825addacbd4b440f443ba3a49104a07be7a8fb440fc1bf5a2e0f5dde516a48cf` |
 | `tools/binding_ledger.py` | `sha256:8c5e3abcdfcc80826535e7f50b0b3f6ea3f0eb445447419ffc442b9cac1a211a` |
-| `audit/BINDING_LEDGER.md` | `sha256:ada55f331deeee977080eea166d5cd05335bd72fbdc53c2ea4c298d3274b0e14` |
+| `audit/BINDING_LEDGER.md` | `sha256:48cd6ef1cfe7cbd94b2ebde6e7f7f6d9c3078894a1dcf8446e5434b37d1e7dcb` |
 
 `tools/binding_ledger.py` is an input because its parsers are IMPORTED,
 not copied — one parse, two artifacts, no drift between instruments.

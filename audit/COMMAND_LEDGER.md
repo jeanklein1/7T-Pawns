@@ -5,8 +5,8 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `22b15bd5be6de7ffa3c9954041ced610cbac1d33`
-(IOS_3 B — the failure speaks, and the boot says what it is)
+Last commit touching any scanned file: `892de606b834328cb101b56b280b8523ea78dea1`
+(IOS_3 C — the four switches, and the one that could not be a pure skip)
 
 | file scanned | sha256 |
 |---|---|
