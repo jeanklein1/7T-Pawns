@@ -58,6 +58,7 @@
 #endif
 
 #include "core/instruments.hpp"   // THE INSTRUMENTS DIAL: INSTRUMENTS.watcher_ticks gates the hot-reload progress dot
+#include "core/aubade.hpp"        // AUBADE U1 — the present mark, the tick probe, the first-present latch
 #include "core/boot_params.hpp"   // DOMESDAY_1 B9 — parse_boot_params at the top of main
 #include <iostream>
 #include <chrono>
@@ -291,6 +292,42 @@ static void frame() {
     if constexpr (t7::INSTRUMENTS.frame_meter) s_t0 = std::chrono::steady_clock::now();
     wgpu::CommandBuffer commands = encoder.Finish(&cmdDesc);
     app->queue.Submit(1, &commands);
+
+    // ══ AUBADE U1 — THE FIRST PRESENT, AT LAST WITNESSED ═══════════════
+    //
+    // The program had NO first-present witness. `[FRAME_1]` was read as one
+    // for a whole campaign and is CAP_1's canvas-resize census (R1); the
+    // veil dismisses on a log-string sniff before any frame is submitted
+    // (R9). So the moment the dark actually ends was, until this line,
+    // unobserved by anything.
+    //
+    // onSubmittedWorkDone ON FRAME 1's SUBMIT is the honest instrument:
+    // it resolves when the GPU has finished the work this submit
+    // describes, which is the first moment there is a rendered frame at
+    // all. Registering it here — after Submit, before present() — is what
+    // makes it frame 1's and not some later frame's.
+    //
+    // ONCE. A callback per frame would be an instrument that costs a
+    // readback forever to answer a question asked once.
+    if (!t7::aubade_registered()) {
+        t7::aubade_registered() = true;
+        app->queue.OnSubmittedWorkDone(wgpu::CallbackMode::AllowSpontaneous,
+            [](wgpu::QueueWorkDoneStatus, wgpu::StringView) {
+                t7::aubade_presented() = true;
+                t7::aubade_mark("present");
+                // The probe is pushed HERE, in the callback, so its numbers
+                // describe the window that just closed. Pushed at submit
+                // they would describe one frame.
+                t7::aubade_probe();
+                // AUBADE U4 — and the veil learns it here, from the same
+                // signal, so the handover cannot drift from the mark that
+                // measures it.
+                EM_ASM({
+                    if (typeof window !== 'undefined' && window.t7FirstPresent)
+                        window.t7FirstPresent();
+                });
+            });
+    }
     // RIBBON_2 P0 1.2b: an updated-but-unrendered frame adds its dt to the
     // next rendered one — a dropped acquire stretches a step, never deletes
     // it. This is the moment the GPU has actually been handed the time the
@@ -300,6 +337,18 @@ static void frame() {
     if constexpr (t7::INSTRUMENTS.frame_meter)
         s_submit = std::chrono::duration<float, std::milli>(
             std::chrono::steady_clock::now() - s_t0).count();
+
+    // AUBADE U1 — THE TICK PROBE. Counted only until first present, then
+    // never touched again. `ticks` high with `cpu` low is the signature of
+    // a DEVICE-SIDE wait — the main thread turning freely while something
+    // downstream is not ready — which is what pipeline compilation looks
+    // like from up here. `cpu` high is our own work, and `stb` says how
+    // much of it was painting decode.
+    if (!t7::aubade_presented()) {
+        t7::aubade_ticks()++;
+        t7::aubade_cpu() += std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - s_frame0).count();
+    }
 
     if constexpr (t7::INSTRUMENTS.frame_meter) s_t0 = std::chrono::steady_clock::now();
     app->console.present();

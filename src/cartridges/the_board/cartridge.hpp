@@ -50,6 +50,7 @@
 #include "core/input_event.hpp"
 #include "core/boot_params.hpp"                                    // DOMESDAY_1 B9 — ?seed= / ?mood= boot overrides (ctor, the one authoring site)
 #include "core/boot_card.hpp"                                      // IOS_3 B2 — the world, the switches and the patch counters reach the page
+#include "core/aubade.hpp"                                        // AUBADE U1 — the waterfall's marks and the first-present latch
 #include "core/instruments.hpp"                                    // THE INSTRUMENTS DIAL: INSTRUMENTS.frame_meter / .periodic_census gate the recurring self-measurement (compile-time, T7_INSTRUMENTS; default off)
 #include "cartridges/the_board/contracts/roster.hpp"
 #include "cartridges/the_board/demos/demo.hpp"             // THE SELECTED SENTENCE: DEMO + ROSTER (compile-time, INCUBATE_DEMO; default full)
@@ -782,6 +783,10 @@ namespace t7 {
                     << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count() << " ms\n";
                 std::cout << "[Cartridge] Patch system:     "
                     << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t1).count() << " ms\n";
+                // AUBADE U1 — init RETURNS here. The 75 ms this line has
+                // always printed is the innocent part; every mark after it
+                // is the part nobody had measured.
+                t7::aubade_mark("init");
                 std::cout << "[Cartridge] Total init:       "
                     << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t0).count() << " ms\n";
 
@@ -1476,6 +1481,12 @@ namespace t7 {
             void phase_stage_fade_and_upload(UpdateCtx& c) {
                 auto& gpuSignal = c.gpuSignal;
                 auto& queue = c.queue;
+                // AUBADE U1 — the piece's own darkness, published for the
+                // probe. One store a frame. It reads 0 at boot (no
+                // transition runs), and that ZERO IS THE FINDING: the black
+                // between init and present is unauthored, so no amount of
+                // fade tuning addresses it.
+                t7::aubade_fade() = mood_state_.transition_fade_alpha;
                 gpuState_.set_fade(mood_state_.transition_fade_alpha, 0.0f, 0.0f, 0.0f);
                 gpuState_.upload_signal(queue, gpuSignal);
                 gpuState_.upload_config(queue);

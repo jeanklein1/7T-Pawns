@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>     // authored disk manifest
 #include "core/instruments.hpp"                                        // PURSE_0 R1 — t7::g_served_k, the presentation law's own verdict
+#include "core/aubade.hpp"                                            // AUBADE U1 — the authored6 mark and the stb decode accumulator
 #include "cartridges/the_board/realization/state.hpp"                    // Dim::*, GPUPaintingSlot, GPUPhotographerConfig, wgpu
 #include "cartridges/the_board/contracts/mood_constants.hpp"   // MOOD_COUNT (sizes the mood gate)
 #include "cartridges/the_board/primitives/seed_utils.hpp"       // select_weighted (PhotographerState::sample_shot_type)
@@ -36,6 +37,7 @@
 
 #include <algorithm>   // std::max, std::min, std::sort, std::transform   // (impl, merged)
 #include <cmath>       // std::sqrt, std::floor, std::cos, std::sin, std::round   // (impl, merged)
+#include <chrono>      // AUBADE U1 — the stb/scale decode accumulator   // (impl, merged)
 #include <cstdint>   // (impl, merged)
 #include <filesystem>  // paintings folder scan   // (impl, merged)
 #include <iostream>    // capture / gallery / authored logs   // (impl, merged)
@@ -1932,6 +1934,11 @@ inline int authored_extract_number(const std::string& path) {
 inline void authored_stage_decoded_image(GalleryState& gs, GPUState& gpu, wgpu::Queue& queue,
     uint32_t staging_layer, uint32_t disk_index,
     const unsigned char* data, int width, int height) {
+    // AUBADE U1 — the decode window opens here. The stb decode itself
+    // happened in the caller; what this body costs is the SCALE and the
+    // PAD, which is main-thread pixel work by any name and belongs in the
+    // same number.
+    const auto t_decode0 = std::chrono::steady_clock::now();
     constexpr uint32_t RES = Dim::PAINTING_RESOLUTION;
     float scale = std::min((float)RES / width, (float)RES / height);
     if (scale > 1.0f) scale = 1.0f;
@@ -1976,6 +1983,24 @@ inline void authored_stage_decoded_image(GalleryState& gs, GPUState& gpu, wgpu::
     rec.shown_disk_index = rec.disk_index;
     rec.consumed = false;
 
+    // AUBADE U1 — HOW MUCH OF THE DARK WAS PAINTING DECODE. R6 found the
+    // authored path decodes with stb_image ON THE MAIN THREAD, so this is
+    // the number that separates "the paintings did it" from a device-side
+    // wait. Summed only before first present; after it, the question has
+    // been answered and the add stops.
+    if (!t7::aubade_presented()) {
+        t7::aubade_stb() += std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - t_decode0).count();
+    }
+
+    // AUBADE U1 — THE SIXTH IS THE ONE THAT MATTERS. Six staged images is
+    // the READY floor (OVERTURE_0 U9), so `authored6` is the mark that says
+    // when the offer could have been made. Counted here, at the moment a
+    // slot becomes valid, because that is what "staged" means.
+    {
+        static uint32_t staged = 0;
+        if (++staged == 6u) t7::aubade_mark("authored6");
+    }
     std::cout << "[Authored] Scaled → " << dst_w << "x" << dst_h
         << " (aspect " << rec.aspect_ratio << ")\n";
 }

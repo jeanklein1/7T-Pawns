@@ -29,11 +29,11 @@ only — `draw_orbs` is called from `bodies/orbs.hpp`, not from
 
 | caller file scanned | sha256 |
 |---|---|
-| `src/cartridges/the_board/bodies/gallery.hpp` | `048770976593dbd7e70a33cd8cd8f147586e4afde5f267d38addf0b2e038d92a` |
+| `src/cartridges/the_board/bodies/gallery.hpp` | `27e3be4562b179bdfc3e89fe291aa6a99b42e547b33df111f17034376f6279e0` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `71102db67a59d2bf904f3fc0554d04e9bca834f958079d052c78d7c06cba1f39` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `a3bde8f506af81f67844572f51e88f2f0cb9336b9cfbddbc946883faef8d4a0c` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
-| `src/cartridges/the_board/cartridge.hpp` | `bf842b78fb3074c4d3175a636b724509e098fc8e376cd0657308f2a9cb633d79` |
+| `src/cartridges/the_board/cartridge.hpp` | `16b88cf131bc4be54db43d459b0f81ccc254fd3faa1433e4f1967f2f85942c4d` |
 | `src/cartridges/the_board/contracts/spine_state.hpp` | `1e797a5ae1f0d34e7e57a865c14f1401ed9a6204e6d6d3496fef8d3542d5534e` |
 | `src/cartridges/the_board/direction/mood.hpp` | `a53858722ef67b23c06885e6ea6b550dfd7fe1b53c25132fa52aa5be7e1e0aa6` |
 | `src/cartridges/the_board/realization/render_passes.hpp` | `abd1589b48c00742573929a723b66cc3ff490adcfae4ad1333a6aa1314440846` |

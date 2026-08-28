@@ -28,6 +28,7 @@
 #include "core/input_event.hpp"
 #include "core/boot_params.hpp"   // DOMESDAY_1 B9 — ?cap= / --cap= (effective_pixel_cap below)
 #include "core/boot_card.hpp"     // IOS_3 B — the program's own surface: facts, and last words
+#include "core/aubade.hpp"       // AUBADE U1 — the waterfall's marks
 #include "core/instruments.hpp"  // WIT_2 — t7::g_dropped_submits, the frame-validity witness
 
 #include <webgpu/webgpu_cpp.h>
@@ -730,6 +731,10 @@ namespace t7 {
                         //     runtime half.
                         // The floors read the NEEDS table's emitted
                         // constants; no literal lives in the C++.
+                        // AUBADE U1 — the device is in hand. Marked HERE and
+                        // not at the request, because the wait this campaign
+                        // is partitioning is the GRANT, not the asking.
+                        t7::aubade_mark("device");
                         std::cout << "[Device] granted vs floor:"
                             << " maxTextureDimension2D=" << got.maxTextureDimension2D
                             << "/" << FLOOR_MAX_TEXTURE_DIMENSION_2D

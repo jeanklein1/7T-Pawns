@@ -422,6 +422,61 @@
     padding:10px;max-height:60vh;overflow:auto;white-space:pre-wrap;
     -webkit-user-select:text;user-select:text"></div>
   <script>
+    // ══ AUBADE U1 — t0, AND IT IS THE FIRST STATEMENT IN THE BODY ══════
+    //
+    // Every number this campaign reports is an offset from here. It sits
+    // above the card, above the module, above everything, because a
+    // waterfall measured from anything later would flatter the part of
+    // the dark that runs before it.
+    //
+    // ALL MARKS ARE TAKEN IN THIS REALM, from this one clock. The C++
+    // side calls in through EM_ASM rather than keeping its own
+    // performance.now() — two clocks would need reconciling and the
+    // reconciliation would be the thing nobody checks.
+    //
+    // WHY A WATERFALL AND NOT A TRACE. The device that most needs reading
+    // has no DevTools. Six offsets and four attribution numbers, printed
+    // as two lines a phone can show and a person can paste, answer "where
+    // did the seconds go" without anyone opening a Performance panel.
+    window.T7_AUBADE = (function () {
+      var t0 = performance.now();
+      var m = {}, reported = false;
+      function mark(k) { if (m[k] === undefined) m[k] = Math.round(performance.now() - t0); }
+      // The probe's counters. C++ owns three of them (ticks, cpu, stb) and
+      // hands them over at report time; `fade` is whatever the piece's own
+      // fade alpha reads at first present — authored darkness, named, so it
+      // is never confused with the unauthored kind.
+      var probe = { ticks: 0, cpu: 0, stb: 0, fade: 0 };
+      function net() {
+        // Resource timing splits the wasm's NETWORK from its COMPILE. The
+        // pair is the whole of "was it the wire or the compiler", and it
+        // costs one entry lookup rather than a trace.
+        try {
+          var e = performance.getEntriesByType('resource');
+          for (var i = 0; i < e.length; i++)
+            if (e[i].name.indexOf('the_board.wasm') >= 0)
+              return Math.round(e[i].responseEnd - t0);
+        } catch (x) {}
+        return -1;
+      }
+      function report() {
+        if (reported) return;
+        reported = true;
+        m.net = net();
+        var say = (typeof out === 'function') ? out : console.log;
+        var k = ['net', 'wasm', 'device', 'init', 'present', 'authored6', 'ready'];
+        var line = '[AUBADE] waterfall';
+        for (var i = 0; i < k.length; i++)
+          line += ' ' + k[i] + '=' + (m[k[i]] === undefined ? '-' : m[k[i]]);
+        say(line);
+        say('[AUBADE] window ticks=' + probe.ticks
+          + ' cpu=' + Math.round(probe.cpu) + 'ms'
+          + ' stb=' + Math.round(probe.stb) + 'ms'
+          + ' fade=' + probe.fade);
+      }
+      return { mark: mark, probe: probe, report: report, marks: m };
+    })();
+
     // TWO DOORS, ONE SURFACE. t7card is the identity block (quiet, green);
     // t7err is a failure (loud, red, and it turns the whole card red so a
     // photograph reads at a glance). Both are plain globals so the C++
@@ -635,6 +690,8 @@
     // ── STATE TRANSITIONS ────────────────────────────────────────
     function present() {                    // LOADING -> the world
       if (terminal) return;                 // a real end outranks the world
+      window.T7_AUBADE.mark('ready');       // AUBADE U1 — the entered path's end of dark
+      window.T7_AUBADE.report();
       card.hidden = true;                   // clears a watchdog card, if any
       shown = true;
       veil.classList.add('lifting');
@@ -652,6 +709,11 @@
     // arriving is exactly the moment that card stops being true.
     function showReady() {
       if (terminal) return;               // a real end outranks the door
+      // AUBADE U1 — the last mark, and therefore the one that reports.
+      // READY is where the dark ends for a visitor who has not yet
+      // tapped; present() below marks it too, for the one who has.
+      window.T7_AUBADE.mark('ready');
+      window.T7_AUBADE.report();
       card.hidden = true;                 // clears a watchdog card, if any
       veil.hidden = false;                // ...which had hidden the veil
       ready = true;
@@ -1196,7 +1258,11 @@
     // depending on Emscripten's lifecycle.
     window.SHADER_SHA = SHADER_SHA;
 
+    // AUBADE U1 — `wasm` is INSTANTIATION, not arrival. `net` above is the
+    // arrival; the gap between them is the compile, and naming both is
+    // what makes U6's warm-load claim checkable rather than asserted.
     window.Module = {
+      onRuntimeInitialized: function () { window.T7_AUBADE.mark('wasm'); },
       canvas: document.getElementById('canvas'),
       // The .wasm and the .data are fetched by the glue, not by us, so
       // the version has to reach them through the one hook Emscripten

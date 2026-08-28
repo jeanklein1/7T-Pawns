@@ -376,7 +376,7 @@ declarations: 0 (the handoff expected 0).
 
 ### (b) `.binding =` with a non-registry right side
 
-Boundary: the comment-stripped text of all 63 `*.hpp` under `src/`
+Boundary: the comment-stripped text of all 64 `*.hpp` under `src/`
 (the handoff's sweep), extended to the 3 `.cpp`/`.h`/`.cc` files
 there so a seat assignment in a translation unit cannot hide on the
 wrong extension (0 hit(s) on the extension). state.hpp is read
@@ -1049,16 +1049,16 @@ wrapper, 18 wrapper calls) and are not recounted here.
 
 | site (line hint) | enclosing function | idx | group member(s) | dynamic offsets |
 |---|---|---|---|---|
-| `cartridge.hpp:2160` | `phase_entity_mesh_gen` | 0 | `worldGroup_` | — |
-| `cartridge.hpp:2161` | `phase_entity_mesh_gen` | 1 | `frameCGroup_` | — |
-| `gallery.hpp:1747` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
-| `gallery.hpp:1748` | `render_snapshot_pass` | 1 | `frameCGroup_` | — |
-| `gallery.hpp:1819` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
-| `gallery.hpp:1820` | `render_snapshot_pass` | 1 | `framePhotographerGroup_` | `1, &kFrameSlotZero` |
-| `gallery.hpp:1821` | `render_snapshot_pass` | 2 | `sceneStateGroup_` | — |
-| `gallery.hpp:1822` | `render_snapshot_pass` | 3 | `sceneTexturesGroup_` | — |
-| `gallery.hpp:1866` | `render_snapshot_pass` | 2 | `galleryStateGroup_` | — |
-| `gallery.hpp:1867` | `render_snapshot_pass` | 3 | `galleryTexturesGroup_` | — |
+| `cartridge.hpp:2171` | `phase_entity_mesh_gen` | 0 | `worldGroup_` | — |
+| `cartridge.hpp:2172` | `phase_entity_mesh_gen` | 1 | `frameCGroup_` | — |
+| `gallery.hpp:1749` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
+| `gallery.hpp:1750` | `render_snapshot_pass` | 1 | `frameCGroup_` | — |
+| `gallery.hpp:1821` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
+| `gallery.hpp:1822` | `render_snapshot_pass` | 1 | `framePhotographerGroup_` | `1, &kFrameSlotZero` |
+| `gallery.hpp:1823` | `render_snapshot_pass` | 2 | `sceneStateGroup_` | — |
+| `gallery.hpp:1824` | `render_snapshot_pass` | 3 | `sceneTexturesGroup_` | — |
+| `gallery.hpp:1868` | `render_snapshot_pass` | 2 | `galleryStateGroup_` | — |
+| `gallery.hpp:1869` | `render_snapshot_pass` | 3 | `galleryTexturesGroup_` | — |
 | `gol_zones.hpp:824` | `flush_zone_derive_requests` | 0 | `worldGroup_` | — |
 | `gol_zones.hpp:825` | `flush_zone_derive_requests` | 1 | `frameCGroup_` | — |
 | `gol_zones.hpp:912` | `dispatch_zone_sync` | 0 | `worldGroup_` | — |
