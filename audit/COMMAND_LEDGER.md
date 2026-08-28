@@ -5,8 +5,8 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `85970103ee5cba1d5133b9d812402bf41277c014`
-(IOS_5 A — the sun pass encodes direct; the depth-only bundle is deleted)
+Last commit touching any scanned file: `df00779f400da78f77cddf65987bd4b9401d126e`
+(IOS_5 D — the record, and the arc closes)
 
 | file scanned | sha256 |
 |---|---|
