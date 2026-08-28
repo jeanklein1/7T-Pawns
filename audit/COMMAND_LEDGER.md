@@ -5,8 +5,8 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `df00779f400da78f77cddf65987bd4b9401d126e`
-(IOS_5 D — the record, and the arc closes)
+Last commit touching any scanned file: `60b73cec07ea8403c4646be979bba4e582f53ae0`
+(AUBADE U2: device overlaps wasm — adoption verified by the same census)
 
 | file scanned | sha256 |
 |---|---|
@@ -19,7 +19,7 @@ Last commit touching any scanned file: `df00779f400da78f77cddf65987bd4b9401d126e
 | `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:27e3be4562b179bdfc3e89fe291aa6a99b42e547b33df111f17034376f6279e0` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:a3bde8f506af81f67844572f51e88f2f0cb9336b9cfbddbc946883faef8d4a0c` |
 | `src/the_board.cpp` | `sha256:b40b2fc6bf092aa1ff77971a04493047d60dd1cf97cc05eae14700b5ced5d450` |
-| `src/console/console.hpp` | `sha256:f223ae134db5f47a11a82b1ee64f4f029fa6fdf51361784f693ae4f7dec5808c` |
+| `src/console/console.hpp` | `sha256:796056de623105b068c59d8c44b30734b4aa55c12e1bb7713808f8d4ac655679` |
 
 The handoff named `render_passes.hpp` and `renderer.hpp`; the
 tree places pass encoders more widely, so the census scans the
@@ -93,13 +93,13 @@ every landing.
 
 | # | enclosing function | site |
 |---|---|---|
-| 1 | `initSurface` | `src/console/console.hpp:1016` |
-| 2 | `reassert_canvas_target` | `src/console/console.hpp:1173` |
-| 3 | `begin_frame` | `src/console/console.hpp:1312` |
+| 1 | `initSurface` | `src/console/console.hpp:1274` |
+| 2 | `reassert_canvas_target` | `src/console/console.hpp:1431` |
+| 3 | `begin_frame` | `src/console/console.hpp:1570` |
 
 The boot-time site configures the surface once; the per-frame
 trigger is the resize branch of `Console::begin_frame`, quoted
-verbatim (`src/console/console.hpp:1302`) — its branch is what feeds the `[FRAME_1]`
+verbatim (`src/console/console.hpp:1560`) — its branch is what feeds the `[FRAME_1]`
 print. This is the debounce ruling's evidence: the condition is
 a bare not-equal on the capped framebuffer size, so any size
 flutter reconfigures the surface and recreates the depth buffer
