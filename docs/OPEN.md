@@ -47,9 +47,9 @@ OWED — THE WEBKIT BUG IS NOT YET FILED. A draft report is at
 outward-facing post under the project's name). Link it from renderer.hpp's
 banner once it has a URL. Unblocked by the filing.
 
-## THE FIELD DIAGNOSTIC SET — PERMANENT (IOS_5)
+## THE FIELD DIAGNOSTIC SET — PERMANENT (IOS_5, extended by AUBADE)
 
-Five switches, in EVERY build, forever. They found the iOS black screen
+Seven switches, in EVERY build, forever. They found the iOS black screen
 in four reloads on a device with no console, and they are the only
 instrument that works in a gallery: no inspector, no log, no cable — a
 picture and a photograph of it.
@@ -61,6 +61,15 @@ picture and a photograph of it.
 | `?card=0` | `write_live_card` | no zone lift, no live delta |
 | `?sunpass=0` | the sun pass's DRAW LIST — **never the pass** | the world with **no sun shadows** |
 | `?bundles=0` | `ExecuteBundles` on the main bundle; encode direct | **identical** |
+| `?adopt=0` | the page's pre-created device; C++ asks for its own | **identical**, and slower to first light (AUBADE U2) |
+| `?async=0` | asynchronous pipeline creation; all sixty compile before the loop runs | **identical**, and the old boot's long dark (AUBADE U3) |
+
+THE LAST TWO REMOVE A STAGE OF THE BOOT rather than a stage of the
+frame, and they answer the same rule for the same reason: both are
+mechanisms a browser can get quietly wrong, and neither produces a
+picture of its own. What they are for is bisecting a boot that never
+arrives — on the device with no console, which is the only place this
+question has ever actually been asked.
 
 THE PICTURE IS WHAT MAKES A SWITCH READABLE, and `?sunpass=0` is the
 example of what a switch must never be. Skipping the whole pass would
@@ -74,6 +83,84 @@ unambiguous on the first reading instead of costing another round.
 Only an explicit `0` removes a stage; absent or malformed leaves the
 piece entire, and the `[Params]` line names any switch that is off, so
 silence means the piece whole and a diagnosis stays reproducible.
+
+## AUBADE — first light (branch `claude/aubade`, LAND-GATED)
+
+Boot rearrangement: nothing new was built, existing work was resequenced
+so the screen lights early and the world assembles in view. Seven units
+landed on the held branch; **production is untouched until the merge
+word** (RUL-A). Jean's gate is one sitting.
+
+| unit | what moved |
+|---|---|
+| U1 | the waterfall and the attribution probe — the program's FIRST first-present witness |
+| U2 | the device is asked for at HTML parse, adopted by the wasm, verified by the same census |
+| U3 | every pipeline creates asynchronously; first light gates the loop, rows skip until ready, shadows land as one event |
+| U4 | the veil hands off at first present, not at a substring of a log line |
+| U5b/c | the paintings' bytes leave at manifest scan; decode, pad and upload park until first light, then one a frame |
+| U6 | the four versioned artifacts are immutable for a year |
+| U7 | the package holds the shader and nothing else; three preloads start first light at HTML parse |
+
+### CONSEQUENCE — THE READY FLOOR IS NO LONGER A COUNT
+
+OVERTURE_0 U9 put six staged paintings in front of the veil so the
+visitor met a furnished world. U4 moves the veil to first present, which
+is EARLIER — ahead of that floor. The floor's promise is kept by U5c
+instead: the valve parks every painting until first light and then feeds
+one a frame, so the six still land, in view, which is where this campaign
+wants them. **READY stops being a count and becomes a fact: the first
+reachable room is real.** The 5 s timeout becomes the rare path.
+
+The `Controls:` line is not retired. It no longer lifts the veil; it arms
+a 20 s belt, so a browser that renders but never resolves
+`onSubmittedWorkDone` still gets its world (and says which path lifted
+it). Its text stays load-bearing, one notch weaker.
+
+### OPEN — U5a's PREMISE DOES NOT HOLD IN THIS TREE
+
+U5a asked for the world's hung set to resolve at manifest scan as a pure
+function of (seed, record), ordered by the guaranteed door and then by
+gallery spawn distance. It is **not built**, and the reason is three
+facts rather than a difficulty:
+
+- Galleries are not a world-level quantity. They are spawned per TILE,
+  through `compose_spawn_chance(c, gx, gz, PopFamily::GALLERY)`, as tiles
+  stream. A world's gallery set does not exist at scan, does not exist at
+  population, and keeps growing while the visitor walks.
+- The guaranteed door is `force_spawn_door_fallback` (mood.hpp),
+  conditional on the ROLLED ARCHES — it reads `entities_state_.arches`
+  and stands down if one already falls within `DOOR_NEAR_RADIUS`. It runs
+  at population, after the device, and it is a portal rather than a
+  gallery.
+- There is no gallery-to-painting map at all. A room hangs from whatever
+  the staging pool holds when it is built; `disk_index` comes from the
+  fill's linear walk of the manifest.
+
+Building the ordering means authoring a seed-determined exhibition map —
+which painting hangs in which room. That is a change to what the piece
+IS, not a resequencing of when its bytes move, and the campaign's frame
+is that nothing new is built. **Unblocks on:** Jean's ruling on whether
+the piece wants a seed-determined exhibition at all.
+
+What U5a was FOR is partly delivered anyway: the bytes leave at scan
+(U5b), and the boot fetch count was **already** invariant to catalogue
+size — the fill asks for `min(manifest, STAGING_LAYERS)` = at most 32 and
+has since OVERTURE_0. A catalogue of 57 or 500 sends the same 32.
+
+### OWED
+
+- **The iOS witness (L48).** This campaign touched pipeline construction
+  and the render path; L48 says no such round lands without one. RUL-A's
+  land gate already puts that witness at Jean's single sitting, which is
+  where it belongs. `?async=0` and `?adopt=0` are the bisect if it finds
+  a fault.
+- **The WebKit bug is drafted, not filed** (`docs/reference/
+  WEBKIT_BUNDLE_BUG.md`). Filing is Jean's — it is an outward-facing post
+  under the project's name. Its URL goes into that file and into
+  renderer.hpp's `main_bundle_ready` banner.
+- **The preview deploys.** CC's container has no EMSDK and cannot produce
+  a wasm; every `wrangler pages deploy` prints its own per-deployment
+  URL, and those are the ones to open — never the branch alias.
 
 ## THE OPTIMIZATION ARC — CLOSED 2026-08-28 (PURSE_0)
 
