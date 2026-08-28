@@ -483,6 +483,37 @@ const TERRAIN_BANDS = array<TerrainBand, 6>(
     TerrainBand(    500.0,   0.012,  0.004,  15.0,  6.0,   0.004,  0.002,  0.003,  0.75,  0.02  ),  // 5: tectonic     reach≈1000
 );
 
+// ── THE SPACINGS, ALONE (IOS_3 §4) ──────────────────────────────────
+//
+// THE ONLY THING A THREAD-VARYING INDEX EVER NEEDS FROM THE TABLE. Both
+// fused kernels open by asking for a spacing at a per-lane index:
+//
+//     bake_origin[t] = vec2<i32>(floor(tile_min / TERRAIN_BANDS[t].spacing));
+//     card_origin[t] = vec2<i32>(floor(tile_min / TERRAIN_BANDS[t].spacing));
+//
+// with t = lid.y * 16 + lid.x. TERRAIN_BANDS is a const array OF STRUCTS,
+// and a const array of structs indexed dynamically cannot be folded the
+// way a const array of scalars can — it has to be materialised into real
+// memory first. Tint and DXC do it without complaint; WebKit's WGSL→Metal
+// compiler is the youngest in the set and is the one arm no gate here
+// exercises (IOS_1's law).
+//
+// So the six spacings get their own scalar array and the two per-lane
+// sites read that. NOTHING ELSE MOVES: every uniform-index reader keeps
+// TERRAIN_BANDS, because the struct is the right shape for them and the
+// suspect construct is the dynamic index, not the table.
+//
+// BEHAVIOUR-IDENTICAL BY CONSTRUCTION, and asserted rather than trusted:
+// the six const_asserts below hold this array to the struct table it
+// mirrors, so the two cannot drift and a hand-copied digit cannot pass.
+const TERRAIN_BAND_SPACING = array<f32, 6>(200.0, 80.0, 30.0, 12.0, 5.0, 500.0);
+const_assert TERRAIN_BAND_SPACING[0] == TERRAIN_BANDS[0].spacing;
+const_assert TERRAIN_BAND_SPACING[1] == TERRAIN_BANDS[1].spacing;
+const_assert TERRAIN_BAND_SPACING[2] == TERRAIN_BANDS[2].spacing;
+const_assert TERRAIN_BAND_SPACING[3] == TERRAIN_BANDS[3].spacing;
+const_assert TERRAIN_BAND_SPACING[4] == TERRAIN_BANDS[4].spacing;
+const_assert TERRAIN_BAND_SPACING[5] == TERRAIN_BANDS[5].spacing;
+
 // Property indices for deriving wave parameters from a lattice node seed.
 // These occupy their own range (200+) to avoid collisions with entity
 // property indices (0-119) and the Gaussian pair offset (1000+).
@@ -10511,7 +10542,11 @@ fn bake_patch_heightfield(
         - vec2(BAKE_STENCIL_EPS);
 
     if (t < TERRAIN_BAND_COUNT) {
-        bake_origin[t] = vec2<i32>(floor(tile_min / TERRAIN_BANDS[t].spacing));
+        // IOS_3 §4 — the scalar table, not the struct table: `t` is a lane
+        // id, and a const array of STRUCTS indexed per-lane is the one
+        // construct in this kernel that a young WGSL→Metal compiler has to
+        // materialise rather than fold.
+        bake_origin[t] = vec2<i32>(floor(tile_min / TERRAIN_BAND_SPACING[t]));
     }
     workgroupBarrier();
 
@@ -11149,7 +11184,8 @@ fn write_live_card(
     let bands_awake = config.terrain_time > 0.0;
 
     if (bands_awake && t < TERRAIN_BAND_COUNT) {
-        card_origin[t] = vec2<i32>(floor(tile_min / TERRAIN_BANDS[t].spacing));
+        // IOS_3 §4 — the scalar table, for the reason the bake's twin gives.
+        card_origin[t] = vec2<i32>(floor(tile_min / TERRAIN_BAND_SPACING[t]));
     }
     workgroupBarrier();                                   // 1: origins
 
