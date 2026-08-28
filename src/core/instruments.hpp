@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <cstdio>   // WIT_2b — the witness prints its own line
+#include <emscripten.h>   // AUBADE U2 — fold_page_dropped_submits_ reads the page's half
 
 // ═══ THE INSTRUMENTS DIAL ════════════════════════════════════════════
 //
@@ -239,7 +240,38 @@ namespace t7 {
     // distinguished from one that was never armed. One formatting site,
     // here, beside the counter; the window close and the teardown both
     // call it rather than each spelling the line their own way.
+    // ── AUBADE U2 — AND IT FOLDS THE PAGE'S HALF IN BEFORE IT SPEAKS ──
+    //
+    // note_if_dropped_submit (console.hpp) runs inside the uncaptured-
+    // error callback, and that callback is set on the DEVICE DESCRIPTOR —
+    // the only home webgpu_cpp.h gives it. A device the page created and
+    // C++ adopted therefore never routes an error through it, and this
+    // counter would read a confident, permanent ZERO on exactly the boots
+    // the overlap made fast. A witness that reads zero because it was
+    // never wired is the one failure P6 names by name, and SOAK's gate
+    // reads this number.
+    //
+    // So the page keeps the same count, by the same rule (window.T7_GPU's
+    // onuncapturederror handler spells WIT_2's two substring tests), and
+    // the fold happens HERE, at the single formatting site, once per
+    // spoken line — twice a session on the census cadence, never per
+    // frame. Monotonic on both sides, so calling it twice adds nothing
+    // twice; absent page, absent T7_GPU, native-shaped build: zero, and
+    // the line is what it always was.
+    inline void fold_page_dropped_submits_() {
+        static uint32_t folded = 0;
+        const uint32_t total = static_cast<uint32_t>(EM_ASM_INT({
+            return (typeof window !== "undefined" && window.T7_GPU)
+                 ? (window.T7_GPU.dropped | 0) : 0;
+        }));
+        if (total > folded) {
+            g_dropped_submits += (total - folded);
+            folded = total;
+        }
+    }
+
     inline void print_dropped_submits(const char* when) {
+        fold_page_dropped_submits_();
         std::printf("[WIT] dropped_submits %u (%s)\n", g_dropped_submits, when);
     }
 

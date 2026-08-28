@@ -515,6 +515,155 @@
         window.t7err('promise', String(ev.reason));
       });
     })();
+
+    // ══ AUBADE U2 — THE DEVICE IS ASKED FOR AT PARSE TIME ═════════════
+    //
+    // WHAT WAS SERIAL AND DID NOT HAVE TO BE. Until now the page fetched
+    // and compiled a multi-megabyte wasm, ran to main, and only THEN
+    // asked the browser for a GPU adapter and a device. Two waits, end
+    // to end, neither of which needs the other: requestAdapter talks to
+    // the driver, instantiateStreaming talks to the wire and the
+    // compiler. U1's waterfall is what made the seam visible — `device`
+    // sat after `wasm` by construction, and nothing in the program said
+    // it had to.
+    //
+    // So the page asks first, at parse time, and the wasm adopts what it
+    // finds. `Module['preinitializedWebGPUDevice']` is the vendored
+    // emdawnwebgpu port's own hook (library_webgpu.js,
+    // emscripten_webgpu_get_device -> importJsDevice): the device is
+    // imported into the port's object table and ref-counted there, which
+    // is why this is not a second boot path but the same one, entered
+    // with the long wait already paid.
+    //
+    // ── C++ REMAINS THE AUTHORITY ────────────────────────────────────
+    //
+    // This block asks; it does not decide. The descriptor policy it
+    // mirrors — core-default limits, the wallet's optional features and
+    // only those the adapter offers — is stated in C++ (console.hpp,
+    // request_device_web) and emitted from the schema
+    // (features_wallet.gen.inc). If the two ever disagree, the C++ side
+    // runs the SAME granted-vs-floor census on the adopted device, sees
+    // the disagreement, refuses the adoption and asks for its own. The
+    // cost of drift is therefore the overlap, never correctness — and it
+    // is LOUD: the refusal prints its reason.
+    //
+    // ── ONE ROW ──────────────────────────────────────────────────────
+    //
+    // The wallet is one feature (timestamp-query). It is spelled here as
+    // a literal because this code runs before the wasm exists and has
+    // nothing generated to read; the census above is what keeps the
+    // literal honest.
+    //
+    // ── THE TWO CALLBACKS, AND WHY THEY MOVE HERE ────────────────────
+    //
+    // wgpu::DeviceDescriptor is the ONLY home for the uncaptured-error
+    // and device-lost callbacks — webgpu_cpp.h has no Device setter for
+    // either — so a device C++ did not request cannot receive them from
+    // C++. They are installed here instead, on the same device, writing
+    // through the SAME doors (window.t7err) the C++ handlers write
+    // through. The card a photograph carries is identical; only the
+    // parenthetical differs, because JS holds the error CLASS where C++
+    // holds the enum, and a name reads better than a number.
+    //
+    // WIT_2's dropped-submit rule is spelled here for the same reason —
+    // an adopted device's errors never reach note_if_dropped_submit, and
+    // a witness that silently reads zero is worse than one that is
+    // absent. C++ folds this count into its own before [WIT] speaks.
+    //
+    // ── THE TWO SWITCHES IT ANSWERS TO ───────────────────────────────
+    //
+    //   ?adopt=0    — do not pre-create; the C++ path runs exactly as it
+    //                 did before this unit. The bisect, for the device
+    //                 with no console.
+    //   ?failboot=1 — IOS_3 B5's rehearsal of the failure surface lives
+    //                 in the C++ request, so pre-creation stands aside
+    //                 and lets it fire.
+    //
+    // This is a SECOND read of location.search, and the one in
+    // boot_params.hpp is still the C++ side's only one. It has to be:
+    // this code runs before the wasm exists. Both spell the same rule
+    // (only an explicit 0 removes a stage), and a disagreement costs the
+    // overlap and nothing else — C++ ignoring an offer leaves an unused
+    // device; the shell standing aside leaves C++ to ask, which is what
+    // it always did.
+    window.T7_GPU = {
+      state: 'off',   // off | skipped | pending | ready | failed
+      why: '',
+      device: null,
+      offers: '',     // the adapter's feature spellings, comma-joined
+      dropped: 0,     // WIT_2's count on the adopted path
+      lost: false
+    };
+    (function () {
+      var G = window.T7_GPU;
+      var q = null;
+      try { q = new URLSearchParams(location.search); } catch (e) {}
+      var off  = q && q.get('adopt') === '0';
+      var fail = q && q.get('failboot') === '1';
+      if (off || fail) {
+        G.state = 'skipped';
+        G.why = off ? 'adopt=0' : 'failboot=1 wants the C++ request path';
+        return;
+      }
+      if (!navigator.gpu) { G.state = 'failed'; G.why = 'navigator.gpu absent'; return; }
+      G.state = 'pending';
+      navigator.gpu.requestAdapter({ powerPreference: 'high-performance' })
+        .then(function (adapter) {
+          if (!adapter) throw new Error('requestAdapter returned null');
+          var offers = [];
+          adapter.features.forEach(function (f) { offers.push(f); });
+          offers.sort();
+          G.offers = offers.join(',');
+          // The wallet, filtered by what this adapter actually offers —
+          // requestDevice REJECTS an unofferable required feature, and a
+          // rejected request here would cost the whole overlap.
+          var want = [];
+          if (adapter.features.has('timestamp-query')) want.push('timestamp-query');
+          return adapter.requestDevice({
+            label: '7T Device',
+            requiredFeatures: want,
+            requiredLimits: {}      // core defaults; the program carries no exception
+          });
+        })
+        .then(function (device) {
+          // THE MARK MOVES HERE, and that is the unit's whole claim. It
+          // is idempotent and first-call-wins, so the C++ mark at the
+          // census below is a no-op on this path and the real mark on
+          // the fallback one. Neither side has to know which ran.
+          window.T7_AUBADE.mark('device');
+          G.device = device;
+          G.state  = 'ready';
+          // Module may or may not exist yet: this callback is a
+          // microtask and the block that builds Module is a later
+          // script. Seeding it here and merging there (Object.assign)
+          // makes the order irrelevant.
+          window.Module = window.Module || {};
+          window.Module['preinitializedWebGPUDevice'] = device;
+          device.onuncapturederror = function (ev) {
+            var err = ev && ev.error;
+            var m = (err && err.message) ? err.message : String(ev);
+            var kind = (err && err.constructor && err.constructor.name)
+                     ? err.constructor.name : 'GPUError';
+            var validation = (kind === 'GPUValidationError');
+            console.log('WebGPU Error (' + kind + '): ' + m);
+            if (validation
+                && (m.indexOf('CommandBuffer') >= 0 || m.indexOf('command buffer') >= 0)
+                && (m.indexOf('invalid') >= 0 || m.indexOf('Invalid') >= 0)) G.dropped++;
+            if (window.t7err) window.t7err('gpu', '(' + kind + ') ' + m);
+          };
+          device.lost.then(function (info) {
+            G.lost = true;
+            console.log('[Device] LOST reason=' + info.reason + ' : ' + info.message);
+            if (window.t7err) window.t7err('lost', info.reason + ': ' + info.message);
+          });
+        })
+        .catch(function (e) {
+          G.state = 'failed';
+          G.why = (e && e.message) ? e.message : String(e);
+          console.log('[Device] pre-creation failed: ' + G.why
+                      + ' — the C++ path will ask for its own');
+        });
+    })();
   </script>
 
   <!-- FRAME_0 — the canvas's size comes from this container, not from a
@@ -1261,7 +1410,13 @@
     // AUBADE U1 — `wasm` is INSTANTIATION, not arrival. `net` above is the
     // arrival; the gap between them is the compile, and naming both is
     // what makes U6's warm-load claim checkable rather than asserted.
-    window.Module = {
+    //
+    // AUBADE U2 — Object.assign, NOT assignment. The pre-creation block
+    // above may have already seeded Module with the device it created;
+    // replacing the object here would throw that away in exactly the
+    // fast case the unit exists for.
+    window.Module = window.Module || {};
+    Object.assign(window.Module, {
       onRuntimeInitialized: function () { window.T7_AUBADE.mark('wasm'); },
       canvas: document.getElementById('canvas'),
       // The .wasm and the .data are fetched by the glue, not by us, so
@@ -1277,7 +1432,7 @@
       // costs nothing: the lines that matter are matched by text in
       // onLine(), not by which stream carried them.
       printErr: function (t) { console.log(t); onLine(t); }
-    };
+    });
 
     // A wasm that never arrives is the other white page. 404, a broken
     // .data, an out-of-memory instantiation: all of them land here.

@@ -65,6 +65,16 @@ namespace t7 {
         bool sunpass  = true;   // the outdoor sun shadow pass, bundle included
         bool bundles  = true;   // ExecuteBundles; 0 = encode direct
 
+        // AUBADE U2 — the fifth switch, and it removes a STAGE OF THE
+        // BOOT rather than a stage of the frame. 0 = do not adopt the
+        // device the page pre-created; ask for one from C++, exactly as
+        // every build before this unit did. It earns its place on the
+        // four's own ground: the device that most needs bisecting has no
+        // console, and the only question it can answer is "does it boot
+        // with this gone". The page reads the same key itself, because
+        // it must decide before the wasm exists.
+        bool adopt    = true;   // Module['preinitializedWebGPUDevice']
+
         // ?bootinfo=1 shows the identity block on the page itself.
         // ?failboot=1 asks the device for a feature that does not exist,
         // so the failure path can be WITNESSED on a machine that works.
@@ -105,7 +115,7 @@ namespace t7 {
         // on: silence must mean "the piece entire". A stage removed
         // without a line in the log is a diagnosis nobody can reproduce.
         const bool any_switch = !p.bake || !p.card || !p.sunpass || !p.bundles
-                                || p.bootinfo || p.failboot;
+                                || !p.adopt || p.bootinfo || p.failboot;
         if (p.has_seed || p.has_mood || p.has_cap || p.has_msaa || p.has_pace
                 || any_switch) {
             std::cout << "[Params]";
@@ -118,6 +128,7 @@ namespace t7 {
             if (!p.card)    std::cout << " card=0";
             if (!p.sunpass) std::cout << " sunpass=0";
             if (!p.bundles) std::cout << " bundles=0";
+            if (!p.adopt)   std::cout << " adopt=0";
             if (p.bootinfo) std::cout << " bootinfo=1";
             if (p.failboot) std::cout << " failboot=1";
             std::cout << "\n";
@@ -129,7 +140,7 @@ namespace t7 {
     // NaN = absent-or-malformed; integer/range checks land on the C++
     // side so the rule has one spelling per twin.
     inline void parse_boot_params(int, char**) {
-        double vals[11];
+        double vals[12];
         EM_ASM({
             var q = new URLSearchParams(location.search);
             var o = $0 >> 3;
@@ -153,6 +164,7 @@ namespace t7 {
             HEAPF64[o + 8] = num('bundles');
             HEAPF64[o + 9] = num('bootinfo');
             HEAPF64[o + 10] = num('failboot');
+            HEAPF64[o + 11] = num('adopt');   // AUBADE U2
         }, vals);
         BootParams& p = boot_params();
         if (!std::isnan(vals[0]) && vals[0] >= 0.0 && vals[0] <= 4294967295.0
@@ -183,6 +195,7 @@ namespace t7 {
         p.card     = !(vals[6] == 0.0);
         p.sunpass  = !(vals[7] == 0.0);
         p.bundles  = !(vals[8] == 0.0);
+        p.adopt    = !(vals[11] == 0.0);   // AUBADE U2 — the same rule
         p.bootinfo = (vals[9] == 1.0);
         p.failboot = (vals[10] == 1.0);
         boot_params_announce_();

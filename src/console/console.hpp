@@ -546,6 +546,222 @@ namespace t7 {
         // made anyway, because a device whose ceilings are zero fails at
         // pipeline creation later, far from this line and with nothing
         // pointing back here.
+        // ═══ AUBADE U2 — THE CENSUS, LIFTED SO BOTH PATHS ANSWER TO IT ══
+        //
+        // This was the body of the RequestDevice callback's `if
+        // (!passthrough)` branch, moved out WORD FOR WORD and called from
+        // two places instead of one. That is the whole safety argument for
+        // adoption: the page may ASK for a device, but nothing the page
+        // produces is kept until this function has said yes to it, against
+        // the same emitted floor, in the same order, printing the same
+        // line. A second census would be a second opinion about the
+        // treasury, and the program has one.
+        //
+        // Prints ALWAYS — the granted-vs-floor line is on the record
+        // whether or not it disagrees. Returns false if any censused
+        // ceiling came back below its floor; the CALLER decides what that
+        // costs, because the two paths answer it differently (the request
+        // path reissues with passthrough; the adopted path lets go and
+        // asks from C++).
+        bool device_meets_floor_(const wgpu::Device& dev) {
+            const wgpu::Device& device = dev;   // the extracted body's name
+            wgpu::Limits got{};
+            device.GetLimits(&got);
+            // PORT_6a (2) — granted vs the censused floor, always
+            // printed, so the numbers are on the record whether or
+            // not they disagree.
+            //
+            // LANTERN U1 — three rows added, each one a ceiling
+            // this program's design actually stands on, and each
+            // silent until now:
+            //   maxTextureArrayLayers — the patch heightfield
+            //     array is MAX_ACTIVE_PATCHES = 225 layers
+            //     (state.hpp: "fits default maxTextureArrayLayers").
+            //     225 of a 256 default is the tightest ceiling
+            //     the program owns.
+            //   maxUniformBuffersPerShaderStage — the LOOM wallet
+            //     closed with the agents compute row at 11 of 12
+            //     (BINDING_LEDGER Table B). One seat of margin.
+            //   maxBindGroups — the LOOM recut spends all four
+            //     strata at every pipeline. 4 of 4 is not margin,
+            //     it is the design.
+            // The DISCARD net below still reads the original
+            // three: adding a floor to the discard decision is a
+            // behavior change, not an instrument, and this
+            // campaign prints only.
+            //
+            //   maxDynamicUniformBuffersPerPipelineLayout —
+            //     ONE dynamic seat in the program: shadow_slot on
+            //     frame R. 1 of the 8 default. (LATTICE_1 retired
+            //     the second — patch_params left the dynamic seat
+            //     for a read-only storage array when the bake
+            //     became one batched dispatch.)
+            //   maxComputeWorkgroupStorageSize — the CARD writer's
+            //     node table + origins + its 20x20 tile, 4,912 B of
+            //     the 16,384 default, and the program's largest
+            //     per-entry-point sum since LATTICE_4 fused the
+            //     card. The module states the number itself
+            //     (CARD_WORKGROUP_BYTES) and carries two
+            //     const_asserts: under the default, and at or above
+            //     the bake's BAKE_WORKGROUP_BYTES (3,744) so this
+            //     row always quotes the larger. This print is the
+            //     runtime half.
+            // The floors read the NEEDS table's emitted
+            // constants; no literal lives in the C++.
+            // AUBADE U1 — the device is in hand. Marked HERE and
+            // not at the request, because the wait this campaign
+            // is partitioning is the GRANT, not the asking.
+            t7::aubade_mark("device");
+            std::cout << "[Device] granted vs floor:"
+                << " maxTextureDimension2D=" << got.maxTextureDimension2D
+                << "/" << FLOOR_MAX_TEXTURE_DIMENSION_2D
+                << " maxTextureArrayLayers=" << got.maxTextureArrayLayers
+                << "/" << FLOOR_MAX_TEXTURE_ARRAY_LAYERS
+                << " maxStorageBuffersPerShaderStage="
+                << got.maxStorageBuffersPerShaderStage
+                << "/" << FLOOR_MAX_STORAGE_BUFFERS_PER_SHADER_STAGE
+                << " maxUniformBuffersPerShaderStage="
+                << got.maxUniformBuffersPerShaderStage
+                << "/" << FLOOR_MAX_UNIFORM_BUFFERS_PER_SHADER_STAGE
+                << " maxUniformBufferBindingSize="
+                << got.maxUniformBufferBindingSize
+                << "/" << FLOOR_MAX_UNIFORM_BUFFER_BINDING_SIZE
+                << " maxBindGroups=" << got.maxBindGroups
+                << "/" << FLOOR_MAX_BIND_GROUPS
+                << " maxDynamicUniformBuffersPerPipelineLayout="
+                << got.maxDynamicUniformBuffersPerPipelineLayout
+                << "/" << FLOOR_MAX_DYNAMIC_UNIFORM_BUFFERS_PER_PIPELINE_LAYOUT
+                << " maxComputeWorkgroupStorageSize="
+                << got.maxComputeWorkgroupStorageSize
+                << "/" << FLOOR_MAX_COMPUTE_WORKGROUP_STORAGE_SIZE
+                << " (floor)\n";
+            bool below = false;
+            if (got.maxTextureDimension2D < FLOOR_MAX_TEXTURE_DIMENSION_2D) {
+                std::cerr << "[Device] BELOW FLOOR: maxTextureDimension2D granted "
+                    << got.maxTextureDimension2D << ", floor "
+                    << FLOOR_MAX_TEXTURE_DIMENSION_2D << "\n";
+                below = true;
+            }
+            if (got.maxStorageBuffersPerShaderStage < FLOOR_MAX_STORAGE_BUFFERS_PER_SHADER_STAGE) {
+                std::cerr << "[Device] BELOW FLOOR: maxStorageBuffersPerShaderStage"
+                             " granted " << got.maxStorageBuffersPerShaderStage
+                    << ", floor " << FLOOR_MAX_STORAGE_BUFFERS_PER_SHADER_STAGE << "\n";
+                below = true;
+            }
+            if (got.maxUniformBufferBindingSize < FLOOR_MAX_UNIFORM_BUFFER_BINDING_SIZE) {
+                std::cerr << "[Device] BELOW FLOOR: maxUniformBufferBindingSize"
+                             " granted " << got.maxUniformBufferBindingSize
+                    << ", floor " << FLOOR_MAX_UNIFORM_BUFFER_BINDING_SIZE << "\n";
+                below = true;
+            }
+            return !below;
+        }
+
+
+        // ═══ AUBADE U2 — THE LINES EVERY ACCEPTED DEVICE PRINTS ═════════
+        //
+        // Also lifted verbatim, for the same reason: a device the page
+        // granted must be described by the same block that describes a
+        // device C++ granted, or the two boots are not comparable and the
+        // whole overlap is unreadable.
+        //
+        // ONE THING IS PARAMETERISED, and it is the one thing that
+        // genuinely differs. The adapter's OFFER — what silicon was
+        // willing to give — is testimony only the holder of the adapter
+        // handle can give, and on the adopted path C++ never holds one:
+        // the adapter ceases to exist in this realm the moment adoption
+        // succeeds. So each path composes that one sentence with what it
+        // has (the request path: ids and names from the adapter; the
+        // adopted path: the names the page stashed) and hands it in.
+        // Everything else here reads device_, which both paths own.
+        // ═══ LANTERN U1 — THE GRANTS CENSUS, web half ════════════════
+        //
+        // The optional-feature treasury (L20), printed at last. The web
+        // console named no feature at all, yet the meter produced GPU
+        // timings — so timestamp-query was granted and unreported, and
+        // its ONLY evidence was the ABSENCE of the cartridge's "[METER]
+        // timestamp-query unavailable" line. A grant witnessed by
+        // silence is P6's exact complaint: a switch that cannot be seen
+        // to have fired is indistinguishable from one that never fired.
+        //
+        // TWO FACTS, one line. What the adapter OFFERS bounds which
+        // optional wings can ever open (L20 governs the request, this
+        // governs the possibility) — and it is the half that arrives as
+        // an argument, because only the path that held an adapter can
+        // testify to it. What the DEVICE carries is what this boot
+        // actually got, read here from device_ on both paths; the
+        // program requests exactly one optional feature, so the named
+        // half is complete, not a sample.
+        //
+        // DOMESDAY_1 A8 (R6): ids AND spellings — the pair is the
+        // census. On the request path the names come from the enumerator
+        // switch (feature_name, top of this file), never from numeric
+        // values. On the adopted path there are no ids to pair: page JS
+        // holds feature SPELLINGS and the port's numbering is internal
+        // to the port. The line says so rather than inventing them.
+        void report_device_(const std::string& offerIds,
+                            const std::string& offerNames,
+                            const char* which) {
+            std::cout << "[Device] features: adapter offers " << offerIds
+                << "; granted timestamp-query="
+                << (device_.HasFeature(wgpu::FeatureName::TimestampQuery)
+                        ? "YES" : "no")
+                << " (the only optional feature this program requests)\n";
+            // PROBATE_F — THE WALLET LINE. The line above says
+            // what this boot GOT; this one says what the
+            // program's treasury ASKS FOR and what it has
+            // deliberately left unspent. Both halves come from
+            // the schema's FEATURES table, so the testimony
+            // cannot drift from the request beside it.
+            std::cout << "[Device] feature wallet: granted ";
+            for (uint32_t i = 0; i < FEATURE_WALLET_GRANTED_COUNT; i++) {
+                std::cout << (i ? " " : "")
+                    << FEATURE_WALLET_GRANTED_NAMES[i]
+                    << (device_.HasFeature(FEATURE_WALLET_GRANTED[i])
+                            ? "" : "(WITHHELD by adapter)");
+            }
+            std::cout << "; vaulted " << FEATURE_WALLET_VAULTED_COUNT
+                << " (schema FEATURES)\n";
+            std::cout << "[Device] features named: " << offerNames << "\n";
+            // ═══ LANTERN U3 C1 — THE PIXEL CAP, NAMED ════════════
+            //
+            // The largest lever over the frame's biggest GPU row,
+            // and the device block did not mention it. Every purse
+            // number this program has printed was measured UNDER
+            // this cap, so a device-fact block that hides it
+            // overstates the treasury.
+            //
+            // THREE FACTS, because none of them is useful alone:
+            // the cap in force, the ratio the device reports, and
+            // that the cap is a COMPILE-TIME CONSTANT. A reader
+            // seeing a cap below the device's ratio must know
+            // whether that is a setting to change or a rebuild to
+            // schedule — it is a rebuild (console.hpp ·
+            // MAX_DEVICE_PIXEL_RATIO, consumed by
+            // Console::apply_pixel_cap()).
+            //
+            // emscripten_get_device_pixel_ratio() reads
+            // window.devicePixelRatio straight from the browser, so
+            // it answers here regardless of canvas layout state —
+            // no work is moved to reach it, and the line does not
+            // wait for the first frame. The GLFW framebuffer/window
+            // ratio would ALSO answer, but only after the library
+            // has sized the canvas from #frame (FRAME_0), which has
+            // not happened at device adoption.
+            //
+            // PRINT ONLY. This line does not steer the cap, change
+            // its value, or touch apply_pixel_cap().
+            std::cout << "[Device] pixel cap: " << effective_pixel_cap()
+                << (boot_params().has_cap
+                        ? " (boot param — this run only)"
+                        : " (compile-time constant, not a setting)")
+                << "; device dpr "
+                << emscripten_get_device_pixel_ratio() << "\n";
+            // PORT_6a (5) — the device the program actually keeps.
+            std::cout << "[Device] KEEPING the device from: " << which
+                << " (this is the one the frame loop runs on)\n";
+        }
+
         void request_device_web(bool passthrough) {
             wgpu::DeviceDescriptor deviceDesc{};
             deviceDesc.label = "7T Device";
@@ -687,100 +903,17 @@ namespace t7 {
                     }
                     // Net (2) — verify before adopting, while `device` is
                     // still the local (it is moved from just below).
+                    //
+                    // AUBADE U2 — the census that used to live here now
+                    // lives in device_meets_floor_, so the device the
+                    // PAGE creates answers to the identical one. The
+                    // verdict is the same; only the two paths' answers to
+                    // a NO differ, and each says its own.
                     if (!passthrough) {
-                        wgpu::Limits got{};
-                        device.GetLimits(&got);
-                        // PORT_6a (2) — granted vs the censused floor, always
-                        // printed, so the numbers are on the record whether or
-                        // not they disagree.
-                        //
-                        // LANTERN U1 — three rows added, each one a ceiling
-                        // this program's design actually stands on, and each
-                        // silent until now:
-                        //   maxTextureArrayLayers — the patch heightfield
-                        //     array is MAX_ACTIVE_PATCHES = 225 layers
-                        //     (state.hpp: "fits default maxTextureArrayLayers").
-                        //     225 of a 256 default is the tightest ceiling
-                        //     the program owns.
-                        //   maxUniformBuffersPerShaderStage — the LOOM wallet
-                        //     closed with the agents compute row at 11 of 12
-                        //     (BINDING_LEDGER Table B). One seat of margin.
-                        //   maxBindGroups — the LOOM recut spends all four
-                        //     strata at every pipeline. 4 of 4 is not margin,
-                        //     it is the design.
-                        // The DISCARD net below still reads the original
-                        // three: adding a floor to the discard decision is a
-                        // behavior change, not an instrument, and this
-                        // campaign prints only.
-                        //
-                        //   maxDynamicUniformBuffersPerPipelineLayout —
-                        //     ONE dynamic seat in the program: shadow_slot on
-                        //     frame R. 1 of the 8 default. (LATTICE_1 retired
-                        //     the second — patch_params left the dynamic seat
-                        //     for a read-only storage array when the bake
-                        //     became one batched dispatch.)
-                        //   maxComputeWorkgroupStorageSize — the CARD writer's
-                        //     node table + origins + its 20x20 tile, 4,912 B of
-                        //     the 16,384 default, and the program's largest
-                        //     per-entry-point sum since LATTICE_4 fused the
-                        //     card. The module states the number itself
-                        //     (CARD_WORKGROUP_BYTES) and carries two
-                        //     const_asserts: under the default, and at or above
-                        //     the bake's BAKE_WORKGROUP_BYTES (3,744) so this
-                        //     row always quotes the larger. This print is the
-                        //     runtime half.
-                        // The floors read the NEEDS table's emitted
-                        // constants; no literal lives in the C++.
-                        // AUBADE U1 — the device is in hand. Marked HERE and
-                        // not at the request, because the wait this campaign
-                        // is partitioning is the GRANT, not the asking.
-                        t7::aubade_mark("device");
-                        std::cout << "[Device] granted vs floor:"
-                            << " maxTextureDimension2D=" << got.maxTextureDimension2D
-                            << "/" << FLOOR_MAX_TEXTURE_DIMENSION_2D
-                            << " maxTextureArrayLayers=" << got.maxTextureArrayLayers
-                            << "/" << FLOOR_MAX_TEXTURE_ARRAY_LAYERS
-                            << " maxStorageBuffersPerShaderStage="
-                            << got.maxStorageBuffersPerShaderStage
-                            << "/" << FLOOR_MAX_STORAGE_BUFFERS_PER_SHADER_STAGE
-                            << " maxUniformBuffersPerShaderStage="
-                            << got.maxUniformBuffersPerShaderStage
-                            << "/" << FLOOR_MAX_UNIFORM_BUFFERS_PER_SHADER_STAGE
-                            << " maxUniformBufferBindingSize="
-                            << got.maxUniformBufferBindingSize
-                            << "/" << FLOOR_MAX_UNIFORM_BUFFER_BINDING_SIZE
-                            << " maxBindGroups=" << got.maxBindGroups
-                            << "/" << FLOOR_MAX_BIND_GROUPS
-                            << " maxDynamicUniformBuffersPerPipelineLayout="
-                            << got.maxDynamicUniformBuffersPerPipelineLayout
-                            << "/" << FLOOR_MAX_DYNAMIC_UNIFORM_BUFFERS_PER_PIPELINE_LAYOUT
-                            << " maxComputeWorkgroupStorageSize="
-                            << got.maxComputeWorkgroupStorageSize
-                            << "/" << FLOOR_MAX_COMPUTE_WORKGROUP_STORAGE_SIZE
-                            << " (floor)\n";
-                        bool below = false;
-                        if (got.maxTextureDimension2D < FLOOR_MAX_TEXTURE_DIMENSION_2D) {
-                            std::cerr << "[Device] BELOW FLOOR: maxTextureDimension2D granted "
-                                << got.maxTextureDimension2D << ", floor "
-                                << FLOOR_MAX_TEXTURE_DIMENSION_2D << "\n";
-                            below = true;
-                        }
-                        if (got.maxStorageBuffersPerShaderStage < FLOOR_MAX_STORAGE_BUFFERS_PER_SHADER_STAGE) {
-                            std::cerr << "[Device] BELOW FLOOR: maxStorageBuffersPerShaderStage"
-                                         " granted " << got.maxStorageBuffersPerShaderStage
-                                << ", floor " << FLOOR_MAX_STORAGE_BUFFERS_PER_SHADER_STAGE << "\n";
-                            below = true;
-                        }
-                        if (got.maxUniformBufferBindingSize < FLOOR_MAX_UNIFORM_BUFFER_BINDING_SIZE) {
-                            std::cerr << "[Device] BELOW FLOOR: maxUniformBufferBindingSize"
-                                         " granted " << got.maxUniformBufferBindingSize
-                                << ", floor " << FLOOR_MAX_UNIFORM_BUFFER_BINDING_SIZE << "\n";
-                            below = true;
-                        }
-                        // PORT_6a (3) — the discard decision, BOTH ways. The
-                        // no-discard line is the informative one: it is what
-                        // says a [Device] LOST later did not come from here.
-                        if (below) {
+                        if (!device_meets_floor_(device)) {
+                            // PORT_6a (3) — the discard decision, BOTH ways. The
+                            // no-discard line is the informative one: it is what
+                            // says a [Device] LOST later did not come from here.
                             std::cerr << "[Device] DISCARDING the modest device — its `lost`"
                                          " promise will resolve as a CONSEQUENCE of this"
                                          " discard, not as a failure\n";
@@ -794,108 +927,227 @@ namespace t7 {
                     }
                     device_ = std::move(device);
                     queue_ = device_.GetQueue();
-                    // ═══ LANTERN U1 — THE GRANTS CENSUS, web half ════════
-                    //
-                    // The optional-feature treasury (L20), printed at last.
-                    // The web console named no feature at all, yet the meter
-                    // produced GPU timings — so timestamp-query was granted
-                    // and unreported, and its ONLY evidence was the ABSENCE
-                    // of the cartridge's "[METER] timestamp-query
-                    // unavailable" line. A grant witnessed by silence is P6's
-                    // exact complaint: a switch that cannot be seen to have
-                    // fired is indistinguishable from one that never fired.
-                    //
-                    // TWO FACTS, one line. What the adapter OFFERS bounds
-                    // which optional wings can ever open (L20 governs the
-                    // request, this governs the possibility). What the DEVICE
-                    // carries is what this boot actually got — and this
-                    // program requests exactly one optional feature, so the
-                    // named half is complete, not a sample.
-                    //
-                    // DOMESDAY_1 A8 (R6): ids AND spellings — the pair is
-                    // the census. The names come from the enumerator
-                    // switch (feature_name, top of this file), never from
-                    // numeric values; an id the switch does not know
-                    // prints as its number.
-                    //
-                    // Prints on BOTH request paths — the fallback passthrough
-                    // is the path where the numbers matter most.
+                    // The adapter's offer, composed by the path that holds
+                    // the handle — ids and spellings both, per DOMESDAY_1
+                    // A8 (R6). Prints on BOTH request paths: the fallback
+                    // passthrough is the path where the numbers matter most.
                     {
                         wgpu::SupportedFeatures feats{};
                         adapter_.GetFeatures(&feats);
-                        std::cout << "[Device] features: adapter offers "
-                            << feats.featureCount << " (";
+                        std::string ids = std::to_string(feats.featureCount) + " (";
+                        std::string names;
                         for (size_t i = 0; i < feats.featureCount; i++) {
-                            std::cout << (i ? " " : "")
-                                << static_cast<uint32_t>(feats.features[i]);
-                        }
-                        std::cout << "); granted timestamp-query="
-                            << (device_.HasFeature(wgpu::FeatureName::TimestampQuery)
-                                    ? "YES" : "no")
-                            << " (the only optional feature this program requests)\n";
-                        // PROBATE_F — THE WALLET LINE. The line above says
-                        // what this boot GOT; this one says what the
-                        // program's treasury ASKS FOR and what it has
-                        // deliberately left unspent. Both halves come from
-                        // the schema's FEATURES table, so the testimony
-                        // cannot drift from the request beside it.
-                        std::cout << "[Device] feature wallet: granted ";
-                        for (uint32_t i = 0; i < FEATURE_WALLET_GRANTED_COUNT; i++) {
-                            std::cout << (i ? " " : "")
-                                << FEATURE_WALLET_GRANTED_NAMES[i]
-                                << (device_.HasFeature(FEATURE_WALLET_GRANTED[i])
-                                        ? "" : "(WITHHELD by adapter)");
-                        }
-                        std::cout << "; vaulted " << FEATURE_WALLET_VAULTED_COUNT
-                            << " (schema FEATURES)\n";
-                        std::cout << "[Device] features named: ";
-                        for (size_t i = 0; i < feats.featureCount; i++) {
+                            if (i) { ids += " "; names += " "; }
+                            ids += std::to_string(
+                                static_cast<uint32_t>(feats.features[i]));
                             const char* nm = feature_name(feats.features[i]);
-                            if (i) std::cout << " ";
-                            if (nm) std::cout << nm;
-                            else std::cout << static_cast<uint32_t>(feats.features[i]);
+                            names += nm ? std::string(nm)
+                                        : std::to_string(
+                                              static_cast<uint32_t>(feats.features[i]));
                         }
-                        std::cout << "\n";
+                        ids += ")";
+                        report_device_(ids, names, which);
                     }
-                    // ═══ LANTERN U3 C1 — THE PIXEL CAP, NAMED ════════════
-                    //
-                    // The largest lever over the frame's biggest GPU row,
-                    // and the device block did not mention it. Every purse
-                    // number this program has printed was measured UNDER
-                    // this cap, so a device-fact block that hides it
-                    // overstates the treasury.
-                    //
-                    // THREE FACTS, because none of them is useful alone:
-                    // the cap in force, the ratio the device reports, and
-                    // that the cap is a COMPILE-TIME CONSTANT. A reader
-                    // seeing a cap below the device's ratio must know
-                    // whether that is a setting to change or a rebuild to
-                    // schedule — it is a rebuild (console.hpp ·
-                    // MAX_DEVICE_PIXEL_RATIO, consumed by
-                    // Console::apply_pixel_cap()).
-                    //
-                    // emscripten_get_device_pixel_ratio() reads
-                    // window.devicePixelRatio straight from the browser, so
-                    // it answers here regardless of canvas layout state —
-                    // no work is moved to reach it, and the line does not
-                    // wait for the first frame. The GLFW framebuffer/window
-                    // ratio would ALSO answer, but only after the library
-                    // has sized the canvas from #frame (FRAME_0), which has
-                    // not happened at device adoption.
-                    //
-                    // PRINT ONLY. This line does not steer the cap, change
-                    // its value, or touch apply_pixel_cap().
-                    std::cout << "[Device] pixel cap: " << effective_pixel_cap()
-                        << (boot_params().has_cap
-                                ? " (boot param — this run only)"
-                                : " (compile-time constant, not a setting)")
-                        << "; device dpr "
-                        << emscripten_get_device_pixel_ratio() << "\n";
-                    // PORT_6a (5) — the device the program actually keeps.
-                    std::cout << "[Device] KEEPING the device from: " << which
-                        << " (this is the one the frame loop runs on)\n";
                     bootState_ = BootState::Configuring;
                 });
+        }
+
+        // ── SHIP_0 U2's identity line, lifted (AUBADE U2) ────────────
+        //
+        // Empty fields print "?" rather than nothing: some builds redact
+        // these strings, and a blank field is indistinguishable from a
+        // line that never ran. A capture reading all "?" is the RESOLVE
+        // case — report it, do not plumb a fallback.
+        //
+        // Called with the info the adapter gave on the request path, and
+        // with the info the DEVICE gives on the adopted one
+        // (wgpuDeviceGetAdapterInfo, which the vendored port implements
+        // — library_webgpu.js reads device.adapterInfo). Same struct,
+        // same line, one home.
+        void announce_adapter_(const wgpu::AdapterInfo& info) {
+            auto sv = [](wgpu::StringView s) {
+                return (s.data && s.length)
+                    ? std::string_view(s.data, s.length)
+                    : std::string_view("?");
+            };
+            card_fact("adapter " + std::string(sv(info.vendor))
+                      + " | " + std::string(sv(info.architecture)));
+            std::cout << "[Device] adapter: " << sv(info.vendor)
+                      << " | " << sv(info.architecture)
+                      << " | " << sv(info.device)
+                      << " | " << sv(info.description) << "\n";
+        }
+
+        // ═══ AUBADE U2 — ADOPT THE DEVICE THE PAGE ALREADY ASKED FOR ═════
+        //
+        // WHAT THIS BUYS. Until this unit the boot was two waits in a row
+        // that never needed to be: fetch-and-compile a multi-megabyte
+        // wasm, run to main, THEN ask the browser for an adapter and a
+        // device. U1's waterfall is what made the seam legible — `device`
+        // sat after `wasm` by construction. web/index.html now asks at
+        // parse time, in parallel with the fetch, and this function keeps
+        // what it finds. The `device` mark moves with it (the page takes
+        // it; the mark below is idempotent and no-ops), which is the
+        // measurement the unit is judged on.
+        //
+        // WHY THIS IS NOT A SECOND BOOT PATH. The device is IMPORTED into
+        // the vendored port's own object table
+        // (emscripten_webgpu_get_device -> WebGPU.importJsDevice) and
+        // ref-counted there. From the first line after this function it
+        // is an ordinary wgpu::Device and nothing downstream can tell.
+        //
+        // THE DEVICE IS THE ONLY HANDLE THAT CROSSES. Adoption is
+        // device-only: the adapter ceases to exist in this realm when
+        // adoption succeeds, and no second port-undefined adoption is
+        // attempted for it. Everything the boot used to read from the
+        // adapter is read from the device side or not at all —
+        //   identity ....... device_.GetAdapterInfo (the port implements it)
+        //   granted limits . device_.GetLimits, the same census
+        //   granted feature  device_.HasFeature, the same wallet line
+        //   the OFFER ...... the page's list, because only the holder of
+        //                    an adapter can testify to what silicon was
+        //                    willing to give, and C++ never holds one here
+        // and initSurface's GetCapabilities takes an adapter it does not
+        // read (webgpu.cpp: both parameters unnamed; the answer is
+        // navigator.gpu.getPreferredCanvasFormat), so a null adapter_ is
+        // legal there and stays legal.
+        //
+        // ── C++ REMAINS THE AUTHORITY, AND THIS IS WHERE ─────────────
+        //
+        // Two refusals, and either one costs the overlap and nothing
+        // else — the C++ request runs exactly as it did before this unit:
+        //
+        //   THE FLOOR. device_meets_floor_, the same function the request
+        //   path calls, printing the same line against the same emitted
+        //   floor.
+        //
+        //   THE WALLET. For every granted row the page says the adapter
+        //   OFFERED, the device must actually carry it. This is what
+        //   makes the literal wallet in web/index.html safe: if the page
+        //   ever asks for less than features_wallet.gen.inc grants, the
+        //   drift lands HERE, as a refusal with a name in it, and never
+        //   as a silently feature-poor device that fails at some pipeline
+        //   later with nothing pointing back.
+        //
+        // ── AND TWO SWITCHES STAND IT DOWN ───────────────────────────
+        //
+        //   ?adopt=0    the bisect: boot exactly as every build before
+        //               this unit did. For the device with no console.
+        //   ?failboot=1 IOS_3 B5's rehearsal lives in the C++ REQUEST, so
+        //               a pre-created device would defeat it. The page
+        //               reads this key too and stands aside on its own;
+        //               this check is the C++ half of the same decision,
+        //               and it holds even if the page's does not.
+        //
+        // Returns true only when device_ and queue_ are live and the boot
+        // may proceed to Configuring.
+        bool adopt_page_device_() {
+            if (!boot_params().adopt) {
+                std::cout << "[Device] adopt=0 — not taking the page's device;"
+                             " requesting one from C++\n";
+                return false;
+            }
+            if (boot_params().failboot) {
+                std::cout << "[Device] failboot=1 — the failure path lives in the"
+                             " C++ request; not adopting\n";
+                return false;
+            }
+            // One EM_ASM, bytes into stack buffers through HEAPU8 —
+            // boot_params.hpp's pattern, and deliberately NOT
+            // stringToNewUTF8/EM_ASM_PTR: those need a runtime helper to
+            // be present in the shipped glue, and F5F is this program's
+            // standing lesson about betting on an API the payload may not
+            // carry. DOUBLE QUOTES in the body: the preprocessor lexes it
+            // as pp-tokens first and '' is an empty character constant.
+            char state[24] = {};
+            char offers[512] = {};
+            EM_ASM({
+                function put(p, cap, s) {
+                    var n = Math.min(s.length, cap - 1);
+                    for (var i = 0; i < n; i++) HEAPU8[p + i] = s.charCodeAt(i) & 0x7f;
+                    HEAPU8[p + n] = 0;
+                }
+                var G = (typeof window !== "undefined") ? window.T7_GPU : null;
+                put($0, $1, G ? String(G.state) : "absent");
+                put($2, $3, G ? String(G.offers) : "");
+            }, state, static_cast<int>(sizeof(state)),
+               offers, static_cast<int>(sizeof(offers)));
+            state[sizeof(state) - 1] = '\0';
+            offers[sizeof(offers) - 1] = '\0';
+
+            const std::string st(state);
+            if (st != "ready") {
+                // NOT A FAILURE. `pending` is the honest common case on a
+                // fast wire — the wasm won the race — and `failed` has
+                // already printed its own reason from the page.
+                std::cout << "[Device] the page has no device to hand over (state="
+                          << st << ") — requesting one from C++\n";
+                return false;
+            }
+
+            wgpu::Device dev = wgpu::Device::Acquire(emscripten_webgpu_get_device());
+            if (!dev) {
+                std::cerr << "[Device] the page said ready but the import produced"
+                             " nothing — requesting one from C++\n";
+                return false;
+            }
+            std::cout << "[Device] ADOPTING the device the page created at parse time"
+                         " (core defaults + the wallet, asked before the wasm arrived)\n";
+
+            // THE SAME CENSUS, and it runs BEFORE anything is kept.
+            if (!device_meets_floor_(dev)) {
+                std::cerr << "[Device] the page's device is BELOW FLOOR — letting it go"
+                             " and requesting one from C++\n";
+                return false;   // dev's destructor releases the import
+            }
+
+            // THE WALLET HALF. `offers` is the page's comma-joined list of
+            // the adapter's feature spellings; the commas on both ends make
+            // the membership test exact rather than a prefix match.
+            const std::string haystack = "," + std::string(offers) + ",";
+            std::string missing;
+            for (uint32_t i = 0; i < FEATURE_WALLET_GRANTED_COUNT; i++) {
+                const std::string needle =
+                    "," + std::string(FEATURE_WALLET_GRANTED_NAMES[i]) + ",";
+                const bool offered = haystack.find(needle) != std::string::npos;
+                if (offered && !dev.HasFeature(FEATURE_WALLET_GRANTED[i])) {
+                    if (!missing.empty()) missing += " ";
+                    missing += FEATURE_WALLET_GRANTED_NAMES[i];
+                }
+            }
+            if (!missing.empty()) {
+                std::cerr << "[Device] the page's device is missing wallet features the"
+                             " adapter offered (" << missing << ") — letting it go and"
+                             " requesting one from C++\n";
+                return false;
+            }
+
+            device_ = std::move(dev);
+            queue_ = device_.GetQueue();
+            {
+                wgpu::AdapterInfo info{};
+                if (device_.GetAdapterInfo(&info) == wgpu::Status::Success) {
+                    announce_adapter_(info);
+                } else {
+                    std::cout << "[Device] adapter: (the device declined to name its"
+                                 " adapter)\n";
+                }
+            }
+            // The offer, as the page saw it. The COUNT is the half that
+            // matters and it survives; the ids do not exist to be
+            // reported, and the line says why rather than leaving a
+            // reader to wonder whether it ran.
+            const std::string offerList(offers);
+            uint32_t offerCount = offerList.empty() ? 0u : 1u;
+            for (char c : offerList) if (c == ',') offerCount++;
+            report_device_(
+                std::to_string(offerCount)
+                    + " (no ids — the adapter handle does not cross the port"
+                      " boundary; these are the page's spellings)",
+                offerList.empty() ? std::string("-") : offerList,
+                "the page, pre-created at parse time");
+            bootState_ = BootState::Configuring;
+            return true;
         }
 
         bool initWebGPU() {
@@ -917,6 +1169,11 @@ namespace t7 {
             // adds a second one that outlives every object in the
             // program. Both are external references by Dawn's counting.
             g_instanceAnchor = instance_;
+            // AUBADE U2 — the page may already have done the waiting.
+            // Adoption sets device_, queue_ and bootState_ itself and
+            // returns true; every refusal falls through to the request
+            // chain below with its reason already printed.
+            if (adopt_page_device_()) return true;
             bootState_ = BootState::RequestingAdapter;
             // SHIP_0 U2 — ASK FOR THE REAL GPU. Harmless on single-GPU
             // phones (the only adapter is the only answer); correct for a
@@ -952,17 +1209,7 @@ namespace t7 {
                     {
                         wgpu::AdapterInfo info{};
                         adapter_.GetInfo(&info);
-                        auto sv = [](wgpu::StringView s) {
-                            return (s.data && s.length)
-                                ? std::string_view(s.data, s.length)
-                                : std::string_view("?");
-                        };
-                        card_fact("adapter " + std::string(sv(info.vendor))
-                                  + " | " + std::string(sv(info.architecture)));
-                        std::cout << "[Device] adapter: " << sv(info.vendor)
-                                  << " | " << sv(info.architecture)
-                                  << " | " << sv(info.device)
-                                  << " | " << sv(info.description) << "\n";
+                        announce_adapter_(info);
                     }
                     bootState_ = BootState::RequestingDevice;
                     // PORT_5d — ask modestly first; the helper owns the
@@ -984,6 +1231,17 @@ namespace t7 {
 
             surface_ = instance_.CreateSurface(&surfaceDesc);
 
+            // AUBADE U2 — adapter_ IS NULL ON THE ADOPTED PATH, AND THAT
+            // IS FINE HERE. This is the program's last surviving read of
+            // the member, and the port does not read it: webgpu.cpp's
+            // wgpuSurfaceGetCapabilities takes both the surface and the
+            // adapter as UNNAMED parameters and answers from
+            // navigator.gpu.getPreferredCanvasFormat(). A null wgpu::Adapter
+            // passes nullptr, which the implementation ignores exactly as
+            // it ignores a live one. If a future port ever reads it, this
+            // line is where that lands — and the fix is not to resurrect a
+            // second adoption path for the adapter but to take the format
+            // from the page, which already knows it.
             wgpu::SurfaceCapabilities caps;
             surface_.GetCapabilities(adapter_, &caps);
 
