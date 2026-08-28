@@ -1,4 +1,5 @@
 #pragma once
+#include "core/boot_params.hpp"   // IOS_3 C — the four switches
 #include "cartridges/the_board/realization/state.hpp"   // wgpu, GPUSpotLight (the light-VP helper's parameter)
 #include "cartridges/the_board/contracts/wgpu_fwd.hpp"   // wgpu handle fwds (lockstep insurance)
 #include <algorithm>   // std::max, std::min   // (impl, merged)
@@ -252,7 +253,11 @@ inline void dispatch_compute(MachineCtx* c, wgpu::CommandEncoder& encoder,
 
     // THE CARD FIRST — before every consumer, on its own group 2/3 pair
     // (ZONES), which the ribbon's binds below replace.
-    if (write_live_card) {
+    // IOS_3 C — ?card=0 rides the same `if` the rest law already owns. A
+    // PURE SKIP for the same reason the bake's is: the live card texture is
+    // zero-initialised, and zero IS its cleared value — the consumers read
+    // no delta and the zones simply do not lift.
+    if (write_live_card && t7::boot_params().card) {
         c->renderer_.dispatch_live_card_write(
             compute, c->gpuState_.zones_state_group(), c->gpuState_.zones_textures_group()
         );
@@ -460,7 +465,30 @@ inline void render_shadow_pass(MachineCtx* c, wgpu::CommandEncoder& encoder,
         // binds included — ExecuteBundles resets pass state, so the bundle
         // carries its own. The direct arm below is not a fallback that can
         // drift: it calls the SAME draw_shadow_all the recorder called.
-        if (c->renderer_.shadow_sun_bundle_ready()) {
+        // IOS_3 C — ?sunpass=0 SKIPS THE DRAWS, NOT THE PASS, and this is
+        // the one switch that could not be a pure pass-skip. FLAGGED.
+        //
+        // Removing the whole pass would leave the shadow map unwritten —
+        // and it is `depthLoadOp = Clear` at depthClearValue 1.0 that
+        // clears it. An unwritten map reads its zero-init 0.0, which the
+        // PCF compare reads as "everything occluded": a world ENTIRELY in
+        // shadow, which is nearly black and therefore AMBIGUOUS WITH THE
+        // SYMPTOM WE ARE CHASING. A diagnostic that can be mistaken for
+        // the disease is worse than none.
+        //
+        // So the pass still opens and still clears to 1.0 — nothing
+        // occludes — and only the draw list is skipped. The picture is
+        // exactly "the world with no sun shadows", which is what the
+        // ladder's row expects to see.
+        //
+        // ?bundles=0 sits beside it: the direct arm below is not a
+        // fallback that can drift — it calls the SAME draw_shadow_all the
+        // recorder called (BUNDLE_1 R3).
+        const bool sun_draws = t7::boot_params().sunpass;
+        if (!sun_draws) {
+            // the cleared depth is the whole content of the pass
+        } else if (c->renderer_.shadow_sun_bundle_ready()
+                   && t7::boot_params().bundles) {
             wgpu::RenderBundle b = c->renderer_.shadow_sun_bundle();
             pass.ExecuteBundles(1, &b);
         } else {
@@ -796,7 +824,12 @@ inline void render_main_pass(MachineCtx* c, wgpu::CommandEncoder& encoder,
     // — ExecuteBundles resets pass state, so the bundle carries its own and
     // the fade below rebinds for itself. The direct arm cannot drift from
     // the bundle: both call encode_main_opaque.
-    if (c->renderer_.main_bundle_ready()) {
+    // IOS_3 C — ?bundles=0. The cheapest switch in the set, because
+    // BUNDLE_1 R3 already built both roads: the direct arm calls
+    // encode_main_opaque, which is exactly what the recorder recorded. The
+    // picture must be IDENTICAL either way; if it is not, the bundle is
+    // the fault and that is the finding.
+    if (c->renderer_.main_bundle_ready() && t7::boot_params().bundles) {
         wgpu::RenderBundle mb = c->renderer_.main_bundle();
         pass.ExecuteBundles(1, &mb);
     } else {

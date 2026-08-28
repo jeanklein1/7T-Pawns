@@ -15,15 +15,15 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `64e26270f1f3ab564cad192ddbc423bec1e86e07` |
-| | IOS_3 A — the card's guard must never become load-bearing |
+| source commit | `22b15bd5be6de7ffa3c9954041ced610cbac1d33` |
+| | IOS_3 B — the failure speaks, and the boot says what it is |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:f492028e9d624b68baf65dca67e9a4039ecc63d328ff449207e66f2fe9c63e63` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:8f63e762913fd52df8ccbc95c731cc1912ef4f1e443e1a08a89bf8960ebf9cec` |
 | `src/cartridges/the_board/realization/binding_surface.gen.inc` | `sha256:463f1d4f323e50439bc83ce20b35830a32356c33350adfbe425b773712de4661` |
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:825addacbd4b440f443ba3a49104a07be7a8fb440fc1bf5a2e0f5dde516a48cf` |
 | `tools/binding_ledger.py` | `sha256:8c5e3abcdfcc80826535e7f50b0b3f6ea3f0eb445447419ffc442b9cac1a211a` |
-| `audit/BINDING_LEDGER.md` | `sha256:9bcb74fd3c5e9fc6f359bfb0346479f2e7a963b178f3617737c99523fe51fe88` |
+| `audit/BINDING_LEDGER.md` | `sha256:ada55f331deeee977080eea166d5cd05335bd72fbdc53c2ea4c298d3274b0e14` |
 
 `tools/binding_ledger.py` is an input because its parsers are IMPORTED,
 not copied — one parse, two artifacts, no drift between instruments.
@@ -1075,43 +1075,43 @@ wrapper, 18 wrapper calls) and are not recounted here.
 | `orbs.hpp:802` | `dispatch_orb_dynamics` | 1 | `frameCGroup_` | — |
 | `pawn.hpp:170` | `dispatch_pawn_aura` | 0 | `worldGroup_` | — |
 | `pawn.hpp:171` | `dispatch_pawn_aura` | 1 | `frameCGroup_` | — |
-| `render_passes.hpp:152` | `dispatch_placement_correction` | 0 | `worldGroup_` | — |
-| `render_passes.hpp:153` | `dispatch_placement_correction` | 1 | `frameCGroup_` | — |
-| `render_passes.hpp:250` | `dispatch_compute` | 0 | `worldGroup_` | — |
-| `render_passes.hpp:251` | `dispatch_compute` | 1 | `frameCGroup_` | — |
-| `render_passes.hpp:278` | `dispatch_compute` | 2 | `agentsStateGroup_` | — |
-| `render_passes.hpp:279` | `dispatch_compute` | 3 | `agentsTexturesGroup_` | — |
-| `render_passes.hpp:285` | `dispatch_compute` | 2 | `agentsStateGroup_` | — |
-| `render_passes.hpp:286` | `dispatch_compute` | 3 | `agentsTexturesGroup_` | — |
-| `render_passes.hpp:338` | `dispatch_frustum_cull` | 0 | `worldGroup_` | — |
-| `render_passes.hpp:339` | `dispatch_frustum_cull` | 1 | `frameCGroup_` | — |
-| `render_passes.hpp:413` | `render_shadow_pass` | 0 | `worldGroup_` | — |
-| `render_passes.hpp:414` | `render_shadow_pass` | 1 | `frameRGroup_` | `1, &kFrameSlotZero` |
-| `render_passes.hpp:415` | `render_shadow_pass` | 2 | `shadowStateGroup_` | — |
-| `render_passes.hpp:416` | `render_shadow_pass` | 3 | `shadowTexturesGroup_` | — |
-| `render_passes.hpp:425` | `render_shadow_pass` | 1 | `frameRGroup_` | `1, &slotOffset` |
-| `render_passes.hpp:467` | `render_shadow_pass` | 0 | `worldGroup_` | — |
-| `render_passes.hpp:468` | `render_shadow_pass` | 1 | `frameRGroup_` | `1, &kFrameSlotZero` |
-| `render_passes.hpp:469` | `render_shadow_pass` | 2 | `shadowStateGroup_` | — |
-| `render_passes.hpp:470` | `render_shadow_pass` | 3 | `shadowTexturesGroup_` | — |
-| `render_passes.hpp:664` | `encode_main_opaque` | 2 | `galleryStateGroup_` | — |
-| `render_passes.hpp:665` | `encode_main_opaque` | 3 | `galleryTexturesGroup_` | — |
-| `render_passes.hpp:687` | `encode_main_opaque` | 2 | `sceneStateGroup_` | — |
-| `render_passes.hpp:688` | `encode_main_opaque` | 3 | `sceneTexturesGroup_` | — |
-| `render_passes.hpp:710` | `record_bundles` | 0 | `worldGroup_` | — |
-| `render_passes.hpp:711` | `record_bundles` | 1 | `frameRGroup_` | `1, &kFrameSlotZero` |
-| `render_passes.hpp:712` | `record_bundles` | 3 | `sceneTexturesGroup_` | — |
-| `render_passes.hpp:723` | `record_bundles` | 0 | `worldGroup_` | — |
-| `render_passes.hpp:724` | `record_bundles` | 1 | `frameRGroup_` | `1, &kFrameSlotZero` |
-| `render_passes.hpp:725` | `record_bundles` | 2 | `shadowStateGroup_` | — |
-| `render_passes.hpp:726` | `record_bundles` | 3 | `shadowTexturesGroup_` | — |
-| `render_passes.hpp:803` | `render_main_pass` | 0 | `worldGroup_` | — |
-| `render_passes.hpp:804` | `render_main_pass` | 1 | `frameRGroup_` | `1, &kFrameSlotZero` |
-| `render_passes.hpp:805` | `render_main_pass` | 3 | `sceneTexturesGroup_` | — |
-| `render_passes.hpp:812` | `render_main_pass` | 0 | `worldGroup_` | — |
-| `render_passes.hpp:821` | `render_main_pass` | 1 | `emptyGroup_` | — |
-| `render_passes.hpp:822` | `render_main_pass` | 2 | `emptyGroup_` | — |
-| `render_passes.hpp:823` | `render_main_pass` | 3 | `emptyGroup_` | — |
+| `render_passes.hpp:153` | `dispatch_placement_correction` | 0 | `worldGroup_` | — |
+| `render_passes.hpp:154` | `dispatch_placement_correction` | 1 | `frameCGroup_` | — |
+| `render_passes.hpp:251` | `dispatch_compute` | 0 | `worldGroup_` | — |
+| `render_passes.hpp:252` | `dispatch_compute` | 1 | `frameCGroup_` | — |
+| `render_passes.hpp:283` | `dispatch_compute` | 2 | `agentsStateGroup_` | — |
+| `render_passes.hpp:284` | `dispatch_compute` | 3 | `agentsTexturesGroup_` | — |
+| `render_passes.hpp:290` | `dispatch_compute` | 2 | `agentsStateGroup_` | — |
+| `render_passes.hpp:291` | `dispatch_compute` | 3 | `agentsTexturesGroup_` | — |
+| `render_passes.hpp:343` | `dispatch_frustum_cull` | 0 | `worldGroup_` | — |
+| `render_passes.hpp:344` | `dispatch_frustum_cull` | 1 | `frameCGroup_` | — |
+| `render_passes.hpp:418` | `render_shadow_pass` | 0 | `worldGroup_` | — |
+| `render_passes.hpp:419` | `render_shadow_pass` | 1 | `frameRGroup_` | `1, &kFrameSlotZero` |
+| `render_passes.hpp:420` | `render_shadow_pass` | 2 | `shadowStateGroup_` | — |
+| `render_passes.hpp:421` | `render_shadow_pass` | 3 | `shadowTexturesGroup_` | — |
+| `render_passes.hpp:430` | `render_shadow_pass` | 1 | `frameRGroup_` | `1, &slotOffset` |
+| `render_passes.hpp:495` | `render_shadow_pass` | 0 | `worldGroup_` | — |
+| `render_passes.hpp:496` | `render_shadow_pass` | 1 | `frameRGroup_` | `1, &kFrameSlotZero` |
+| `render_passes.hpp:497` | `render_shadow_pass` | 2 | `shadowStateGroup_` | — |
+| `render_passes.hpp:498` | `render_shadow_pass` | 3 | `shadowTexturesGroup_` | — |
+| `render_passes.hpp:692` | `encode_main_opaque` | 2 | `galleryStateGroup_` | — |
+| `render_passes.hpp:693` | `encode_main_opaque` | 3 | `galleryTexturesGroup_` | — |
+| `render_passes.hpp:715` | `encode_main_opaque` | 2 | `sceneStateGroup_` | — |
+| `render_passes.hpp:716` | `encode_main_opaque` | 3 | `sceneTexturesGroup_` | — |
+| `render_passes.hpp:738` | `record_bundles` | 0 | `worldGroup_` | — |
+| `render_passes.hpp:739` | `record_bundles` | 1 | `frameRGroup_` | `1, &kFrameSlotZero` |
+| `render_passes.hpp:740` | `record_bundles` | 3 | `sceneTexturesGroup_` | — |
+| `render_passes.hpp:751` | `record_bundles` | 0 | `worldGroup_` | — |
+| `render_passes.hpp:752` | `record_bundles` | 1 | `frameRGroup_` | `1, &kFrameSlotZero` |
+| `render_passes.hpp:753` | `record_bundles` | 2 | `shadowStateGroup_` | — |
+| `render_passes.hpp:754` | `record_bundles` | 3 | `shadowTexturesGroup_` | — |
+| `render_passes.hpp:836` | `render_main_pass` | 0 | `worldGroup_` | — |
+| `render_passes.hpp:837` | `render_main_pass` | 1 | `frameRGroup_` | `1, &kFrameSlotZero` |
+| `render_passes.hpp:838` | `render_main_pass` | 3 | `sceneTexturesGroup_` | — |
+| `render_passes.hpp:845` | `render_main_pass` | 0 | `worldGroup_` | — |
+| `render_passes.hpp:854` | `render_main_pass` | 1 | `emptyGroup_` | — |
+| `render_passes.hpp:855` | `render_main_pass` | 2 | `emptyGroup_` | — |
+| `render_passes.hpp:856` | `render_main_pass` | 3 | `emptyGroup_` | — |
 | `renderer.hpp:480` | `dispatch_update_camera_vp` | 2 | `frameKStateGroup_` | — |
 | `renderer.hpp:481` | `dispatch_update_camera_vp` | 3 | `frameKTexturesGroup_` | — |
 | `renderer.hpp:516` | `dispatch_bake_patches` | 2 | `patchgenStateGroup_` | — |
@@ -1159,8 +1159,8 @@ wrapper, 18 wrapper calls) and are not recounted here.
 | `renderer.hpp:852` | `draw_patch_terrain_plan_slot` | 2 | `sceneStateGroup_` | — |
 | `renderer.hpp:880` | `draw_patch_terrain_direct` | 2 | `sceneStateGroup_` | — |
 | `renderer.hpp:881` | `draw_patch_terrain_direct` | 3 | `sceneTexturesGroup_` | — |
-| `patch_system.hpp:187` | `generate_patch_batch` | 0 | `worldGroup_` | — |
-| `patch_system.hpp:188` | `generate_patch_batch` | 1 | `frameCGroup_` | — |
+| `patch_system.hpp:188` | `generate_patch_batch` | 0 | `worldGroup_` | — |
+| `patch_system.hpp:189` | `generate_patch_batch` | 1 | `frameCGroup_` | — |
 
 ## Appendix — the renderer handle convention
 

@@ -1,4 +1,5 @@
 #pragma once
+#include "core/boot_params.hpp"   // IOS_3 C — the four switches
 #include <cstdint>
 #include "cartridges/the_board/contracts/wgpu_fwd.hpp"   // wgpu handle fwds (lockstep insurance)
 #include "cartridges/the_board/contracts/surface_services.hpp"  // the surface's decl tier (this module's own contract)
@@ -186,9 +187,20 @@ inline void generate_patch_batch(MachineCtx* c, wgpu::CommandEncoder& encoder, w
     // LOOM_2 pass head: WORLD + FRAME are every pipeline's strata 0/1.
     { cp.SetBindGroup(0, c->gpuState_.world_group());
       cp.SetBindGroup(1, c->gpuState_.frame_c_group()); }
-    c->renderer_.dispatch_bake_patches(cp,
-        c->gpuState_.patchgen_state_group(), c->gpuState_.patchgen_textures_group(),
-        GPUState::patch_heightfield_workgroups(), count);
+    // IOS_3 C — ?bake=0. A PURE SKIP: WebGPU zero-initialises a texture,
+    // so an unbaked layer reads (0, 0, 0, 0) — height 0, gradients 0 — and
+    // the world is FLAT BUT VISIBLE rather than garbage. That is what makes
+    // this the discriminator Jean's lead wants: if the iPad renders a flat
+    // world, the bake is the cause; if it stays black, the bake is
+    // exonerated and the ladder continues.
+    //
+    // The CELLS still run below, deliberately: this isolates the
+    // heightfield dispatch, not the batch shape or the pass.
+    if (t7::boot_params().bake) {
+        c->renderer_.dispatch_bake_patches(cp,
+            c->gpuState_.patchgen_state_group(), c->gpuState_.patchgen_textures_group(),
+            GPUState::patch_heightfield_workgroups(), count);
+    }
     c->renderer_.dispatch_generate_patch_cells(cp,
         c->gpuState_.patchgen_state_group(), c->gpuState_.patchgen_textures_group(),
         GPUState::patch_cell_workgroups(), count);
