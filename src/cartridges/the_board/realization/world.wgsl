@@ -12395,8 +12395,20 @@ fn wall_painting_vs(@builtin(vertex_index) vid: u32) -> WallPaintingVarying {
 
     let slot = painting_slots[pidx];
 
-    // Skip inactive or terrain-quad slots
-    if (slot.is_active == 0u || slot.form_type != FORM_WALL_FRAME) {
+    // THE RING (draw authority): wall frames draw only inside the ring —
+    // the quad path's law (compute_gallery_quad_geometry), the quad path's
+    // margin (5 wu covers the frame's half-reach). One term the quad could
+    // not teach: FORM_WALL_FRAME is the only form living in BOTH
+    // jurisdictions (indoor walls AND outdoor monuments), so the gate
+    // defers to the MODE — veil_strength is 0 finite/indoor (U5), and
+    // there the ring holds no authority.
+    let ring_kills = config.veil_strength > 0.5
+        && distance(slot.position.xz,
+                    vec2(config.lod_point_x, config.lod_point_z))
+           - 5.0 > config.veil_ring;
+
+    // Skip inactive, terrain-quad, or out-of-ring slots
+    if (slot.is_active == 0u || slot.form_type != FORM_WALL_FRAME || ring_kills) {
         var out: WallPaintingVarying;
         out.clip_pos = vec4(0.0); out.world_pos = vec3(0.0);
         out.normal = vec3(0.0, 0.0, 1.0); out.uv = vec2(0.0);
@@ -12421,7 +12433,25 @@ fn wall_painting_canvas_fs(in: WallPaintingVarying) -> @location(0) vec4<f32> {
     let lit = tex_color.rgb * 0.9;
     let dist = distance(in.world_pos, frame_r.camera.pos);
     let fog = 1.0 - exp(-dist * config.fog_density);
-    return vec4(mix(lit, config.fog_color, fog), 1.0);
+    var color = mix(lit, config.fog_color, fog);
+
+    // THE ICING — wall frames join the band (own-FS family; same term as
+    // shade_lit's / gallery_frame_fs's). DRAW membership is the ring gate
+    // in wall_painting_vs; this fade is where the join materializes. The
+    // indoor EXEMPTION is the MODE (veil_strength = 0 finite/indoor), not
+    // this family. Staged point per law E-4 — this layout, like the
+    // quad's, binds no render_agents, so veil_t() is out of reach.
+    let point_d = distance(in.world_pos.xz, vec2(config.lod_point_x, config.lod_point_z));
+    let veil = smoothstep(config.veil_ring - config.veil_icing, config.veil_ring, point_d)
+             * config.veil_strength;
+    // THE RIM taste knob (same as shade_lit): dither-dissolve or tint.
+    if (config.veil_dither > 0.5) {
+        if (veil_dither_noise(in.world_pos.xz) < veil) { discard; }
+    } else {
+        color = mix(color, config.fog_color, veil);
+    }
+
+    return vec4(color, 1.0);
 }
 
 @fragment
@@ -12431,11 +12461,24 @@ fn wall_painting_frame_fs(in: WallPaintingVarying) -> @location(0) vec4<f32> {
     let lit = in.frame_color * 0.8;
     let dist = distance(in.world_pos, frame_r.camera.pos);
     let fog = 1.0 - exp(-dist * config.fog_density);
-    return vec4(mix(lit, config.fog_color, fog), 1.0);
+    var color = mix(lit, config.fog_color, fog);
+
+    // THE ICING — see wall_painting_canvas_fs: the frame joins the same
+    // band with the same term.
+    let point_d = distance(in.world_pos.xz, vec2(config.lod_point_x, config.lod_point_z));
+    let veil = smoothstep(config.veil_ring - config.veil_icing, config.veil_ring, point_d)
+             * config.veil_strength;
+    if (config.veil_dither > 0.5) {
+        if (veil_dither_noise(in.world_pos.xz) < veil) { discard; }
+    } else {
+        color = mix(color, config.fog_color, veil);
+    }
+
+    return vec4(color, 1.0);
 }
 
 // §8.3 WALL PAINTING SHADOW
-// The twin of wall_painting_vs: the same decode, the same two guards, the
+// The twin of wall_painting_vs: the same decode, the same three guards, the
 // same geometry call and the same live-card lift, differing only in the
 // matrix. BOTH VERT RANGES PASS THROUGH — canvas [0, 6) and frame [6, 78).
 // The frame is an open border with a canvas-shaped hole (§8.2's [54, 78)
@@ -12456,8 +12499,16 @@ fn shadow_wall_painting_vs(@builtin(vertex_index) vid: u32) -> ShadowVarying {
 
     let slot = painting_slots[pidx];
 
-    // Skip inactive or terrain-quad slots
-    if (slot.is_active == 0u || slot.form_type != FORM_WALL_FRAME) {
+    // THE RING — mirrored term-for-term from wall_painting_vs (a caster
+    // may not outlive its body). This twin is the one shadow VS with no
+    // patch-banded superset behind it, so the gate does double duty here.
+    let ring_kills = config.veil_strength > 0.5
+        && distance(slot.position.xz,
+                    vec2(config.lod_point_x, config.lod_point_z))
+           - 5.0 > config.veil_ring;
+
+    // Skip inactive, terrain-quad, or out-of-ring slots
+    if (slot.is_active == 0u || slot.form_type != FORM_WALL_FRAME || ring_kills) {
         var out: ShadowVarying;
         out.clip_pos = vec4(0.0);
         return out;
