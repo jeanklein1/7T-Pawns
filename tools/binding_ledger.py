@@ -3160,6 +3160,67 @@ def provenance():
     return sha, subj, [(r, sha256(p)) for r, p in zip(rel, INPUTS)]
 
 
+_PIN_ROW = re.compile(
+    r"^\|\s*`([^`]+)`\s*\|\s*`sha256:([0-9a-f]{64})`\s*\|\s*$", re.M)
+
+
+def pinned_inputs(ledger_md):
+    """Read back the pins a ledger wrote about ITS OWN inputs.
+
+    The inverse of provenance(): that function stamps the hashes, this one
+    recovers them. Keyed on the `sha256:` prefix, which is exactly what
+    separates the provenance stanza from BUDGET_0f's caller table, whose
+    hashes are bare. Separators are normalised because the stamp is
+    os.path.relpath and the two hosts disagree about the slash.
+
+    Returns None when the ledger is not on disk — an absent artifact
+    pins nothing, which the caller reports rather than passes.
+    """
+    try:
+        text = read_raw(ledger_md)
+    except OSError:
+        return None
+    return {p.replace("\\", "/"): h for p, h in _PIN_ROW.findall(text)}
+
+
+def report_stale(ledger_md, required):
+    """GATES_2 — does the ARTIFACT still describe the tree it censused?
+
+    `--check` proves the witnesses hold against the LIVE files. It never
+    proved the ledger on disk was taken FROM those files, so an edit to a
+    scanned input that skipped regeneration left every witness green and
+    the artifact silently wrong — the whole battery included, since no row
+    read the pins. PALE_0 shipped one file where three were due and no
+    gate said a word. This is that missing comparison, one line per pin.
+
+    `required` is the paths this ledger must pin; a pin that is absent is
+    as red as a pin that disagrees. Returns True when stale, and the
+    caller exits nonzero — the message names the CURE, not just the
+    disease, because the two tools have a load-bearing order.
+    """
+    rel_led = os.path.relpath(ledger_md, REPO).replace(os.sep, "/")
+    cure = ("Regenerate in input order: binding_ledger, then mirror_census.")
+    pins = pinned_inputs(ledger_md)
+    bad = []
+    for p in required:
+        rel = os.path.relpath(p, REPO).replace(os.sep, "/")
+        if pins is None:
+            bad.append("STALE: %s is absent, so nothing pins %s. %s"
+                       % (rel_led, rel, cure))
+            continue
+        want = pins.get(rel)
+        if want is None:
+            bad.append("STALE: %s pins no hash for %s. %s"
+                       % (rel_led, rel, cure))
+            continue
+        live = sha256(p)
+        if live != want:
+            bad.append("STALE: %s pins %s for %s; live is %s. %s"
+                       % (rel_led, want[:8], rel, live[:8], cure))
+    for line in bad:
+        print(line)
+    return bool(bad)
+
 
 def shallow_note():
     """L29 — the environment announces its own depth.
@@ -4566,7 +4627,12 @@ def main():
 
     if args.check:
         print("")
-        print("--check: all witnesses pass, nothing written.")
+        # GATES_2 — the witnesses pass on the live tree; now ask whether the
+        # ledger on disk was taken from it.
+        if report_stale(args.out, [WORLD_WGSL]):
+            return 1
+        print("--check: all witnesses pass, the ledger's pins match the live "
+              "inputs, nothing written.")
         return 0
 
     text = emit(args.out, w, column, layouts, b, c, d, e1, e2, e3, e4, room)

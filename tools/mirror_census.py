@@ -1989,7 +1989,13 @@ def main():
 
     if args.check:
         print("")
-        print("--check: all witnesses pass, nothing written.")
+        # GATES_2 — two pins here, not one: this census hashes the binding
+        # ledger as an input (ML-0 reads its counts), so it goes stale both
+        # when world.wgsl moves and when the ledger beneath it is rebuilt.
+        if BL.report_stale(args.out, [BL.WORLD_WGSL, LEDGER_MD]):
+            return 1
+        print("--check: all witnesses pass, the ledger's pins match the live "
+              "inputs, nothing written.")
         return 0
 
     text = emit(args.out, wb, wm, counts, surfaces, reg_info, wgsl_info,
