@@ -2289,6 +2289,12 @@ struct GoLTierParams {
 
 const GOL_TIER_COUNT: u32 = 10u;
 
+// GOL_TEMPO_2 quantized the CPU draw to GOL_TICK_LADDER and re-authored
+// four means onto rungs; A MEAN OFF THE LADDER AUTHORS A COIN, NOT A
+// TEMPO — a mean sitting in a boundary band splits its zones ~50/50
+// across two rungs, so the row has no tempo, it has two. Every mean in
+// both tables is now a rung. Flash 0.5 -> 1.0, HighLife 1.2 -> 1.0,
+// Cauldron 5.0 -> 4.0 (both rooms), Pulse Sparkle 1.0 -> 1.5.
 //                                            rule       dens_μ  σ     tick_μ  σ    spring_μ σ    trans_μ  σ     ht_μ    σ    sv    wt    no_h  cells
 // (cells column: authored by UNIFIED_GROUND_1 U5 as "defaults by weight
 //  order thirds, 32/24/16"; Jean-tunable per row. That descending-rank
@@ -2300,7 +2306,7 @@ const GOL_TIERS = array<GoLTierParams, GOL_TIER_COUNT>(
     /* 1: SPARSE   */ GoLTierParams(0x1808u,  0.15, 0.05,   4.0, 1.0,   4.0, 1.0,   0.12, 0.03,  18.0, 6.0,  0.20,  0.17, 0u, 32u),
     /* 2: MODERATE */ GoLTierParams(0x1808u,  0.30, 0.08,   2.0, 0.6,   8.0, 2.0,   0.15, 0.03,   9.0, 3.0,  0.15,  0.09, 0u, 32u),
     /* 3: DENSE    */ GoLTierParams(0x1808u,  0.45, 0.10,   1.0,  0.3, 12.0, 3.0,   0.25, 0.05,   6.0, 1.5,  0.10,  0.03, 0u, 16u),
-    /* 4: FLASH    */ GoLTierParams(0x1808u,  0.35, 0.10,   0.5,  0.1, 20.0, 5.0,   0.30, 0.05,   0.0, 0.0,  0.40,  0.03, 1u, 24u),
+    /* 4: FLASH    */ GoLTierParams(0x1808u,  0.35, 0.10,   1.0,  0.2, 20.0, 5.0,   0.30, 0.05,   0.0, 0.0,  0.40,  0.03, 1u, 24u),
     /* 5: MONOLITH */ GoLTierParams(0x1808u,  0.20, 0.03,  24.0, 6.0,   0.3, 0.05,  0.03, 0.01,  42.0, 12.0, 0.05,  0.12, 0u, 16u),
     /* 6: GLACIER  */ GoLTierParams(0x1808u,  0.12, 0.03,   8.0, 2.0,   2.0, 0.5,   0.08, 0.02,  24.0, 7.5,  0.25,  0.21, 0u, 24u),
     // GOL_RULES_1 — three rules that are not Conway; GOL_ROWS_1/2/3 then
@@ -2308,8 +2314,8 @@ const GOL_TIERS = array<GoLTierParams, GOL_TIER_COUNT>(
     // Plateau was Day & night and took a new mask). Rationale lives with
     // the CPU twin in bodies/gol_zones.hpp; these are the same rows.
     /* 7: PLATEAU  */ GoLTierParams(0x3E1E0u, 0.50, 0.06,   8.0, 2.0,   6.0, 1.5,   0.10, 0.02,  30.0, 8.0,  0.08,  0.09, 0u, 32u),
-    /* 8: CAULDRON */ GoLTierParams(0x79F0u,  0.50, 0.05,   5.0, 1.2,   1.2, 0.3,   0.40, 0.08,   5.0, 1.5,  0.15,  0.08, 0u, 24u),
-    /* 9: HIGHLIFE */ GoLTierParams(0x1848u,  0.30, 0.05,   1.2,  0.3,  9.0, 2.0,   0.20, 0.04,  10.0, 3.0,  0.22,  0.07, 0u, 32u),
+    /* 8: CAULDRON */ GoLTierParams(0x79F0u,  0.50, 0.05,   4.0, 1.0,   1.2, 0.3,   0.40, 0.08,   5.0, 1.5,  0.15,  0.08, 0u, 24u),
+    /* 9: HIGHLIFE */ GoLTierParams(0x1848u,  0.30, 0.05,   1.0,  0.3,  9.0, 2.0,   0.20, 0.04,  10.0, 3.0,  0.22,  0.07, 0u, 32u),
 );
 
 // --- Pulse Algorithm Tier Definitions ────────────────────────────────────
@@ -2366,9 +2372,15 @@ const GOL_PULSE_TIER_COUNT: u32 = 4u;
 
 //                                            field                    tick_μ   σ    spring_μ σ    trans_μ  σ    phase_μ  σ    tempo_μ σ    ht_μ   σ    wand_μ  σ    sv    wt    no_h  bnd  cells
 // (cells column: UNIFIED_GROUND_1 U5 — 32/16/8 by weight order; Jean-tunable.)
+// GOL_TEMPO_2 quantized the CPU draw to GOL_TICK_LADDER and re-authored
+// four means onto rungs; A MEAN OFF THE LADDER AUTHORS A COIN, NOT A
+// TEMPO — a mean sitting in a boundary band splits its zones ~50/50
+// across two rungs, so the row has no tempo, it has two. Every mean in
+// both tables is now a rung. Flash 0.5 -> 1.0, HighLife 1.2 -> 1.0,
+// Cauldron 5.0 -> 4.0 (both rooms), Pulse Sparkle 1.0 -> 1.5.
 const GOL_PULSE_TIERS = array<GolPulseTierParams, GOL_PULSE_TIER_COUNT>(
     /* 0: Breathe  */ GolPulseTierParams( PULSE_FIELD_BREATH,  4.0, 1.0,   4.0, 1.0,   0.20, 0.05,   0.15, 0.05,   0.10, 0.03,   2.0, 0.8,  10.0, 3.0,   0.20,  0.38, 0u, 0u, 32u ),
-    /* 1: Sparkle  */ GolPulseTierParams( PULSE_FIELD_BREATH,  1.0,  0.3, 12.0, 3.0,   0.25, 0.05,   0.90, 0.10,   0.60, 0.15,   0.0, 0.0,   5.0, 2.0,   0.50,  0.24, 1u, 0u, 16u ),
+    /* 1: Sparkle  */ GolPulseTierParams( PULSE_FIELD_BREATH,  1.5,  0.4, 12.0, 3.0,   0.25, 0.05,   0.90, 0.10,   0.60, 0.15,   0.0, 0.0,   5.0, 2.0,   0.50,  0.24, 1u, 0u, 16u ),
     /* 2: Drift    */ GolPulseTierParams( PULSE_FIELD_BREATH,  8.0, 2.0,   1.5, 0.4,   0.10, 0.03,   0.50, 0.15,   0.40, 0.10,   4.0, 1.5,  25.0, 8.0,   0.35,  0.20, 0u, 1u, 8u ),
     // GOL_RULES_1 — the continuous field row. Rationale lives with the CPU
     // twin in bodies/gol_zones.hpp; this is the same row.

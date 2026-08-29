@@ -238,13 +238,19 @@ struct GoLTierProfile {
 // rank pattern is gone. Re-author the cells if the pattern is wanted back.
 // (GOL_RULES_1 reweighted the seven again and appended three rows, so the
 //  seven-value list above describes the original rows only.)
+// GOL_TEMPO_2 quantized the CPU draw to GOL_TICK_LADDER and re-authored
+// four means onto rungs; A MEAN OFF THE LADDER AUTHORS A COIN, NOT A
+// TEMPO — a mean sitting in a boundary band splits its zones ~50/50
+// across two rungs, so the row has no tempo, it has two. Every mean in
+// both tables is now a rung. Flash 0.5 -> 1.0, HighLife 1.2 -> 1.0,
+// Cauldron 5.0 -> 4.0 (both rooms), Pulse Sparkle 1.0 -> 1.5.
 //                                     rule       dens_μ   σ    tick_μ  σ    spring_μ σ    trans_μ  σ     ht_μ    σ    sv    wt    no_h   cells
 inline constexpr GoLTierProfile GOL_TIERS[GOL_TIER_COUNT] = {
     /* 0: Pillars  */ { 0x1808u,  0.30f, 0.05f,  16.0f, 4.0f,   0.5f, 0.1f,   0.05f, 0.01f,  30.0f, 9.0f,  0.30f,  0.11f, false, 16u },
     /* 1: Sparse   */ { 0x1808u,  0.15f, 0.05f,   4.0f, 1.0f,   4.0f, 1.0f,   0.12f, 0.03f,  18.0f, 6.0f,  0.20f,  0.17f, false, 32u },
     /* 2: Moderate */ { 0x1808u,  0.30f, 0.08f,   2.0f, 0.6f,   8.0f, 2.0f,   0.15f, 0.03f,   9.0f, 3.0f,  0.15f,  0.09f, false, 32u },
     /* 3: Dense    */ { 0x1808u,  0.45f, 0.10f,   1.0f,  0.3f, 12.0f, 3.0f,   0.25f, 0.05f,   6.0f, 1.5f,  0.10f,  0.03f, false, 16u },
-    /* 4: Flash    */ { 0x1808u,  0.35f, 0.10f,   0.5f,  0.1f, 20.0f, 5.0f,   0.30f, 0.05f,   0.0f, 0.0f,  0.40f,  0.03f, true,  24u },
+    /* 4: Flash    */ { 0x1808u,  0.35f, 0.10f,   1.0f,  0.2f, 20.0f, 5.0f,   0.30f, 0.05f,   0.0f, 0.0f,  0.40f,  0.03f, true,  24u },
     /* 5: Monolith */ { 0x1808u,  0.20f, 0.03f,  24.0f, 6.0f,   0.3f, 0.05f,  0.03f, 0.01f,  42.0f, 12.f,  0.05f,  0.12f, false, 16u },
     /* 6: Glacier  */ { 0x1808u,  0.12f, 0.03f,   8.0f, 2.0f,   2.0f, 0.5f,   0.08f, 0.02f,  24.0f, 7.5f,  0.25f,  0.21f, false, 24u },
     // GOL_TEMPO_1 doubled tick_period_mean and _sigma on EVERY row of both
@@ -300,18 +306,25 @@ inline constexpr GoLTierProfile GOL_TIERS[GOL_TIER_COUNT] = {
     //    GOL_ROWS_2 took it 6.0 -> 2.5 because at 120bpm 6.0 was three
     //    seconds a generation, slower than a boil can be seen to be;
     //    GOL_TEMPO_1 then halved the whole board's rate and carried this
-    //    row with it, 2.5 -> 5.0, which is two and a half seconds a
-    //    generation and back within reach of the argument that rejected
-    //    6.0 (omega = 3 / (0.40 x 5.0) = 1.5). If the boil stops reading
-    //    as one, this row is the first place to look and 2.5 is where it
-    //    was.
+    //    row with it, 2.5 -> 5.0. GOL_TEMPO_2 put it on the ladder at 4.0
+    //    (omega = 3 / (0.40 x 4.0) = 1.875), which is 2.4 seconds a
+    //    generation at 100bpm. THE SNAP WAS NOT NEAREST: 5.0 sat almost
+    //    exactly ON the 4/6 boundary (sqrt(24) = 4.899), so the row was a
+    //    coin, and nearest would have returned it to the 6.0 the argument
+    //    above rejected. The row's own history argues downward, and 4.0 is
+    //    the rung that keeps it. If the boil stops reading as one, this row
+    //    is the first place to look and 3.0 is the rung below.
     //  · HighLife must be 32 cells or the replicator has no room and the
-    //    row reads as thin Conway. Brisk tick so replication is visible.
+    //    row reads as thin Conway. Brisk tick so replication is visible —
+    //    and GOL_TEMPO_2 made brisk mean THE QUARTER NOTE. The old 1.2 sat
+    //    a hair under the 1.0/1.5 boundary (sqrt(1.5) = 1.2247), close
+    //    enough that the row's own sigma made the rung a coin flip; 1.0 is
+    //    the rung it was always reaching for.
     //    Untouched by GOL_ROWS_1 — the witness ran Hickerson's replicator
     //    on this row's own grid and watched one 12-cell seed become two.
     /* 7: Plateau  */ { 0x3E1E0u, 0.50f, 0.06f,   8.0f, 2.0f,   6.0f, 1.5f,   0.10f, 0.02f,  30.0f, 8.0f,  0.08f,  0.09f, false, 32u },
-    /* 8: Cauldron */ { 0x79F0u,  0.50f, 0.05f,   5.0f, 1.2f,   1.2f, 0.3f,   0.40f, 0.08f,   5.0f, 1.5f,  0.15f,  0.08f, false, 24u },
-    /* 9: HighLife */ { 0x1848u,  0.30f, 0.05f,   1.2f,  0.3f,  9.0f, 2.0f,   0.20f, 0.04f,  10.0f, 3.0f,  0.22f,  0.07f, false, 32u },
+    /* 8: Cauldron */ { 0x79F0u,  0.50f, 0.05f,   4.0f, 1.0f,   1.2f, 0.3f,   0.40f, 0.08f,   5.0f, 1.5f,  0.15f,  0.08f, false, 24u },
+    /* 9: HighLife */ { 0x1848u,  0.30f, 0.05f,   1.0f,  0.3f,  9.0f, 2.0f,   0.20f, 0.04f,  10.0f, 3.0f,  0.22f,  0.07f, false, 32u },
 };
 
 inline constexpr const char* GOL_TIER_NAMES[] = {
@@ -376,10 +389,16 @@ struct GolPulseTierProfile {
 // MUST match world.wgsl's GOL_PULSE_TIERS cells column
 // (UNIFIED_GROUND_1 U5 — "32/16/8 by weight order"). Hardware
 // mirror — when tuning, change both sides.
+// GOL_TEMPO_2 quantized the CPU draw to GOL_TICK_LADDER and re-authored
+// four means onto rungs; A MEAN OFF THE LADDER AUTHORS A COIN, NOT A
+// TEMPO — a mean sitting in a boundary band splits its zones ~50/50
+// across two rungs, so the row has no tempo, it has two. Every mean in
+// both tables is now a rung. Flash 0.5 -> 1.0, HighLife 1.2 -> 1.0,
+// Cauldron 5.0 -> 4.0 (both rooms), Pulse Sparkle 1.0 -> 1.5.
 //                                     field                  tick_μ   σ    spring_μ σ    trans_μ  σ    phase_μ  σ    tempo_μ σ    ht_μ   σ    wand_μ  σ    sv    wt    no_h  bnd                    cells
 inline constexpr GolPulseTierProfile GOL_PULSE_TIERS[GOL_PULSE_TIER_COUNT] = {
     /* 0: Breathe  */ { PulseField::BREATH,  4.0f, 1.0f,   4.0f, 1.0f,   0.20f, 0.05f,   0.15f, 0.05f,   0.10f, 0.03f,   2.0f, 0.8f,  10.0f, 3.0f,   0.20f,  0.38f, false, BoundaryMode::REFLECT, 32u },
-    /* 1: Sparkle  */ { PulseField::BREATH,  1.0f,  0.3f, 12.0f, 3.0f,   0.25f, 0.05f,   0.90f, 0.10f,   0.60f, 0.15f,   0.0f, 0.0f,   5.0f, 2.0f,   0.50f,  0.24f, true,  BoundaryMode::REFLECT, 16u },
+    /* 1: Sparkle  */ { PulseField::BREATH,  1.5f,  0.4f, 12.0f, 3.0f,   0.25f, 0.05f,   0.90f, 0.10f,   0.60f, 0.15f,   0.0f, 0.0f,   5.0f, 2.0f,   0.50f,  0.24f, true,  BoundaryMode::REFLECT, 16u },
     /* 2: Drift    */ { PulseField::BREATH,  8.0f, 2.0f,   1.5f, 0.4f,   0.10f, 0.03f,   0.50f, 0.15f,   0.40f, 0.10f,   4.0f, 1.5f,  25.0f, 8.0f,   0.35f,  0.20f, false, BoundaryMode::WRAP, 8u },
     // GOL_RULES_1. The first Pulse row that is not BREATH, and the first
     // whose target is continuous rather than binary. Read the values as
