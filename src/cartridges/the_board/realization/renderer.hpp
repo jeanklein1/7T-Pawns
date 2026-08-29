@@ -341,10 +341,15 @@ namespace t7 {
                 if (!firstLightAnnounced_ && first_light_ready()) {
                     firstLightAnnounced_ = true;
                     t7::g_first_light_ready = true;   // the loop's gate
-                    t7::aubade_mark("firstlight");
+                    // AUBADE_1 F2 — ONE MARK, AND THIS LINE PRINTS IT. It
+                    // used to print t.done, which is this renderer's own
+                    // stopwatch from the first pipeline issue; the waterfall
+                    // printed the page's mark. Same instant, two clocks, two
+                    // numbers, and no way to tell which was the boot's.
+                    const double at = t7::aubade_mark_ms("firstlight");
                     std::cout << "[AUBADE] pipelines firstlight="
                               << pipeIssued_[static_cast<uint32_t>(PipeGroup::FIRST_LIGHT)]
-                              << " ready@" << static_cast<long long>(t.done)
+                              << " ready@" << static_cast<long long>(at)
                               << "ms — the loop may run\n";
                 }
                 if (!pipelineTablePrinted_ && all_pipelines_resolved())
@@ -435,11 +440,16 @@ namespace t7 {
                                   : t.group == PipeGroup::SHADOW ? "  [shadow]" : "")
                               << (t.failed ? "  FAILED" : "") << "\n";
                 }
-                double last = 0.0;
-                for (const auto& t : pipelineTimings_) if (t.done > last) last = t.done;
+                // AUBADE_1 F2 — the page's clock here too. This function is
+                // called from the LAST resolve, so "now" is the instant the
+                // rest finished, and it is the same realm every other
+                // [AUBADE] number is quoted in. The per-row `ms` above stay
+                // on the local stopwatch, correctly: a DURATION is
+                // clock-independent, an instant is not.
                 std::cout << "\n[AUBADE] pipelines firstlight="
                           << pipeIssued_[static_cast<uint32_t>(PipeGroup::FIRST_LIGHT)]
-                          << " rest ready@" << static_cast<long long>(last) << "ms"
+                          << " rest ready@"
+                          << static_cast<long long>(t7::aubade_now_ms()) << "ms"
                           << " total=" << pipelineTimings_.size()
                           << " failed=" << pipelinesFailed_ << "\n\n";
             }

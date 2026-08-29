@@ -17,12 +17,19 @@
 //
 // THE FOUR ATTRIBUTION NUMBERS, and what each one settles:
 //
-//   ticks  rAF turns between init and present. MANY cheap ticks against a
-//          late present means the main thread was free and the wait was
-//          DEVICE-SIDE — which is what pipeline compilation looks like
-//          from here. Few ticks means the main thread was busy.
-//   cpu    summed main-thread ms over those same ticks. Read WITH ticks:
-//          ticks high + cpu low is a device wait; cpu high is our own work.
+//   ticks  rAF turns between init and present — counted ABOVE the
+//          first-light gate (AUBADE_1 F2), because a turn the gate sent
+//          home is still a turn. MANY cheap ticks against a late present
+//          means the main thread was free and the wait was DEVICE-SIDE —
+//          which is what pipeline compilation looks like from here. Few
+//          ticks means the main thread was busy.
+//   cpu    summed main-thread ms over the turns that ran a FRAME BODY —
+//          a subset of `ticks`, and deliberately so: a gated turn does no
+//          work and should add none. Each turn contributes its own end
+//          minus its own start; it was once a sum of absolute timestamps,
+//          which is why a 5.4 s boot once reported 38,526 ms. Read WITH
+//          ticks: ticks high + cpu low is a device wait; cpu high is our
+//          own work.
 //   stb    summed stb_image decode ms before present. The authored path
 //          decodes on the main thread (R6), so this separates "the
 //          paintings did it" from everything else.
@@ -46,6 +53,32 @@ namespace t7 {
             if (typeof window !== 'undefined' && window.T7_AUBADE)
                 window.T7_AUBADE.mark(UTF8ToString($0));
         }, name);
+    }
+
+    // AUBADE_1 F2 — MARK AND READ IT BACK, IN ONE CROSSING.
+    //
+    // `firstlight` was printed twice from two clocks: the page's mark, and
+    // the renderer's own `pipeT0_` stopwatch, which starts at the first
+    // pipeline issue rather than at the page's t0. The two disagreed by the
+    // offset between them (4747 against 5062 — about `init`, which is
+    // exactly what that offset is). One mark, one home: the site that marks
+    // the instant also prints it, and prints THIS number.
+    //
+    // Returns ms from the page's t0, or -1 where there is no page.
+    inline double aubade_mark_ms(const char* name) {
+        return EM_ASM_DOUBLE({
+            if (typeof window === 'undefined' || !window.T7_AUBADE) return -1.0;
+            return window.T7_AUBADE.mark(UTF8ToString($0));
+        }, name);
+    }
+
+    // The same clock, without leaving a mark — for a line that wants to say
+    // WHEN it printed and does not deserve a name in the waterfall.
+    inline double aubade_now_ms() {
+        return EM_ASM_DOUBLE({
+            if (typeof window === 'undefined' || !window.T7_AUBADE) return -1.0;
+            return window.T7_AUBADE.now();
+        });
     }
 
     // TWO LATCHES, AND THE DISTINCTION IS THE WHOLE INSTRUMENT.

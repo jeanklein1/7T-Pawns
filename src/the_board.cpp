@@ -259,6 +259,18 @@ static void frame() {
     // the veil is up, no input is live, and the pipeline callbacks are
     // AllowSpontaneous — they fire from the browser's event loop between
     // rAF turns and need no pump of ours to arrive.
+    //
+    // AUBADE_1 F2 — AND THE TICK IS COUNTED ABOVE IT, DELIBERATELY. The
+    // probe's whole reading is "many cheap ticks against a late present
+    // means the wait was DEVICE-SIDE" — and the gate below silently broke
+    // that: it returns before the body, so the 4.4 s of compile counted
+    // SEVEN ticks in a 5.4 s window instead of some three hundred. The
+    // number proved the gate held, which is true and is not what it was
+    // built to say. `ticks` is rAF turns in the init->present window, as
+    // its banner has always claimed; `cpu` below is main-thread work in
+    // those turns, and a gated turn does none. High ticks with low cpu is
+    // the signature, and now it can appear.
+    if (!t7::aubade_presented()) t7::aubade_ticks()++;
     if (!t7::g_first_light_ready) return;
 
     // THE METRONOME (WRAP_0 U2) — armed from inside the loop, once, because
@@ -284,6 +296,21 @@ static void frame() {
         s_frame0 = std::chrono::steady_clock::now();
         s_t0 = s_frame0;
     }
+
+    // ══ AUBADE_1 F2 — THE PROBE'S OWN STAMP, AND WHY IT NEEDED ONE ═════
+    //
+    // `cpu` read 38,526 ms inside a 5.4 s window. It was summing s_frame0,
+    // which is only ASSIGNED under `if constexpr (INSTRUMENTS.frame_meter)`
+    // — and the meter is off in the shipped build, so s_frame0 sat at a
+    // default-constructed epoch and `now() - s_frame0` was the absolute
+    // steady_clock reading, summed once a frame. Timestamps, not deltas.
+    //
+    // The probe takes its own stamp, unconditionally, so it cannot inherit
+    // the dial's state — and only while it is still counting, so a shipped
+    // frame after first present pays one bool and nothing else.
+    const bool a_counting = !t7::aubade_presented();
+    std::chrono::steady_clock::time_point a_tick0{};
+    if (a_counting) a_tick0 = std::chrono::steady_clock::now();
 
     float dt = app->console.begin_frame();
     // ORGAN — THE DIRTY FLUSH, at the frame boundary and nowhere else.
@@ -373,16 +400,21 @@ static void frame() {
         s_submit = std::chrono::duration<float, std::milli>(
             std::chrono::steady_clock::now() - s_t0).count();
 
-    // AUBADE U1 — THE TICK PROBE. Counted only until first present, then
-    // never touched again. `ticks` high with `cpu` low is the signature of
-    // a DEVICE-SIDE wait — the main thread turning freely while something
-    // downstream is not ready — which is what pipeline compilation looks
-    // like from up here. `cpu` high is our own work, and `stb` says how
-    // much of it was painting decode.
-    if (!t7::aubade_presented()) {
-        t7::aubade_ticks()++;
+    // AUBADE U1 — THE TICK PROBE's other half. Counted only until first
+    // present, then never touched again. `ticks` high with `cpu` low is the
+    // signature of a DEVICE-SIDE wait — the main thread turning freely
+    // while something downstream is not ready — which is what pipeline
+    // compilation looks like from up here. `cpu` high is our own work, and
+    // `stb` says how much of it was painting decode.
+    //
+    // AUBADE_1 F2 — THE TWO HALVES SIT AT DIFFERENT HEIGHTS, on purpose.
+    // The tick is counted at the top of the frame, above the first-light
+    // gate, because a gated turn IS an rAF turn. The cpu is accumulated
+    // here, below every early return, because a turn that did no work
+    // should add no work. That asymmetry is the whole reading.
+    if (a_counting) {
         t7::aubade_cpu() += std::chrono::duration<double, std::milli>(
-            std::chrono::steady_clock::now() - s_frame0).count();
+            std::chrono::steady_clock::now() - a_tick0).count();
     }
 
     if constexpr (t7::INSTRUMENTS.frame_meter) s_t0 = std::chrono::steady_clock::now();

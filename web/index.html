@@ -441,7 +441,28 @@
     window.T7_AUBADE = (function () {
       var t0 = performance.now();
       var m = {}, reported = false;
-      function mark(k) { if (m[k] === undefined) m[k] = Math.round(performance.now() - t0); }
+      function now() { return Math.round(performance.now() - t0); }
+      // AUBADE_1 F2 — A MARK RETURNS ITS OWN VALUE, so a caller that wants
+      // to PRINT the instant it just marked reads it back from here rather
+      // than from a second clock. `firstlight` was printed twice by two
+      // clocks and disagreed by ~315 ms; one mark, one home, one number.
+      //
+      // AND A MARK THAT ARRIVES AFTER THE REPORT SAYS SO. The report fires
+      // at `ready`, and some marks are legitimately later than that —
+      // `authored6` is, by construction, because U5c's valve does not stage
+      // a painting until after first present. Printing `pending` and then
+      // never printing the number would be a worse lie than the `-` it
+      // replaces. Every late mark gets its own line, whichever it is.
+      function mark(k) {
+        if (m[k] === undefined) {
+          m[k] = now();
+          if (reported) {
+            var say = (typeof out === 'function') ? out : console.log;
+            say('[AUBADE] ' + k + '=' + m[k] + 'ms (after the report)');
+          }
+        }
+        return m[k];
+      }
       // The probe's counters. C++ owns three of them (ticks, cpu, stb) and
       // hands them over at report time; `fade` is whatever the piece's own
       // fade alpha reads at first present — authored darkness, named, so it
@@ -470,15 +491,21 @@
         // firstlight->present is everything after it.
         var k = ['net', 'wasm', 'device', 'init', 'firstlight', 'present', 'authored6', 'ready'];
         var line = '[AUBADE] waterfall';
+        // AUBADE_1 F2 — `pending`, not `-`. The report fires at `ready`, and
+        // a mark missing at that instant has not failed to happen; it has
+        // not happened YET. `authored6` is the standing example and the
+        // reason the word changed: the valve stages nothing until after
+        // first present, so `-` read as "never" for a number that always
+        // arrives. The late-mark line above prints it when it does.
         for (var i = 0; i < k.length; i++)
-          line += ' ' + k[i] + '=' + (m[k[i]] === undefined ? '-' : m[k[i]]);
+          line += ' ' + k[i] + '=' + (m[k[i]] === undefined ? 'pending' : m[k[i]]);
         say(line);
         say('[AUBADE] window ticks=' + probe.ticks
           + ' cpu=' + Math.round(probe.cpu) + 'ms'
           + ' stb=' + Math.round(probe.stb) + 'ms'
           + ' fade=' + probe.fade);
       }
-      return { mark: mark, probe: probe, report: report, marks: m };
+      return { mark: mark, now: now, probe: probe, report: report, marks: m };
     })();
 
     // TWO DOORS, ONE SURFACE. t7card is the identity block (quiet, green);
