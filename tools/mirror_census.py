@@ -32,6 +32,13 @@
 # USAGE
 #   python3 tools/mirror_census.py              # witnesses to stdout, write artifact
 #   python3 tools/mirror_census.py --check      # witnesses only, write nothing
+#
+# THE HASH CONVENTION, AND IT IS LAW (GATES_2c) — shared with
+# binding_ledger, whose statement of it is the same: a `sha256:`-prefixed
+# hash is an ENFORCED PIN that `--check` iterates and reds on; a BARE
+# 64-hex token is FORBIDDEN and reds as an unenforced pin. This census
+# pins its own source as well as binding's, both being generators of
+# artifacts they are inputs to.
 #   python3 tools/mirror_census.py -o PATH      # write elsewhere
 #
 # Exit status is 1 if any witness fails. A failing witness is a STOP: the
@@ -57,10 +64,13 @@ LEDGER_MD = os.path.join(REPO, "audit", "BINDING_LEDGER.md")
 DEFAULT_OUT = os.path.join(REPO, "audit", "MIRROR_LEDGER.md")
 
 # Input order is the handoff's: the four mirrors, then the instrument
-# this one leans on, then the ledger it reconciles against.
+# this one leans on, then this census's OWN source (GATES_2c — a generator
+# is an input to its own artifact; the asymmetry of pinning binding's tool
+# but not this one closes here), then the ledger it reconciles against.
 INPUTS = [BL.REGISTRY_HPP, BL.WORLD_WGSL, BL.STATE_HPP, BL.GEN_INC,
           BL.RENDERER_HPP,
-          os.path.join(_HERE, "binding_ledger.py"), LEDGER_MD]
+          os.path.join(_HERE, "binding_ledger.py"),
+          os.path.abspath(__file__), LEDGER_MD]
 
 CONTRACTS_DIR = os.path.join(REPO, "src", "cartridges", "the_board", "contracts")
 

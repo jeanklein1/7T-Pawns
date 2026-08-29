@@ -14,6 +14,15 @@
 # build graph. It reads four files and writes one markdown artifact.
 # Precedent: tools/web_dist.py.
 #
+# THE HASH CONVENTION, AND IT IS LAW (GATES_2c). In this artifact a
+# `sha256:`-prefixed hash IS AN ENFORCED PIN: `--check` iterates every one
+# of them, whatever table it sits in, and reds when it disagrees with the
+# live file. A BARE hash is FORBIDDEN — check mode reds on any 64-hex
+# token that is not so prefixed, because an unenforced pin is a promise
+# the artifact cannot keep. Emitting a new hash means emitting the prefix,
+# and the tax it carries is the point: the file it names must be
+# regenerated with the ledger.
+#
 # THE UNIT OF THE LEDGER is one row per (bind group layout, entry index)
 # — NOT per buffer. The registry is one constant per SITE: the same
 # buffer wears several names because each name is one (group, slot).
@@ -43,6 +52,11 @@ STATE_HPP = os.path.join(REAL, "state.hpp")
 REGISTRY_HPP = os.path.join(REAL, "binding_registry.hpp")
 RENDERER_HPP = os.path.join(REAL, "renderer.hpp")
 WORLD_WGSL = os.path.join(REAL, "world.wgsl")
+
+# GATES_2c — a generator is an input to its own artifact. An emitter edit
+# that changes the ledger's FORMAT (not its census) would otherwise ship
+# under a green check, because nothing pinned the thing doing the writing.
+SELF_PY = os.path.abspath(__file__)
 
 DEFAULT_OUT = os.path.join(REPO, "audit", "BINDING_LEDGER.md")
 
@@ -3105,7 +3119,8 @@ def phase_ext4(w, wgsl, layouts, cen):
 # left empty on purpose: they are the two things a census cannot produce.
 # ═══════════════════════════════════════════════════════════════════════
 
-INPUTS = [STATE_HPP, GEN_INC, REGISTRY_HPP, RENDERER_HPP, WORLD_WGSL]
+INPUTS = [STATE_HPP, GEN_INC, REGISTRY_HPP, RENDERER_HPP, WORLD_WGSL,
+          SELF_PY]
 
 
 def writer_pins_lf(w):
@@ -3140,7 +3155,7 @@ def verify_bytes(path):
 
 
 def provenance():
-    """Commit SHA + content hashes of the four inputs.
+    """Commit SHA + content hashes of every input, this file included.
 
     NOT `HEAD`. G2 requires that re-running on an unchanged tree reproduces
     this file byte for byte, and HEAD moves the moment the artifact is
@@ -3187,8 +3202,39 @@ def pinned_inputs(ledger_md):
     return [(p.replace("\\", "/"), h) for p, h in _PIN_ROW.findall(text)]
 
 
+_BARE_HEX = re.compile(r"(?<![0-9a-fA-F])[0-9a-f]{64}(?![0-9a-fA-F])")
+
+
+def bare_hash_lint(ledger_md):
+    """GATES_2c — the fourth red: a hash wearing no prefix is not a pin.
+
+    In these ledgers a 64-hex token is only ever a sha256; nothing else in
+    the vocabulary is that shape (commit SHAs are 40). So a bare one is an
+    unenforced pin — a promise the artifact makes and `--check` cannot
+    keep. That is exactly the shape GATES_2b was written to end, and
+    BUDGET_0f's caller table wore it one table over while the provenance
+    stanza was being made coextensive. Linting the FORM rather than a
+    named table outlaws the costume in every table, current and future.
+
+    Yields ready-made red lines; empty when the ledger is clean or gone.
+    """
+    rel_led = os.path.relpath(ledger_md, REPO).replace(os.sep, "/")
+    try:
+        text = read_raw(ledger_md)
+    except OSError:
+        return
+    for m in _BARE_HEX.finditer(text):
+        if text[max(0, m.start() - 7):m.start()] == "sha256:":
+            continue
+        yield ("STALE: %s carries a bare hash %s at line %d — in an audit "
+               "ledger a 64-hex token is only ever a sha256, so this is an "
+               "unenforced pin. Prefix it `sha256:` in the emitter so "
+               "--check iterates it."
+               % (rel_led, m.group(0)[:8], text[:m.start()].count("\n") + 1))
+
+
 def report_stale(ledger_md):
-    """GATES_2b — does the ARTIFACT still describe the tree it censused?
+    """GATES_2b/2c — does the ARTIFACT still describe the tree it censused?
 
     `--check` proves the witnesses hold against the LIVE files. It never
     proved the ledger on disk was taken FROM those files, so an edit to a
@@ -3214,7 +3260,7 @@ def report_stale(ledger_md):
     rel_led = os.path.relpath(ledger_md, REPO).replace(os.sep, "/")
     cure = "Regenerate in input order: binding_ledger, then mirror_census."
     pins = pinned_inputs(ledger_md)
-    bad = []
+    bad = list(bare_hash_lint(ledger_md))
     if pins is None:
         bad.append("STALE: %s is absent, so nothing is pinned. %s"
                    % (rel_led, cure))
@@ -3373,11 +3419,14 @@ def emit(path, w, column, layouts, wgsl, cen, join, e1, e2, e3, e4, room):
     A("| caller file scanned | sha256 |")
     A("|---|---|")
     for cp in e3["callers"]:
-        A("| `%s` | `%s` |" % (os.path.relpath(cp, REPO), sha256(cp)))
+        A("| `%s` | `sha256:%s` |" % (os.path.relpath(cp, REPO), sha256(cp)))
     A("")
-    A("The source commit is the last commit touching any of the four primary")
-    A("inputs — not `HEAD`, which moves when this file is committed. The content")
-    A("hashes are the authoritative provenance.")
+    A("The source commit is the last commit touching any input — not `HEAD`,")
+    A("which moves when this file is committed. The content hashes are the")
+    A("authoritative provenance, and EVERY `sha256:` row above is an enforced")
+    A("pin: `--check` compares it against the live file and reds on a")
+    A("mismatch. That is why the caller rows carry the prefix too — a hash")
+    A("here is a promise, or it is illegal (GATES_2c).")
     A("")
     A("**Determinism is asserted at byte level, not by comparing two local runs.**")
     A("Two runs on one host are byte-identical even if the write is")
