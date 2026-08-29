@@ -1541,7 +1541,11 @@ namespace t7 {
             float extent;
             uint32_t grid_size;
             float tick_period;
-            float spring_stiffness;
+            // GOL_TEMPO_2 U5: the spring_stiffness word, renamed in
+            // place when the column died — written by both derive
+            // branches, read by nothing. Same offsets, same 80 bytes;
+            // the static_assert below is the witness.
+            float _pad_spring;
             float alive_height;
             float transition_fraction;
             uint32_t color_mode;

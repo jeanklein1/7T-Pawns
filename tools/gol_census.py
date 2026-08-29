@@ -144,13 +144,11 @@ def quantize_tick_period(x, ladder):
 
 CONWAY_FIELDS = ["rule_mask", "density_mean", "density_sigma",
                  "tick_period_mean", "tick_period_sigma",
-                 "spring_stiffness_mean", "spring_stiffness_sigma",
                  "transition_fraction_mean", "transition_fraction_sigma",
                  "alive_height_mean", "alive_height_sigma",
                  "spring_variance", "weight", "force_no_height", "grid_cells"]
 
 PULSE_FIELDS = ["field_fn", "tick_period_mean", "tick_period_sigma",
-                "spring_stiffness_mean", "spring_stiffness_sigma",
                 "transition_fraction_mean", "transition_fraction_sigma",
                 "phase_randomness_mean", "phase_randomness_sigma",
                 "tempo_randomness_mean", "tempo_randomness_sigma",

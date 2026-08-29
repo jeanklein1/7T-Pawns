@@ -1784,20 +1784,6 @@ many blocks along the way, a few times a second, worse with speed.*
   false, by taking GOL_TIER_COUNT past 8. Unblocked by a ruling on the tag
   encoding — widen the alpha's budget, move the height bit, or retire the
   payload.
-- `spring_stiffness` is written and never read. `zone_derive_params`
-  samples it into `zc.spring_stiffness` for both algorithms, and no shader
-  reads that field: `zone_gol_evolve` derives the whole spring from
-  `omega = 3.0 / (transition_fraction * tick_period)`. That is forty
-  authored floats across fourteen rows of two tables doing nothing, and
-  every one of them has to be re-read and discounted by whoever next opens
-  those tables — which is the cost, not the bytes. The real dial is
-  `transition_fraction x tick_period`. GOL_ROWS_1 authors its values
-  against the real formula and says so at each row. Origin: found by the
-  GOL_RULES_1 headless witness; the column pre-dates it. Unblocked by the
-  sitting that next opens GoLTierProfile / GolPulseTierProfile — either the
-  column gets a reader or it dies in that commit, both rooms together
-  (L26 docket rules: the braces are positional, so table and struct move
-  as one).
 
 ## GOL_TEMPO_2 — what the ladder opened and did not close
 
