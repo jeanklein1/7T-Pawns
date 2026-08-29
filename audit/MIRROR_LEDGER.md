@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `1772c668296f5795f19d771253f869740790bd8f` |
-| | AUBADE_1 F2: the probe tells the truth — deltas summed, one firstlight mark, authored6 when it exists |
+| source commit | `3f2824216000e2dedf5e712840bd44264c755b93` |
+| | audit — ledger provenance converged (AUBADE_1) |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:f492028e9d624b68baf65dca67e9a4039ecc63d328ff449207e66f2fe9c63e63` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:8f63e762913fd52df8ccbc95c731cc1912ef4f1e443e1a08a89bf8960ebf9cec` |
