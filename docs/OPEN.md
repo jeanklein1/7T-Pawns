@@ -84,12 +84,12 @@ Only an explicit `0` removes a stage; absent or malformed leaves the
 piece entire, and the `[Params]` line names any switch that is off, so
 silence means the piece whole and a diagnosis stays reproducible.
 
-## AUBADE — first light (branch `claude/aubade`, LAND-GATED)
+## AUBADE — first light — CLOSED 2026-08-28, merged at `fcbed3c4`
 
 Boot rearrangement: nothing new was built, existing work was resequenced
-so the screen lights early and the world assembles in view. Seven units
-landed on the held branch; **production is untouched until the merge
-word** (RUL-A). Jean's gate is one sitting.
+so the screen lights early and the world assembles in view. Seven units,
+`0ee6bc90` … `fcbed3c4`, merged to master by fast-forward on Jean's word;
+the branch is retired per ATTIC LAW. **The follow-on is AUBADE_1, below.**
 
 | unit | what moved |
 |---|---|
@@ -163,28 +163,29 @@ a 20 s belt, so a browser that renders but never resolves
 lifted it, present or belt. Its text stays load-bearing, one notch
 weaker.
 
-### THE TWO WATERFALL PASTES — OWED, Jean's sitting
+### THE PASTE — TAKEN, AND IT CLOSED R2
 
-The campaign's before-photo and after-photo, side by side, from the two
-preview URLs. **Not yet taken:** the tip has never met emscripten — every
-witness this campaign ran was headless — so the build itself is the first
-true gate.
+`fcbed3c4`, cold:
 
-    preview-A  (tag aubade-preview-a, U1 only)
-    [AUBADE] waterfall …
-    [AUBADE] window …
+    [AUBADE] waterfall net=14 wasm=82 device=158 init=326 firstlight=5062
+             present=5403 authored6=- ready=5403
+    [AUBADE] window ticks=7 cpu=38526ms stb=0ms fade=0
+    [AUBADE] pipelines firstlight=7 ready@4747 rest@5077 total=57 failed=0
 
-    preview-B  (branch head, U1-U7) — cold
-    [AUBADE] waterfall …
-    [AUBADE] window …
+**P1 CONFIRMED. R2 CLOSED, by instrument, with no trace read by hand.**
+The occupant of the dark is pipeline compilation — 4.4 s of it, resolving
+roughly serially in issue order. `stb=0` and `fade=0` acquit the other
+two suspects by name: no painting decode, no authored darkness. U3's own
+side-repair is what proved it, because the table now prints
+resolve-minus-call: `pawn: 4743 ms compile, call at 3 ms`.
 
-    preview-B — warm (U6's proof)
-    [AUBADE] waterfall …
-    [AUBADE] window …
+**preview-A IS STRUCK FROM OWED.** The paste in hand closed R2 on its
+own; the tag was never pushed (CC's proxy 403s tag pushes) and is not
+needed. This paste stands as AUBADE's after-photo and AUBADE_1's
+before-photo.
 
-A closes R2 by instrument: many cheap `ticks` against a late `present` is
-a device-side wait — compiles — and high `cpu` is our own work. B against
-A is the campaign's whole claim.
+The warm paste — U6's proof — is still owed, and moves to AUBADE_1's OWED
+with the rest of the sitting.
 
 ### PARKED, WITH THE CONDITION THAT REOPENS IT
 
@@ -219,32 +220,111 @@ A is the campaign's whole claim.
 - **Service worker.** U6 covers repeat visits; heavier machinery buys
   nothing here.
 
-### OWED — the single sitting, and what it is a gate on
+### WHAT AUBADE LEFT BEHIND
 
-The deploy gate is Jean's by standing law, and CC's container can produce
-no wasm. **The tip has never met emscripten** — every witness this
-campaign ran was headless — so the build is the first true gate, and a
-compile failure is a paste to CC rather than a fault.
+Everything else it owed now sits in AUBADE_1's OWED, below, because that
+is where the sitting is. Two items carry across unchanged:
 
-- **The tag.** CC's proxy 403s tag pushes; branch pushes are fine.
-  `git fetch origin claude/aubade && git tag aubade-preview-a 0ee6bc90
-  && git push origin aubade-preview-a`
-- **Two previews, two photos.** `aubade-preview-a` (U1 only) for the
-  before-photo; `claude/aubade` for the after, cold and warm. Every
-  `wrangler pages deploy` prints a UNIQUE per-deployment URL — open
-  those, never the branch alias: the alias moves with each deploy, the
-  unique URLs are permanent, and each is cold by construction on first
-  open.
-- **The iOS witness (L48).** This campaign touched pipeline construction
-  and the render path; L48 says no such round lands without one. It sits
-  at step 3 of the sitting: open preview-B's URL on the iOS device and
-  watch one full boot. If anything looks wrong the bisect is two switches
-  — `?adopt=0` (U2 out), `?async=0` (U3 out) — from the seven-switch set
-  above.
+- **The iOS witness (L48).** AUBADE touched pipeline construction and the
+  render path; AUBADE_1 touches the same. It is taken on PRODUCTION now,
+  post-merge, on Jean's authority — see below.
 - **The WebKit bug is drafted, not filed** (`docs/reference/
-  WEBKIT_BUNDLE_BUG.md`). Filing is Jean's — it is an outward-facing post
-  under the project's name. Its URL goes into that file and into
-  renderer.hpp's `main_bundle_ready` banner.
+  WEBKIT_BUNDLE_BUG.md`). Outward-facing, under the project's name, so
+  Jean's. Its URL goes into that file and into renderer.hpp's
+  `main_bundle_ready` banner.
+
+## AUBADE_1 — first light first (on master, awaiting one production paste)
+
+One reorder and two repairs. AUBADE built the gate correctly and queued
+it behind everything it was meant to skip; this campaign issues first
+light first. No visual gate: the first-light SET is unchanged; what
+changes is when the rest arrives.
+
+| unit | what moved |
+|---|---|
+| M0 | the merge — `claude/aubade` fast-forwarded to master, branch retired |
+| F1 | the seven first-light creates are issued before the other fifty |
+| F2 | `cpu` sums deltas, `firstlight` is one mark, a late mark prints its own line |
+| F3 | a `pending` page is awaited (2000 ms) instead of read as a refusal |
+
+### THE FINDING F1 REPAIRS
+
+The seven first-light pipelines resolved at queue positions
+**{1, 5, 6, 10, 28, 29, 30}** — the gate waited behind ~23 pipelines it
+does not need. The assembly-order ruling was Claude's: it ordered the
+dawn and accidentally ordered the gate last. `rest@5077 < present@5403`
+says it plainly — the world arrived COMPLETE BEFORE THE FIRST FRAME,
+which is the exact opposite of assembling in view.
+
+Creation order carries no semantics, so the repair is an ordering and not
+a restructuring: the creators are called twice and each issuer answers
+only its own pass. Membership, ready bits, layouts and the shadow
+conjunction are untouched.
+
+### THE THREE THINGS THE PROBE WAS SAYING WRONG (F2)
+
+- `cpu=38526ms` inside a 5.4 s window — it was summing `now() - s_frame0`
+  where `s_frame0` is only assigned under `if constexpr (frame_meter)`,
+  and the meter is off in the shipped build. Absolute timestamps, summed;
+  the number grew with the machine's uptime.
+- `ticks=7` in that same window — not in the handoff, found while
+  fixing the above, and the same lie wearing the other shoe. U3's gate
+  returns before the frame body and the tick was counted after it, so
+  4.4 s of compile counted seven turns instead of some three hundred. The
+  tick is now counted ABOVE the gate (a turn the gate sent home is still
+  a turn) and `cpu` below every early return (a turn that did no work
+  adds none). That asymmetry is the whole reading.
+- `firstlight` printed twice, 4747 and 5062 — one instant, two clocks.
+  The site that takes the mark now prints the value the mark hands back.
+- `authored6=-` — the report fires at `ready` and the valve stages
+  nothing until after first present. A missing mark prints `pending`, and
+  any mark arriving after the report prints its own line.
+
+### THE FINDING F3 REPAIRS
+
+`[Device] the page has no device to hand over (state=pending)`. U2's
+overlap was real and C++ simply arrived first: the shell's promise was
+unresolved when C++ asked, adoption fell to the fallback — gracefully,
+census intact — and the boot paid two adapter requests instead of one,
+about 150 ms. `pending` was being read as a refusal. It is now awaited,
+2000 ms, in the boot's own pumped state machine.
+
+### THE PERCEPTUAL CONSEQUENCE, SAID HONESTLY
+
+In the `fcbed3c4` build the world arrived complete before present
+(`rest@5077 < present@5403`), so nothing was ever seen to assemble. After
+F1, present precedes the rest and **the assembly becomes visible for the
+first time** — which is the original brief: a few frames for everything
+to sit in place beats a few seconds of nothing. One production look
+confirms the taste. If the dawn ever reads as damage, the rest's assembly
+order is the tuning knob, and that is a stanza for a future round rather
+than a fault.
+
+### OWED — Jean, minutes, all against production
+
+The tip has still never met emscripten; every witness both campaigns ran
+was headless, so the build is the first true gate and a compile failure
+is a paste to CC, not a fault.
+
+1. Build master → `python tools\web_dist.py` →
+   `npx wrangler pages deploy dist --project-name=7t` (production, no
+   `--branch`).
+2. Open production cold — new hashes make it cold by construction — and
+   paste the `[AUBADE]` lines. F1/F3's witness and the campaign's
+   after-photo.
+3. Reload; paste warm. **U6's proof, finally taken.**
+4. Open production once on the iOS device. **L48's witness** — the one
+   law-item still outstanding — completed on Jean's authority
+   post-merge; one line back to this file. If anything looks wrong the
+   bisect is two switches, `?adopt=0` and `?async=0`, from the
+   seven-switch set above.
+5. File the drafted WebKit bug when convenient.
+
+**CC could not delete the remote branch.** `git push origin --delete
+claude/aubade` is refused by the same proxy that 403s tag pushes; the
+local branch is gone and master carries every commit. One command from
+Jean's side closes ATTIC LAW's second half:
+`git push origin --delete claude/aubade`.
 
 ## THE OPTIMIZATION ARC — CLOSED 2026-08-28 (PURSE_0)
 
