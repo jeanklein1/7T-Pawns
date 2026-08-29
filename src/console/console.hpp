@@ -303,9 +303,25 @@ namespace t7 {
         // init() and the frame gate pumps Configuring → Ready once the
         // device callback lands. Failed is terminal — the cause has
         // already printed.
-        enum class BootState { RequestingAdapter, RequestingDevice, Configuring, Ready, Failed };
+        // AUBADE_1 F3 — AwaitingPageDevice joins them. U2's overlap did not
+        // take on the production boot: the page's requestDevice promise was
+        // still unresolved when C++ asked, so adoption fell to the fallback,
+        // gracefully, and the boot paid for two adapter requests instead of
+        // one (~150 ms). The overlap was real; C++ simply arrived first and
+        // did not wait. This state is the waiting.
+        enum class BootState { RequestingAdapter, RequestingDevice,
+                               AwaitingPageDevice, Configuring, Ready, Failed };
 
         BootState boot_state() const { return bootState_; }
+
+        // How long C++ will wait on a promise the page has not settled.
+        // GENEROUS AGAINST THE THING IT SAVES and mean against the thing it
+        // risks: the prize is ~150 ms, and a device request that has not
+        // answered in two seconds is not going to answer usefully — the
+        // C++ path from a cold start beats it. A wait that never ended
+        // would be a black screen, which is the one outcome this whole
+        // campaign exists to remove.
+        static constexpr double PAGE_DEVICE_WAIT_MS = 2000.0;
 
         // ── PORT_3a: the device can be lost ──────────────────────
         // On the web, device loss is NORMAL: tab backgrounding, GPU
@@ -323,6 +339,32 @@ namespace t7 {
         // synchronously) but it was callable there harmlessly:
         // every other state is a no-op.
         void pump_boot() {
+            // ══ AUBADE_1 F3 — THE WAIT, PUMPED ═══════════════════════════
+            //
+            // One string across the boundary per rAF turn, for a handful of
+            // turns, and it ends three ways:
+            //
+            //   the page answers   -> adopt it, exactly as a boot that
+            //                         found it ready would have
+            //   the page is refused-> its own reason has printed; ask
+            //   the deadline passes-> say so, once, and ask
+            //
+            // AND THE CENSUS STILL DECIDES. A device that arrives late is
+            // put through device_meets_floor_ and the wallet check like any
+            // other; a late device that fails them is REFUSED here and the
+            // C++ request runs. Waiting bought time, not authority.
+            if (bootState_ == BootState::AwaitingPageDevice) {
+                const PageDevice answer = adopt_page_device_();
+                if (answer == PageDevice::ADOPTED) return;   // sets Configuring
+                if (answer == PageDevice::PENDING) {
+                    if (std::chrono::steady_clock::now() < pageDeviceDeadline_) return;
+                    std::cout << "[Device] the page's device did not settle within "
+                              << static_cast<long long>(PAGE_DEVICE_WAIT_MS)
+                              << " ms — asking from C++\n";
+                }
+                start_cpp_device_request_();
+                return;
+            }
             if (bootState_ != BootState::Configuring) return;
             if (!initSurface()) { bootState_ = BootState::Failed; return; }
             // ACQ_0: no depth buffer here. It is built at the first acquire,
@@ -1039,18 +1081,29 @@ namespace t7 {
         //               this check is the C++ half of the same decision,
         //               and it holds even if the page's does not.
         //
-        // Returns true only when device_ and queue_ are live and the boot
-        // may proceed to Configuring.
-        bool adopt_page_device_() {
+        // AUBADE_1 F3 — THREE ANSWERS, because there were always three and
+        // the second was being read as the third:
+        //
+        //   ADOPTED  device_ and queue_ are live; bootState_ is Configuring.
+        //   PENDING  the page asked and has not been answered yet. NOT a
+        //            refusal — the thing we want is in flight.
+        //   REFUSED  a switch stood it down, the page never asked or was
+        //            rejected, or the census would not keep what arrived.
+        //
+        // The caller decides what each costs. Only REFUSED goes straight to
+        // the C++ request.
+        enum class PageDevice { REFUSED, PENDING, ADOPTED };
+
+        PageDevice adopt_page_device_() {
             if (!boot_params().adopt) {
                 std::cout << "[Device] adopt=0 — not taking the page's device;"
                              " requesting one from C++\n";
-                return false;
+                return PageDevice::REFUSED;
             }
             if (boot_params().failboot) {
                 std::cout << "[Device] failboot=1 — the failure path lives in the"
                              " C++ request; not adopting\n";
-                return false;
+                return PageDevice::REFUSED;
             }
             // One EM_ASM, bytes into stack buffers through HEAPU8 —
             // boot_params.hpp's pattern, and deliberately NOT
@@ -1076,20 +1129,27 @@ namespace t7 {
             offers[sizeof(offers) - 1] = '\0';
 
             const std::string st(state);
+            // AUBADE_1 F3 — PENDING IS NOT A REFUSAL, and reading it as one
+            // is what cost U2 its overlap. It is the honest common case on a
+            // fast wire: the wasm won the race, the page's promise is still
+            // in flight, and the thing we want is seconds of driver work
+            // already under way. It returns SILENTLY — the caller says what
+            // it is going to do about it, once, rather than this function
+            // saying it on every pump.
+            if (st == "pending") return PageDevice::PENDING;
             if (st != "ready") {
-                // NOT A FAILURE. `pending` is the honest common case on a
-                // fast wire — the wasm won the race — and `failed` has
-                // already printed its own reason from the page.
+                // `failed` and `skipped` have already printed their own
+                // reason from the page; `absent` means no page at all.
                 std::cout << "[Device] the page has no device to hand over (state="
                           << st << ") — requesting one from C++\n";
-                return false;
+                return PageDevice::REFUSED;
             }
 
             wgpu::Device dev = wgpu::Device::Acquire(emscripten_webgpu_get_device());
             if (!dev) {
                 std::cerr << "[Device] the page said ready but the import produced"
                              " nothing — requesting one from C++\n";
-                return false;
+                return PageDevice::REFUSED;
             }
             std::cout << "[Device] ADOPTING the device the page created at parse time"
                          " (core defaults + the wallet, asked before the wasm arrived)\n";
@@ -1098,7 +1158,7 @@ namespace t7 {
             if (!device_meets_floor_(dev)) {
                 std::cerr << "[Device] the page's device is BELOW FLOOR — letting it go"
                              " and requesting one from C++\n";
-                return false;   // dev's destructor releases the import
+                return PageDevice::REFUSED;   // dev's destructor releases the import
             }
 
             // THE WALLET HALF. `offers` is the page's comma-joined list of
@@ -1119,7 +1179,7 @@ namespace t7 {
                 std::cerr << "[Device] the page's device is missing wallet features the"
                              " adapter offered (" << missing << ") — letting it go and"
                              " requesting one from C++\n";
-                return false;
+                return PageDevice::REFUSED;
             }
 
             device_ = std::move(dev);
@@ -1147,7 +1207,7 @@ namespace t7 {
                 offerList.empty() ? std::string("-") : offerList,
                 "the page, pre-created at parse time");
             bootState_ = BootState::Configuring;
-            return true;
+            return PageDevice::ADOPTED;
         }
 
         bool initWebGPU() {
@@ -1169,11 +1229,48 @@ namespace t7 {
             // adds a second one that outlives every object in the
             // program. Both are external references by Dawn's counting.
             g_instanceAnchor = instance_;
-            // AUBADE U2 — the page may already have done the waiting.
-            // Adoption sets device_, queue_ and bootState_ itself and
-            // returns true; every refusal falls through to the request
-            // chain below with its reason already printed.
-            if (adopt_page_device_()) return true;
+            // ══ AUBADE_1 F3 — WHAT THE BOOT DOES ABOUT THE PAGE'S ANSWER ══
+            //
+            // Three answers, three costs. ADOPTED is the win. REFUSED goes
+            // straight to the C++ request, exactly as it did. PENDING —
+            // the case the production paste actually hit — now WAITS,
+            // because the thing we want is already in flight and arriving
+            // first is not the same as arriving best.
+            //
+            // The wait is the boot's own state machine, not a callback: the
+            // frame gate already pumps this machine once an rAF turn, and a
+            // poll of one string across the boundary is cheaper than an
+            // exported symbol and a promise continuation would be. It costs
+            // a handful of turns, and it cannot outlive its deadline.
+            switch (adopt_page_device_()) {
+                case PageDevice::ADOPTED:
+                    return true;
+                case PageDevice::PENDING:
+                    pageDeviceDeadline_ =
+                        std::chrono::steady_clock::now()
+                        + std::chrono::milliseconds(
+                              static_cast<long long>(PAGE_DEVICE_WAIT_MS));
+                    bootState_ = BootState::AwaitingPageDevice;
+                    std::cout << "[Device] the page asked first and has not been"
+                                 " answered yet — waiting up to "
+                              << static_cast<long long>(PAGE_DEVICE_WAIT_MS)
+                              << " ms for it rather than asking a second time\n";
+                    return true;
+                case PageDevice::REFUSED:
+                    break;
+            }
+            start_cpp_device_request_();
+            return true;
+        }
+
+        // ── THE C++ REQUEST CHAIN, lifted verbatim (AUBADE_1 F3) ────────
+        //
+        // It was the tail of initWebGPU and is now callable from two
+        // places: that function, when the page refused or never asked, and
+        // pump_boot, when the wait ends without a device. Not one line of
+        // it changed — which is the point: the fallback the campaign leans
+        // on has to be the same fallback that has always run.
+        void start_cpp_device_request_() {
             bootState_ = BootState::RequestingAdapter;
             // SHIP_0 U2 — ASK FOR THE REAL GPU. Harmless on single-GPU
             // phones (the only adapter is the only answer); correct for a
@@ -1216,8 +1313,8 @@ namespace t7 {
                     // descriptor, the limits census and the one retry.
                     request_device_web(/*passthrough=*/false);
                 });
-            return true;
         }
+
 
         bool initSurface() {
             wgpu::SurfaceDescriptor surfaceDesc{};
@@ -2551,6 +2648,9 @@ namespace t7 {
 
         // ── Boot (PORT_1b) ───────────────────────────────────────
         BootState bootState_ = BootState::RequestingAdapter;
+        // AUBADE_1 F3 — set once, when the wait begins; read once an rAF
+        // turn until it ends. Meaningless in every other state.
+        std::chrono::steady_clock::time_point pageDeviceDeadline_{};
         bool deviceLost_ = false;   // PORT_3a — set by the loss callback, read by the frame gate
 
         // ── Surface & Presentation ───────────────────────────────
