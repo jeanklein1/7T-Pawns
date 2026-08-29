@@ -21,6 +21,11 @@
 #             are the program's own, not a Python copy of them.
 #   REAL      the tier tables — parsed out of bodies/gol_zones.hpp at
 #             every run. Edit a row, rerun, get the new answer.
+#   REAL      the tick draw under --ladder — same function, same zone
+#             seeds, at each row's own mean and sigma.
+#   MIRRORED  quantize_tick_period, ported to Python for --ladder in the
+#             same product-compare form (see read_ladder below for why a
+#             f64 port is sound for a distributional witness).
 #   MIRRORED  coupling_gol_next_state, pulse_cell_target's SPIRAL
 #             branch, and zone_gol_evolve's spring + apply_boundary, all
 #             transliterated from world.wgsl. If that file's versions
@@ -42,6 +47,13 @@
 # USAGE
 #   python3 tools/gol_census.py                    # census every Conway row
 #   python3 tools/gol_census.py --spiral           # Pulse: Spiral coherence
+#   python3 tools/gol_census.py --ladder           # GOL_TEMPO_2: every
+#         # row's tick draw through the snap. Asserts that every value is
+#         # a rung of GOL_TICK_LADDER and that no row falls below the
+#         # bottom rung, prints each row's rung histogram, its transit in
+#         # seconds per rung, and the RECOVERED DUTY that witnesses the
+#         # extrusion law. Exits nonzero on a violation, so it can be run
+#         # as a gate.
 #   python3 tools/gol_census.py --seeds 512        # widen the sample
 #   python3 tools/gol_census.py --gens 4000        # run them longer
 #   python3 tools/gol_census.py --candidate 'Vote:0x3E1E0:0.50:0.06:32'
@@ -82,6 +94,51 @@ INC = os.path.join(REPO, "src", "cartridges")
 # The property indices select_gol_zone / seed_gol_zone roll on. Mirrors
 # GoLZoneProp / PulseZoneProp in bodies/gol_zones.hpp.
 PROP_DENSITY = 930
+PROP_TICK_PERIOD = 931
+
+
+# ── The ladder, and the census's port of its snapper ──────────────────
+#
+# MIRRORED, and the third kind of mirror in this file. The draws below
+# are REAL — the driver calls the program's own cpu_sample_gaussian — but
+# the SNAP here is a Python transliteration of quantize_tick_period in
+# bodies/gol_zones.hpp, written in the same product-compare form so the
+# two can be read side by side.
+#
+# WHY THAT IS SAFE. This census is a DISTRIBUTIONAL witness, not a
+# bit-exactness one. Python computes x*x in f64 where the program
+# computes it in f32, so for a draw lying within a hair of a boundary the
+# two snappers can disagree about WHICH of two adjacent rungs it takes,
+# and a histogram column can be off by a count. The MEMBERSHIP assertion
+# is immune to that and it is the one that matters: both snappers return
+# an element of GOL_TICK_LADDER for every input, so a disagreement moves
+# a sample between rungs and can never move it off the ladder.
+#
+# The ladder itself is parsed out of the tree at every run, like the tier
+# tables — edit a rung, rerun, get the new answer.
+
+
+def read_ladder():
+    with open(BODIES, encoding="utf-8") as fh:
+        src = fh.read()
+    body = src.split("GOL_TICK_LADDER[12]", 1)[1].split(";", 1)[0]
+    rungs = [float(t) for t in re.findall(r"([\d.]+)f", body)]
+    if len(rungs) != 12 or rungs != sorted(rungs):
+        raise SystemExit(
+            "gol-census: GOL_TICK_LADDER parsed as %d rung(s), %s — the "
+            "ladder and this tool have diverged." % (len(rungs), rungs))
+    return rungs
+
+
+def quantize_tick_period(x, ladder):
+    """Python port of bodies/gol_zones.hpp's quantize_tick_period.
+    Nearest rung in log space; the boundary between lad[i] and lad[i+1] is
+    their geometric mean, compared as x*x < lad[i]*lad[i+1]. Below the
+    bottom rung and above the top the ladder clamps."""
+    for i in range(11):
+        if x * x < ladder[i] * ladder[i + 1]:
+            return ladder[i]
+    return ladder[11]
 
 # ── Parsing the tables out of the tree ────────────────────────────────
 
@@ -175,6 +232,7 @@ using namespace t7::the_board;
 static const float PI_ = 3.14159265359f;
 static const uint32_t SEED_BAND = 250u;   // GoLZoneProp::SEED_BAND
 static const uint32_t PROP_DENSITY = 930u;
+static const uint32_t PROP_TICK_PERIOD = 931u;  // GoLZoneProp::TICK_PERIOD
 
 // world.wgsl §3.7 — coupling_gol_next_state
 static float next_state(bool alive, int neighbors, uint32_t rule_mask) {
@@ -343,11 +401,41 @@ static void spiral_run(float tick, float trans, float phase, float tempo,
     }
 }
 
+// ── The ladder draw ──────────────────────────────────────────────────
+//
+// select_gol_zone's tick draw, verbatim and REAL: the program's own
+// cpu_sample_gaussian at the row's own mean and sigma, on the same zone
+// seeds the Conway census walks. The SNAP is not done here — the raw f32
+// draw is printed and Python snaps it, so the census's port of
+// quantize_tick_period is what gets exercised.
+static void ladder_draw(const char* name, float mu, float sigma, int seeds) {
+    for (uint32_t k = 0; k < (uint32_t)seeds; k++) {
+        uint32_t seed = cpu_lattice_node_seed(9000u + k, (int32_t)k, 13, SEED_BAND);
+        printf("%s %.9g\n", name,
+               cpu_sample_gaussian(seed, PROP_TICK_PERIOD, mu, sigma));
+    }
+}
+
 // argv: MODE then packed rows.
 //   conway  seeds gens   then name:mask:dm:ds:cells per row
 //   spiral  tick:trans:phase:tempo:sv:cells:bnd
+//   ladder  seeds        then name:tick_mu:tick_sigma per row
 int main(int argc, char** argv) {
     std::string mode = argv[1];
+    if (mode == "ladder") {
+        int seeds = atoi(argv[2]);
+        for (int a = 3; a < argc; a++) {
+            std::string s = argv[a];
+            std::vector<std::string> f; size_t p = 0, q;
+            while ((q = s.find(':', p)) != std::string::npos) {
+                f.push_back(s.substr(p, q - p)); p = q + 1;
+            }
+            f.push_back(s.substr(p));
+            ladder_draw(f[0].c_str(), (float)atof(f[1].c_str()),
+                        (float)atof(f[2].c_str()), seeds);
+        }
+        return 0;
+    }
     if (mode == "spiral") {
         float f[7]; std::string s = argv[2]; size_t p = 0; int i = 0;
         while (i < 7) {
@@ -399,11 +487,107 @@ def decode(mask):
     return "B%s/S%s" % (born, surv)
 
 
+# ── The ladder census (GOL_TEMPO_2 U4) ────────────────────────────────
+#
+# THE §1.4 WITNESS. The extrusion law says transit = transition_fraction x
+# tick_period, so quantizing the tick stretches every transit with its
+# rung and leaves every row's DUTY CYCLE where its author put it. The
+# recovered-duty column is that claim, measured: transit / rung must come
+# back as the row's own transition_fraction mean, on every rung it lands.
+def ladder_census(exe, conway, pulse, seeds):
+    ladder = read_ladder()
+    rows = ([(n, r, "Conway") for n, r in conway]
+            + [(n, r, "Pulse") for n, r in pulse])
+
+    packed = ["%s:%.9g:%.9g" % (n.replace(" ", "_"), r["tick_period_mean"],
+                                r["tick_period_sigma"]) for n, r, _ in rows]
+    out = subprocess.run([exe, "ladder", str(seeds)] + packed,
+                         capture_output=True, text=True)
+    if out.returncode != 0:
+        sys.stdout.write(out.stdout + out.stderr)
+        raise SystemExit("gol-census: the ladder driver did not run")
+
+    draws = {}
+    for line in out.stdout.splitlines():
+        name, value = line.rsplit(" ", 1)
+        draws.setdefault(name, []).append(float(value))
+
+    print("── the tick ladder, %d zone seeds per row ──\n" % seeds)
+    print("   GOL_TICK_LADDER = { %s }"
+          % ", ".join(("%g" % r) for r in ladder))
+    print("   The draw is REAL (the program's own cpu_sample_gaussian); the "
+          "snap is this\n   file's port of quantize_tick_period. Transit "
+          "seconds are quoted at 100 BPM\n   (one beat = 0.6 s). Recovered "
+          "duty is transit / rung, which must return the\n   row's own "
+          "transition_fraction mean — the extrusion law, measured.\n")
+
+    violations = []
+    for name, row, algo in rows:
+        key = name.replace(" ", "_")
+        raw = draws.get(key)
+        if not raw:
+            raise SystemExit("gol-census: the driver returned no draws for %s"
+                             % name)
+        snapped = [quantize_tick_period(x, ladder) for x in raw]
+
+        off = sorted({v for v in snapped if v not in ladder})
+        if off:
+            violations.append("%s: %d draw(s) off the ladder, e.g. %s"
+                              % (name, sum(1 for v in snapped if v in off),
+                                 off[:4]))
+        low = min(snapped)
+        if low < ladder[0]:
+            violations.append("%s: min rung %g is below the bottom rung %g"
+                              % (name, low, ladder[0]))
+
+        mu, sigma = row["tick_period_mean"], row["tick_period_sigma"]
+        trans = row["transition_fraction_mean"]
+        on_ladder = "rung" if mu in ladder else "*** OFF LADDER ***"
+        print("  %-9s %-8s mean %g +/- %g  (%s)   raw %.3f..%.3f"
+              % (algo, name, mu, sigma, on_ladder, min(raw), max(raw)))
+
+        hist = {}
+        for v in snapped:
+            hist[v] = hist.get(v, 0) + 1
+        modal = max(hist, key=lambda k: hist[k])
+        if modal != quantize_tick_period(mu, ladder):
+            violations.append(
+                "%s: modal rung %g is not the mean's own rung %g"
+                % (name, modal, quantize_tick_period(mu, ladder)))
+        print("      %-7s %7s  %8s  %8s  %s"
+              % ("rung", "zones", "share", "transit", "recovered duty"))
+        for rung in ladder:
+            n = hist.get(rung, 0)
+            if not n:
+                continue
+            transit_beats = trans * rung
+            print("      %-7g %7d  %7.2f%%  %7.2fs  %.4f%s"
+                  % (rung, n, 100.0 * n / len(snapped), transit_beats * 0.6,
+                     transit_beats / rung,
+                     "   <- the mean's rung" if rung == modal else ""))
+        print()
+
+    print("  %d row(s), %d draw(s) each, %d total."
+          % (len(rows), seeds, len(rows) * seeds))
+    if violations:
+        print("\n  LADDER VIOLATIONS:")
+        for v in violations:
+            print("    - %s" % v)
+        print("\n  gol-census --ladder: FAIL")
+        return 1
+    print("  Every draw landed on a rung; every row's minimum is at or above "
+          "the bottom\n  rung; every row's modal mass sits on its mean's own "
+          "rung; every recovered duty\n  returned its row's transition_fraction.")
+    print("\n  gol-census --ladder: PASS")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(
         description="Census what each GoL tier row actually does.")
-    ap.add_argument("--seeds", type=int, default=32,
-                    help="zone seeds per row (default 32)")
+    ap.add_argument("--seeds", type=int, default=None,
+                    help="zone seeds per row (default 32; 4096 under --ladder, "
+                         "which needs a distribution rather than a sample)")
     ap.add_argument("--gens", type=int, default=2000,
                     help="generations per zone (default 2000)")
     ap.add_argument("--row", action="append", default=[],
@@ -413,13 +597,22 @@ def main():
                          "name:mask:density_mean:density_sigma:cells")
     ap.add_argument("--spiral", action="store_true",
                     help="Pulse instead: the Spiral row's arm coherence")
+    ap.add_argument("--ladder", action="store_true",
+                    help="GOL_TEMPO_2: every row's tick draw through the "
+                         "snap. Asserts membership in GOL_TICK_LADDER and "
+                         "prints the rung histogram, transit and recovered "
+                         "duty. Exits nonzero on a violation.")
     args = ap.parse_args()
 
     conway, pulse = read_tables()
+    seeds = args.seeds if args.seeds is not None else (4096 if args.ladder else 32)
 
     tmp = tempfile.mkdtemp(prefix="gol_census_")
     try:
         exe = build(tmp)
+
+        if args.ladder:
+            return ladder_census(exe, conway, pulse, seeds)
 
         if args.spiral:
             row = dict(pulse).get("Spiral")
@@ -458,7 +651,7 @@ def main():
                              float(f[2]), float(f[3]), int(f[4])))
 
         print("── the Conway rows, %d zone seeds each, %d generations ──"
-              % (args.seeds, args.gens))
+              % (seeds, args.gens))
         print("   dark counts are a LOWER BOUND: zone_seed_mask is not modelled "
               "(see the header).\n")
         for n, r in rows:
@@ -472,7 +665,7 @@ def main():
               % ("row", "mask", "dens m/s", "N", "dark", "satu", "strc",
                  "live", "frze", "dark%"))
         print("  " + "-" * 88)
-        subprocess.run([exe, "conway", str(args.seeds), str(args.gens)] + packed)
+        subprocess.run([exe, "conway", str(seeds), str(args.gens)] + packed)
         return 0
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
