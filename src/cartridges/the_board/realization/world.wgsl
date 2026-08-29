@@ -2350,6 +2350,20 @@ struct GolPulseTierParams {
     phase_randomness_mean: f32,
     phase_randomness_sigma: f32,
     // --- Tempo scatter
+    // GOL_TEMPO_2 U3 ZEROED THIS COLUMN ON EVERY ROW. It is the one
+    // variance that breaks musical time PER CELL: tempo scatter is a
+    // per-cell FREQUENCY multiplier, so each cell drifts off the ladder
+    // continuously and its phase error integrates in t_beats without
+    // bound. The Spiral row measured it and won the argument (see its
+    // comment): 0.99 correlation against a scatter-free field at 20
+    // beats, 0.66 at 75, 0.02 by 150 — coherence gone inside a minute.
+    // A ladder that every zone leaves per cell is not a ladder.
+    // The column is still LIVE and still read (pulse_cell_target's
+    // tempo_jitter) — it is zero by ruling, not dead. phase_randomness
+    // beside it is untouched: a bounded static offset is texture, not
+    // broken time, which is why Sparkle keeps its 0.90 and stays a
+    // sparkle. Cost, knowingly paid: Sparkle and Drift lose their
+    // per-cell tempo shimmer.
     tempo_randomness_mean: f32,
     tempo_randomness_sigma: f32,
     // --- Height
@@ -2379,9 +2393,9 @@ const GOL_PULSE_TIER_COUNT: u32 = 4u;
 // both tables is now a rung. Flash 0.5 -> 1.0, HighLife 1.2 -> 1.0,
 // Cauldron 5.0 -> 4.0 (both rooms), Pulse Sparkle 1.0 -> 1.5.
 const GOL_PULSE_TIERS = array<GolPulseTierParams, GOL_PULSE_TIER_COUNT>(
-    /* 0: Breathe  */ GolPulseTierParams( PULSE_FIELD_BREATH,  4.0, 1.0,   4.0, 1.0,   0.20, 0.05,   0.15, 0.05,   0.10, 0.03,   2.0, 0.8,  10.0, 3.0,   0.20,  0.38, 0u, 0u, 32u ),
-    /* 1: Sparkle  */ GolPulseTierParams( PULSE_FIELD_BREATH,  1.5,  0.4, 12.0, 3.0,   0.25, 0.05,   0.90, 0.10,   0.60, 0.15,   0.0, 0.0,   5.0, 2.0,   0.50,  0.24, 1u, 0u, 16u ),
-    /* 2: Drift    */ GolPulseTierParams( PULSE_FIELD_BREATH,  8.0, 2.0,   1.5, 0.4,   0.10, 0.03,   0.50, 0.15,   0.40, 0.10,   4.0, 1.5,  25.0, 8.0,   0.35,  0.20, 0u, 1u, 8u ),
+    /* 0: Breathe  */ GolPulseTierParams( PULSE_FIELD_BREATH,  4.0, 1.0,   4.0, 1.0,   0.20, 0.05,   0.15, 0.05,    0.0,  0.0,   2.0, 0.8,  10.0, 3.0,   0.20,  0.38, 0u, 0u, 32u ),
+    /* 1: Sparkle  */ GolPulseTierParams( PULSE_FIELD_BREATH,  1.5,  0.4, 12.0, 3.0,   0.25, 0.05,   0.90, 0.10,    0.0,  0.0,   0.0, 0.0,   5.0, 2.0,   0.50,  0.24, 1u, 0u, 16u ),
+    /* 2: Drift    */ GolPulseTierParams( PULSE_FIELD_BREATH,  8.0, 2.0,   1.5, 0.4,   0.10, 0.03,   0.50, 0.15,    0.0,  0.0,   4.0, 1.5,  25.0, 8.0,   0.35,  0.20, 0u, 1u, 8u ),
     // GOL_RULES_1 — the continuous field row. Rationale lives with the CPU
     // twin in bodies/gol_zones.hpp; this is the same row.
     /* 3: Spiral   */ GolPulseTierParams( PULSE_FIELD_SPIRAL,  6.0, 1.6,   8.0, 2.0,   0.30, 0.06,   0.03, 0.01,    0.0, 0.0,   0.0, 0.0,   0.0, 0.0,   0.10,  0.18, 1u, 1u, 32u ),

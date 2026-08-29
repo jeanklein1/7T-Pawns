@@ -366,6 +366,20 @@ struct GolPulseTierProfile {
     float phase_randomness_mean, phase_randomness_sigma;
 
     // ─── Tempo scatter ───────────────────────────────────────
+    // GOL_TEMPO_2 U3 ZEROED THIS COLUMN ON EVERY ROW. It is the one
+    // variance that breaks musical time PER CELL: tempo scatter is a
+    // per-cell FREQUENCY multiplier, so each cell drifts off the ladder
+    // continuously and its phase error integrates in t_beats without
+    // bound. The Spiral row measured it and won the argument (see its
+    // comment): 0.99 correlation against a scatter-free field at 20
+    // beats, 0.66 at 75, 0.02 by 150 — coherence gone inside a minute.
+    // A ladder that every zone leaves per cell is not a ladder.
+    // The column is still LIVE and still read (pulse_cell_target's
+    // tempo_jitter) — it is zero by ruling, not dead. phase_randomness
+    // beside it is untouched: a bounded static offset is texture, not
+    // broken time, which is why Sparkle keeps its 0.90 and stays a
+    // sparkle. Cost, knowingly paid: Sparkle and Drift lose their
+    // per-cell tempo shimmer.
     float tempo_randomness_mean, tempo_randomness_sigma;
 
     // ─── Height ──────────────────────────────────────────────
@@ -397,9 +411,9 @@ struct GolPulseTierProfile {
 // Cauldron 5.0 -> 4.0 (both rooms), Pulse Sparkle 1.0 -> 1.5.
 //                                     field                  tick_μ   σ    spring_μ σ    trans_μ  σ    phase_μ  σ    tempo_μ σ    ht_μ   σ    wand_μ  σ    sv    wt    no_h  bnd                    cells
 inline constexpr GolPulseTierProfile GOL_PULSE_TIERS[GOL_PULSE_TIER_COUNT] = {
-    /* 0: Breathe  */ { PulseField::BREATH,  4.0f, 1.0f,   4.0f, 1.0f,   0.20f, 0.05f,   0.15f, 0.05f,   0.10f, 0.03f,   2.0f, 0.8f,  10.0f, 3.0f,   0.20f,  0.38f, false, BoundaryMode::REFLECT, 32u },
-    /* 1: Sparkle  */ { PulseField::BREATH,  1.5f,  0.4f, 12.0f, 3.0f,   0.25f, 0.05f,   0.90f, 0.10f,   0.60f, 0.15f,   0.0f, 0.0f,   5.0f, 2.0f,   0.50f,  0.24f, true,  BoundaryMode::REFLECT, 16u },
-    /* 2: Drift    */ { PulseField::BREATH,  8.0f, 2.0f,   1.5f, 0.4f,   0.10f, 0.03f,   0.50f, 0.15f,   0.40f, 0.10f,   4.0f, 1.5f,  25.0f, 8.0f,   0.35f,  0.20f, false, BoundaryMode::WRAP, 8u },
+    /* 0: Breathe  */ { PulseField::BREATH,  4.0f, 1.0f,   4.0f, 1.0f,   0.20f, 0.05f,   0.15f, 0.05f,    0.0f,  0.0f,   2.0f, 0.8f,  10.0f, 3.0f,   0.20f,  0.38f, false, BoundaryMode::REFLECT, 32u },
+    /* 1: Sparkle  */ { PulseField::BREATH,  1.5f,  0.4f, 12.0f, 3.0f,   0.25f, 0.05f,   0.90f, 0.10f,    0.0f,  0.0f,   0.0f, 0.0f,   5.0f, 2.0f,   0.50f,  0.24f, true,  BoundaryMode::REFLECT, 16u },
+    /* 2: Drift    */ { PulseField::BREATH,  8.0f, 2.0f,   1.5f, 0.4f,   0.10f, 0.03f,   0.50f, 0.15f,    0.0f,  0.0f,   4.0f, 1.5f,  25.0f, 8.0f,   0.35f,  0.20f, false, BoundaryMode::WRAP, 8u },
     // GOL_RULES_1. The first Pulse row that is not BREATH, and the first
     // whose target is continuous rather than binary. Read the values as
     // intent:
