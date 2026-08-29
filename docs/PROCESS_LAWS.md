@@ -366,6 +366,18 @@ the executor.
 verified reachable and wrote its stop without a default; one full
 round-trip to learn the lane lived elsewhere.
 
+## P18 — WITNESS DIRT
+
+A file dirtied for a witness is restored from a sidecar copy taken at the
+moment of dirtying (`cp F F.bak` … `mv F.bak F`), never from HEAD. HEAD
+restores a state the witness never saved; on a mid-change file it destroys
+the change under test. The sidecar is deleted by its own restore; a
+surviving `.bak` is a failed witness.
+
+*Paid for by:* GATES_2b witness 3 (near-miss, saved by judgment) and
+GATES_2c witness 3 (entered one round after ratifying the hazard, saved by
+the gate). Twice is mechanism's turn.
+
 ## SCHEDULING RECORD
 
 > DRIFT NOTE (RECENSION_3, 2026-08-18; L28): the DAWN RELEASE BUILD entry
