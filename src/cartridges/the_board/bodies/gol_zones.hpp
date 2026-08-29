@@ -157,6 +157,41 @@ struct GoLColorMode {
     static constexpr float WEIGHTS_NO_HEIGHT[COUNT] = { 0.00f, 0.55f, 0.45f };
 };
 
+// ═══ THE TICK LADDER (GOL_TEMPO_2) ═══════════════════════════════
+//
+// Every GoL tick period is a NOTE VALUE. Binary note values and their
+// dotted forms, in beats: twelve rungs, {1, 1.5} x 2^n. Fully
+// commensurate — every rung divides 96 beats, so the whole board
+// realigns every 24 bars of 4/4. The bottom rung is the hard floor of
+// the world; the top caps Monolith's +3σ tail at 8 bars.
+//
+// This governs the tick_period column of BOTH tier tables below.
+inline constexpr float GOL_TICK_LADDER[12] =
+    { 0.75f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 6.0f, 8.0f,
+      12.0f, 16.0f, 24.0f, 32.0f };
+
+// CPU-ONLY — THE ONE-AUTHOR LAW. The GPU receives the quantized value
+// on the derive request and draws nothing. sample_gaussian runs log and
+// cos, and the WGSL spec licenses per-backend accuracy for both, so a
+// GPU twin of this snapper would put one draw on two different rungs
+// either side of a boundary — a permanent duty desync, different per
+// backend and unreproducible across machines. One draw, one number.
+//
+// Nearest rung in LOG space: the boundary between lad[i] and lad[i+1]
+// is their geometric mean, compared as x*x < lad[i]*lad[i+1] — two f32
+// products, no transcendentals. Every boundary product (0.75, 1.5, 3,
+// 6, 12, 24, 48, 96, 192, 384, 768) is exactly representable, so the
+// comparison is exact and the census's Python port cannot disagree
+// about membership. Below the bottom rung and above the top the ladder
+// clamps — it IS the floor that retired max(0.1f, ...).
+inline float quantize_tick_period(float x) {
+    for (int i = 0; i < 11; i++)
+        if (x * x < GOL_TICK_LADDER[i] * GOL_TICK_LADDER[i + 1])
+            return GOL_TICK_LADDER[i];
+    return GOL_TICK_LADDER[11];
+}
+
+
 // ═══ CONWAY ALGORITHM ════════════════════════════════════════════
 
 // ── Tier Profile (mean+sigma, matches ColumnTierParams pattern) ──
@@ -437,7 +472,11 @@ struct GoLZoneState {
     float extent_x = 0.0f, extent_z = 0.0f;
     bool active = false;
     uint32_t algorithm = AlgorithmType::CONWAY;
-    float tick_period = 1.0f;        // CPU derives this for tick mask (matches GPU)
+    // THE CPU AUTHORS THIS, for both rooms (GOL_TEMPO_2 U1). It is not
+    // a copy that happens to match the GPU's — it is the number, drawn
+    // and snapped to GOL_TICK_LADDER once, read here for the tick mask
+    // and carried on the derive request for omega and the pulse phase.
+    float tick_period = 1.0f;
     float initial_density = 0.3f;    // CPU needs this for life buffer seeding
     int32_t last_tick_index = -1;
 };
@@ -575,7 +614,7 @@ inline bool select_gol_for_patch(GoLState& gs, MachineCtx* c,
                 uint32_t tier = select_tier(seed, GoLZoneProp::TIER, w, GOL_TIER_COUNT);
                 const auto& tp = GOL_TIERS[tier];
                 if (tp.force_no_height) height_enabled = false;
-                tick_period = std::max(0.1f,
+                tick_period = quantize_tick_period(
                     cpu_sample_gaussian(seed, GoLZoneProp::TICK_PERIOD,
                         tp.tick_period_mean, tp.tick_period_sigma));
                 initial_density = std::max(0.05f, std::min(0.9f,
@@ -589,7 +628,7 @@ inline bool select_gol_for_patch(GoLState& gs, MachineCtx* c,
                 uint32_t tier = select_tier(seed, PulseZoneProp::PULSE_TIER, w, GOL_PULSE_TIER_COUNT);
                 const auto& pp = GOL_PULSE_TIERS[tier];
                 if (pp.force_no_height) height_enabled = false;
-                tick_period = std::max(0.1f,
+                tick_period = quantize_tick_period(
                     cpu_sample_gaussian(seed, GoLZoneProp::TICK_PERIOD,
                         pp.tick_period_mean, pp.tick_period_sigma));
                 initial_density = 0.0f;
@@ -716,6 +755,11 @@ inline void commit_gol(GoLState& gs, MachineCtx* c,
         req.algorithm = plan.algorithm;
         req.height_enabled = plan.height_enabled ? 1u : 0u;
         req.world_seed = c->world_state_.active_seed;
+        // THE ONE-AUTHOR LAW: the tick crosses the seam as a VALUE,
+        // already drawn and already snapped to GOL_TICK_LADDER. The
+        // GPU no longer re-derives it, so gate, omega and pulse phase
+        // read literally the same number.
+        req.tick_period = plan.tick_period;
     }
 
     // A BIRTH ANNOUNCEMENT ON THE SPAWN PATH (PURSE_0 R3). Unconditional
@@ -787,9 +831,14 @@ inline void upload_gol_zone_config(GoLState& gs, GolDeps* c, wgpu::Queue& queue)
     for (uint32_t i = 0; i < Dim::MAX_GOL_ZONES; i++) {
         if (!gs.zones[i].active) continue;
 
-        // Conway tick gating: exactly one tick per period
-        float effective_period = std::max(gs.zones[i].tick_period, 0.01f);
-        int32_t current_tick = (int32_t)std::floor(c->time_state_.beats / effective_period);
+        // Conway tick gating: exactly one tick per period.
+        // No floor on the divisor. The bound is STRUCTURAL: the only
+        // author of this field snaps it to GOL_TICK_LADDER, whose
+        // bottom rung is 0.75 beats, so the divisor cannot approach
+        // zero and the guard that used to say so had nothing left to
+        // guard (GOL_TEMPO_2 U1).
+        int32_t current_tick = (int32_t)std::floor(
+            c->time_state_.beats / gs.zones[i].tick_period);
         if (current_tick != gs.zones[i].last_tick_index) {
             tick_mask |= (1u << i);
             gs.zones[i].last_tick_index = current_tick;

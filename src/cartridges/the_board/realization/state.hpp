@@ -1581,7 +1581,12 @@ namespace t7 {
             uint32_t algorithm;        // 0=Conway, 1=Pulse
             uint32_t height_enabled;   // 0 or 1
             uint32_t world_seed;       // master seed
-            uint32_t _pad0;
+            // GOL_TEMPO_2 U1: the leading pad word, renamed in place.
+            // Same offsets, same 32 bytes — the static_assert below is
+            // the witness that nothing grew (the GOL_RULES_1 precedent).
+            // THE ONE-AUTHOR LAW: the CPU draws and snaps the tick to
+            // GOL_TICK_LADDER, and the GPU reads this instead of drawing.
+            float tick_period;         // beats, already on the ladder
             uint32_t _pad1;
         };
         static_assert(sizeof(GPUZoneDeriveRequest) == 32, "GPUZoneDeriveRequest must be 32 bytes");

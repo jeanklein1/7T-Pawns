@@ -1798,3 +1798,34 @@ many blocks along the way, a few times a second, worse with speed.*
   column gets a reader or it dies in that commit, both rooms together
   (L26 docket rules: the braces are positional, so table and struct move
   as one).
+
+## GOL_TEMPO_2 — what the ladder opened and did not close
+
+- **The ladder's grid has no musical origin.** `GOL_TICK_LADDER` makes every
+  tick period a note value, and every rung divides 96 beats, so the whole
+  board realigns every 24 bars of 4/4 — against a grid whose beat 0 is BOOT.
+  That is correct while nothing else keeps musical time: the board is its own
+  transport and the origin is arbitrary. The day the audio socket fills, it
+  stops being arbitrary — every zone on the board would be quantized to a
+  grid offset from the music by the page-load time, which is a uniformly
+  random phase error, not a small one. The ladder cannot fix this from where
+  it sits: `t_beats` is handed to the shader already accumulated, so the
+  origin needs a home before a transport can move it. Origin: opened by
+  GOL_TEMPO_2 U1, which built the grid and deliberately did not build the
+  transport (§6 out of scope). Unblocked by a ruling on where musical time
+  starts — a transport whose origin the board reads, or an explicit statement
+  that boot IS the downbeat.
+- **`mode_gol_tick_scale` must stay 1.0, or quantize its product.** The dial
+  multiplies `tick_period` inside `pulse_cell_target` and nowhere else, so it
+  is not an author of the tick and the one-author law is intact — but it is
+  the one live seam through which a Pulse cell's rate can leave the ladder.
+  At any value but 1.0 a Pulse zone's cells oscillate off-grid while that same
+  zone's tick gate and transit stay on it, which is the duty desync the
+  quantizer exists to prevent, arrived at by hand instead of by backend. The
+  dial is held at neutral by the boot block (`cartridge.hpp`, the only code
+  caller, passes 1.0f) and the shader's own comment calls it DRIVERLESS, so
+  today only the organ panel can move it. Origin: found by GOL_TEMPO_2's R5
+  recon, which confirmed no ORGAN row writes `tick_period` or either tier
+  table — this dial is the whole of the exposure. Unblocked by either pinning
+  the ORGAN row read-only, or snapping the product
+  `tick_period * mode_gol_tick_scale` to the ladder at both read sites.

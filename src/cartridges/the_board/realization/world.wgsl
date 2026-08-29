@@ -7561,7 +7561,14 @@ struct ZoneDeriveRequest {
     algorithm: u32,         // 0=Conway, 1=Pulse
     height_enabled: u32,    // 0 or 1 (from CPU height chance roll)
     world_seed: u32,        // master seed for lattice_node_seed
-    _pad0: u32,
+    // GOL_TEMPO_2 U1 — THE ONE-AUTHOR LAW. The leading pad word,
+    // renamed in place: same offsets, same 32 bytes, and the CPU twin's
+    // static_assert in state.hpp is the witness that nothing grew.
+    // sample_gaussian runs log and cos, and the spec licenses per-backend
+    // accuracy for both — so a GPU re-draw of the tick would land on a
+    // different rung of GOL_TICK_LADDER than the CPU's gate whenever the
+    // draw fell near a boundary. The CPU draws and snaps; this carries it.
+    tick_period: f32,       // beats, already on GOL_TICK_LADDER
     _pad1: u32,
 }
 
@@ -7603,7 +7610,6 @@ const GOL_COLOR_WEIGHTS_NO_HEIGHT = array<f32, 3>(0.00, 0.55, 0.45);
 // Property indices for zone parameter derivation (must match CPU GoLZoneProp / PulseZoneProp)
 const ZONE_PROP_TIER: u32         = 921u;
 const ZONE_PROP_COLOR_ROLL: u32   = 923u;
-const ZONE_PROP_TICK_PERIOD: u32  = 931u;
 const ZONE_PROP_SPRING: u32       = 932u;
 const ZONE_PROP_HEIGHT: u32       = 933u;
 const ZONE_PROP_TRANSITION: u32   = 934u;
@@ -7664,8 +7670,7 @@ fn zone_derive_params(@builtin(global_invocation_id) gid: vec3<u32>) {
 
         let actual_height = height_enabled && (tp.force_no_height == 0u);
 
-        zc.tick_period = max(0.1,
-            sample_gaussian(seed, ZONE_PROP_TICK_PERIOD, tp.tick_period_mean, tp.tick_period_sigma));
+        zc.tick_period = req.tick_period;
         zc.spring_stiffness = max(0.1,
             sample_gaussian(seed, ZONE_PROP_SPRING, tp.spring_stiffness_mean, tp.spring_stiffness_sigma));
         zc.transition_fraction = clamp(
@@ -7712,8 +7717,7 @@ fn zone_derive_params(@builtin(global_invocation_id) gid: vec3<u32>) {
 
         let actual_height = height_enabled && (pp.force_no_height == 0u);
 
-        zc.tick_period = max(0.1,
-            sample_gaussian(seed, ZONE_PROP_TICK_PERIOD, pp.tick_period_mean, pp.tick_period_sigma));
+        zc.tick_period = req.tick_period;
         zc.spring_stiffness = max(0.1,
             sample_gaussian(seed, ZONE_PROP_SPRING, pp.spring_stiffness_mean, pp.spring_stiffness_sigma));
         zc.transition_fraction = clamp(
