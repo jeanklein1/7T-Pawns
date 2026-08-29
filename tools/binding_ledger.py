@@ -3165,7 +3165,7 @@ _PIN_ROW = re.compile(
 
 
 def pinned_inputs(ledger_md):
-    """Read back the pins a ledger wrote about ITS OWN inputs.
+    """Read back every pin a ledger wrote about its own inputs, in order.
 
     The inverse of provenance(): that function stamps the hashes, this one
     recovers them. Keyed on the `sha256:` prefix, which is exactly what
@@ -3173,18 +3173,22 @@ def pinned_inputs(ledger_md):
     hashes are bare. Separators are normalised because the stamp is
     os.path.relpath and the two hosts disagree about the slash.
 
-    Returns None when the ledger is not on disk — an absent artifact
-    pins nothing, which the caller reports rather than passes.
+    A LIST, not a dict, and the stanza's own order — the report must read
+    the way the ledger is written, and two rows naming one path would
+    otherwise silently collapse.
+
+    Returns None when the ledger is not on disk — an absent artifact pins
+    nothing, which the caller reports rather than passes.
     """
     try:
         text = read_raw(ledger_md)
     except OSError:
         return None
-    return {p.replace("\\", "/"): h for p, h in _PIN_ROW.findall(text)}
+    return [(p.replace("\\", "/"), h) for p, h in _PIN_ROW.findall(text)]
 
 
-def report_stale(ledger_md, required):
-    """GATES_2 — does the ARTIFACT still describe the tree it censused?
+def report_stale(ledger_md):
+    """GATES_2b — does the ARTIFACT still describe the tree it censused?
 
     `--check` proves the witnesses hold against the LIVE files. It never
     proved the ledger on disk was taken FROM those files, so an edit to a
@@ -3193,30 +3197,41 @@ def report_stale(ledger_md, required):
     read the pins. PALE_0 shipped one file where three were due and no
     gate said a word. This is that missing comparison, one line per pin.
 
-    `required` is the paths this ledger must pin; a pin that is absent is
-    as red as a pin that disagrees. Returns True when stale, and the
-    caller exits nonzero — the message names the CURE, not just the
-    disease, because the two tools have a load-bearing order.
+    THE STANZA IS THE LIST (GATES_2b). GATES_2 compared a hardcoded set of
+    pins, which left the rest of the stanza unverified — the very pattern
+    the gate was built to kill, reproduced inside it: the mirror pins the
+    instrument (tools/binding_ledger.py) and nothing compared it. So this
+    takes no argument beyond the ledger. Whatever the stanza names is
+    checked, and a pin added tomorrow is enforced the moment it is
+    written, with no edit here. A pin whose file is gone is as red as a
+    pin that disagrees, and a stanza with no pins at all is red too — an
+    artifact that claims nothing cannot be shown current.
+
+    Returns True when stale; the caller exits nonzero. The message names
+    the CURE, not just the disease, because the two tools have a
+    load-bearing order.
     """
     rel_led = os.path.relpath(ledger_md, REPO).replace(os.sep, "/")
-    cure = ("Regenerate in input order: binding_ledger, then mirror_census.")
+    cure = "Regenerate in input order: binding_ledger, then mirror_census."
     pins = pinned_inputs(ledger_md)
     bad = []
-    for p in required:
-        rel = os.path.relpath(p, REPO).replace(os.sep, "/")
-        if pins is None:
-            bad.append("STALE: %s is absent, so nothing pins %s. %s"
-                       % (rel_led, rel, cure))
-            continue
-        want = pins.get(rel)
-        if want is None:
-            bad.append("STALE: %s pins no hash for %s. %s"
-                       % (rel_led, rel, cure))
-            continue
-        live = sha256(p)
-        if live != want:
-            bad.append("STALE: %s pins %s for %s; live is %s. %s"
-                       % (rel_led, want[:8], rel, live[:8], cure))
+    if pins is None:
+        bad.append("STALE: %s is absent, so nothing is pinned. %s"
+                   % (rel_led, cure))
+    elif not pins:
+        bad.append("STALE: %s pins nothing; its provenance stanza carries no "
+                   "sha256 row. %s" % (rel_led, cure))
+    else:
+        for rel, want in pins:
+            live_path = os.path.join(REPO, rel.replace("/", os.sep))
+            if not os.path.isfile(live_path):
+                bad.append("STALE: %s pins %s for %s; that file is not on "
+                           "disk. %s" % (rel_led, want[:8], rel, cure))
+                continue
+            live = sha256(live_path)
+            if live != want:
+                bad.append("STALE: %s pins %s for %s; live is %s. %s"
+                           % (rel_led, want[:8], rel, live[:8], cure))
     for line in bad:
         print(line)
     return bool(bad)
@@ -4627,9 +4642,10 @@ def main():
 
     if args.check:
         print("")
-        # GATES_2 — the witnesses pass on the live tree; now ask whether the
-        # ledger on disk was taken from it.
-        if report_stale(args.out, [WORLD_WGSL]):
+        # GATES_2b — the witnesses pass on the live tree; now ask whether the
+        # ledger on disk was taken from it. Every pin the stanza carries,
+        # named by the artifact itself rather than by a list kept here.
+        if report_stale(args.out):
             return 1
         print("--check: all witnesses pass, the ledger's pins match the live "
               "inputs, nothing written.")

@@ -61,7 +61,8 @@ python3 and clang++ do.
 | binding surface | `python3 tools/binding_gen.py --check` | schema ↔ tree ↔ emitters agree; S-6 also wants a clean tree at the pushed tip | PASS |
 | organ gap | `python3 tools/organ_gap.py --gate` | no graduated pair kept a surviving runtime reader | PASS |
 | organ ledger | `python3 tools/organ_ledger.py --check` | every enrolled dial's field is named by a declared reader | PASS |
-| mirror census | `python3 tools/mirror_census.py` | the C++↔WGSL mirror and the binding idioms hold | GREEN |
+| mirror census | `python3 tools/mirror_census.py --check` | the C++↔WGSL mirror and the binding idioms hold, and every pin MIRROR_LEDGER carries matches the live file | GREEN |
+| binding ledger | `python3 tools/binding_ledger.py --check` | the reach census holds, and every pin BINDING_LEDGER carries matches the live file | GREEN |
 
 **Every row green, and the room rebuilds.** Delete the five files in `audit/`,
 run the five tools above, and the tree is byte-identical again (L33's standing

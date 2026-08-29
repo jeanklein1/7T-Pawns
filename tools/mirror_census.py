@@ -1989,10 +1989,11 @@ def main():
 
     if args.check:
         print("")
-        # GATES_2 — two pins here, not one: this census hashes the binding
-        # ledger as an input (ML-0 reads its counts), so it goes stale both
-        # when world.wgsl moves and when the ledger beneath it is rebuilt.
-        if BL.report_stale(args.out, [BL.WORLD_WGSL, LEDGER_MD]):
+        # GATES_2b — every pin this census writes, including the two only it
+        # carries: tools/binding_ledger.py (the instrument, imported not
+        # copied) and audit/BINDING_LEDGER.md (ML-0's reconciliation
+        # authority). Both were unchecked while the list was hardcoded.
+        if BL.report_stale(args.out):
             return 1
         print("--check: all witnesses pass, the ledger's pins match the live "
               "inputs, nothing written.")

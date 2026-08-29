@@ -15,14 +15,14 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `8c8c2ef629e8dcdea4961fea07d2439051f6bce2` |
-| | PALE_1: ring authority unconditional for patch-seated frames (sentinel discriminator); margin = the body's own half-reach at both artwork gates |
+| source commit | `4f39d23c95524d4edf71aedf26f77b9adfb2d398` |
+| | GATES_2: stale-ledger red — check mode compares pinned input hashes (binding_ledger: world.wgsl; mirror_census: world.wgsl + BINDING_LEDGER) |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:a52f41dd72b4cacfa576f406c318fccbc66b42fb21587023f4802aad7a03df20` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:b48364246f02747908ee7ca8084d9de1bf0f53ed481ef31820ba0d5686766047` |
 | `src/cartridges/the_board/realization/binding_surface.gen.inc` | `sha256:463f1d4f323e50439bc83ce20b35830a32356c33350adfbe425b773712de4661` |
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:fc3137898e0dc6f0f2edd938cd40681cfc4fe8c272fb9fc4920f71b34643f48e` |
-| `tools/binding_ledger.py` | `sha256:36aa5038a5353706d96384df6239b1fbc07975f700eca6355cc19e50089919c1` |
+| `tools/binding_ledger.py` | `sha256:6ee69ae70e06009e069ce9930e889fab7d7223d9c422f925c798b47ccf9a4808` |
 | `audit/BINDING_LEDGER.md` | `sha256:b29a24f87f81509ea0b8b3fd7b5eef9a97ad85f232c95eb3c54849dbc8a24aec` |
 
 `tools/binding_ledger.py` is an input because its parsers are IMPORTED,
