@@ -349,6 +349,19 @@ about a whole tree and must declare the shapes it cannot reach.
 
 ---
 
+## P17 — DEFAULT-AND-FLAG
+
+Every falsifier, scope guard, and conflict condition in a handoff names its
+default action; the executor takes the default, flags it in the report, and
+continues. HALT is reserved for three classes — unreachable subject, stale
+authority that would land edits on the wrong tree, and irreversible or
+destructive actions — and a HALT stops the item, never the round (P13
+extended from gates to halts). Item zero of every handoff is a reachability
+preflight of every home the order names; an unreachable lane is reported in
+minute one while the rest proceeds. An order containing a stop without a
+default is an authoring defect charged to the author, not caution charged to
+the executor.
+
 ## SCHEDULING RECORD
 
 > DRIFT NOTE (RECENSION_3, 2026-08-18; L28): the DAWN RELEASE BUILD entry
