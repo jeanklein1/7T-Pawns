@@ -229,6 +229,53 @@ namespace t7 {
             };
             static constexpr uint32_t PIPE_GROUP_COUNT = 3;
 
+            // ═══ AUBADE_1 F1 — TWO PASSES OVER ONE SOURCE ════════════════
+            //
+            // AUBADE U3 built the gate correctly and then queued it behind
+            // everything it was meant to skip. The seven first-light
+            // pipelines sat at queue positions {1, 5, 6, 10, 28, 29, 30},
+            // because the creators run in ASSEMBLY order — world, entities,
+            // shadows, interiors — and that ruling ordered the dawn
+            // beautifully while ordering the gate last. The production
+            // paste priced it: `firstlight` at 4747 ms against a `rest` at
+            // 5077, which is the gate waiting on ~23 compiles it does not
+            // need and then the loop starting with nothing left to wait
+            // for. The world arrived complete BEFORE the first frame — the
+            // exact opposite of assembling in view.
+            //
+            // THE FIX IS AN ORDERING, NOT A RESTRUCTURING. Creation order
+            // carries no semantics: the gate's membership, the ready bits,
+            // the layouts and the shadow conjunction are untouched. So the
+            // creators are called TWICE and each issuer answers only the
+            // pass it belongs to. The seven go out first; the fifty follow
+            // in exactly the assembly order they always had.
+            //
+            // WHY NOT LIFT THE SEVEN INTO THEIR OWN FUNCTION, which is what
+            // "issue first light first" sounds like: their descriptors are
+            // built from six locals apiece — layouts, the shared depth and
+            // colour state, two vertex-buffer layouts — and lifting them
+            // would either duplicate that assembly (two homes for one
+            // descriptor, which this tree does not allow) or gut the
+            // creators of the rows that make their assembly narrative
+            // readable. A flag costs seven words and moves nothing.
+            //
+            // THE PRICE, STATED: the descriptor assembly runs twice and a
+            // dozen-odd pipeline layouts are created twice. Both are
+            // microseconds of CPU against seconds of compile, and the
+            // duplicate layouts are structurally identical — WebGPU's
+            // bind-group compatibility is group-equivalence, not object
+            // identity, so nothing downstream can tell.
+            enum class IssuePass : uint8_t { FIRST_LIGHT, REST };
+            IssuePass issuePass_ = IssuePass::FIRST_LIGHT;
+
+            // True when this pass is the one that should issue this row.
+            // Called before begin_pipe_, so a skipped row records nothing
+            // and every count stays exact.
+            bool pass_takes_(PipeGroup group) const {
+                return (group == PipeGroup::FIRST_LIGHT)
+                     == (issuePass_ == IssuePass::FIRST_LIGHT);
+            }
+
             struct PipelineTiming {
                 std::string label;
                 long long ms;        // the CALL, as the old table measured it
@@ -330,6 +377,7 @@ namespace t7 {
                                const wgpu::RenderPipelineDescriptor& desc,
                                wgpu::RenderPipeline& out,
                                PipeGroup group) {
+                if (!pass_takes_(group)) return true;   // AUBADE_1 F1
                 const size_t idx = begin_pipe_(label, group);
                 if (!t7::boot_params().pipeline_async) {
                     out = device_.CreateRenderPipeline(&desc);
@@ -355,6 +403,7 @@ namespace t7 {
                                 const wgpu::ComputePipelineDescriptor& desc,
                                 wgpu::ComputePipeline& out,
                                 PipeGroup group) {
+                if (!pass_takes_(group)) return true;   // AUBADE_1 F1
                 const size_t idx = begin_pipe_(label, group);
                 if (!t7::boot_params().pipeline_async) {
                     out = device_.CreateComputePipeline(&desc);
@@ -679,9 +728,15 @@ namespace t7 {
                 if (!loadShader()) return false;
                 requestShaderVerdict();   // PROBATE_SEAL3 — see the note above it
 
+                // AUBADE_1 F1 — FIRST LIGHT GOES OUT FIRST. Two passes over
+                // the same two creators; each issuer takes only its own pass.
                 auto t0 = std::chrono::high_resolution_clock::now();
+                issuePass_ = IssuePass::FIRST_LIGHT;
                 if (!createComputePipelines()) return false;
+                if (!createRenderPipelines()) return false;
                 auto t1 = std::chrono::high_resolution_clock::now();
+                issuePass_ = IssuePass::REST;
+                if (!createComputePipelines()) return false;
                 if (!createRenderPipelines()) return false;
                 auto t2 = std::chrono::high_resolution_clock::now();
 
@@ -694,16 +749,25 @@ namespace t7 {
                 // are synchronous and the table prints from the last of them
                 // — the same place, one instant later than it used to.
                 //
-                // THESE THREE LINES NOW MEASURE THE ISSUE, and they are kept
+                // THESE LINES NOW MEASURE THE ISSUE, and they are kept
                 // because that is worth knowing: a boot that spends real time
                 // here is a boot spending it on layouts and descriptor
                 // assembly, which no async call defers. They are RENAMED so
                 // no reader can mistake them for the old ones — the old ones
                 // claimed to be compiles and were not.
-                std::cout << "[Renderer] Compute pipelines issued: "
-                    << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count() << " ms\n";
-                std::cout << "[Renderer] Render pipelines issued:  "
-                    << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " ms\n";
+                //
+                // AUBADE_1 F1 SPLIT THEM BY PASS, not by kind. Compute
+                // against render was the split that mattered when both were
+                // synchronous compiles; first light against the rest is the
+                // split that matters now, because it is the one the gate
+                // waits on. The kinds are still in the table below, per row.
+                std::cout << "[Renderer] first light issued: "
+                    << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count()
+                    << " ms (" << pipeIssued_[static_cast<uint32_t>(PipeGroup::FIRST_LIGHT)]
+                    << " pipelines, ahead of everything)\n";
+                std::cout << "[Renderer] the rest issued:   "
+                    << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+                    << " ms\n";
                 std::cout << "[Renderer] Total pipelines issued:   "
                     << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t0).count() << " ms"
                     << " (" << pipelineTimings_.size() << " pipelines, "
@@ -1788,6 +1852,13 @@ namespace t7 {
                 // reset: first light does not un-happen, and a reload must
                 // not put the world back behind a gate the visitor already
                 // came through.
+                // AUBADE_1 F1 — BOTH PASSES HERE TOO, or a reload would issue
+                // whichever half the pass flag was left on. First light
+                // first, for the same reason it is first at boot.
+                issuePass_ = IssuePass::FIRST_LIGHT;
+                if (!createComputePipelines()) return false;
+                if (!createRenderPipelines()) return false;
+                issuePass_ = IssuePass::REST;
                 if (!createComputePipelines()) return false;
                 if (!createRenderPipelines()) return false;
                 std::cout << "[Hot Reload] Shader reloaded successfully\n";
