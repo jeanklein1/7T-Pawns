@@ -15,15 +15,15 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `5b15077a3dc7e38bc3a5e0a2d0a17f498bb0f6ed` |
-| | audit — ledger provenance converged (GOL_TEMPO_2) |
+| source commit | `8fece03401269a1cdd4b0f053dccdee8ac848b67` |
+| | PALE_0: FORM_WALL_FRAME joins the veil — ring gate in wall_painting_vs + shadow twin (MODE-deferred), THE ICING in canvas/frame FS |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
-| `src/cartridges/the_board/realization/world.wgsl` | `sha256:ca9a85519f595d06f1e2eda1caf06db995a5a6e4ce8c32d3c343bfac10cdbbbd` |
+| `src/cartridges/the_board/realization/world.wgsl` | `sha256:a52f41dd72b4cacfa576f406c318fccbc66b42fb21587023f4802aad7a03df20` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:b48364246f02747908ee7ca8084d9de1bf0f53ed481ef31820ba0d5686766047` |
 | `src/cartridges/the_board/realization/binding_surface.gen.inc` | `sha256:463f1d4f323e50439bc83ce20b35830a32356c33350adfbe425b773712de4661` |
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:fc3137898e0dc6f0f2edd938cd40681cfc4fe8c272fb9fc4920f71b34643f48e` |
 | `tools/binding_ledger.py` | `sha256:c1898fcb31daeed489c535f4bb60ce3d1312266b899fd56c6046dc1bfbc6fe90` |
-| `audit/BINDING_LEDGER.md` | `sha256:174d2d5057610de23ac94dc4d4913b99170d1419bf60ec1210559ba889888d05` |
+| `audit/BINDING_LEDGER.md` | `sha256:020a9a9af518e841fc83368bc95b39551c04ff0ad01438cd048266a91990f483` |
 
 `tools/binding_ledger.py` is an input because its parsers are IMPORTED,
 not copied — one parse, two artifacts, no drift between instruments.
@@ -255,12 +255,12 @@ emit-one-block vs patch-in-place — that call is LOOM_1's.
 | 19 | 11812–11816 | 5 | `fc_config` | `fc_indirect` |
 | 20 | 11834–11834 | 1 | `fc_draw_plan` | `fc_draw_plan` |
 | 21 | 11991–11993 | 3 | `painting_slots` | `painting_sampler_filt` |
-| 22 | 12636–12638 | 3 | `amg_params` | `amg_indices` |
-| 23 | 13015–13022 | 5 | `cmg_params` | `cmg_column_ground` |
-| 24 | 13572–13574 | 3 | `palmg_params` | `palmg_indices` |
-| 25 | 13933–13935 | 3 | `cactusg_params` | `cactusg_indices` |
-| 26 | 14332–14334 | 3 | `bladeg_params` | `bladeg_indices` |
-| 27 | 14798–14810 | 5 | `orb_state` | `orb_state_prev_rw` |
+| 22 | 12656–12658 | 3 | `amg_params` | `amg_indices` |
+| 23 | 13035–13042 | 5 | `cmg_params` | `cmg_column_ground` |
+| 24 | 13592–13594 | 3 | `palmg_params` | `palmg_indices` |
+| 25 | 13953–13955 | 3 | `cactusg_params` | `cactusg_indices` |
+| 26 | 14352–14354 | 3 | `bladeg_params` | `bladeg_indices` |
+| 27 | 14818–14830 | 5 | `orb_state` | `orb_state_prev_rw` |
 
 Line numbers are non-authoritative hints; cite symbols.
 
@@ -332,28 +332,28 @@ Line numbers are non-authoritative hints; cite symbols.
 | `painting_slots` | 11991 | 21 | yes | — |
 | `painting_array` | 11992 | 21 | — | — |
 | `painting_sampler_filt` | 11993 | 21 | — | — |
-| `amg_params` | 12636 | 22 | yes | — |
-| `amg_vertices` | 12637 | 22 | — | — |
-| `amg_indices` | 12638 | 22 | — | — |
-| `cmg_params` | 13015 | 23 | yes | — |
-| `cmg_vertices` | 13016 | 23 | — | — |
-| `cmg_indices` | 13017 | 23 | — | — |
-| `cmg_config` | 13021 | 23 | yes | — |
-| `cmg_column_ground` | 13022 | 23 | — | — |
-| `palmg_params` | 13572 | 24 | — | — |
-| `palmg_vertices` | 13573 | 24 | — | — |
-| `palmg_indices` | 13574 | 24 | — | — |
-| `cactusg_params` | 13933 | 25 | — | — |
-| `cactusg_vertices` | 13934 | 25 | — | — |
-| `cactusg_indices` | 13935 | 25 | — | — |
-| `bladeg_params` | 14332 | 26 | — | — |
-| `bladeg_vertices` | 14333 | 26 | — | — |
-| `bladeg_indices` | 14334 | 26 | — | — |
-| `orb_state` | 14798 | 27 | — | **yes** |
-| `orb_config` | 14799 | 27 | — | — |
-| `orb_state_prev` | 14803 | 27 | yes | **yes** |
-| `orb_state_ro` | 14809 | 27 | yes | — |
-| `orb_state_prev_rw` | 14810 | 27 | — | — |
+| `amg_params` | 12656 | 22 | yes | — |
+| `amg_vertices` | 12657 | 22 | — | — |
+| `amg_indices` | 12658 | 22 | — | — |
+| `cmg_params` | 13035 | 23 | yes | — |
+| `cmg_vertices` | 13036 | 23 | — | — |
+| `cmg_indices` | 13037 | 23 | — | — |
+| `cmg_config` | 13041 | 23 | yes | — |
+| `cmg_column_ground` | 13042 | 23 | — | — |
+| `palmg_params` | 13592 | 24 | — | — |
+| `palmg_vertices` | 13593 | 24 | — | — |
+| `palmg_indices` | 13594 | 24 | — | — |
+| `cactusg_params` | 13953 | 25 | — | — |
+| `cactusg_vertices` | 13954 | 25 | — | — |
+| `cactusg_indices` | 13955 | 25 | — | — |
+| `bladeg_params` | 14352 | 26 | — | — |
+| `bladeg_vertices` | 14353 | 26 | — | — |
+| `bladeg_indices` | 14354 | 26 | — | — |
+| `orb_state` | 14818 | 27 | — | **yes** |
+| `orb_config` | 14819 | 27 | — | — |
+| `orb_state_prev` | 14823 | 27 | yes | **yes** |
+| `orb_state_ro` | 14829 | 27 | yes | — |
+| `orb_state_prev_rw` | 14830 | 27 | — | — |
 
 ## M3 — the fifth-home grep
 
@@ -543,12 +543,12 @@ is LOOM_1 / panel work.
 | `AgentRoomConstants` | 7099 | `agent_room` | `GPUAgentRoomConstants` | `src/cartridges/the_board/realization/state.hpp:2075` | 6 |
 | `AgentState` | 907 | `agent_state`, `render_agents` | `GPUAgentState` | `src/cartridges/the_board/realization/state.hpp:957` | 2 |
 | `ArchGroundEntry` | 11413 | `arch_ground` | `GPUArchGroundEntry` | `src/cartridges/the_board/realization/state.hpp:1324` | 1 |
-| `ArchMeshParams` | 12609 | `amg_params` | `GPUArchMeshParams` | `src/cartridges/the_board/realization/state.hpp:1375` | 1 |
-| `BladeClusterMeshParams` | 14314 | `bladeg_params` | `GPUBladeClusterMeshParams` | `src/cartridges/the_board/realization/state.hpp:1513` | 1 |
-| `CactusMeshParams` | 13911 | `cactusg_params` | `GPUCactusMeshParams` | `src/cartridges/the_board/realization/state.hpp:1480` | 1 |
+| `ArchMeshParams` | 12629 | `amg_params` | `GPUArchMeshParams` | `src/cartridges/the_board/realization/state.hpp:1375` | 1 |
+| `BladeClusterMeshParams` | 14334 | `bladeg_params` | `GPUBladeClusterMeshParams` | `src/cartridges/the_board/realization/state.hpp:1513` | 1 |
+| `CactusMeshParams` | 13931 | `cactusg_params` | `GPUCactusMeshParams` | `src/cartridges/the_board/realization/state.hpp:1480` | 1 |
 | `CameraState` | 1052 | `camera_state`, `photographer_camera_out` | `GPUCameraState` | `src/cartridges/the_board/realization/state.hpp:1136` | 1 |
 | `ColumnGroundEntry` | 11425 | `cmg_column_ground`, `column_ground` | `GPUColumnGroundEntry` | `src/cartridges/the_board/realization/state.hpp:1338` | 1 |
-| `ColumnMeshParams` | 12983 | `cmg_params` | `GPUColumnMeshParams` | `src/cartridges/the_board/realization/state.hpp:1408` | 1 |
+| `ColumnMeshParams` | 13003 | `cmg_params` | `GPUColumnMeshParams` | `src/cartridges/the_board/realization/state.hpp:1408` | 1 |
 | `DesignConfig` | 1665 | `cmg_config`, `config`, `fc_config` | `GPUDesignConfig` | `src/cartridges/the_board/realization/state.hpp:617` | 3 |
 | `DrawPlanParams` | 11827 | `fc_draw_plan` | `GPUDrawPlanParams` | `src/cartridges/the_board/realization/state.hpp:1887` | 2 |
 | `FieldBus` | 2765 | `field_bus` | `GPUFieldBus` | `src/cartridges/the_board/realization/state.hpp:2127` | 2 |
@@ -556,10 +556,10 @@ is LOOM_1 / panel work.
 | `FrameR` | 7205 | `frame_r` | `GPUFrameR` | `src/cartridges/the_board/realization/state.hpp:2152` | 4 |
 | `FrameSignal` | 873 | `signal` | `GPUFrameSignal` | `src/cartridges/the_board/realization/state.hpp:561` | 2 |
 | `GoLZoneArray` | 7459 | `zone_config`, `zone_params` | `GPUGoLZoneArray` | `src/cartridges/the_board/realization/state.hpp:1571` | 1 |
-| `OrbConfig` | 14636 | `orb_config` | `GPUOrbConfig` | `src/cartridges/the_board/realization/state.hpp:1667` | 2 |
-| `OrbState` | 14621 | `orb_state`, `orb_state_prev`, `orb_state_prev_rw`, `orb_state_ro` | `GPUOrbState` | `src/cartridges/the_board/realization/state.hpp:1651` | 1 |
+| `OrbConfig` | 14656 | `orb_config` | `GPUOrbConfig` | `src/cartridges/the_board/realization/state.hpp:1667` | 2 |
+| `OrbState` | 14641 | `orb_state`, `orb_state_prev`, `orb_state_prev_rw`, `orb_state_ro` | `GPUOrbState` | `src/cartridges/the_board/realization/state.hpp:1651` | 1 |
 | `PalmGroundEntry` | 11437 | `plant_ground` | `GPUPalmGroundEntry` | `src/cartridges/the_board/realization/state.hpp:1465` | 1 |
-| `PalmMeshParams` | 13546 | `palmg_params` | `GPUPalmMeshParams` | `src/cartridges/the_board/realization/state.hpp:1444` | 1 |
+| `PalmMeshParams` | 13566 | `palmg_params` | `GPUPalmMeshParams` | `src/cartridges/the_board/realization/state.hpp:1444` | 1 |
 | `PatchGrid` | 11455 | `patch_grid` | `GPUPatchGrid` | `src/cartridges/the_board/realization/state.hpp:1989` | 1 |
 | `PatchInstance` | 1175 | `fc_patches`, `patch_instances` | `GPUPatchInstance` | `src/cartridges/the_board/realization/state.hpp:1979` | 1 |
 | `PatchParams` | 1167 | `patch_params_batch` | `GPUPatchParams` | `src/cartridges/the_board/realization/state.hpp:1973` | 1 |

@@ -12058,11 +12058,23 @@ fn compute_gallery_quad_geometry(vid: u32, iid: u32) -> GalleryQuadPoint {
 
     let slot = painting_slots[iid];
 
-    // THE RING (draw authority): outdoor frames draw only inside the ring
-    // (center - extent <= ring; 5 wu covers the frame's half-reach).
+    // THE RING (draw authority): outdoor frames draw only inside the ring —
+    // center − half_reach ≤ ring, the sphere's law: the margin is the
+    // body's OWN extent, so a body leaves the draw set only after its
+    // near edge has fully iced. In-plane half-width is 0.5·scale_x; the
+    // bow deform adds ≤ 0.23 of it out-of-plane (deform_gallery_frame
+    // branch 2 supremum), 0.5·√(1+0.23²) < 0.52; scale_y is vertical and
+    // casts no XZ footprint (tilt ≤ 0.02). THE CONSTANT IS NOT SLACK:
+    // deform_gallery_frame runs on an ALREADY world-scaled `local`, so
+    // branch 2 alone is proportional — branch 1's tilt (≤ 0.02) and
+    // branch 3's amp (≤ 0.03 + 0.06) are additive in WORLD units, and
+    // 0.2 is their supremum with room, the three branches being mutually
+    // exclusive. Shared with the shadow twin through this helper, as both
+    // gates have been since UMBRA_9.
+    let half_reach = 0.52 * slot.scale_x + 0.2;
     let frame_in_ring = distance(slot.position.xz,
                                  vec2(config.lod_point_x, config.lod_point_z))
-                        - 5.0 <= config.veil_ring;
+                        - half_reach <= config.veil_ring;
     if (slot.is_active == 0u || slot.form_type != FORM_TERRAIN_QUAD || !frame_in_ring) {
         return out;
     }
@@ -12395,17 +12407,23 @@ fn wall_painting_vs(@builtin(vertex_index) vid: u32) -> WallPaintingVarying {
 
     let slot = painting_slots[pidx];
 
-    // THE RING (draw authority): wall frames draw only inside the ring —
-    // the quad path's law (compute_gallery_quad_geometry), the quad path's
-    // margin (5 wu covers the frame's half-reach). One term the quad could
-    // not teach: FORM_WALL_FRAME is the only form living in BOTH
-    // jurisdictions (indoor walls AND outdoor monuments), so the gate
-    // defers to the MODE — veil_strength is 0 finite/indoor (U5), and
-    // there the ring holds no authority.
-    let ring_kills = config.veil_strength > 0.5
+    // THE RING (draw authority): a patch-seated frame — an outdoor
+    // monument — draws only inside the ring, UNCONDITIONALLY, exactly as
+    // terrain and the quad path cull. The ring is draw authority in
+    // EVERY world; the MODE (veil_strength) scales only the icing, and
+    // PALE_0's borrowing of it left MOOD_FINITE_OUTDOOR ungated —
+    // corrected here (PALE_1). Indoor frames are sentinel-seated
+    // (patch_gx == 0x7FFFFFFF, the placement compute's own
+    // discriminator) and are not the ring's subject, at any dial.
+    // Margin is the body's OWN half-reach — the sphere's law: in-plane
+    // 0.5·scale_x + frame_width, out-of-plane frame_depth, all slot
+    // fields, so the bound cannot drift from the geometry it bounds.
+    let half_reach = length(vec2(slot.scale_x * 0.5 + slot.frame_width,
+                                 slot.frame_depth));
+    let ring_kills = slot.patch_gx != 0x7FFFFFFF
         && distance(slot.position.xz,
                     vec2(config.lod_point_x, config.lod_point_z))
-           - 5.0 > config.veil_ring;
+           - half_reach > config.veil_ring;
 
     // Skip inactive, terrain-quad, or out-of-ring slots
     if (slot.is_active == 0u || slot.form_type != FORM_WALL_FRAME || ring_kills) {
@@ -12502,10 +12520,12 @@ fn shadow_wall_painting_vs(@builtin(vertex_index) vid: u32) -> ShadowVarying {
     // THE RING — mirrored term-for-term from wall_painting_vs (a caster
     // may not outlive its body). This twin is the one shadow VS with no
     // patch-banded superset behind it, so the gate does double duty here.
-    let ring_kills = config.veil_strength > 0.5
+    let half_reach = length(vec2(slot.scale_x * 0.5 + slot.frame_width,
+                                 slot.frame_depth));
+    let ring_kills = slot.patch_gx != 0x7FFFFFFF
         && distance(slot.position.xz,
                     vec2(config.lod_point_x, config.lod_point_z))
-           - 5.0 > config.veil_ring;
+           - half_reach > config.veil_ring;
 
     // Skip inactive, terrain-quad, or out-of-ring slots
     if (slot.is_active == 0u || slot.form_type != FORM_WALL_FRAME || ring_kills) {
