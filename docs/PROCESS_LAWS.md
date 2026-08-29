@@ -362,6 +362,10 @@ minute one while the rest proceeds. An order containing a stop without a
 default is an authoring defect charged to the author, not caution charged to
 the executor.
 
+*Paid for by:* N7, ROUND ORDER 1 — an order that named a home it never
+verified reachable and wrote its stop without a default; one full
+round-trip to learn the lane lived elsewhere.
+
 ## SCHEDULING RECORD
 
 > DRIFT NOTE (RECENSION_3, 2026-08-18; L28): the DAWN RELEASE BUILD entry
