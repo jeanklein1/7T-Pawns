@@ -1815,3 +1815,355 @@ many blocks along the way, a few times a second, worse with speed.*
   table — this dial is the whole of the exposure. Unblocked by either pinning
   the ORGAN row read-only, or snapping the product
   `tick_period * mode_gol_tick_scale` to the ladder at both read sites.
+
+## REPEAT_0 — THE CONVEYOR · Phase 0 recon (read-only)
+
+The campaign replaces authored SELECTION with a FIFO playlist: one sequence
+(the manifest), one window (the 32 staging layers as a ring), and one verb —
+to exhibit is to pop the head and append the cursor in the same act. This
+section is the recon that had to land before any edit. Seven gates, every
+count with its recipe, symbols and never line numbers.
+
+**Tree at recon:** `f4e2d0dc`, non-shallow (`git rev-parse
+--is-shallow-repository` → `false`), working tree clean. The order itself is
+not in the tree — `docs/HANDOFFS/` does not exist, which per CLAUDE.md is
+health — so every claim below was checked against the order as relayed, not
+diffed against a tracked artifact.
+
+### THE DRIFT REGISTER — where the order and the tree disagree
+
+The order was written from a snapshot. Nine of its statements do not
+describe `f4e2d0dc`. None is fatal; all are recorded here because the units
+below were re-scoped against the tree, not against the order.
+
+| # | the order says | the tree says | weight |
+|---|---|---|---|
+| D1 | R9: `AUTHORED_FETCH_INFLIGHT_CAP` **stays 1** — "one lane is what makes validity contiguous from the head" | the constant is **4**. OVERTURE_0 R-E raised it, and this file's FIREFOX STAGING RATCHET entry records the raise. R9's premise is false | **flag — the conclusion survives, see R9-RESCUED below** |
+| D2 | U1/U2: a **paintings range** of the manifest (`range.lo`, `range_size`) | there is no range. `ATTIC_ATRIUM` D2 deleted the partition; `rotate_authored_staging` says so verbatim: "what is left is one collection, walked by one cursor". `exhibition_manifest_onsuccess` parses the `"paintings"` key alone | **flag — the model simplifies: range = the whole manifest** |
+| D3 | U2: `load_authored_image_to_staging(gs, gpu, queue, layer, disk, url)` | the live signature is `(GalleryState&, uint32_t staging_layer, uint32_t disk_index, const char* path)` — **no GPU, no queue**. AUBADE U5b took the device off this path on purpose | **flag — `authored_pop` needs neither `GPUState&` nor `wgpu::Queue&`** |
+| D4 | R8/U6: `authored_record_for_disk` and `shown_disk_index` **stay — the atrium reads them** | the atrium does not exist. `authored_record_for_disk` has **zero callers and zero declarations** — `ATTIC_ATRIUM` D1 deleted its only caller and left the definition orphaned. Recipe: `grep -rn "authored_record_for_disk" . --exclude-dir=.git` → 1 hit, its own definition | **flag — see G4** |
+| D5 | U5 anchor: `for (uint32_t i = 0; i < Dim::STAGING_LAYERS; i++) gs.authored_staging[i].consumed = false;` (one line) | the live loop is braced and clears **two** fields — `consumed` and `exhibition_layer` | **flag — site unmistakable, quote stale (P15)** |
+| D6 | G2's recipe `grep -n "authored_staging\[" src/ -r \| grep consumed` enumerates the census | it returns **9** hits against a live census of **15** expressions. Six are reached through an alias binding and are invisible to it — including the writer in `authored_release_layer` (P16: a recipe must name what it cannot see) | **flag — census redone by hand, below** |
+| D7 | G6: the `found N paintings` sentence is web_dist.py's | it is **C++**: `exhibition_manifest_onsuccess` emits it. `tools/web_dist.py` writes `exhibition.json` and never says "found" | **cosmetic — the coupling R10 protects is real, its home is not where the order put it** |
+| D8 | U5: "the exhibition-layer freeing loop and **its ATRIUM_7 exception**" | there is no exception. `teardown_gallery` frees all forty layers unconditionally; the comment claiming otherwise is orphaned prose, and ATRIUM_7 in the live tree means arch-shell geometry | **cosmetic — nothing to preserve; comment left for a sweep** |
+| D9 | (unstated) `gallery.hpp` is free to edit | it is an **enforced sha256 pin** in `audit/BINDING_LEDGER.md` and `audit/COMMAND_LEDGER.md` (`sha256:b77b6c07…`, matching live). Any byte change reds both until the generators re-run, and `MIRROR_LEDGER` pins `BINDING_LEDGER`, so the cascade is three tools in order: `binding_ledger.py` → `command_census.py` → `mirror_census.py` | **flag — a ledger commit is owed at the campaign's end** |
+
+**R9-RESCUED — the ruling holds on a better argument than the one it gave.**
+R9 wanted one lane so that "arrivals are FIFO because departures are." With
+four lanes arrivals can land out of order, so that sentence is false. The
+design survives anyway, because **pops are strictly ordered even when
+arrivals are not**: `authored_pop` takes the head and advances, so the
+pending records are always the k most recently popped, which in ring order
+from the head are the k LAST positions. Validity is therefore contiguous
+from the head by construction of the pop, not by construction of the fetch.
+Out-of-order arrival can only make `authored_ready_depth` report FEWER ready
+layers than are actually ready — never more — and a conservative depth
+under-hangs a row, which is the already-legal thin-room case. The cap is not
+touched by this campaign; re-pricing it stays REPEAT_1's business.
+
+### G1 — THE RECORD STRUCT · FLAG
+
+**`authored_staging` and `snapshot_staging` are arrays of TWO DIFFERENT
+structs** — `AuthoredStagingRecord` and `SnapshotStagingRecord`, declared
+back to back, each owning an independent `consumed` bool. Recipe:
+`grep -n "struct .*StagingRecord" src/cartridges/the_board/bodies/gallery.hpp`
+→ 2. **So R7's fork resolves to its second arm: the field dies, not only its
+uses** — subject to proving no reader survives, which G2 does.
+
+`AuthoredStagingRecord` carries nine members. Their fate under the playlist,
+each with the reader that decides it:
+
+| member | who reads it after REPEAT_0 | verdict |
+|---|---|---|
+| `disk_index` | `authored_fetch_release_slot` (the fallback), the fetch context | **lives** |
+| `shown_disk_index` | `authored_fetch_release_slot`, and U8's pop line — the log must name the picture the texture HOLDS, not the claim (WALLS_3) | **lives** |
+| `aspect_ratio` | the plan's peek (row-width trim) and both slot fills | **lives** |
+| `uv_scale_x` / `uv_scale_y` | both slot fills | **live** |
+| `valid` | the ready predicate | **lives** |
+| `pending` | the ready predicate | **lives** |
+| `consumed` | nothing — R7 | **dies** |
+| `hung_this_world` | `rotate_authored_staging` only, which dies at U5 | **dies by cascade** |
+| `exhibition_layer` | `authored_release_layer` only, which exists only to clear `consumed` | **dies by cascade** |
+
+**THE TWO CASCADE DEATHS ARE THE GATE'S REAL FINDING, and no unit named
+them.** Every claim site writes a TRIAD in one breath under the in-tree
+comment `THE CLAIM, WHOLE (OVERTURE_0)` — `consumed`, `hung_this_world`,
+`exhibition_layer`. R7 deletes one leg; the other two have no reader once
+the rotation and the release are gone. Under P7 the minimal coherent form is
+to take all three, and U5/U6 do.
+
+Stale, and worth one line: both struct banners still read `(circular buffer,
+16 layers)` while `Dim::STAGING_LAYERS = 32`. The authored one becomes an
+actual circular buffer at U1, so its banner is corrected there; the snapshot
+one is out of scope and left.
+
+### G2 — `consumed` CENSUS, AUTHORED SIDE · STOP RAISED, RESOLVED IN PLACE
+
+**The order's recipe is blind to 40% of the census (P16).** It sees 9 of 15
+expressions; the six it misses are every one reached through an alias
+binding — `authored_stage_decoded_image` (`auto& rec`),
+`load_authored_textures` (`const auto& r` and `auto& rec`),
+`authored_hangable` (`const auto& r`), `authored_record_for_disk`
+(`const auto& r`), and `authored_release_layer` (`auto& r`). The reaching
+recipe:
+
+    grep -n "consumed" src/cartridges/the_board/bodies/gallery.hpp
+
+then read every hit for its binding. Fifteen expressions: **five writers,
+ten readers.**
+
+WRITERS (five, not the four the order expected):
+
+| symbol | expression | unit |
+|---|---|---|
+| `place_wall_paintings` | `gs.authored_staging[f.record].consumed = true;` | U3 |
+| `commit_gallery` | `gs.authored_staging[auth_stg].consumed = true;` | U4 |
+| `teardown_gallery` | the clearing loop | U5 |
+| `authored_stage_decoded_image` | `rec.consumed = false;` | U6 |
+| **`authored_release_layer`** | **`r.consumed = false;`** | **named by no unit — this is the STOP** |
+
+READERS (ten). Six die with the selection the order names. The other four
+are the gate's finding, and each dies with its own host rather than needing
+a home:
+
+- `load_authored_textures` × 2 — the `disk_in_use` book and the "a picture
+  already here is not re-asked for" skip. **Both die at U1**, which rewrites
+  the fill: the ring fills every layer unconditionally and there is no
+  dedupe book.
+- `rotate_authored_staging` — the dedupe book. **Dies at U5** with the
+  function.
+- `authored_record_for_disk` — **dead code, zero callers** (G4). **Dies at
+  U6.**
+
+**THE STOP, AND WHY IT IS A FLAG.** `authored_release_layer` is the mid-world
+release keyed on `exhibition_layer`, called from `evict_paintings_for_patch`
+and `clear_wall_paintings`. Under the playlist there is no `consumed` to
+release: supply comes from the cursor, not from records handed back. The
+function's whole body is the release, and its other field —
+`exhibition_layer` — has no other reader. **So it does not lose a home; it
+loses its subject, which is what dying is.** The order's own STOP condition
+names the default ("if the struct is not shared, delete the field too and
+prove no reader survives"), and that proof is the table above. P17: default
+taken, flagged, continued. HALT is reserved for an unreachable subject,
+stale authority landing edits on the wrong tree, or an irreversible act —
+this is none of the three.
+
+**AND ONE THING U7 DOES NOT DO.** `authored_fetch_release_slot` contains
+**zero** `consumed` reads or writes; its only two mentions are comment lines
+RULING that it must not touch the field. U7 has nothing to remove here.
+
+### G3 — CALLER CENSUS OF THE DYING · FLAG
+
+- `rotate_authored_staging` — **one call site, `teardown_gallery`**, as
+  expected. Recipe: `grep -rn "rotate_authored_staging(gs, c, queue);" src/`
+  → 1. It is ~100 lines, the largest body in this census.
+- `authored_write_cursor` — **already dead, unconditionally**: one writer
+  (`load_authored_textures`), **zero readers** anywhere in `src/ tools/ web/
+  docs/ audit/`. The order's conditional ("dies if the boot fill is its only
+  writer") is answered stronger than it asked.
+- `authored_staged_count` — **the reader outside `gallery.hpp` is real and
+  the order understates it.** `offer_controls_when_ready` in
+  `src/the_board.cpp` gates `OVERTURE_READY_FLOOR`; the `Controls:` line it
+  emits is what arms `web/index.html`'s 20 s watchdog belt. It is a tally of
+  `valid` and the playlist does not change what `valid` means, so it and
+  `recount_authored_staged` **both live, untouched.**
+- `recount_authored_staged` — **five** call sites, not "six-ish":
+  `authored_fetch_finish`, `pump_authored_valve` ×2, `load_authored_textures`,
+  `rotate_authored_staging`. The last dies with its host; the rest live.
+- **THREE independent lowest-`shown_disk_index` selectors exist, not one.**
+  `pick_authored_staging`, plus two hand-rolled inline loops that call it
+  never and copy its order by comment: `commit_gallery`'s authored fallback
+  (masked by `usedAuthored[]`) and `place_wall_paintings`' wall selection
+  (masked by `authClaimed[]`). Replacing only the function would fork the
+  ordering three ways. All three die.
+- `authored_hangable` — its callers are **not** selection scans, and one of
+  them the order never names: `gallery_available_staging` (which feeds
+  `place_gallery_from_selection`'s reservation arithmetic and the fan
+  radius), plus `commit_gallery`'s `have_authored` / `max_available` /
+  `AUTHORED_ONLY` branch and the `BARE WALL` log. **All repoint to
+  `authored_ready_depth`.**
+- `disk_in_use` — not a symbol with callers: a stack-local `bool
+  disk_in_use[256]` declared **twice**, in `load_authored_textures` and in
+  `rotate_authored_staging`, as two unrelated automatic arrays. Both go.
+
+### G4 — ATRIUM COHABITATION · CLEAR OF THE CAMPAIGN STOP
+
+**The atrium does not exist.** `ATTIC_ATRIUM` D1 (`0f138fed`, "the entrance's
+hang, deleted whole") removed 479 lines from `gallery.hpp`; D2 (`bd1e444b`,
+"the partition, deleted; one manifest, one collection") removed 139 more.
+Every one of the 26 case-insensitive `atrium` matches surviving in
+`gallery.hpp` is a **comment**. Recipe: `grep -n -i "atrium"
+src/cartridges/the_board/bodies/gallery.hpp` — read each hit for its line
+kind.
+
+The gate's question was: can the ring own all 32 layers with the atrium as a
+transient borrower, or does the atrium hold staging residency? **Neither.
+There is no atrium to partition against.** The ring owns all 32 layers
+outright, no tail reserved, and R8 ("the atrium is out-of-band") is true in
+the strongest available sense.
+
+Evidence, each checked:
+
+- `authored_record_for_disk` — **zero callers, zero declarations.** Its
+  historical caller lived in the deleted poster stage; the definition was
+  left orphaned. It is absent even from the impl-internal forward-declaration
+  block.
+- `DiskRange`, `authored_range_for`, `authored_cursor_for`, `atrium_first`,
+  `atrium_disk_cursor`, `authored_loaded_lo/hi` — **zero hits** outside
+  `docs/reference/ATTIC.md`.
+- The manifest has no atrium key: `web_dist.py` writes
+  `{"paintings": …, "music": …}` and `exhibition_manifest_onsuccess` parses
+  `"paintings"` alone. The `+ M atrium` clause the order asks about is not in
+  the sentence; `web/index.html` matches `/found\s+(\d+)\s+paintings/`.
+- `place_atrium_poster`, `place_atrium_walls`, `rehang_atrium_memory`,
+  `reseat_atrium_poster` — **zero hits** in `src/ tools/ web/`. They survive
+  only as orphan cross-references inside comments.
+
+**D4 RULED, and it is the one place this recon overrides the order.** U6 says
+to keep `authored_record_for_disk` "because the atrium reads them". Nothing
+reads it. Keeping it would also mean inventing a replacement predicate for
+its `consumed` test — a larger deviation than deleting a function with no
+callers. Under P7 the minimal form is deletion, and U6 takes it. Resurrect:
+`git checkout f4e2d0dc -- src/cartridges/the_board/bodies/gallery.hpp`.
+`shown_disk_index` **stays** and gains a live reader at U8.
+
+Three orphans found and deliberately NOT touched (out of the campaign's
+reach, recorded for a sweep): `gallery.hpp`'s `#include <iomanip>` whose
+`std::fixed`/`std::setprecision` witness died with the entrance; the
+`═══ THE ATRIUM'S HANG (ATRIUM_3) ═══` banner and its fourteen lines of prose,
+which now introduce `clear_wall_paintings` alone; and
+`src/console/organ_params.inc`'s last line, an `Atrium` banner with no rows
+beneath it.
+
+### G5 — THE RESERVATION FLOW · FLAG (maps onto a counter)
+
+**No site reserves a named record.** `staging_reserved` is a plain count:
+`place_gallery_from_selection` does `gs.staging_reserved += reserved`, and
+`commit_gallery` releases the same value first thing, so every early return
+releases it too. `GalleryPlacement::reserved_count` carries the number; no
+DTO carries a staging index; commit re-derives its records from scratch. **So
+the mapping the order wants is exact, and U4 lands.**
+
+Four qualifications, none blocking:
+
+- The counter is **one number over two pools** (snapshot + authored), netted
+  in `gallery_available_staging`. Repointing `authored_hangable` to
+  `authored_ready_depth` inside that function is the whole of U4's
+  reservation change.
+- `place_wall_paintings` **spends the pool without reading the counter** —
+  it always did; the indoor path is not reserved for. Unchanged by the
+  playlist.
+- `GalleryState`'s comment claims up to `SPAWN_BUDGET_PER_FRAME` galleries
+  can be outstanding. `spawn_selected_patches` drains place-then-commit
+  inside one loop iteration, so **at most one** reservation is ever live.
+  Stale prose, harmless, left.
+- "Balanced by construction and cannot drift" has one guarded-unreachable
+  leak: `place_entity_queue` tests `placementCount_ >= SPAWN_QUEUE_MAX`
+  after `try_place` returned true, so a dropped `PlacementEntry` would strand
+  its reservation until `teardown_gallery` zeroes it. Pre-existing, not this
+  campaign's, recorded because the gate walked the path.
+
+### G6 — THE MIRROR · FLAG
+
+`MANIFEST_DEDUPE_CAP = 256` and its warning block are quoted whole in the U6
+commit before removal; both die there with the array they mirror. The two
+prose blocks in `web_dist.py` that name `rotate_authored_staging` and
+`disk_idx < 256 && disk_in_use[disk_idx]` by symbol go with them — a warning
+about a function that no longer exists is worse than no warning.
+
+**R10's couplings, exactly:**
+
+- `web/index.html` matches `/found\s+(\d+)\s+paintings/` against the C++
+  sentence `[Authored] Scanned exhibition.json — found N paintings`, emitted
+  by `exhibition_manifest_onsuccess`. **Untouched by every unit.**
+- `classify()` also fires on `Controls:`, which `offer_controls_when_ready`
+  emits behind `authored_staged_count >= OVERTURE_READY_FLOOR`. **Untouched.**
+- `[Authored] Staged N/M images` keeps its exact shape at U1.
+- Nothing outside C++ parses `[Authored] Rotated`, `[Authored] Pop`,
+  `[WallPainting] …` or `[Gallery] …`.
+
+**And the finding no gate was asked for (D9):** `gallery.hpp` is an enforced
+sha256 pin in two ledgers. The campaign owes a regeneration commit —
+`binding_ledger.py` → `command_census.py` → `mirror_census.py`, in that
+order, because `MIRROR_LEDGER` pins `BINDING_LEDGER`'s output.
+
+### G7 — PRICING REPEAT_1 · CLEAR (informational)
+
+`GPUPaintingSlot` is declared once, in `realization/state.hpp`, `alignas(16)`
+with a bare `static_assert(sizeof(GPUPaintingSlot) == 128, …)` — no growth-law
+clause of the kind the mesh-params structs carry. Its WGSL twin is named
+`UnifiedPaintingSlot`, and **the name asymmetry is why `mirror_census.py`
+records the pair as UNRESOLVED**: the 128 is held on the WGSL side by prose
+alone, unwitnessed by the layout calculator.
+
+**THE PADDING, COUNTED. Twenty-four free bytes — six f32 slots — with zero
+implicit compiler padding:**
+
+| pad | offset | bytes |
+|---|---|---|
+| `float _pad0` | 92 | 4 |
+| `float _pad1` | 108 | 4 |
+| `float _pad2[4]` | 112 | 16 |
+| | | **24 = 6 × f32** |
+
+All six are offset-neutral: `_pad0` at 92 leaves `frame_color` at its
+16-aligned 96; `_pad1` at 108 leaves `_pad2` at 112; `_pad2` is the tail and
+splits into four scalars with the 128 stride intact under both C++ and WGSL
+layout rules. `offsetof(GPUPaintingSlot, is_active) == 44` — the address
+`deactivate_painting_slot` writes — is untouched by any carve. No site names
+a pad field; three sites write all pads by whole-struct value-init
+(`fill_slot_wall_frame`'s opening `s = {}` and the two teardown clears), so
+a field carved from pad inherits zero-init free.
+
+**A crossfade needs two — a source layer and a mix factor. It fits three
+times over, with no growth past 128 and no field moved.**
+
+**THE ONE THING THAT CHANGES THE IMPLEMENTATION, not the budget.** The slot
+buffer is bound `@group(2) @binding(80) var<storage, read_write>
+photo_painting_slots` and **the GPU writes it** —
+`photo_painting_slots[i].position.y = ground + lift;`. `upload_painting_slot`
+issues a full 128-byte write, so a CPU-driven ramp refreshed through it would
+clobber the GPU's Y-correction every frame. REPEAT_1's crossfade must
+therefore be GPU-driven, or drive its ramp through a partial
+`queue.WriteBuffer` at the new field's `offsetof` — the idiom
+`deactivate_painting_slot` already uses. Priced here so the campaign does not
+discover it at the keyboard.
+
+### CLOSED BY REPEAT_0
+
+- **THE STARVATION READING (WALLS_1, "the readings WALLS_1 is not closed
+  without", item 1).** It asked Jean to enter several indoor moods and watch
+  `Placed N + M` fall while `across K walls` holds — the witness for the
+  ROTATION account of the starvation. **The mechanism it was to witness is
+  deleted at U5.** `rotate_authored_staging` invalidated consumed slots at
+  teardown while `place_wall_paintings` hung the next room in the same frame;
+  with refill moved to the pop, the vacated layer keeps its picture until its
+  fetch lands (the WALLS_2 guarantee) and the next room hangs full
+  immediately. There is nothing left to reproduce, and the `consumed`
+  overload ruling the reading awaited is superseded by the field's deletion.
+  Its replacement is VISUAL GATE 2 below, which reads the opposite outcome.
+
+### STILL OPEN OUT OF REPEAT_0
+
+- **`shown_disk_index` is a REPEAT_1 deletion candidate — and the atrium
+  ruling it was pending is moot (G4).** After this campaign its readers are
+  `authored_fetch_release_slot`'s claim fallback and U8's pop line. If
+  REPEAT_1's crossfade logs the source layer instead, the field's last
+  independent reader is the failure path, and `disk_index` alone may serve.
+  Unblocked by REPEAT_1 opening.
+- **`AUTHORED_FETCH_INFLIGHT_CAP` is 4 and its two regimes are unpriced
+  (R9, D1).** The playlist makes a boot-time case for four lanes and a
+  steady-state case for fewer, and the Firefox-ratchet justification for one
+  lane is recorded in this file as suspended, not deleted. Unblocked by
+  REPEAT_1, or by Firefox returning.
+- **A whole-origin outage makes the heal path a steady retry (U7, priced).**
+  See U7's commit: a failed fetch re-appends the NEXT cursor index, so a
+  single missing file self-heals in one hop, but an origin that answers
+  nothing produces one request per failure, bounded by the four lanes,
+  indefinitely. Accepted rather than bounded, because every bound that stops
+  re-appending reintroduces a permanently invalid head — which stalls the
+  playlist for the session. Unblocked by a ruling on what the piece should do
+  when its exhibition goes away mid-show.
+- **The blocking question for REPEAT_1 is unchanged and is Jean's: the aspect
+  fork** — letterbox, re-derive, or fixed cells with pictures breathing
+  inside them. No handoff is written until that word is given.
