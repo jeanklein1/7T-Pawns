@@ -684,7 +684,9 @@ struct SnapshotStagingRecord {
     uint32_t capture_frame = 0;
 };
 
-// ── Authored Staging (circular buffer, 16 layers) ──
+// ── Authored Staging (the ring — STAGING_LAYERS layers, walked by
+//    authored_head; REPEAT_0 made the phrase true, and the old banner
+//    said sixteen while Dim::STAGING_LAYERS said thirty-two) ──
 struct AuthoredStagingRecord {
     uint32_t disk_index = UINT32_MAX;
     // WHICH PAINTING THIS SLOT'S TEXTURE ACTUALLY HOLDS (WALLS_3).
@@ -799,7 +801,19 @@ struct GalleryState {
     uint32_t              staging_reserved = 0;
 
     AuthoredStagingRecord authored_staging[Dim::STAGING_LAYERS]{};
-    uint32_t              authored_write_cursor = 0;
+    // THE PLAYHEAD AND THE PLAYLIST CURSOR — and between them they are the
+    // WHOLE of the authored state (REPEAT_0 R1). `authored_head` is the ring
+    // position the next hang pops; `authored_disk_cursor` is the manifest
+    // index the vacated layer is refilled from. They advance together, in
+    // one act, at the pop. Nothing else remembers which painting hangs
+    // where, because nothing else needs to: the playlist advances, it does
+    // not choose.
+    //
+    // `authored_write_cursor` stood between these two and is DELETED. It had
+    // one writer — this fill — and zero readers anywhere in src/, tools/,
+    // web/, docs/ or audit/. It was the rotation's book-keeping outliving
+    // the rotation by two campaigns.
+    uint32_t              authored_head = 0;
     uint32_t              authored_disk_cursor = 0;     // walks authored_disk_manifest
     uint32_t              authored_staged_count = 0;
     // ONE FILL PER SESSION, AND THIS IS ITS LATCH (OVERTURE_0). Read in two
@@ -999,6 +1013,14 @@ inline void recompute_slot_high_water(GalleryState& gs) {
 inline void capture_snapshot(GalleryState& gs, GalleryDeps* c, float pawn_x, float pawn_z, wgpu::Queue& queue);
 inline uint32_t authored_hangable(const GalleryState& gs);
 inline void authored_release_layer(GalleryState& gs, uint32_t exh);
+// THE RING'S LENGTH — DERIVED, NEVER STORED (REPEAT_0 U1). One expression
+// over two facts that are both already here, so there is no third fact to
+// drift. Zero before the manifest lands, which makes every pop a no-op
+// until there is something to play.
+inline uint32_t authored_ring_size(const GalleryState& gs) {
+    const uint32_t m = (uint32_t)gs.authored_disk_manifest.size();
+    return m < Dim::STAGING_LAYERS ? m : Dim::STAGING_LAYERS;
+}
 inline uint32_t count_unused_authored(const GalleryState& gs, const bool usedAuthored[]);
 inline uint32_t pick_authored_staging(GalleryState& gs, uint32_t seed, uint32_t prop);
 
@@ -2526,41 +2548,34 @@ inline void load_authored_textures(GalleryState& gs) {
     // die roll; before that it was three call sites re-entering each other.
     if (gs.authored_textures_loaded) return;
 
-    // WHAT THE STAGING ALREADY HAS IN HAND — claimed (a fetch in flight) or
-    // shown (a texture still holding it). The rotation's book, kept by the
-    // fill too, so the one-index-one-record invariant holds across both.
-    // The cap fails OPEN exactly as it does there: an index past the array
-    // reads as "not in use" (tools/web_dist.py warns above it).
-    bool disk_in_use[256]{};
-    for (uint32_t i = 0; i < Dim::STAGING_LAYERS; i++) {
-        const auto& r = gs.authored_staging[i];
-        if (r.pending && r.disk_index < 256) disk_in_use[r.disk_index] = true;
-        if (r.valid && !r.consumed && r.disk_index < 256) disk_in_use[r.disk_index] = true;
-        if (r.shown_disk_index != UINT32_MAX && r.shown_disk_index < 256)
-            disk_in_use[r.shown_disk_index] = true;
-    }
-
+    // THE FIRST LAP (REPEAT_0 U1). Layer i takes manifest entry i, ascending,
+    // and that is the whole fill: no dedupe book, no free-index search, no
+    // skip conditions. There is nothing to dedupe against — this runs once
+    // per session, before any other writer has touched a record — and the
+    // one-index-one-record invariant the book used to keep is now kept by
+    // the arithmetic, which hands out each index exactly once per lap (R5).
+    //
+    // THE RING IS AS LONG AS THE FILL COULD MAKE IT DENSE, and this is the
+    // one place that matters. A layer the manifest cannot reach stays
+    // {valid=false, pending=false} forever, and such a layer at the head
+    // ends every row for the rest of the session (R3) — the playlist would
+    // stall at the first hole and never advance past it. So the ring is
+    // min(manifest, STAGING_LAYERS) and the head wraps at THAT, not at 32.
+    // A five-painting exhibition is a five-layer ring on repeat, which is
+    // what "on repeat" means.
+    //
+    // The boot payload is unchanged by this: the fill asked min(manifest,
+    // 32) before REPEAT_0 and asks min(manifest, 32) after it (AUBADE U5b).
     const uint32_t manifest_size = (uint32_t)gs.authored_disk_manifest.size();
-    const uint32_t want = std::min(manifest_size, Dim::STAGING_LAYERS);
-    uint32_t disk = 0u;
-    uint32_t filled = 0;
-    for (uint32_t i = 0; i < Dim::STAGING_LAYERS && filled < want; i++) {
-        auto& rec = gs.authored_staging[i];
-        // A SLOT IN FLIGHT IS SPOKEN FOR. Its fetch is already on its way
-        // and its claim is already in the book above.
-        if (rec.pending) continue;
-        // A PICTURE ALREADY HERE IS NOT RE-ASKED FOR.
-        if (rec.valid && !rec.consumed) continue;
-        while (disk < manifest_size && disk < 256 && disk_in_use[disk]) disk++;
-        if (disk >= manifest_size) break;
-        load_authored_image_to_staging(gs, i, disk, gs.authored_disk_manifest[disk].c_str());
-        if (disk < 256) disk_in_use[disk] = true;
-        disk++;
-        filled++;
-    }
-    // The rotation picks up where the fill left off.
-    gs.authored_disk_cursor = disk % manifest_size;
-    gs.authored_write_cursor = filled % Dim::STAGING_LAYERS;
+    const uint32_t ring = authored_ring_size(gs);
+    for (uint32_t i = 0; i < ring; i++)
+        load_authored_image_to_staging(gs, i, i, gs.authored_disk_manifest[i].c_str());
+
+    // THE PLAYHEAD OPENS AT ZERO AND THE CURSOR AT THE END OF THE LAP. When
+    // the manifest is shorter than the ring the two coincide at 0, which is
+    // correct: the second lap re-asks for the first painting.
+    gs.authored_head = 0u;
+    gs.authored_disk_cursor = ring % manifest_size;
     gs.authored_textures_loaded = true;
     recount_authored_staged(gs);
     std::cout << "[Authored] Staged " << gs.authored_staged_count
