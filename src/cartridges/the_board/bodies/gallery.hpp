@@ -812,11 +812,6 @@ struct GalleryState {
     // the rotation by two campaigns.
     uint32_t              authored_head = 0;
     uint32_t              authored_disk_cursor = 0;     // walks authored_disk_manifest
-    // CONSECUTIVE SLIPS, AND THE ONLY REASON IT EXISTS IS AN ORIGIN THAT HAS
-    // GONE AWAY. Zeroed by any painting that stages; counted up by every
-    // failure. Past one lap of the ring the eager heal stands down and the
-    // pop's own heal carries the ring instead — see authored_fetch_release_slot.
-    uint32_t              authored_slip_run = 0;
     uint32_t              authored_staged_count = 0;
     // ONE FILL PER SESSION, AND THIS IS ITS LATCH (OVERTURE_0). Read in two
     // places: the fill's own early return, and nowhere else since commit's
@@ -825,6 +820,20 @@ struct GalleryState {
     // the exhibition out for the session.
     bool                  authored_textures_loaded = false;
     std::vector<std::string> authored_disk_manifest;    // scanned lazily on first load, sorted numerically
+    // WHICH ENTRIES HAVE NOTHING BEHIND THEM (REPEAT_0a R1). Sized and
+    // cleared where the manifest is written, because they are two facts
+    // about one thing. A fetch that fails kills its index FOR THE SESSION:
+    // a picture that is not there this minute is not there in ten, and the
+    // alternative is one failed round trip per ghost per lap, forever.
+    //
+    // THE COST OF BEING WRONG IS PRICED AND REVERSIBLE. If the failures are
+    // transient rather than absences — a refused burst rather than a missing
+    // file — this drops a live painting for the session. That is R4's
+    // one-counter reversal, recorded in docs/OPEN.md and deliberately not
+    // built: nothing has measured a real outage yet.
+    std::vector<bool>        authored_manifest_dead;
+    // Exhaustion is a LEGAL state (R3), and worth saying exactly once.
+    bool                  authored_exhausted_logged = false;
 
 
     // ── EXHIBIT_0: the web twin's loading gap, named ────────────────
@@ -1044,6 +1053,54 @@ inline uint32_t authored_ready_depth(const GalleryState& gs) {
         depth++;
     }
     return depth;
+}
+
+// THE CURSOR STEPS OVER THE DEAD (REPEAT_0a U1). The first live index at or
+// after `from`, walking the manifest at most once; UINT32_MAX when a full lap
+// finds nothing — which is EXHAUSTION, a legal state (R3) and not an error.
+//
+// It fails OPEN on a mask that is shorter than the manifest: an index the mask
+// cannot speak for reads as live, which is the pre-campaign behaviour and
+// costs one failed round trip rather than silently deleting a painting. The
+// mask is sized with the manifest, so that arm is unreachable — it is there
+// because "unreachable" is the word that gets campaigns written.
+inline uint32_t authored_next_live(const GalleryState& gs, uint32_t from) {
+    const uint32_t n = (uint32_t)gs.authored_disk_manifest.size();
+    if (n == 0u) return UINT32_MAX;
+    uint32_t i = from % n;
+    for (uint32_t step = 0; step < n; step++) {
+        if (i >= (uint32_t)gs.authored_manifest_dead.size()
+            || !gs.authored_manifest_dead[i]) return i;
+        i = (i + 1u) % n;
+    }
+    return UINT32_MAX;
+}
+
+// EXHAUSTION SPEAKS ONCE (R3). Every entry dead is the "no paintings folder"
+// state reached by a different road: the ring stops appending, popped layers
+// go invalid, rows end, the deferred hang idles. No reload logic, no timer.
+inline void authored_report_exhausted(GalleryState& gs) {
+    if (gs.authored_exhausted_logged) return;
+    gs.authored_exhausted_logged = true;
+    std::cout << "[Authored] Sequence exhausted — every entry is dead\n";
+}
+
+// THE ONE PLACE THE PLAYLIST STEPS FORWARD (REPEAT_0a U1). Takes the next
+// LIVE index and advances the cursor past it; UINT32_MAX when the sequence is
+// exhausted, and then the caller issues no fetch.
+//
+// FOUR CALLERS CONSUMED THE CURSOR BEFORE THIS EXISTED, NOT THE THREE THE
+// ORDER NAMES — the boot fill, the pop's append, the pop's HOLE-HEAL, and the
+// failure path's re-append. The hole-heal is the one no unit named, and a
+// patch applied to "the three writers" would have left it handing dead indices
+// to the ring forever. One verb, four callers, no fourth to forget.
+inline uint32_t authored_take_next(GalleryState& gs) {
+    const uint32_t n = (uint32_t)gs.authored_disk_manifest.size();
+    if (n == 0u) return UINT32_MAX;
+    const uint32_t idx = authored_next_live(gs, gs.authored_disk_cursor);
+    if (idx == UINT32_MAX) { authored_report_exhausted(gs); return UINT32_MAX; }
+    gs.authored_disk_cursor = (idx + 1u) % n;
+    return idx;
 }
 
 // THE POP-AND-APPEND — the playlist's whole verb, and after this campaign the
@@ -2062,10 +2119,6 @@ inline void authored_stage_decoded_image(GalleryState& gs, GPUState& gpu, wgpu::
     // (WALLS_3). A reader that saw one without the other would see a valid
     // slot showing nothing, or a slot showing a picture it no longer holds.
     rec.shown_disk_index = rec.disk_index;
-    // ANYTHING GETTING THROUGH CLEARS THE SLIP RUN. The budget above counts
-    // CONSECUTIVE failures, so one arrival is proof the origin is answering
-    // and the eager heal is welcome again.
-    gs.authored_slip_run = 0u;
 
     // AUBADE U1 — HOW MUCH OF THE DARK WAS PAINTING DECODE. R6 found the
     // authored path decodes with stb_image ON THE MAIN THREAD, so this is
@@ -2206,36 +2259,34 @@ inline void authored_fetch_release_slot(GalleryState& gs, uint32_t staging_layer
     const uint32_t manifest_size = (uint32_t)gs.authored_disk_manifest.size();
     if (manifest_size == 0u) return;   // nothing to append from
 
-    // THE EAGER HEAL STANDS DOWN AFTER A LAP OF UNBROKEN FAILURE (P1). Healing
-    // at the failure is what keeps a hole invisible: the replacement travels
-    // during the round trip and has usually landed before the playhead comes
-    // round. But one request per failure closes a CYCLE, and against an origin
-    // that has gone away — a deploy mid-session, a dropped uplink, a page
-    // whose own server died under it — that cycle runs for the life of the
-    // session at the lane cap, which is a page quietly hammering a dead host
-    // and spending a visitor's battery to do it.
+    // R1 — THE ENTRY IS DEAD FOR THE SESSION, AND THIS IS THE ONLY PLACE THAT
+    // SAYS SO. All four failure paths reach here — the HTTP error, the empty
+    // body, the fetch that would not start, and the decode the bytes lost — so
+    // one line covers every way a painting can fail to arrive.
     //
-    // A budget is only safe because the POP heals too. Every bound that merely
-    // stops appending would leave an invalid head nothing ever asks for again,
-    // and R3 forbids stepping over it, so the playlist would be finished for
-    // the session. With authored_pop's own heal as the floor, standing down
-    // here costs nothing but latency: retries become demand-driven, one per
-    // hang attempt, bounded by the visitor rather than by the network.
-    //
-    // One lap of the ring is the budget, and any painting that stages at all
-    // resets it (authored_stage_decoded_image) — so this can only fire when
-    // NOTHING is getting through, which is exactly the case it is for.
-    if (++gs.authored_slip_run > authored_ring_size(gs)) {
-        if (gs.authored_slip_run == authored_ring_size(gs) + 1u) {
-            std::cout << "[Authored] " << gs.authored_slip_run
-                << " slips with nothing staged — the eager heal stands down;"
-                << " the ring refills on demand from here\n";
-        }
-        return;
+    // `slipped` IS the failing index at all four, and the pending gate is the
+    // proof: authored_enqueue_fetch declines while a layer is pending, and
+    // `pending` spans fetch AND valve (AUBADE U5c), so nothing can re-aim
+    // rec.disk_index between the request and any of these returns. Guarded
+    // against UINT32_MAX and against an index the mask cannot speak for.
+    if (slipped != UINT32_MAX
+        && slipped < (uint32_t)gs.authored_manifest_dead.size()
+        && !gs.authored_manifest_dead[slipped]) {
+        gs.authored_manifest_dead[slipped] = true;
+        std::cout << "[Authored] Dead disk=" << slipped
+            << " (HTTP " << status << ") — dropped for the session\n";
     }
 
-    const uint32_t next = gs.authored_disk_cursor % manifest_size;
-    gs.authored_disk_cursor = (next + 1u) % manifest_size;
+    // THE HEAL NOW ASKS FOR A LIVE INDEX, and the dead mask is what bounds it.
+    // REPEAT_0 U7c bounded this cycle with a consecutive-slip budget because
+    // one request per failure could otherwise run for the life of the session
+    // against a dead origin. R2 supersedes that: fetches are issued ONLY for
+    // live indices and each failure kills exactly one, so the session's
+    // failing fetches are bounded by the manifest itself and the budget has
+    // nothing left to bound. The proof and its one honest caveat are in the
+    // commit message.
+    const uint32_t next = authored_take_next(gs);
+    if (next == UINT32_MAX) return;    // exhausted (R3) — the layer stays invalid
 
     // Autonomous stdout — the slip is named once, and it names both halves:
     // which painting was lost and which one took its place in the ring.
@@ -2545,6 +2596,12 @@ inline void exhibition_manifest_onsuccess(emscripten_fetch_t* fetch) {
     gs->authored_disk_manifest.reserve(paintings.size());
     for (const std::string& n : paintings)
         gs->authored_disk_manifest.push_back(std::string(EXHIBITION_PAINTINGS_DIR) + n);
+    // TWO FACTS ABOUT THE SEQUENCE, WRITTEN IN ONE BREATH (REPEAT_0a U1).
+    // The dead mask is meaningless without the manifest it indexes, so it is
+    // sized here and nowhere else — there is no second place for the two to
+    // disagree about how long the sequence is.
+    gs->authored_manifest_dead.assign(gs->authored_disk_manifest.size(), false);
+    gs->authored_exhausted_logged = false;
 
     std::cout << "[Authored] Scanned " << EXHIBITION_MANIFEST_URL
         << " — found " << paintings.size() << " paintings\n";
@@ -2754,10 +2811,10 @@ inline uint32_t authored_pop(GalleryState& gs, uint32_t exh) {
         // bounded by the visitor rather than by the network, and it is what
         // makes the slip budget safe to have at all.
         if (!head.valid && !head.pending && manifest_size > 0u) {
-            const uint32_t heal = gs.authored_disk_cursor % manifest_size;
-            gs.authored_disk_cursor = (heal + 1u) % manifest_size;
-            load_authored_image_to_staging(gs, layer, heal,
-                gs.authored_disk_manifest[heal].c_str());
+            const uint32_t heal = authored_take_next(gs);
+            if (heal != UINT32_MAX)
+                load_authored_image_to_staging(gs, layer, heal,
+                    gs.authored_disk_manifest[heal].c_str());
         }
         return UINT32_MAX;   // R3 — the row ends here either way
     }
@@ -2769,15 +2826,19 @@ inline uint32_t authored_pop(GalleryState& gs, uint32_t exh) {
     // re-aims.
     const uint32_t hung_disk = head.shown_disk_index;
 
-    const uint32_t disk = gs.authored_disk_cursor % manifest_size;
-
-    // THE CURSOR ADVANCES BEFORE THE APPEND, NOT AFTER IT. The append can
-    // reach authored_fetch_release_slot synchronously (a fetch that refuses to
-    // start unwinds through it) and that function advances the cursor too.
-    // Writing this line afterwards would overwrite its advance with a value
-    // derived from the pre-call cursor, handing one manifest index to two ring
-    // layers and rewinding the playlist by one.
-    gs.authored_disk_cursor = (disk + 1u) % manifest_size;
+    // THE CURSOR IS TAKEN AND ADVANCED IN ONE ACT, BEFORE THE APPEND. The
+    // append can reach authored_fetch_release_slot synchronously (a fetch that
+    // refuses to start unwinds through it) and that function takes from the
+    // cursor too; advancing afterwards would overwrite its advance with a
+    // value derived from the pre-call cursor, handing one manifest index to
+    // two ring layers and rewinding the playlist by one.
+    //
+    // UINT32_MAX IS EXHAUSTION, AND IT DOES NOT STOP THE POP. The head is
+    // valid and its picture is going on a wall; there is simply nothing left
+    // to refill the vacated layer with, so the layer goes invalid and ends a
+    // row later (R3). A dead sequence must never cost the pictures already in
+    // the ring.
+    const uint32_t disk = authored_take_next(gs);
     gs.authored_head = (layer + 1u) % ring;
 
     // AND THE APPEND IS SKIPPED WHEN THE LAYER ALREADY HOLDS THAT PAINTING.
@@ -2788,7 +2849,7 @@ inline uint32_t authored_pop(GalleryState& gs, uint32_t exh) {
     // trip while doing it, shortening every row for no reason. A twelve-image
     // exhibition now costs no network at all after its boot lap, which is what
     // "the window means lookahead" should have meant all along.
-    if (gs.authored_staging[layer].shown_disk_index != disk)
+    if (disk != UINT32_MAX && gs.authored_staging[layer].shown_disk_index != disk)
         load_authored_image_to_staging(gs, layer, disk,
             gs.authored_disk_manifest[disk].c_str());
 
