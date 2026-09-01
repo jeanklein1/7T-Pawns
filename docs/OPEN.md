@@ -1855,7 +1855,7 @@ below were re-scoped against the tree, not against the order.
 | D6 | G2's recipe `grep -n "authored_staging\[" src/ -r \| grep consumed` enumerates the census | it returns **9** hits against a live census of **15** expressions. Six are reached through an alias binding and are invisible to it — including the writer in `authored_release_layer` (P16: a recipe must name what it cannot see) | **flag — census redone by hand, below** |
 | D7 | G6: the `found N paintings` sentence is web_dist.py's | it is **C++**: `exhibition_manifest_onsuccess` emits it. `tools/web_dist.py` writes `exhibition.json` and never says "found" | **cosmetic — the coupling R10 protects is real, its home is not where the order put it** |
 | D8 | U5: "the exhibition-layer freeing loop and **its ATRIUM_7 exception**" | there is no exception. `teardown_gallery` frees all forty layers unconditionally; the comment claiming otherwise is orphaned prose, and ATRIUM_7 in the live tree means arch-shell geometry | **cosmetic — nothing to preserve; comment left for a sweep** |
-| D9 | (unstated) `gallery.hpp` is free to edit | it is an **enforced sha256 pin** in `audit/BINDING_LEDGER.md` and `audit/COMMAND_LEDGER.md` (`sha256:b77b6c07…`, matching live). Any byte change reds both until the generators re-run, and `MIRROR_LEDGER` pins `BINDING_LEDGER`, so the cascade is three tools in order: `binding_ledger.py` → `command_census.py` → `mirror_census.py` | **flag — a ledger commit is owed at the campaign's end** |
+| D9 | (unstated) `gallery.hpp` is free to edit | it is an **enforced sha256 pin** in `audit/BINDING_LEDGER.md` and `audit/COMMAND_LEDGER.md` (`sha256:b77b6c07…` **as of that recon** — the digest moves with every edit to the file, so compare against `sha256sum`, never against this line). Any byte change reds both until the generators re-run, and `MIRROR_LEDGER` pins `BINDING_LEDGER`, so the cascade is three tools in order: `binding_ledger.py` → `command_census.py` → `mirror_census.py` | **flag — a ledger commit is owed at the campaign's end** |
 
 **R9-RESCUED — the ruling holds on a better argument than the one it gave.**
 R9 wanted one lane so that "arrivals are FIFO because departures are." With
@@ -2413,3 +2413,87 @@ indices in a 32-layer ring, 32 mod 24 = 8**: each layer's target index shifts
 by eight per lap and the two never stay aligned, so the no-op never fires and
 every refill is a request. After lap one they are browser cache hits.
 Nothing to optimize, and nothing the dead mask breaks.
+
+### WHAT U1, U2 AND U3 CORRECTED IN THE ORDER
+
+- **FOUR CURSOR CONSUMERS, NOT THREE (U1).** The order names the boot fill,
+  the pop's append and the healing re-append. The fourth is `authored_pop`'s
+  HOLE-HEAL arm, added by REPEAT_0 U7c after the order's snapshot — a distinct
+  cursor consumption on a mutually exclusive path inside the same function. A
+  patch applied to "the three writers" would have left it handing dead indices
+  to the ring forever. The cure was not three patches but one verb:
+  `authored_take_next` is now the only read-modify-write of the cursor in the
+  tree, so there is no fourth to forget.
+
+- **R2's ARITHMETIC IS WRONG, AND THE DELETION STILL STANDS (U1).** R2 says
+  the mask bounds a session to at most `manifest_size` failing fetches, making
+  the slip budget unreachable. Measured, an all-dead 57-entry manifest costs
+  **88** failing fetches, not 57: an index can be handed to more than one ring
+  layer before its first failure marks it dead, and each of those handouts
+  fails on its own. The budget is still deleted, because R2's actual test is
+  whether it guards a case the mask does not — and it does not. The budget
+  bought TERMINATION against an origin that has gone away; the mask buys the
+  same thing and buys it better, since it also stops asking for the specific
+  things that are not there. Bounded is the property that matters, and bounded
+  is measured.
+
+- **THE DEAD MASK, MEASURED (U1).** The pop, the take, the next-live walk, the
+  fill and the heal were transcribed character-for-character into a model and
+  driven against the real 24/33 split:
+
+  | case | result |
+  | --- | --- |
+  | the live defect — 57 named, 24 on the server | boot 65 fetches, **exactly 33 failures, one per ghost**; then 420 fetches over 60 rooms with **zero** failures; all 24 live paintings exhibited, never a dead one |
+  | every entry dead | 88 fetches ever, exhaustion logged **once**, then not one further fetch for the session |
+  | a single ghost | **one** failed request, ever; the other 56 all hang |
+  | an honest manifest | zero failures, indices still ascend by one and wrap — REPEAT_0's gates 2 and 3 intact |
+  | two live entries of 57 | only the pair is hung, 82 failures, then silence |
+
+- **EXHAUSTION NEEDS NO SPECIAL CASE (U1, R3).** R3 asks that popped layers go
+  invalid when the sequence dies. They do by construction: an index is marked
+  dead only by a failure, and an index that ever loaded never failed, so total
+  exhaustion implies nothing ever arrived and no layer was ever valid. In the
+  mixed case — an origin that goes away mid-session — the layers keep the
+  pictures they hold (WALLS_2) and the ring keeps cycling them, which is the
+  graceful half of the same rule and is better than bare walls.
+
+- **THE `ExhibitionName` STRUCT IS NOT CEREMONY (U2).** The order asks for a
+  bare `uint32_t exhibition_disk_index[…]` defaulting to UINT32_MAX. A plain
+  member array value-initialises to ZERO, zero is a legal disk index, and C++
+  gives no way to fill a member array with a non-zero default — so forty
+  layers would have booted claiming to hold painting 0 and `hung` would have
+  read 40 before a single painting was up. A one-member struct with a member
+  initialiser is the same idiom `AuthoredStagingRecord` already uses, for the
+  same reason.
+
+- **`ready` IS A GAUGE, NOT A TALLY (U3).** Read after the pop, it is the
+  contiguous depth from the head, so it reads ring−1 while the append that
+  refills the vacated layer is in flight and ring once it lands. It oscillates
+  just under the ring in a healthy exhibition and only SINKS when the sequence
+  is in trouble. A near-constant reading is the good news.
+
+- **THE EVICT BURST IS PER WORLD TRANSITION, NOT PER MOOD KEYPRESS (U3).**
+  TEARDOWN has two entry doors — `request_mood_transition` and
+  `phase_portal_trigger` — and on everexpandingboard.com there is no keyboard,
+  so the portal is the only one a visitor walks through. The ceiling is 40
+  lines. The order's comparison holds but its number was low: the rotation era
+  spent up to **97** lines on the same boundary, not 64.
+
+- **R10's COUPLING LIST IS SHORT BY ONE.** `web/index.html` parses a THIRD C++
+  sentence: `[Authored] Loaded:` drives the veil's
+  "Hanging the paintings (n/total)" counter. It is emitted by
+  `pump_authored_valve` — inside a function this campaign edits — and was not
+  touched. The full guard set is sixteen `indexOf`/`match` tests, and both new
+  REPEAT_0a sentences were checked against all sixteen.
+
+- **AND ONE PRE-EXISTING MIS-PARSE, FOUND WHILE CHECKING R10.** The failure
+  sentence `[Authored] No paintings folder found (exhibition.json, HTTP 404)`
+  satisfies the shell's `indexOf('found') && indexOf('paintings')` test,
+  fails the `/found\s+(\d+)\s+paintings/` regex behind it, and still calls
+  `say('Hanging the paintings')` and returns. So a manifest that 404s tells
+  the visitor the paintings are being hung. Not this campaign's to fix — the
+  sentence is one R10 protects — but it is the exact shape of coupling R10
+  exists to warn about, and it is one word away from capturing four more
+  sentences, since every URL-bearing `[Authored]` line already contains
+  "paintings" by way of `EXHIBITION_PAINTINGS_DIR`. Unblocked by any campaign
+  that opens the veil's classifier.
