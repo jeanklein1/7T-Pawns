@@ -717,7 +717,10 @@ struct AuthoredStagingRecord {
     // AND on failure — a slot that never clears is a slot the rotation
     // can never reuse.
     bool pending = false;
-    // WHAT THE ROTATION READS (OVERTURE_0 — the WALLS_1 split, ruled).
+    // WHAT THE ROTATION READ (OVERTURE_0 — the WALLS_1 split, ruled). The
+    // rotation is deleted at REPEAT_0 U5 and this flag has no reader left; it
+    // is dismissed with the rest of the claim triad at U6. The block below is
+    // kept until then because it is the reasoning the deletion rests on.
     // `consumed` says "on a wall NOW" and is released when the painting
     // leaves the world; this says "hung at least once THIS world, so rotate
     // it out at world end". Set at the two authored claim sites, cleared by
@@ -946,7 +949,6 @@ void place_wall_paintings(GalleryState& gs, GalleryDeps* c, wgpu::Queue& queue,
 void clear_wall_paintings(GalleryState& gs, GalleryDeps* c, wgpu::Queue& queue);
 // Authored image loading
 void load_authored_textures(GalleryState& gs);   // AUBADE U5b — fetch only; no device, so it may run before one exists
-void rotate_authored_staging(GalleryState& gs, GalleryDeps* c, wgpu::Queue& queue);
 void tick_gallery_deferred_hang(MachineCtx* c, wgpu::Queue& queue);
 void teardown_gallery(GalleryState& gs, GalleryDeps* c, wgpu::Queue& queue);
 void drain_gallery_promotions(GalleryState& gs, GalleryDeps* c, wgpu::CommandEncoder& encoder);
@@ -2659,105 +2661,6 @@ inline uint32_t authored_pop(GalleryState& gs) {
     return layer;
 }
 
-inline void rotate_authored_staging(GalleryState& gs, GalleryDeps* c, wgpu::Queue& queue) {
-    if (gs.authored_disk_manifest.empty()) return;
-    // THE WHOLE MANIFEST. ATRIUM_3's two collections and the range that chose
-    // between them died with the partition (ATTIC_ATRIUM D2); what is left is
-    // one collection, walked by one cursor.
-    const uint32_t manifest_size = (uint32_t)gs.authored_disk_manifest.size();
-    if (manifest_size == 0u) return;
-
-    // Collect disk indices currently in unconsumed (surviving) slots
-    // to avoid loading duplicates
-    // THE CAP FAILS OPEN, and that is worth naming where it lives. Every
-    // read below is guarded `disk_idx < 256 && disk_in_use[disk_idx]`, so
-    // an index past the array does not overflow — it short-circuits to
-    // "not in use", and the no-duplicates rule quietly stops applying to
-    // the overflow. A manifest of 300 can hang one canvas twice.
-    // "Generous" was true while this was a directory the repo owned;
-    // EXHIBIT_0 made the manifest a deploy-time input, so
-    // tools/web_dist.py mirrors this number as MANIFEST_DEDUPE_CAP and
-    // warns loudly when a dist exceeds it. THIS array is the source —
-    // raise it and that constant together.
-    bool disk_in_use[256]{};  // generous upper bound
-    for (uint32_t i = 0; i < Dim::STAGING_LAYERS; i++) {
-        if (gs.authored_staging[i].valid && !gs.authored_staging[i].consumed) {
-            if (gs.authored_staging[i].disk_index < 256)
-                disk_in_use[gs.authored_staging[i].disk_index] = true;
-        }
-        // A SLOT IN FLIGHT ALREADY OWNS ITS PAINTING. It is not valid
-        // yet, so the test above cannot see it — and without this the
-        // cursor would hand the same disk index to a second slot and
-        // the wall would hang the same picture twice.
-        if (gs.authored_staging[i].pending && gs.authored_staging[i].disk_index < 256)
-            disk_in_use[gs.authored_staging[i].disk_index] = true;
-        // AND THE PICTURE IT IS STILL SHOWING (WALLS_3). Unconditional, and
-        // that is the whole point: the two marks above are keyed on the
-        // CLAIM, and a slot rotated away is CONSUMED and not yet pending, so
-        // neither of them covers the image its texture still holds. Since
-        // WALLS_2 that image is on a wall, so handing it to a second slot is
-        // the same picture twice down the row. A painting is unavailable if
-        // any slot has claimed it OR is still showing it.
-        if (gs.authored_staging[i].shown_disk_index != UINT32_MAX
-            && gs.authored_staging[i].shown_disk_index < 256)
-            disk_in_use[gs.authored_staging[i].shown_disk_index] = true;
-    }
-
-    uint32_t rotated = 0;
-    uint32_t& cursor = gs.authored_disk_cursor;
-    if (cursor >= manifest_size) cursor = 0u;
-    for (uint32_t i = 0; i < Dim::STAGING_LAYERS; i++) {
-        // HUNG THIS WORLD (OVERTURE_0). There is one collection, so the
-        // second arm ATRIUM_3 wrote here is gone with the partition; and the
-        // selector is no longer `consumed`, which now says only "on a wall
-        // NOW" and is released the moment a painting leaves the world. What
-        // the rotation wants is "the visitor has already seen this one" —
-        // which outlives the eviction that released it, and is exactly the
-        // fact the split gave its own word.
-        if (!gs.authored_staging[i].hung_this_world) continue;
-        // A SLOT ALREADY IN FLIGHT IS NOT ROTATED. The loop below reads
-        // the disk cursor, ADVANCES it, and then assumes the load took —
-        // it marks the painting in use and counts a rotation. On this
-        // twin the load can decline (the pending guard), and the cursor
-        // would have moved anyway: that manifest entry would be skipped
-        // for a full lap and the log would report a rotation that never
-        // happened. Skipping here costs the slot nothing; its fetch is
-        // already on its way.
-        if (gs.authored_staging[i].pending) continue;
-
-        // Find next disk image not already in a surviving slot
-        uint32_t attempts = 0;
-        while (attempts < manifest_size) {
-            uint32_t disk_idx = cursor;
-            cursor = (cursor + 1u) % manifest_size;
-            if (disk_idx < 256 && disk_in_use[disk_idx]) {
-                attempts++;
-                continue;
-            }
-            // Load this image into the vacated staging slot
-            load_authored_image_to_staging(gs, i, disk_idx,
-                gs.authored_disk_manifest[disk_idx].c_str());
-            // Refreshed: this slot is asking for a picture the visitor has
-            // not seen, so its debt to the rotation is paid (OVERTURE_0).
-            gs.authored_staging[i].hung_this_world = false;
-            if (disk_idx < 256) disk_in_use[disk_idx] = true;
-            rotated++;
-            break;
-        }
-        // If every image in the range is in a surviving slot (unlikely with
-        // 50+), the reusable slot just stays as it was
-    }
-
-    if (rotated > 0) {
-        // Recount valid slots after rotation
-        recount_authored_staged(gs);
-        // Autonomous stdout — exhibition-guard candidate, still open.
-        std::cout << "[Authored] Rotated " << rotated
-            << " slot(s), " << gs.authored_staged_count << " valid"
-            << ", disk cursor at " << cursor << "\n";
-    }
-}
-
 // ATRIUM_3 — how many records this world could actually hang: valid,
 // unconsumed, and holding a picture from the range in force. The plain
 // authored_staged_count is a tally over BOTH collections, so it answers
@@ -3422,15 +3325,21 @@ inline void teardown_gallery(GalleryState& gs, GalleryDeps* c, wgpu::Queue& queu
     // the ones the atrium holds, which outlive every world (ATRIUM_7).
     for (uint32_t i = 0; i < Dim::EXHIBITION_LAYERS; i++)
         gs.exhibition_occupied[i] = false;
-    rotate_authored_staging(gs, c, queue);
-    // Every layer was freed above, so every claim on one dies here too.
-    // `hung_this_world` is NOT cleared: the rotation clears it per record it
-    // actually refreshed, and a record it could not refresh must still be
-    // re-asked for in the next world.
-    for (uint32_t i = 0; i < Dim::STAGING_LAYERS; i++) {
-        gs.authored_staging[i].consumed = false;
-        gs.authored_staging[i].exhibition_layer = UINT32_MAX;
-    }
+    // TEARDOWN FORGETS THE AUTHORED SIDE ENTIRELY (REPEAT_0 U5). Two things
+    // stood here: the rotation, and a loop clearing the claims the rotation
+    // read. Both are gone, and the staging array crosses a world boundary
+    // untouched — which is the point. The playhead does not reset at a
+    // portal, so the next world's first room takes the next paintings in the
+    // sequence, and the disk indices ascend continuously across the boundary.
+    //
+    // THE STARVATION LEAVES WITH THE MECHANISM. The rotation ran BETWEEN
+    // freeing the layers and clearing the claims, and its refresh set
+    // `valid = false, pending = true` on every record the last world hung —
+    // while place_wall_paintings hung the next room in the SAME FRAME, off
+    // `valid`. A heavy room consumed up to 28 of 32 records, so the next room
+    // opened with four. Nothing here invalidates anything now: a popped layer
+    // keeps its picture until its own fetch lands (WALLS_2), so the next room
+    // hangs full immediately.
 }
 
 // ─── Promotion drain (owner verb) ─ copy staged snapshot/authored layers into the exhibition

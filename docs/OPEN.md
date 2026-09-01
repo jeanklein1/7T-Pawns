@@ -1245,15 +1245,24 @@ they are the reasoning WALLS_2 and the split were built on.
 
 COMMIT 1 alone is stampable now: (4) THREE OR FOUR — `across K walls` never
 reads 1 or 2, and OVERTURE_0 U7 pins the two thresholds with a `static_assert`
-so no dial can reopen the shape. WHAT IS STILL OWED is reading (1) THE
-STARVATION, REPRODUCED — enter several indoor moods in one session and watch
-`Placed N + M` fall while `across K walls` holds at 3 or 4. It is the witness
-for the ROTATION account rather than the accumulation one: the drop should
-track what the PREVIOUS room hung, and should recover as `[Authored] Rotated`
-fetches land — four at a time since U4b, so recovery should now be visibly
-faster than the one-lane account this reading was written against. U7's
-`[WallPainting] BARE WALL <w>` line is the second half of the reading: it says
-which wall got nothing, which the room-total line cannot.
+so no dial can reopen the shape.
+
+READING (1), THE STARVATION REPRODUCED — **CLOSED BY REPEAT_0 U5, NOT
+OBSERVED.** It asked Jean to enter several indoor moods in one session and
+watch `Placed N + M` fall while `across K walls` held at 3 or 4, as the
+witness for the ROTATION account of the starvation rather than the
+accumulation one. **The mechanism it was to witness is deleted.**
+`rotate_authored_staging` ran between freeing the exhibition layers and
+clearing the claims, and its refresh set `valid = false, pending = true` on
+every record the last world hung — while `place_wall_paintings` hung the next
+room in the same frame off `valid`. REPEAT_0 deletes the rotation whole and
+moves refill to the pop, where the vacated layer keeps its picture until its
+own fetch lands (WALLS_2). There is no starved room left to reproduce and no
+`[Authored] Rotated` line left to time the recovery against; the `consumed`
+overload ruling the reading awaited is superseded by that field's deletion.
+Its replacement is REPEAT_0's VISUAL GATE 2, which reads the opposite
+outcome — the next room hangs FULL immediately. `[WallPainting] BARE WALL <w>`
+survives and now reports `authored ready` rather than `authored hangable`.
 
 ## SAND_2 — one sizing law, and the one thing it does not cover
 
