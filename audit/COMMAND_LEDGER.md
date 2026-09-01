@@ -5,8 +5,8 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `33d7dc9cbd4fcf3a89ad0ce28f186c70eb344e3d`
-(REPEAT_0 U7b: onerror reads its status BEFORE the close, not after)
+Last commit touching any scanned file: `5910b324a836a77e7a9ce42e56441cfd457ee354`
+(REPEAT_0 U7c: four defects the refuter found, and it earned its keep (P3))
 
 | file scanned | sha256 |
 |---|---|
