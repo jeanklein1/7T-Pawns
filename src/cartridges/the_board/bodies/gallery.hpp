@@ -834,6 +834,10 @@ struct GalleryState {
     std::vector<bool>        authored_manifest_dead;
     // Exhaustion is a LEGAL state (R3), and worth saying exactly once.
     bool                  authored_exhausted_logged = false;
+    // THE WORLD THE LAW LAST SWEPT FOR (REPEAT_0b U3). Not a second copy of
+    // world_gen — a memo of the last serial the law has already answered for,
+    // so the sweep runs ONCE per world entry rather than once per pop.
+    uint32_t              authored_law_world = UINT32_MAX;
 
 
     // ── EXHIBIT_0: the web twin's loading gap, named ────────────────
@@ -1037,6 +1041,29 @@ inline uint32_t authored_hung_count(const GalleryState& gs) {
     return n;
 }
 
+// THE LAW: NO LAYER OUTLIVES ITS WORLD (REPEAT_0b R1/U3).
+//
+// Swept once per world entry, at the choke point every authored hang passes
+// through, against the stamp U1 put on each layer. A layer still named by an
+// older world when a new world asks for its first painting is illegal, and
+// the response is a FORCED RELEASE AND A LOUD LINE — never a stall (R2). A
+// gallery visitor is not a debugger: the piece heals itself and the console
+// carries the accusation.
+//
+// THIS LINE MUST NEVER PRINT, AND RECON SAYS WHY IT CANNOT. teardown_gallery
+// releases all Dim::EXHIBITION_LAYERS unconditionally, before apply_mood hangs
+// anything, and it is the only road out of a world — one caller, both entry
+// doors converging on it, no same-mood short-circuit. So the law is a witness
+// for a defect this tree does not have.
+//
+// WHICH IS EXACTLY WHY IT IS WORTH ITS COST. REPEAT_0b was ordered against a
+// cross-world leak inferred from print order, and print order lied. If the
+// inference was right about something recon could not see, this line names
+// the road and the capture that holds it is the next campaign's first
+// exhibit. If it never prints, that is the leak's absence stated by the
+// program rather than argued by a reading.
+inline void authored_enforce_world_law(GalleryState& gs, uint32_t world_gen);
+
 inline void release_exhibition_layer(GalleryState& gs, uint32_t exh) {
     if (exh >= Dim::EXHIBITION_LAYERS) return;
     const uint32_t was = gs.exhibition_name[exh].disk_index;
@@ -1188,6 +1215,24 @@ inline uint32_t authored_take_next(GalleryState& gs) {
     if (idx == UINT32_MAX) { authored_report_exhausted(gs); return UINT32_MAX; }
     gs.authored_disk_cursor = (idx + 1u) % n;
     return idx;
+}
+
+inline void authored_enforce_world_law(GalleryState& gs, uint32_t world_gen) {
+    if (gs.authored_law_world == world_gen) return;   // this world is already answered for
+    gs.authored_law_world = world_gen;
+    for (uint32_t i = 0; i < Dim::EXHIBITION_LAYERS; i++) {
+        // TAKEN BY VALUE, because the release two statements down clears the
+        // very record a reference would still be pointing at.
+        const uint32_t disk = gs.exhibition_name[i].disk_index;
+        const uint32_t w    = gs.exhibition_name[i].world;
+        if (disk == UINT32_MAX) continue;   // unnamed — a snapshot layer, or free
+        if (w == world_gen) continue;       // this world's own, and legal
+        std::cout << "[Authored] LATE EVICT exh=" << i
+            << " disk=" << disk
+            << " w=" << w << "<" << world_gen
+            << " — released by law, report the road\n";
+        release_exhibition_layer(gs, i);
+    }
 }
 
 // THE POP-AND-APPEND — the playlist's whole verb, and after this campaign the
@@ -2881,6 +2926,12 @@ inline void load_authored_textures(GalleryState& gs) {
 // frame that hung it owns its own pixels in its own exhibition layer (R0), so
 // there is nothing left for a late arrival to disturb.
 inline uint32_t authored_pop(GalleryState& gs, uint32_t exh, uint32_t world_gen) {
+    // THE LAW FIRST, BEFORE SUPPLY IS EVEN ASKED ABOUT (R1). This is the one
+    // verb every authored hang passes through, so it is the one place a new
+    // world's first claim can be caught standing over an old world's layer.
+    // It runs even when the pop then declines: the law binds the ATTEMPT.
+    authored_enforce_world_law(gs, world_gen);
+
     const uint32_t ring = authored_ring_size(gs);
     if (ring == 0u) return UINT32_MAX;          // no exhibition yet — nothing to play
     if (gs.authored_head >= ring) gs.authored_head = 0u;
