@@ -2275,3 +2275,141 @@ pop now always has a reason to).
 - **The blocking question for REPEAT_1 is unchanged and is Jean's: the aspect
   fork** — letterbox, re-derive, or fixed cells with pictures breathing
   inside them. No handoff is written until that word is given.
+
+## REPEAT_0a — THE SEQUENCE HEALS, THE WINDOW SPEAKS
+
+### U0 — WHY 33 NAMES HAVE NO FILE · CC's half
+
+**The order's hypothesis is FALSIFIED, and it could not have been true.**
+`tools/web_dist.py` writes the manifest and copies the files **from the same
+list**: `main` calls `paintings = list_paintings()` once, hands that list to
+`write_paintings(paintings)`, and later writes
+`json.dump({"paintings": paintings, "music": music}, …)` from the same
+variable. There is no second listing, no extension filter on one side only,
+no subfolder walk. A name in the manifest with no file beside it in `dist/`
+cannot be produced by this script.
+
+**RECIPE, ADAPTED, AND WHY.** The order's recipe reads `dist/`. This container
+has no build — `web_dist.py` reaches `BUILD FIRST — 3 artifact(s) absent` and
+returns before `shutil.rmtree(DIST)`, so no `dist/` is ever written here. The
+script's own functions were driven directly instead, which tests the same
+thing more sharply — it exercises the real copy rather than inspecting its
+output:
+
+    python3 - <<'EOF'
+    import os, importlib.util
+    spec = importlib.util.spec_from_file_location("wd", "tools/web_dist.py")
+    wd = importlib.util.module_from_spec(spec); spec.loader.exec_module(wd)
+    wd.DIST = "<scratch>"; wd.DIST_PAINTINGS = os.path.join(wd.DIST, "paintings")
+    names = wd.list_paintings(); wd.write_paintings(names)
+    got = sorted(os.listdir(wd.DIST_PAINTINGS))
+    print(len(names), len(got), sorted(set(names) - set(got)))
+    EOF
+
+Result: **57 names in, 57 files written, zero missing, zero zero-byte, all 57
+beginning `ff d8`** (a real JPEG SOI marker). `web_dist.py` is exonerated by
+execution, not by reading.
+
+**THE SOURCES ARE ALL THERE, TOO.**
+
+| check | recipe | result |
+| --- | --- | --- |
+| files present | `ls assets/paintings \| wc -l` | **57** |
+| all tracked by git | `git ls-files assets/paintings \| wc -l` | **57**, and `git ls-files --others --exclude-standard assets/paintings` is empty |
+| no LFS or filter | `grep -inE "lfs\|filter" .gitattributes` | none — `*.jpeg` is marked `binary`, nothing more |
+| all real JPEGs | first two bytes of each == `ff d8` | **57/57** |
+| when added | `git log --diff-filter=A -1 -- <each>` | **all 57 in one commit**, `f52d8c16`, 2026-04-04 |
+| dist is rebuilt, never patched | `grep -n "rmtree" tools/web_dist.py` | `shutil.rmtree(DIST)` then `os.makedirs(DIST)` — a stale `dist/` is impossible |
+
+**So the loss is DOWNSTREAM of `dist/`: the deploy, the CDN, or the client.**
+It is not in this repository.
+
+**THE COUNT, RECONCILED (a FLAG on the order's arithmetic).** The order names
+the failing set as `70, 71, 104–115, 200–214, 500, 501, 900, 1001, 1002` and
+calls it 33. Read literally that is 34 names — but `PAINTING_204` does not
+exist in `assets/paintings`, so `200–214` is fourteen files, not fifteen, and
+the set is **exactly 33**. The order's set and the console agree.
+
+**AND THE SHAPE OF THE FAILING SET IS THE FINDING.** In `list_paintings`'
+numeric order (index : name):
+
+    0..15   PAINTING_1 … PAINTING_60      LOAD
+    16,17   PAINTING_70, PAINTING_71      FAIL
+    18..25  PAINTING_72 … PAINTING_103    LOAD
+    26..56  PAINTING_104 … PAINTING_1002  FAIL
+
+Sixteen plus eight is the twenty-four that load; two plus thirty-one is the
+thirty-three that fail. **The failures are a contiguous TAIL in request order
+plus one two-wide notch — a shape that tracks WHEN a request was issued, not
+WHICH file it asked for.** Nothing distinguishes `PAINTING_70` from
+`PAINTING_72` in the tree: same folder, same extension, same commit, both
+valid JPEGs, 165 KB against 188 KB.
+
+That leaves exactly two live hypotheses, and they are not distinguishable
+from inside this repository:
+
+- **(A) THE FILES ARE NOT ON THE SERVER.** The deploy dropped or never
+  uploaded 33 of 57. Then `HTTP 0` is the CDN answering a missing object in a
+  way that is not a 404 — a redirect to an error page on another origin, or a
+  connection closed before a status.
+- **(B) THE FILES ARE THERE AND THE REQUESTS ARE BEING REFUSED.** A rate
+  limit, a WAF rule, or a burst ceiling cuts the client off after roughly two
+  dozen image requests. `HTTP 0` is emscripten's verdict for a request that
+  never got an HTTP status at all — a reset, a CORS refusal, an abort — which
+  is what a refused burst looks like, and which is *not* what a 404 looks
+  like. The two-wide notch at 70/71 is what a four-lane race looks like.
+
+**ONE TEST SEPARATES THEM, AND IT IS JEAN'S** (this container's egress policy
+blocks `everexpandingboard.com` — `curl` returns `CONNECT tunnel failed,
+response 403` — so CC cannot run it):
+
+1. Open `https://everexpandingboard.com/paintings/PAINTING_104.jpeg`
+   directly. **200 and a picture ⇒ hypothesis B.** 404, or an error page,
+   ⇒ hypothesis A.
+2. Open `https://everexpandingboard.com/exhibition.json` and count. It should
+   name 57.
+3. In DevTools → Network, filter `paintings/`, and read the failed rows'
+   status column: `404` is A; `(failed) net::ERR_…` is B.
+
+**AND THE ANSWER CHANGES R1, WHICH IS WHY IT MATTERS BEFORE U1 SHIPS.** R1
+rules that a failed fetch is dead for the session, priced on "a picture that
+is not there this minute is not there in ten." That is exactly right under
+(A). **Under (B) it is false**: the pictures are there, the refusal is
+transient, and session-scoped death converts a recoverable burst into 33
+paintings permanently lost until reload. U1 lands as ruled — it is the
+correct degradation for the case the order names, and it is strictly better
+than the per-lap retry either way — but if Jean's test returns 200, R1's
+one-counter reversal (R4's timestamp-and-reset, priced below) stops being a
+horizon item and becomes the next unit.
+
+### U0b — NOT A FILTER FIX; A WITNESS
+
+The order reserves U0b for a mechanical fix to `web_dist.py`'s copy. **There
+is no mechanical fault to fix** — proven above. What the script lacks is not
+correctness but a *witness*: it prints `WROTE dist (N files)` and never says
+whether every name it wrote into `exhibition.json` has a file beside it. Had
+it said so, this campaign's whole question would have been answered at dist
+time, on Jean's machine, months ago. Instrument before mechanism: U0b adds
+the assertion instead of the filter it turns out not to need.
+
+### R4 — OUTAGE RECOVERY, PRICED NOT BUILT
+
+Session-scoped death (R1) means a total network outage ends the authored
+exhibition until reload. The cure is two facts and no new mechanism: a
+`uint32_t authored_dead_stamp[…]` (or one session-wide timestamp beside the
+mask) and a reset of the mask when the sequence exhausts, so an exhaustion
+that happened during an outage is retried once the outage is over. **Priced
+at one counter and one reset; not built, because nothing has measured how
+long a real outage lasts against how long a visitor stays.** Instrument
+before mechanism. Unblocked by a field measurement — or immediately, if
+Jean's U0 test returns 200 and hypothesis (B) is the live one.
+
+### THE ≤32 NO-OP REFILL IS UNAFFECTED
+
+REPEAT_0 skips a refill when the cursor names the painting the popped layer
+already shows, which fires whenever head and cursor advance in lockstep —
+that is, whenever the manifest is no larger than the ring. With **24 live
+indices in a 32-layer ring, 32 mod 24 = 8**: each layer's target index shifts
+by eight per lap and the two never stay aligned, so the no-op never fires and
+every refill is a request. After lap one they are browser cache hits.
+Nothing to optimize, and nothing the dead mask breaks.
