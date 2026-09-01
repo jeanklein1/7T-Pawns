@@ -14,8 +14,8 @@ merge rows the API charges separately.
 | field | value |
 |---|---|
 | demo column censused | `full` |
-| source commit | `3938bf35fe32b2c7064133ab44910e58984b879f` |
-| | GATES_2b: check mode iterates the full provenance stanza — pins and checks coextensive; gate table runs both tools in --check |
+| source commit | `9f71716ae22257b5fc68acc241bee6200f62d677` |
+| | GATES_2c: caller-table hashes become enforced pins (sha256: prefix = the contract); bare hashes outlawed by a fourth red; generators self-pin |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:b48364246f02747908ee7ca8084d9de1bf0f53ed481ef31820ba0d5686766047` |
 | `src/cartridges/the_board/realization/binding_surface.gen.inc` | `sha256:463f1d4f323e50439bc83ce20b35830a32356c33350adfbe425b773712de4661` |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
@@ -30,7 +30,7 @@ only — `draw_orbs` is called from `bodies/orbs.hpp`, not from
 
 | caller file scanned | sha256 |
 |---|---|
-| `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:b77b6c07583c4beee6b7d04d334bad272aa4d833d64efaf3de44c1e5c47eef69` |
+| `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:29a83666b9a6f20691e6fd966fbabd3892bcff126e87bfff57222ed6f00e3819` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:335d9c5a1d7c34aff37f3010abe8b88aa04290c8db487b70828c9c83e8588719` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:a3bde8f506af81f67844572f51e88f2f0cb9336b9cfbddbc946883faef8d4a0c` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |

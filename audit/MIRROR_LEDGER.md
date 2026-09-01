@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `3938bf35fe32b2c7064133ab44910e58984b879f` |
-| | GATES_2b: check mode iterates the full provenance stanza — pins and checks coextensive; gate table runs both tools in --check |
+| source commit | `9f71716ae22257b5fc68acc241bee6200f62d677` |
+| | GATES_2c: caller-table hashes become enforced pins (sha256: prefix = the contract); bare hashes outlawed by a fourth red; generators self-pin |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:a52f41dd72b4cacfa576f406c318fccbc66b42fb21587023f4802aad7a03df20` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:b48364246f02747908ee7ca8084d9de1bf0f53ed481ef31820ba0d5686766047` |
@@ -24,7 +24,7 @@ carry those facts, or leave them in place and patch around them.
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:fc3137898e0dc6f0f2edd938cd40681cfc4fe8c272fb9fc4920f71b34643f48e` |
 | `tools/binding_ledger.py` | `sha256:6d9fc58da755a8416bbcfe8efe5360f97ec11fb4a81a9d60ee41f80a2316f790` |
 | `tools/mirror_census.py` | `sha256:f5f5dca3a4d606e77a45943db815b45e2f11a3403bc57e53bd132026ceda81b8` |
-| `audit/BINDING_LEDGER.md` | `sha256:08786960d65f0dae036cd99d4aebdbe3068e987c063ec9b057f3c0b1b1ba363e` |
+| `audit/BINDING_LEDGER.md` | `sha256:bce892bc583dc9c14ec39d006e5863134df386d8156d52dbcc9ab6f9dff2c7d8` |
 
 `tools/binding_ledger.py` is an input because its parsers are IMPORTED,
 not copied — one parse, two artifacts, no drift between instruments.
@@ -1052,14 +1052,14 @@ wrapper, 18 wrapper calls) and are not recounted here.
 |---|---|---|---|---|
 | `cartridge.hpp:2171` | `phase_entity_mesh_gen` | 0 | `worldGroup_` | — |
 | `cartridge.hpp:2172` | `phase_entity_mesh_gen` | 1 | `frameCGroup_` | — |
-| `gallery.hpp:1776` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
-| `gallery.hpp:1777` | `render_snapshot_pass` | 1 | `frameCGroup_` | — |
-| `gallery.hpp:1848` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
-| `gallery.hpp:1849` | `render_snapshot_pass` | 1 | `framePhotographerGroup_` | `1, &kFrameSlotZero` |
-| `gallery.hpp:1850` | `render_snapshot_pass` | 2 | `sceneStateGroup_` | — |
-| `gallery.hpp:1851` | `render_snapshot_pass` | 3 | `sceneTexturesGroup_` | — |
-| `gallery.hpp:1895` | `render_snapshot_pass` | 2 | `galleryStateGroup_` | — |
-| `gallery.hpp:1896` | `render_snapshot_pass` | 3 | `galleryTexturesGroup_` | — |
+| `gallery.hpp:1826` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
+| `gallery.hpp:1827` | `render_snapshot_pass` | 1 | `frameCGroup_` | — |
+| `gallery.hpp:1898` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
+| `gallery.hpp:1899` | `render_snapshot_pass` | 1 | `framePhotographerGroup_` | `1, &kFrameSlotZero` |
+| `gallery.hpp:1900` | `render_snapshot_pass` | 2 | `sceneStateGroup_` | — |
+| `gallery.hpp:1901` | `render_snapshot_pass` | 3 | `sceneTexturesGroup_` | — |
+| `gallery.hpp:1945` | `render_snapshot_pass` | 2 | `galleryStateGroup_` | — |
+| `gallery.hpp:1946` | `render_snapshot_pass` | 3 | `galleryTexturesGroup_` | — |
 | `gol_zones.hpp:906` | `flush_zone_derive_requests` | 0 | `worldGroup_` | — |
 | `gol_zones.hpp:907` | `flush_zone_derive_requests` | 1 | `frameCGroup_` | — |
 | `gol_zones.hpp:994` | `dispatch_zone_sync` | 0 | `worldGroup_` | — |
