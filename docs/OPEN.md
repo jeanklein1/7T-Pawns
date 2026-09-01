@@ -2543,3 +2543,152 @@ refute it. The web_dist lens returned **zero findings**. Of the rest:
   ~17 KB/s per lane against four lanes — roughly half a megabit aggregate,
   which is a link on which the exhibition cannot run at all. R4's one-counter
   reversal covers this arm for free if it is ever built.
+
+## REPEAT_0b — THE ROOM THAT WOULDN'T LEAVE
+
+### PHASE 0 — RECON. THE PREMISE DOES NOT SURVIVE THE TREE.
+
+The order's subject is a cross-world leak: hung exhibition layers outliving
+their world. **Recon finds no such leak, and finds that none is structurally
+possible.** The order says recon decides and the log only accuses; this is
+recon deciding.
+
+**G1 — THE CHOREOGRAPHY, FROM CODE. There is ONE boundary of record and its
+order is the opposite of the one the log was read as showing.**
+`phase_transition_machine`'s `TEARDOWN` arm, in a single frame, in this order:
+
+| # | what runs | what it prints |
+| --- | --- | --- |
+| 1 | `world_state_.world_gen++` | — |
+| 2 | `become_destination(pendingDestination_)` — the new seed | — |
+| 3 | `reset_surface`, `teardown_entities`, the per-organ teardown verbs | — |
+| 4 | **`teardown_gallery`** — releases ALL `Dim::EXHIBITION_LAYERS` | **the evict burst, `hung` counting to 0** |
+| 5 | pose reset, agent reset, `set_world_seed` | — |
+| 6 | **`apply_mood`** → `apply_mood_indoor_shell` → `place_wall_paintings` | **the new world's pops** |
+| 7 | still inside `apply_mood`, after the hang | `[Mood] Applied: …` |
+| 8 | end of the arm | `[World] Teardown complete, seed=…` |
+
+**`[Mood] Applied` is printed AFTER the hang, not before it** — it is the last
+statement of `apply_mood`, and `apply_mood_indoor_shell` (which reaches
+`place_wall_paintings`) is called twenty lines above it. So **a pop line above
+a `[Mood] Applied` line belongs to the world that line announces, not to the
+one before it.** The order records this ambiguity as observation (a), at low
+confidence, and then reasons from the opposite reading. Every number in the
+accusation follows from that inversion:
+
+- line 616 `Pop … hung=28` is the NEW room filling, not the old one lingering;
+- line 655 `hung=29` and 711 `hung=33` are that same room plus the outdoor
+  galleries dressing as patches stream in;
+- line 845 `Evict exh=0 disk=37` is not a late release. `[World] Transition`
+  is printed by `request_mood_transition`, which only *requests* the
+  transition and sets `FADE_OUT`; teardown happens seconds later, after the
+  fade. An evict one line after it is the streaming evictor releasing a
+  CURRENT-world gallery, and `disk=37` belongs to the current world's lap.
+
+**G2 — THE SKIPPED-STRUCTURES HYPOTHESIS IS REFUTED.** The order asks whether
+`teardown_gallery` walks slots, frames and centres rather than the layer
+array. It walks both, and the layer walk is total and unconditional:
+
+    // Free all exhibition layers …
+    for (uint32_t i = 0; i < Dim::EXHIBITION_LAYERS; i++)
+        release_exhibition_layer(gs, i);
+
+`release_exhibition_layer` clears `exhibition_name[exh].disk_index`
+unconditionally. **No layer, hung by any road, can survive that loop** — the
+release does not consult the slot, the frame, the centre or the patch. R3
+asks that the release pass of record iterate the layers; it already does.
+
+The diff G2 asks for closes to nothing: every writer of the name array is
+`authored_pop`, whose single call chain is the two hang roads, and both are
+covered by a loop that ignores roads entirely.
+
+**G3 — NO LIGHT PATH.** `request_mood_transition` has no same-mood
+short-circuit — its only early returns are `phase != IDLE` and
+`mood >= MOOD_COUNT`. Both entry doors (`request_mood_transition`,
+`phase_portal_trigger`) set `FADE_OUT` and converge on the single `TEARDOWN`
+arm. `teardown_gallery` has exactly ONE caller. Every transition takes the
+same teardown, whatever the mood or the size.
+
+**AND THE LEDGER RECONCILES WITH TOTAL EVICTION.** 257 pops − 227 evicts = 30,
+which is exactly the `hung` the capture ends on: the final world, still
+standing because the capture stopped before its teardown. A partial eviction
+is not reachable — the loop is unconditional — so "some transitions evict
+partially" cannot describe this tree. The excerpt is non-contiguous (line 616
+to 619 to 650 to 655 …), and the evict burst for the boundary in question
+sits above its window, before the pops at 616.
+
+**G4 — THE WORLD SERIAL ALREADY EXISTS, AND IT IS ALREADY AT THE BOUNDARY OF
+RECORD.** `WorldState::world_gen` (`contracts/surface_services.hpp`) is
+incremented exactly once per world rebuild, as the FIRST statement of the
+`TEARDOWN` arm, and is described in place as the P5 stale-callback guard. U1
+therefore introduces no counter: it carries the one that exists into the
+layer. `gallery.hpp` already reads `c->world_state_` at six sites, so both
+hang roads can reach it. The choke point for the law is `authored_pop` — the
+one supply verb, which every authored hang passes through.
+
+**G5 — THE MOOD MONOTONY IS THE OPERATOR, NOT THE CHOOSER.** `[World]
+Transition (…)` is printed only by `request_mood_transition`, the KEYBOARD
+door, which takes the mood as an argument — the key pressed. The weighted
+chooser `pick_mood_weighted_` is reached only by `pick_portal_mood` /
+`pick_open_mood`, for PORTAL destinations, which announce themselves as
+`[Portal] GPU trigger` instead. **Eight `[World] Transition (indoor_flat …)`
+lines are eight presses of the same key.** The varying 3x3/5x5/7x7/9x9 is
+`derive_finite_radius(dest_seed, …)` over a fresh seed each time, exactly as
+designed. For the record, the chooser is not pinned:
+`mood_weights = { 0.20, 0.20, 0.20, 0.10, 0.15, 0.15, 0.02 }`, so
+`indoor_flat` carries ~20% — eight independent picks in a row would be about
+five in a million. Nothing to repair; R5 is answered and closed.
+
+**G6 — THE DEAD ATRIUM PROSE IS THERE, AND IT DIES.** Verbatim above the
+release loop: `// Free all exhibition layers (staging persists across worlds)
+— except // the ones the atrium holds, which outlive every world (ATRIUM_7).`
+The code has no exception and the atrium has no holder — `ATTIC_ATRIUM` D1
+deleted it. Struck under R1.
+
+### AND ONE REAL FINDING THE ACCUSATION WALKED PAST
+
+**`hung` COUNTS AUTHORED LAYERS ONLY, SO IT UNDER-REPORTS OCCUPANCY — and
+that is why the order's visual gate 4 would fire spuriously.** A snapshot
+claims an exhibition layer and is never named by `authored_pop`, so it is
+occupied and invisible to `hung`. At log line 711, `exh=39` allocating with
+`hung=33` is not an allocator fault: it is 33 authored layers plus 7 snapshot
+layers making 40 of 40. **Gate 4's rule — "`exh=39` never allocates while
+`hung < 35`" — is unsatisfiable by construction and should not be run.**
+
+What IS real underneath it: **the exhibition array can saturate, and when it
+does the failure is nearly silent.** `find_free_exhibition_layer` returns
+`UINT32_MAX`, the row ends, and only `[WallPainting] BARE WALL` says anything
+— and only when a whole wall got nothing. A room thinned by layer exhaustion
+rather than by supply reads identically to a small room. The cure is one
+derived count on the pop line (`occ=`, the `exhibition_occupied` tally beside
+`hung=`), which would have made this distinction free. **Priced at one line,
+not built — it is outside this order's units.** Unblocked by REPEAT_1, which
+needs the headroom arithmetic (40 − room size = concurrent fades) to be
+readable anyway.
+
+### WHAT LANDS, UNDER THE ORDER'S OWN STOP CONDITION
+
+G2 refutes the hypothesis and names no alternative road, so the order's first
+stop condition governs: **land U1 and U3, FLAG U2, stop at the instrument.**
+
+- **U1 lands** — and it is the unit that matters, because the campaign was
+  misdiagnosed for exactly the want it fills. `w=` on the pop and evict lines
+  makes per-world attribution a fact of the log instead of an inference from
+  print order.
+- **U2 does not land as a mechanism.** There is no structure-walking loop to
+  replace; the total layer walk R3 specifies is already the code. Its prose
+  half lands: G6's dead atrium clause is struck under R1.
+- **U3 lands** — the law, armed. After it, a leak names itself. It should
+  never print, and the recon above says why it cannot; if it ever does, that
+  capture is the next campaign's first exhibit and the accusation was right
+  about something recon could not see.
+
+### STILL OPEN, RE-RECORDED
+
+- `command_census.py --check` exits 0 while carrying a stale digest — no
+  pin-comparison logic at all, so `COMMAND_LEDGER.md` can be silently wrong
+  with every gate row green. Found by the REPEAT_0a refuter. **This campaign
+  does not fix it; it re-records that it exists.** Unblocked by a gates round.
+- The wrangler dev-loop fragility (R6): a `Dead`/`Failed` burst under
+  `pages dev` is a server symptom before it is a tree symptom. The CDN serves
+  57/57; the ghost file is closed.
