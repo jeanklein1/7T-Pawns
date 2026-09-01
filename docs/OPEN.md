@@ -2152,6 +2152,85 @@ discover it at the keyboard.
   overload ruling the reading awaited is superseded by the field's deletion.
   Its replacement is VISUAL GATE 2 below, which reads the opposite outcome.
 
+### WITNESSED AT THE CAMPAIGN'S TIP
+
+- **THE RING'S ARITHMETIC, RUN RATHER THAN REASONED.** The pop, the ready
+  depth, the ring size, the boot fill and the failure heal were transcribed
+  character-for-character into a standalone model and exercised: 280 pops over
+  a 57-painting manifest hang disk indices that ascend by exactly one and wrap
+  at 57 (**visual gates 2 and 3, proved before Jean reaches the keyboard**);
+  every manifest size from 1 to 33 fills the ring DENSE, `ready == ring`, and
+  advances 200 pops with no stall; an empty manifest survives fill, depth, pop
+  and slip with no division by zero; a total origin outage followed by
+  recovery heals the ring to full; one bad file heals in one hop; and a
+  pending head reads depth 0 while the pop declines without touching a deeper
+  record (R3). The model is not the program — it cannot be, the real functions
+  need a device — but every line of arithmetic in it is a copy of its
+  original. It is what turned U1's ring-size decision from a judgement into a
+  measurement: at the order's literal "fill layers 0..31", a five-painting
+  manifest leaves 27 holes and the playlist stalls after five paintings.
+
+- **L33'S STANDING WITNESS HOLDS.** The five files in `audit/` deleted, the
+  five tools re-run, all five byte-identical.
+
+- **AND THE WITNESS HAS A TRAP, PAID FOR ON THE FIRST RUN.** P18 says to
+  restore a dirtied file from a sidecar taken at the moment of dirtying. It
+  does not say WHERE the sidecar goes, and `audit/` is the wrong answer:
+  `mirror_census.py` counts mentions across that directory, so five
+  `*.md.bak` files sitting in it took a census row from 121 to 394 and the
+  rebuild read as a genuine DIFFERS. The sidecar must live outside every
+  directory the generators scan. Recorded rather than ruled — it is P18's
+  letter working exactly as written and landing wrong, which is the shape a
+  process law gets its next clause from.
+
+### WHAT THE REFUTER FOUND (P3, and it earned its keep)
+
+Six independent lenses over the landed diff — liveness, bounds, the indoor
+plan/place contract, the outdoor commit and reservation, the deletions, and
+the fetch lifecycle — each finding then handed to a separate skeptic told to
+refute it. Eighteen findings raised, most refuted. **Four survived, all four
+real, all four this campaign's own:**
+
+- **`exhibition_layer` WAS NOT DELETED.** U6 announced the death of all three
+  claim-triad fields and delivered two. The field stood as the struct's last
+  member, with zero writers and zero readers, directly beneath its own
+  obituary — the U6 diff shows it as an unchanged CONTEXT line between two
+  deletions. All six lenses found it independently. A comment that lies about
+  the line under it is worse than a leftover, and this is exactly the shape
+  CLAUDE.md's "living matter only" exists to forbid. Fixed at U7c.
+- **THE CURSOR'S READ-MODIFY-WRITE STRADDLED A CALL THAT ADVANCES IT.** Both
+  `authored_pop` and `load_authored_textures` computed a cursor value, called
+  into `load_authored_image_to_staging`, and only then wrote the cursor back.
+  That call can reach `authored_fetch_release_slot` synchronously — a fetch
+  that refuses to start unwinds through it — and the release advances the
+  cursor to heal the layer. The write-back would discard that advance,
+  handing one manifest index to two ring layers and rewinding the playlist.
+  Fixed at U7c: the cursor advances before the call in both.
+- **THE REFILL WAS A NO-OP RE-DOWNLOAD FOR ANY EXHIBITION OF 32 OR FEWER.**
+  Where the manifest is no larger than the ring, head and cursor advance in
+  lockstep, so the cursor always named the picture the popped layer was
+  already showing: every hang re-fetched an image byte for byte to replace
+  itself, and marked the layer `pending` for a round trip while doing it,
+  shortening every subsequent row for nothing. Fixed at U7c by skipping the
+  append when `shown_disk_index` already equals the cursor's index. A
+  twelve-image exhibition now costs no network at all after its boot lap.
+- **THE HEALING APPEND CLOSED AN UNBOUNDED RETRY CYCLE.** Recorded here as
+  accepted when U7 landed; the refuter was right that accepting it was wrong.
+  One request per failure against an origin that has gone away runs at the
+  lane cap for the life of the session. Fixed at U7c with a budget that is
+  only safe because `authored_pop` now heals a hole it trips over: the eager
+  heal stands down after one lap of unbroken failure, and retries become
+  demand-driven — bounded by the visitor rather than by the network — with no
+  invalid head left for nothing to ask about.
+
+Refuted, and worth recording because each was raised more than once: that a
+room's own pops re-create the WALLS_2 starvation (they do not — the pops
+behind the head are the LAST positions from it, so a 28-painting room leaves
+depth 4, not 0); that the ring can index out of bounds or divide by zero on
+an empty manifest (every path is guarded, and the model exercises it); and
+that the pump's new ceiling can strand the queue (the next pop pumps, and the
+pop now always has a reason to).
+
 ### STILL OPEN OUT OF REPEAT_0
 
 - **`shown_disk_index` is a REPEAT_1 deletion candidate — and the atrium
@@ -2165,14 +2244,34 @@ discover it at the keyboard.
   steady-state case for fewer, and the Firefox-ratchet justification for one
   lane is recorded in this file as suspended, not deleted. Unblocked by
   REPEAT_1, or by Firefox returning.
-- **A whole-origin outage makes the heal path a steady retry (U7, priced).**
-  See U7's commit: a failed fetch re-appends the NEXT cursor index, so a
-  single missing file self-heals in one hop, but an origin that answers
-  nothing produces one request per failure, bounded by the four lanes,
-  indefinitely. Accepted rather than bounded, because every bound that stops
-  re-appending reintroduces a permanently invalid head — which stalls the
-  playlist for the session. Unblocked by a ruling on what the piece should do
-  when its exhibition goes away mid-show.
+- **AFTER A TOTAL ORIGIN OUTAGE THE RING REFILLS ONE LAYER PER HANG ATTEMPT,
+  and that is the accepted cost of U7b's storm bound.** The eager heal stands
+  down after a lap of unbroken failure and the pop's own heal carries the ring
+  from there, so a ring of holes comes back at roughly one layer per room
+  rather than all at once: the first room after recovery hangs no authored
+  paintings, the next one, and so on until the ring is dense again. It is a
+  rare degraded mode, it is graceful, and it always completes. The cheap cure,
+  if the eye ever meets it: a hole scrubber in `pump_authored_valve` — one
+  frame verb, one hole re-asked per frame whenever the fetch queue is empty —
+  which would refill the ring in thirty-two frames instead of thirty-two
+  rooms. Priced at one round, not built. Unblocked by anyone actually
+  watching an exhibition come back mid-session.
+- **R3 MAKES BOOT ORDER VISIBLE, AND THIS IS THE ONE THING TO WATCH AT VISUAL
+  GATE 1.** Ready depth is contiguous from the head, so a room can hang fewer
+  authored paintings than there are ready records: if layer 0's fetch is the
+  last of the boot's thirty-two to land, the depth reads 0 while thirty-one
+  pictures sit in the ring. Selection could not have this problem, because it
+  scanned. The exposure is bounded and small — the fill queues layers 0..31 in
+  order, four lanes deep, so arrivals track start order closely, and the
+  valve's holding pen drains FIFO — and it is confined to the first seconds,
+  since after the first lap every layer has landed at least once. It is a
+  DIRECT consequence of R3 ("never skip past a pending head to a deeper
+  record"), which is a stamped ruling, so it was implemented as ruled rather
+  than worked around. If gate 1 shows a thin first room, the fix is a ruling
+  and not a patch: allow the pop to step over a pending head, and accept that
+  the sequence is then a preference rather than a law. Unblocked by Jean's
+  reading of gate 1.
+
 - **The blocking question for REPEAT_1 is unchanged and is Jean's: the aspect
   fork** — letterbox, re-derive, or fixed cells with pictures breathing
   inside them. No handoff is written until that word is given.

@@ -738,7 +738,6 @@ struct AuthoredStagingRecord {
     // was the proof. What REPEAT_0 removes is not the distinction but the
     // QUESTION — a sequence never asks which of its entries have been played,
     // because the playhead is the answer.
-    uint32_t exhibition_layer = UINT32_MAX;
 };
 
 // Pending texture promotions (staging → exhibition, executed in render)
@@ -813,6 +812,11 @@ struct GalleryState {
     // the rotation by two campaigns.
     uint32_t              authored_head = 0;
     uint32_t              authored_disk_cursor = 0;     // walks authored_disk_manifest
+    // CONSECUTIVE SLIPS, AND THE ONLY REASON IT EXISTS IS AN ORIGIN THAT HAS
+    // GONE AWAY. Zeroed by any painting that stages; counted up by every
+    // failure. Past one lap of the ring the eager heal stands down and the
+    // pop's own heal carries the ring instead — see authored_fetch_release_slot.
+    uint32_t              authored_slip_run = 0;
     uint32_t              authored_staged_count = 0;
     // ONE FILL PER SESSION, AND THIS IS ITS LATCH (OVERTURE_0). Read in two
     // places: the fill's own early return, and nowhere else since commit's
@@ -2058,6 +2062,10 @@ inline void authored_stage_decoded_image(GalleryState& gs, GPUState& gpu, wgpu::
     // (WALLS_3). A reader that saw one without the other would see a valid
     // slot showing nothing, or a slot showing a picture it no longer holds.
     rec.shown_disk_index = rec.disk_index;
+    // ANYTHING GETTING THROUGH CLEARS THE SLIP RUN. The budget above counts
+    // CONSECUTIVE failures, so one arrival is proof the origin is answering
+    // and the eager heal is welcome again.
+    gs.authored_slip_run = 0u;
 
     // AUBADE U1 — HOW MUCH OF THE DARK WAS PAINTING DECODE. R6 found the
     // authored path decodes with stb_image ON THE MAIN THREAD, so this is
@@ -2197,6 +2205,35 @@ inline void authored_fetch_release_slot(GalleryState& gs, uint32_t staging_layer
 
     const uint32_t manifest_size = (uint32_t)gs.authored_disk_manifest.size();
     if (manifest_size == 0u) return;   // nothing to append from
+
+    // THE EAGER HEAL STANDS DOWN AFTER A LAP OF UNBROKEN FAILURE (P1). Healing
+    // at the failure is what keeps a hole invisible: the replacement travels
+    // during the round trip and has usually landed before the playhead comes
+    // round. But one request per failure closes a CYCLE, and against an origin
+    // that has gone away — a deploy mid-session, a dropped uplink, a page
+    // whose own server died under it — that cycle runs for the life of the
+    // session at the lane cap, which is a page quietly hammering a dead host
+    // and spending a visitor's battery to do it.
+    //
+    // A budget is only safe because the POP heals too. Every bound that merely
+    // stops appending would leave an invalid head nothing ever asks for again,
+    // and R3 forbids stepping over it, so the playlist would be finished for
+    // the session. With authored_pop's own heal as the floor, standing down
+    // here costs nothing but latency: retries become demand-driven, one per
+    // hang attempt, bounded by the visitor rather than by the network.
+    //
+    // One lap of the ring is the budget, and any painting that stages at all
+    // resets it (authored_stage_decoded_image) — so this can only fire when
+    // NOTHING is getting through, which is exactly the case it is for.
+    if (++gs.authored_slip_run > authored_ring_size(gs)) {
+        if (gs.authored_slip_run == authored_ring_size(gs) + 1u) {
+            std::cout << "[Authored] " << gs.authored_slip_run
+                << " slips with nothing staged — the eager heal stands down;"
+                << " the ring refills on demand from here\n";
+        }
+        return;
+    }
+
     const uint32_t next = gs.authored_disk_cursor % manifest_size;
     gs.authored_disk_cursor = (next + 1u) % manifest_size;
 
@@ -2649,14 +2686,20 @@ inline void load_authored_textures(GalleryState& gs) {
     // 32) before REPEAT_0 and asks min(manifest, 32) after it (AUBADE U5b).
     const uint32_t manifest_size = (uint32_t)gs.authored_disk_manifest.size();
     const uint32_t ring = authored_ring_size(gs);
-    for (uint32_t i = 0; i < ring; i++)
-        load_authored_image_to_staging(gs, i, i, gs.authored_disk_manifest[i].c_str());
 
-    // THE PLAYHEAD OPENS AT ZERO AND THE CURSOR AT THE END OF THE LAP. When
-    // the manifest is shorter than the ring the two coincide at 0, which is
+    // THE PLAYHEAD AND CURSOR ARE SET BEFORE THE LOOP, NOT AFTER IT. The loop
+    // below can reach authored_fetch_release_slot synchronously — a fetch that
+    // refuses to start unwinds through it — and that function ADVANCES the
+    // cursor to heal the layer. Assigning afterwards would silently discard
+    // the advance and hand one manifest index to two layers. When the manifest
+    // is shorter than the ring, head and cursor coincide at 0, which is
     // correct: the second lap re-asks for the first painting.
     gs.authored_head = 0u;
     gs.authored_disk_cursor = ring % manifest_size;
+
+    for (uint32_t i = 0; i < ring; i++)
+        load_authored_image_to_staging(gs, i, i, gs.authored_disk_manifest[i].c_str());
+
     gs.authored_textures_loaded = true;
     recount_authored_staged(gs);
     std::cout << "[Authored] Staged " << gs.authored_staged_count
@@ -2698,9 +2741,26 @@ inline uint32_t authored_pop(GalleryState& gs, uint32_t exh) {
     if (ring == 0u) return UINT32_MAX;          // no exhibition yet — nothing to play
     if (gs.authored_head >= ring) gs.authored_head = 0u;
 
+    const uint32_t manifest_size = (uint32_t)gs.authored_disk_manifest.size();
     const uint32_t layer = gs.authored_head;
     const AuthoredStagingRecord& head = gs.authored_staging[layer];
-    if (!head.valid || head.pending) return UINT32_MAX;   // R3 — the row ends here
+    if (!head.valid || head.pending) {
+        // A HOLE AT THE HEAD IS REPAIRED BY THE HAND THAT TRIPS OVER IT. An
+        // invalid, not-pending head is a layer whose fetch failed after the
+        // eager heal had stood down (the slip run below), and nothing else
+        // would ever ask for it again — the head cannot advance past it (R3),
+        // so the playlist would be over for the session. Asking here costs one
+        // request per hang attempt, which is demand-driven and therefore
+        // bounded by the visitor rather than by the network, and it is what
+        // makes the slip budget safe to have at all.
+        if (!head.valid && !head.pending && manifest_size > 0u) {
+            const uint32_t heal = gs.authored_disk_cursor % manifest_size;
+            gs.authored_disk_cursor = (heal + 1u) % manifest_size;
+            load_authored_image_to_staging(gs, layer, heal,
+                gs.authored_disk_manifest[heal].c_str());
+        }
+        return UINT32_MAX;   // R3 — the row ends here either way
+    }
 
     // TAKEN BEFORE THE APPEND, and only so the witness below cannot be read
     // as a question. The append does not touch `shown_disk_index` — only
@@ -2709,13 +2769,28 @@ inline uint32_t authored_pop(GalleryState& gs, uint32_t exh) {
     // re-aims.
     const uint32_t hung_disk = head.shown_disk_index;
 
-    const uint32_t manifest_size = (uint32_t)gs.authored_disk_manifest.size();
     const uint32_t disk = gs.authored_disk_cursor % manifest_size;
-    load_authored_image_to_staging(gs, layer, disk,
-        gs.authored_disk_manifest[disk].c_str());
 
+    // THE CURSOR ADVANCES BEFORE THE APPEND, NOT AFTER IT. The append can
+    // reach authored_fetch_release_slot synchronously (a fetch that refuses to
+    // start unwinds through it) and that function advances the cursor too.
+    // Writing this line afterwards would overwrite its advance with a value
+    // derived from the pre-call cursor, handing one manifest index to two ring
+    // layers and rewinding the playlist by one.
     gs.authored_disk_cursor = (disk + 1u) % manifest_size;
     gs.authored_head = (layer + 1u) % ring;
+
+    // AND THE APPEND IS SKIPPED WHEN THE LAYER ALREADY HOLDS THAT PAINTING.
+    // Where the manifest is no larger than the ring, head and cursor advance
+    // in lockstep and the cursor always names the picture this layer is
+    // already showing — so the fetch would re-download an image byte for byte
+    // to replace itself, and would mark the layer `pending` for a whole round
+    // trip while doing it, shortening every row for no reason. A twelve-image
+    // exhibition now costs no network at all after its boot lap, which is what
+    // "the window means lookahead" should have meant all along.
+    if (gs.authored_staging[layer].shown_disk_index != disk)
+        load_authored_image_to_staging(gs, layer, disk,
+            gs.authored_disk_manifest[disk].c_str());
 
     // THE PLAYHEAD, MADE VISIBLE (REPEAT_0 U8). Autonomous stdout, and it
     // inherits the slot `[Authored] Rotated` held one-for-one — same family,
