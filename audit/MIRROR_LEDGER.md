@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `5910b324a836a77e7a9ce42e56441cfd457ee354` |
-| | REPEAT_0 U7c: four defects the refuter found, and it earned its keep (P3) |
+| source commit | `e7eecb6e64055953bd41fdd762a0e7e8436da809` |
+| | audit — ledgers converged on REPEAT_0a, and a gate-table gap found paying it |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:a52f41dd72b4cacfa576f406c318fccbc66b42fb21587023f4802aad7a03df20` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:b48364246f02747908ee7ca8084d9de1bf0f53ed481ef31820ba0d5686766047` |
