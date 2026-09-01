@@ -2986,13 +2986,20 @@ inline void place_wall_paintings(GalleryState& gs, GalleryDeps* c, wgpu::Queue& 
         float    total_width = 0.0f;
         uint32_t planned = 0;
 
-        // Per-WALL claim masks. Selection does not set `consumed` — constraint
-        // 2: a painting the placement pass drops on slot exhaustion (Stage C's
-        // break) must not have wasted its record. The mask prevents two
-        // paintings on THIS wall picking the same record; `consumed`, set at
-        // placement, is what later walls see.
+        // The SNAPSHOT claim mask, and it is now the only one. Selection does
+        // not set `consumed` — constraint 2: a snapshot the placement pass
+        // drops on slot exhaustion (Stage C's break) must not have wasted its
+        // record. The mask prevents two paintings on THIS wall picking the
+        // same record; `consumed`, set at placement, is what later walls see.
+        //
+        // `authClaimed` is DELETED (REPEAT_0 U3). The authored side has
+        // nothing to claim: it does not pick a record, it takes the head, and
+        // the head advances at the pop. Within a wall the plan counts its own
+        // pops forward from the head; between walls the pops have already
+        // happened, so wall two peeks from where wall one left the playhead.
+        // The mask was bookkeeping about a choice that is no longer made.
         bool snapClaimed[Dim::STAGING_LAYERS]{};
-        bool authClaimed[Dim::STAGING_LAYERS]{};
+        uint32_t auth_planned = 0;   // this wall's pops-to-come, counted forward from the head
 
         for (uint32_t p = 0; p < effective_count; p++) {
             uint32_t p_seed = cpu_hash(w_seed, WallArtProp::PER_PAINTING_BASE + p * WallArtProp::PER_PAINTING_STRIDE);
@@ -3008,15 +3015,18 @@ inline void place_wall_paintings(GalleryState& gs, GalleryDeps* c, wgpu::Queue& 
 
             // Content decision — the one obstacle Stage A named against this
             // reorder. It resolves here now because the authored tally is a
-            // plan-side count over the claim mask, not a live consumed-count.
+            // plan-side count forward from the playhead, not a live
+            // consumed-count.
             bool use_snapshot = (site_type == IndoorSiteType::SNAPSHOT_ONLY)
                 || (site_type == IndoorSiteType::MIXED
                     && cpu_hash_f(p_seed, WallPaintingProp::MIX_SNAPSHOT_ROLL) < WALL_ART.mix_snapshot_chance);
 
-            uint32_t auth_free = 0;
-            for (uint32_t a = 0; a < Dim::STAGING_LAYERS; a++)
-                if (gs.authored_staging[a].valid && !gs.authored_staging[a].consumed && !authClaimed[a])
-                    auth_free++;
+            // WHAT THE PLAYLIST CAN STILL HAND THIS WALL: the ready depth,
+            // less the pops this wall has already planned but not yet made.
+            // A scan of 32 became one walk from the head (REPEAT_0 U3).
+            const uint32_t auth_ready = authored_ready_depth(gs);
+            const uint32_t auth_free = auth_ready > auth_planned
+                ? auth_ready - auth_planned : 0u;
             // ATRIUM_3 — STRICT TURNS THE DRY-POOL FALL-THROUGH OFF. In a
             // room a dry authored pool means "hang a snapshot instead"; in
             // the entrance it means "hang nothing". The atrium hangs its own
@@ -3047,25 +3057,25 @@ inline void place_wall_paintings(GalleryState& gs, GalleryDeps* c, wgpu::Queue& 
                 }
             }
 
-            if (!resolved && !use_snapshot) {
-                // Lowest SHOWN index first, the pick_authored_staging order,
-                // with the claim mask on top. shown_disk_index, not
-                // disk_index: this is the wall (WALLS_3).
-                uint32_t a_rec = UINT32_MAX, best_disk = UINT32_MAX;
-                for (uint32_t a = 0; a < Dim::STAGING_LAYERS; a++) {
-                    if (!authClaimed[a] && gs.authored_staging[a].valid && !gs.authored_staging[a].consumed
-                        && gs.authored_staging[a].shown_disk_index != UINT32_MAX
-                        && gs.authored_staging[a].shown_disk_index < best_disk) {
-                        best_disk = gs.authored_staging[a].shown_disk_index;
-                        a_rec = a;
-                    }
-                }
-                if (a_rec != UINT32_MAX) {
-                    authClaimed[a_rec] = true;
-                    f.record = a_rec; f.is_snapshot = false;
-                    f.aspect = gs.authored_staging[a_rec].aspect_ratio;
-                    resolved = true;
-                }
+            if (!resolved && !use_snapshot && auth_free > 0) {
+                // THE PEEK, AND IT IS THE WHOLE OF WHAT SELECTION USED TO BE.
+                // The k-th authored frame this wall plans will be fed by the
+                // k-th pop this wall makes, and that is the record at
+                // head + k — no scan, no mask, no lowest-shown ordering. The
+                // depth is well-defined because ready depth is CONTIGUOUS from
+                // the head (U2), so every layer from head to head+auth_free-1
+                // is valid and not pending.
+                //
+                // Only the aspect is wanted here, and only to trim the row to
+                // real widths. The RECORD is not a plan decision any more, so
+                // the plan does not carry one: the pop names it, at placement.
+                const uint32_t ring = authored_ring_size(gs);
+                const auto& peek = gs.authored_staging[(gs.authored_head + auth_planned) % ring];
+                f.record = UINT32_MAX;
+                f.is_snapshot = false;
+                f.aspect = peek.aspect_ratio;
+                auth_planned++;
+                resolved = true;
             }
 
             if (!resolved) break;   // no content of either kind — this wall is done
@@ -3157,7 +3167,19 @@ inline void place_wall_paintings(GalleryState& gs, GalleryDeps* c, wgpu::Queue& 
                 queue_promotion(gs, true, f.record, exh);
             }
             else {
-                const auto& img = gs.authored_staging[f.record];
+                // THE POP, AND IT COMES AFTER THE LAYER (U2's ordering law).
+                // `exh` is secured above; only now does the playlist advance,
+                // so a painting can never be stepped past without a wall to
+                // hang it on. If the head went pending between plan and
+                // placement the row ends here, the same shape as an exhausted
+                // exhibition layer one line up.
+                const uint32_t rec = authored_pop(gs);
+                if (rec == UINT32_MAX) break;    // this wall, not the hang
+
+                // f.aspect is the peeked record's, and `rec` IS that record —
+                // the k-th pop takes what the k-th peek read. Planned width is
+                // placed width, so the row stays centred (Stage C's law).
+                const auto& img = gs.authored_staging[rec];
                 fill_slot_wall_frame(s,
                     px, py, pz,
                     wall.nx, wall.ny, wall.nz,
@@ -3168,11 +3190,12 @@ inline void place_wall_paintings(GalleryState& gs, GalleryDeps* c, wgpu::Queue& 
                     INT32_MAX, INT32_MAX);
 
                 gs.exhibition_occupied[exh] = true;
-                gs.authored_staging[f.record].consumed = true;
-                // THE CLAIM, WHOLE (OVERTURE_0) — see commit_gallery's twin.
-                gs.authored_staging[f.record].hung_this_world = true;
-                gs.authored_staging[f.record].exhibition_layer = exh;
-                queue_promotion(gs, false, f.record, exh);
+                // NO CLAIM IS WRITTEN. `consumed`, `hung_this_world` and
+                // `exhibition_layer` were one triad here (OVERTURE_0's "THE
+                // CLAIM, WHOLE"); all three die with selection (R7), because
+                // supply now comes from the cursor and never from a record
+                // handed back.
+                queue_promotion(gs, false, rec, exh);
             }
 
             cursor += f.width + WALL_ART.painting_gap;
@@ -3193,7 +3216,7 @@ inline void place_wall_paintings(GalleryState& gs, GalleryDeps* c, wgpu::Queue& 
                 if (gs.snapshot_staging[i].valid && !gs.snapshot_staging[i].consumed) snaps_free++;
             std::cerr << "[WallPainting] BARE WALL " << w
                 << ": planned " << effective_count
-                << " pieces, authored hangable " << authored_hangable(gs)
+                << " pieces, authored ready " << authored_ready_depth(gs)
                 << ", snapshots " << snaps_free << "\n";
         }
     }
@@ -3204,9 +3227,10 @@ inline void place_wall_paintings(GalleryState& gs, GalleryDeps* c, wgpu::Queue& 
     //
     // The counts are split by CONTENT SOURCE, not by tier: there is one tier
     // now. In a MIXED room the split is the mix roll made visible, and in an
-    // AUTHORED_ONLY room a non-zero snapshot count is the authored pool
-    // running dry and falling through (gallery.hpp's `count_unused_authored`
-    // branch) — which is the one thing here worth seeing from the console.
+    // AUTHORED_ONLY room a non-zero snapshot count is the playlist running dry
+    // and falling through — a zero `auth_free`, which since REPEAT_0 means a
+    // PENDING HEAD rather than an empty pool — which is the one thing here
+    // worth seeing from the console.
     std::cout << "[WallPainting] Placed " << authored_placed
         << " painting(s) + " << snapshot_placed
         << " snapshot(s) across " << active_wall_count << " walls"
