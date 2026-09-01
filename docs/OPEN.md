@@ -2692,3 +2692,53 @@ stop condition governs: **land U1 and U3, FLAG U2, stop at the instrument.**
 - The wrangler dev-loop fragility (R6): a `Dead`/`Failed` burst under
   `pages dev` is a server symptom before it is a tree symptom. The CDN serves
   57/57; the ghost file is closed.
+
+### U4 — WHAT THE REFUTER FOUND, AND THE CORRECTED VISUAL GATE
+
+Five lenses over the landed diff, the first two aimed at the campaign's own
+no-leak conclusion, each finding handed to an independent skeptic. **The
+conclusion survived every attack on it**: no lens found a road by which a
+layer named by world N is still named when world N+1 begins to hang, and the
+boot path (which never runs `teardown_gallery` because nothing is hung yet)
+was checked and is clean. Roster gating is symmetric — `teardown_gallery` is
+gated on `ROSTER.gallery || ROSTER.indoor_shell`, the UNION of both hang
+roads — so no build configuration hangs a painting it cannot tear down.
+
+**Two findings against U3 landed, and one move fixed both (U3b):**
+
+- **SATURATION DISARMED THE LAW.** Living inside `authored_pop`, the law was
+  unreachable whenever `find_free_exhibition_layer` returned `UINT32_MAX` —
+  because both hang roads `break` on that BEFORE calling the pop. Forty
+  occupied layers is precisely what a leak accumulates to, so the witness
+  would have gone quiet as the defect got worse. It now runs at the head of
+  each hang road, before a layer is asked for.
+- **THE LAW WAS THE ONLY RELEASE THAT DID NOT RETIRE THE FRAME.** Four lenses
+  found this independently. Freeing a layer while a live frame still samples
+  it hands it back to the allocator under that frame, and the next promotion
+  paints a new picture into a dead room. The head of a hang road has the
+  device, so the relocated law retires every frame that samples a layer it
+  frees.
+
+**And the refuter surfaced a synergy the order did not plan.** U1 put `w=` on
+the EVICT line as well as the pop line, which means **any road that releases a
+stale layer testifies, not just the law's**. That matters because
+`clear_wall_paintings` runs at the head of `place_wall_paintings` and would
+silently clean a stale INDOOR layer — the law now runs before it, but even if
+a future road slipped past, its release would print `w=` below the current
+world. The law catches what reaches it; the stamp catches the rest.
+
+**THE VISUAL GATE, CORRECTED.** Three of the order's five checks need
+restating before Jean runs them:
+
+| # | as ordered | as it should be read |
+| --- | --- | --- |
+| 1 | an evict burst to `hung=0` before the incoming world's first pop | **holds, and it always did** — but the burst is ABOVE the incoming world's pops in the log, and `[Mood] Applied` prints AFTER those pops, so do not use that line as the world divider. Use `w=`. |
+| 2 | zero `LATE EVICT` lines | **holds — and now extend it:** also zero `Evict` lines whose `w=` is below the current world. That is the wider net U1 bought. Grep `"] Evict "` with the bracket, or `LATE EVICT` will match `Evict` as a substring and the count will be wrong. |
+| 3 | pop lines carry `w=`; per-world counts read off the log | **holds, and this is the unit that mattered.** |
+| 4 | `exh=39` never allocates while `hung < 35` | **DO NOT RUN — unsatisfiable by construction.** `hung` counts authored layers only; a snapshot claims a layer and is never named. `exh=39` at `hung=33` is 33 authored + 7 snapshot = 40 of 40. |
+| 5 | supply unchanged: indices ascend, wrap, zero `Dead` | **holds.** |
+
+One more, worth adding: **a `LATE EVICT` line is always followed by an
+ordinary `Evict` line for the same layer** — the accusation and the release
+are two lines about one event. The pop-minus-evict reconciliation still works
+because only the second is an `] Evict `.
