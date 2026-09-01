@@ -1008,10 +1008,37 @@ inline uint32_t find_free_exhibition_layer(const GalleryState& gs) {
 // A layer that held nothing, or held a snapshot, clears to the same state it
 // was already in; the verb is idempotent and does not care which kind of
 // content it is releasing.
+// HOW MUCH OF THE EXHIBITION IS UP (REPEAT_0a U3, R6). Derived at the two
+// moments it is said — the pop and the release — and deliberately not stored,
+// which is the ruling that deleted the occupancy array's companion count. A
+// scan of forty on a placement-event path, never per frame.
+inline uint32_t authored_hung_count(const GalleryState& gs) {
+    uint32_t n = 0;
+    for (uint32_t i = 0; i < Dim::EXHIBITION_LAYERS; i++)
+        if (gs.exhibition_name[i].disk_index != UINT32_MAX) n++;
+    return n;
+}
+
 inline void release_exhibition_layer(GalleryState& gs, uint32_t exh) {
     if (exh >= Dim::EXHIBITION_LAYERS) return;
+    const uint32_t was = gs.exhibition_name[exh].disk_index;
     gs.exhibition_occupied[exh] = false;
     gs.exhibition_name[exh].disk_index = UINT32_MAX;
+
+    // THE OTHER HALF OF THE WINDOW, MOVING (R6). A painting leaving is the
+    // event the console never had: pops counted up and nothing counted down,
+    // so `hung` could only ever be inferred. SNAPSHOT LAYERS RELEASE SILENTLY
+    // — they were never in the sequence, and a line about them would be a
+    // line about the other exhibition.
+    //
+    // A world transition frees all forty layers, so a heavy room's teardown
+    // says up to forty of these at once. That is intended and greppable, and
+    // it is lighter than what stood here before REPEAT_0: the rotation era
+    // spent up to 97 lines on the same boundary.
+    if (was != UINT32_MAX)
+        std::cout << "[Authored] Evict exh=" << exh
+            << " disk=" << was
+            << " hung=" << authored_hung_count(gs) << "\n";
 }
 
 inline void queue_promotion(GalleryState& gs,
@@ -2908,10 +2935,20 @@ inline uint32_t authored_pop(GalleryState& gs, uint32_t exh) {
     //
     // `disk` is what is going ON THE WALL — the SHOWN index, not the claim
     // this pop just re-aimed at the appended painting (WALLS_3).
+    // `ready` AND `hung` ARE THE TWO HALVES OF THE WINDOW (R6), read AFTER
+    // the pop so they describe the state the visitor is now in. What healthy
+    // looks like is worth stating, because `ready` is a gauge and not a
+    // tally: it reads ring-1 while the append that refills the vacated layer
+    // is still in flight and ring once it lands, so it oscillates just under
+    // the ring and only SINKS when the sequence is in trouble. `hung` tracks
+    // the room — up as the walls fill, down through the evict lines at a
+    // world boundary.
     std::cout << "[Authored] Pop layer=" << layer
         << " disk=" << hung_disk
         << " → exh=" << exh
-        << ", cursor=" << gs.authored_disk_cursor << "\n";
+        << ", cursor=" << gs.authored_disk_cursor
+        << " ready=" << authored_ready_depth(gs)
+        << " hung=" << authored_hung_count(gs) << "\n";
     return layer;
 }
 
