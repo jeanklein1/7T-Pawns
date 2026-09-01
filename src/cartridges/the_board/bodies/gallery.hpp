@@ -1045,7 +1045,7 @@ inline uint32_t authored_ready_depth(const GalleryState& gs) {
 // THE POP-AND-APPEND — the playlist's whole verb, and after this campaign the
 // ONLY authored supply verb. Defined beside the fill, because it is the fill
 // continued by one layer at a time. See its body for the contract.
-inline uint32_t authored_pop(GalleryState& gs);
+inline uint32_t authored_pop(GalleryState& gs, uint32_t exh);
 
 // ═══ FRAME STYLE PRESETS + SLOT FILL ═════════════════════════════
 
@@ -1677,7 +1677,7 @@ inline void commit_gallery(GalleryState& gs, MachineCtx* c,
             uint32_t exh = find_free_exhibition_layer(gs);
             if (exh == UINT32_MAX) break;
 
-            const uint32_t auth_stg = authored_pop(gs);
+            const uint32_t auth_stg = authored_pop(gs, exh);
             // A PENDING HEAD FALLS THROUGH TO THE SNAPSHOT, not out of the row
             // (R3): `exh` was never marked occupied, so the snapshot branch
             // below claims the same layer one line later and nothing leaks.
@@ -2666,7 +2666,12 @@ inline void load_authored_textures(GalleryState& gs) {
 //
 // ORDERING LAW AT EVERY CALL SITE: SECURE THE EXHIBITION LAYER FIRST, THEN
 // POP. A pop with no layer to promote into would advance the playlist past a
-// painting nobody ever saw — the one way this design can lose a picture.
+// painting nobody ever saw — the one way this design can lose a picture. The
+// law is the SIGNATURE, not a comment: `exh` is the layer the caller has
+// already secured, and a caller that has not secured one cannot form the
+// call. The verb does nothing with it but say it (U8) — which is the point,
+// because what the witness proves is precisely that the two happened in this
+// order.
 //
 // Returns UINT32_MAX if the head is not `valid && !pending` (R3). A pending
 // head stops authored supply for that site exactly as a dry pool did before
@@ -2684,7 +2689,7 @@ inline void load_authored_textures(GalleryState& gs) {
 // them, which is the WALLS_2 guarantee, here merely harmless. And by then the
 // frame that hung it owns its own pixels in its own exhibition layer (R0), so
 // there is nothing left for a late arrival to disturb.
-inline uint32_t authored_pop(GalleryState& gs) {
+inline uint32_t authored_pop(GalleryState& gs, uint32_t exh) {
     const uint32_t ring = authored_ring_size(gs);
     if (ring == 0u) return UINT32_MAX;          // no exhibition yet — nothing to play
     if (gs.authored_head >= ring) gs.authored_head = 0u;
@@ -2693,6 +2698,13 @@ inline uint32_t authored_pop(GalleryState& gs) {
     const AuthoredStagingRecord& head = gs.authored_staging[layer];
     if (!head.valid || head.pending) return UINT32_MAX;   // R3 — the row ends here
 
+    // TAKEN BEFORE THE APPEND, and only so the witness below cannot be read
+    // as a question. The append does not touch `shown_disk_index` — only
+    // `pending` and `disk_index` — but the line that names the hung painting
+    // should not have to be argued for through a reference the same statement
+    // re-aims.
+    const uint32_t hung_disk = head.shown_disk_index;
+
     const uint32_t manifest_size = (uint32_t)gs.authored_disk_manifest.size();
     const uint32_t disk = gs.authored_disk_cursor % manifest_size;
     load_authored_image_to_staging(gs, layer, disk,
@@ -2700,6 +2712,21 @@ inline uint32_t authored_pop(GalleryState& gs) {
 
     gs.authored_disk_cursor = (disk + 1u) % manifest_size;
     gs.authored_head = (layer + 1u) % ring;
+
+    // THE PLAYHEAD, MADE VISIBLE (REPEAT_0 U8). Autonomous stdout, and it
+    // inherits the slot `[Authored] Rotated` held one-for-one — same family,
+    // same always-on rider (none), same standing exhibition-guard candidacy.
+    // It is the campaign's whole visual instrument, and each field reads one
+    // ruling: `disk` ascends continuously ACROSS a world boundary because
+    // teardown no longer touches the ring (U5), and `cursor` wraps at the
+    // manifest's end because the lap is the feature (R5).
+    //
+    // `disk` is what is going ON THE WALL — the SHOWN index, not the claim
+    // this pop just re-aimed at the appended painting (WALLS_3).
+    std::cout << "[Authored] Pop layer=" << layer
+        << " disk=" << hung_disk
+        << " → exh=" << exh
+        << ", cursor=" << gs.authored_disk_cursor << "\n";
     return layer;
 }
 
@@ -3075,7 +3102,7 @@ inline void place_wall_paintings(GalleryState& gs, GalleryDeps* c, wgpu::Queue& 
                 // hang it on. If the head went pending between plan and
                 // placement the row ends here, the same shape as an exhausted
                 // exhibition layer one line up.
-                const uint32_t rec = authored_pop(gs);
+                const uint32_t rec = authored_pop(gs, exh);
                 if (rec == UINT32_MAX) break;    // this wall, not the hang
 
                 // f.aspect is the peeked record's, and `rec` IS that record —
