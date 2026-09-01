@@ -321,6 +321,43 @@ def assert_painting_cap(paths):
     return bad
 
 
+def assert_exhibition_written(names):
+    """Every name exhibition.json will carry has a real file beside it.
+
+    Returns a list of (name, reason) — empty is the pass.
+
+    REPEAT_0a U0b. exhibition.json is a list of PROMISES, and nothing
+    checked that dist/ keeps them. The one time it mattered — 57 names, 24
+    pictures, HTTP 0 on the other 33, every lap, for a month — the console
+    could say the program was asking and nothing anywhere could say whether
+    the files had ever been WRITTEN. That left the fault equally on this
+    script, the deploy and the host, and clearing this script's name cost a
+    campaign. THIS is the line that should have done it.
+
+    It cannot fail on a healthy run: write_paintings is handed the very list
+    the manifest is written from, so the two agree by construction. That is
+    exactly why it earns its place — a run where it DOES fail has written a
+    manifest that lies, and the whole point of the exhibition being plain
+    files beside the program is that such a lie is invisible until a
+    visitor's console fills with HTTP 0.
+
+    AND THE NEGATIVE IS THE HALF THAT PAYS. When this passes and the
+    deployed site still cannot serve a painting, the loss is in the deploy
+    or the host, and nobody has to spend a campaign finding that out."""
+    bad = []
+    if not os.path.isdir(DIST_PAINTINGS):
+        return [(DIST_PAINTINGS, "no paintings folder in dist at all")]
+    on_disk = set(os.listdir(DIST_PAINTINGS))
+    for f in names:
+        if f not in on_disk:
+            bad.append((f, "named by exhibition.json, no file in dist/paintings"))
+        elif os.path.getsize(os.path.join(DIST_PAINTINGS, f)) == 0:
+            bad.append((f, "named by exhibition.json, zero bytes in dist/paintings"))
+    for f in sorted(on_disk - set(names)):
+        bad.append((f, "in dist/paintings, not named by exhibition.json"))
+    return bad
+
+
 # ═══ AUBADE U7 — THE PACKAGE HOLDS THE SHADER AND NOTHING ELSE ═══════
 #
 # R11 found the package already lawful: one --preload-file, world.wgsl
@@ -1046,6 +1083,29 @@ def main():
                   fh, indent=2, ensure_ascii=False)
         fh.write("\n")
 
+    # ── REPEAT_0a U0b — THE DIST PROVES ITS OWN EXHIBITION ───────────
+    # The reasoning lives on assert_exhibition_written. It refuses rather
+    # than warns: a manifest that names a file dist/ does not have is a lie
+    # this script is the last thing in the chain able to see.
+    unkept = assert_exhibition_written(paintings)
+    if unkept:
+        print("")
+        print("REFUSING TO SHIP AN EXHIBITION THAT DOES NOT EXIST.")
+        print("  %d promise(s) in %s that dist/ does not keep:"
+              % (len(unkept), EXHIBITION_JSON))
+        for name, why in unkept[:12]:
+            print("    %-28s %s" % (name, why))
+        if len(unkept) > 12:
+            print("    ... and %d more" % (len(unkept) - 12))
+        print("")
+        print("  The program fetches exactly what exhibition.json names, one index at")
+        print("  a time, and a name with nothing behind it costs a failed round trip")
+        print("  it can never get back. write_paintings and the manifest are written")
+        print("  from ONE list (list_paintings), so this cannot happen by accident —")
+        print("  if it fired, something edited dist/ between the two, or a write")
+        print("  failed silently. Do not deploy this tree.")
+        return 8
+
     paintings_dist_bytes = dir_bytes(painting_paths)
     music_dist_bytes = dir_bytes(music_paths)
     poster_dist_bytes = dir_bytes(poster_paths)
@@ -1189,6 +1249,11 @@ def main():
 
     print("")
     print("WROTE %s  (%d files)" % (DIST, file_count))
+    # REPEAT_0a U0b — the promise, kept, said out loud. The negative is the
+    # useful half: if the deployed site still cannot serve a painting, this
+    # line has already ruled out everything upstream of the deploy.
+    print("  exhibition          %d painting(s) named, %d written, every name has its file"
+          % (len(paintings), len(paintings)))
     print("  _headers           index is no-cache; a plain reload now fetches the current build")
     print("                     %d versioned path(s) immutable for a year — the second dawn is free"
           % len(IMMUTABLE_PATHS))
