@@ -910,7 +910,25 @@ struct GalleryState {
     // forty layers would boot claiming to hold painting 0. A member
     // initialiser makes "nothing" the default — the same idiom, for the same
     // reason, as AuthoredStagingRecord's own UINT32_MAX fields.
-    struct ExhibitionName { uint32_t disk_index = UINT32_MAX; };
+    //
+    // AND WHICH WORLD HUNG IT (REPEAT_0b U1). `world` is a copy of
+    // WorldState::world_gen — the serial the transition machine bumps as the
+    // FIRST statement of its TEARDOWN arm, which makes it the boundary of
+    // record by construction. NO SECOND COUNTER IS MINTED: world_gen is the
+    // one home, this is a stamp taken from it, and the gallery already reads
+    // c->world_state_ at six other sites.
+    //
+    // It exists so the LOG can attribute a hung layer to a world. Before it,
+    // attribution had to be inferred from print order — and the inference is
+    // treacherous, because `[Mood] Applied` is the LAST statement of
+    // apply_mood while the hang happens twenty lines earlier, so a pop above
+    // that line belongs to the world the line announces. A whole campaign was
+    // aimed at a leak on the strength of reading it the other way. This is
+    // the instrument that makes the question a fact instead of a reading.
+    struct ExhibitionName {
+        uint32_t disk_index = UINT32_MAX;
+        uint32_t world      = UINT32_MAX;
+    };
     ExhibitionName exhibition_name[Dim::EXHIBITION_LAYERS]{};
 
     PendingPromotion pending_promotions[MAX_PROMOTIONS_PER_FRAME]{};
@@ -1022,8 +1040,10 @@ inline uint32_t authored_hung_count(const GalleryState& gs) {
 inline void release_exhibition_layer(GalleryState& gs, uint32_t exh) {
     if (exh >= Dim::EXHIBITION_LAYERS) return;
     const uint32_t was = gs.exhibition_name[exh].disk_index;
+    const uint32_t was_w = gs.exhibition_name[exh].world;
     gs.exhibition_occupied[exh] = false;
     gs.exhibition_name[exh].disk_index = UINT32_MAX;
+    gs.exhibition_name[exh].world = UINT32_MAX;
 
     // THE OTHER HALF OF THE WINDOW, MOVING (R6). A painting leaving is the
     // event the console never had: pops counted up and nothing counted down,
@@ -1038,6 +1058,7 @@ inline void release_exhibition_layer(GalleryState& gs, uint32_t exh) {
     if (was != UINT32_MAX)
         std::cout << "[Authored] Evict exh=" << exh
             << " disk=" << was
+            << " w=" << was_w
             << " hung=" << authored_hung_count(gs) << "\n";
 }
 
@@ -1172,7 +1193,7 @@ inline uint32_t authored_take_next(GalleryState& gs) {
 // THE POP-AND-APPEND — the playlist's whole verb, and after this campaign the
 // ONLY authored supply verb. Defined beside the fill, because it is the fill
 // continued by one layer at a time. See its body for the contract.
-inline uint32_t authored_pop(GalleryState& gs, uint32_t exh);
+inline uint32_t authored_pop(GalleryState& gs, uint32_t exh, uint32_t world_gen);
 
 // ═══ FRAME STYLE PRESETS + SLOT FILL ═════════════════════════════
 
@@ -1804,7 +1825,7 @@ inline void commit_gallery(GalleryState& gs, MachineCtx* c,
             uint32_t exh = find_free_exhibition_layer(gs);
             if (exh == UINT32_MAX) break;
 
-            const uint32_t auth_stg = authored_pop(gs, exh);
+            const uint32_t auth_stg = authored_pop(gs, exh, c->world_state_.world_gen);
             // A PENDING HEAD FALLS THROUGH TO THE SNAPSHOT, not out of the row
             // (R3): `exh` was never marked occupied, so the snapshot branch
             // below claims the same layer one line later and nothing leaks.
@@ -2859,7 +2880,7 @@ inline void load_authored_textures(GalleryState& gs) {
 // them, which is the WALLS_2 guarantee, here merely harmless. And by then the
 // frame that hung it owns its own pixels in its own exhibition layer (R0), so
 // there is nothing left for a late arrival to disturb.
-inline uint32_t authored_pop(GalleryState& gs, uint32_t exh) {
+inline uint32_t authored_pop(GalleryState& gs, uint32_t exh, uint32_t world_gen) {
     const uint32_t ring = authored_ring_size(gs);
     if (ring == 0u) return UINT32_MAX;          // no exhibition yet — nothing to play
     if (gs.authored_head >= ring) gs.authored_head = 0u;
@@ -2896,7 +2917,10 @@ inline uint32_t authored_pop(GalleryState& gs, uint32_t exh) {
     // the exhibition's half of the window is written by the same act that
     // fills it, from the same value the witness prints, so the two can never
     // disagree about what is on the wall.
-    if (exh < Dim::EXHIBITION_LAYERS) gs.exhibition_name[exh].disk_index = hung_disk;
+    if (exh < Dim::EXHIBITION_LAYERS) {
+        gs.exhibition_name[exh].disk_index = hung_disk;
+        gs.exhibition_name[exh].world      = world_gen;
+    }
 
     // THE CURSOR IS TAKEN AND ADVANCED IN ONE ACT, BEFORE THE APPEND. The
     // append can reach authored_fetch_release_slot synchronously (a fetch that
@@ -2947,6 +2971,7 @@ inline uint32_t authored_pop(GalleryState& gs, uint32_t exh) {
         << " disk=" << hung_disk
         << " → exh=" << exh
         << ", cursor=" << gs.authored_disk_cursor
+        << " w=" << world_gen
         << " ready=" << authored_ready_depth(gs)
         << " hung=" << authored_hung_count(gs) << "\n";
     return layer;
@@ -3324,7 +3349,7 @@ inline void place_wall_paintings(GalleryState& gs, GalleryDeps* c, wgpu::Queue& 
                 // hang it on. If the head went pending between plan and
                 // placement the row ends here, the same shape as an exhausted
                 // exhibition layer one line up.
-                const uint32_t rec = authored_pop(gs, exh);
+                const uint32_t rec = authored_pop(gs, exh, c->world_state_.world_gen);
                 if (rec == UINT32_MAX) break;    // this wall, not the hang
 
                 // f.aspect is the peeked record's, and `rec` IS that record —
@@ -3565,8 +3590,16 @@ inline void teardown_gallery(GalleryState& gs, GalleryDeps* c, wgpu::Queue& queu
         GPUPaintingSlot empty[Dim::PAINTING_MAX_SLOTS]{};
         c->gpuState_.upload_painting_slots(queue, empty, Dim::PAINTING_MAX_SLOTS);
     }
-    // Free all exhibition layers (staging persists across worlds) — except
-    // the ones the atrium holds, which outlive every world (ATRIUM_7).
+    // FREE ALL EXHIBITION LAYERS — every one, whatever road hung it. Staging
+    // persists across worlds; the exhibition does not, and this loop is the
+    // whole of why (REPEAT_0b R3: the release pass of record walks the LAYERS,
+    // and it already did). It consults no slot, no frame, no centre and no
+    // patch, so no hang road can hide a layer from it.
+    //
+    // THE ATRIUM EXCEPTION IS STRUCK (REPEAT_0b R1/G6). This loop carried
+    // "except the ones the atrium holds, which outlive every world (ATRIUM_7)"
+    // — prose describing a holder ATTIC_ATRIUM deleted and an exception the
+    // code never implemented. One fact, one home, and the fact is gone.
     for (uint32_t i = 0; i < Dim::EXHIBITION_LAYERS; i++)
         release_exhibition_layer(gs, i);
     // TEARDOWN FORGETS THE AUTHORED SIDE ENTIRELY (REPEAT_0 U5). Two things
