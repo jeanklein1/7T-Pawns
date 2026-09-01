@@ -888,7 +888,30 @@ struct GalleryState {
     // free — and read by nothing, not even a log. Deleted rather than
     // reserved: if a later stage needs a population figure it can name its
     // reader when it introduces one.
+    //
+    // REPEAT_0a U3 IS THAT LATER STAGE, AND IT NAMES ITS READER: the pop line
+    // and the evict line both carry `hung=`, counted from the array below.
+    // The count is still not stored — it is derived at the two moments it is
+    // said, which is the same ruling that deleted the companion.
     bool     exhibition_occupied[Dim::EXHIBITION_LAYERS]{};
+
+    // WHICH PAINTING IS ON WHICH LAYER (REPEAT_0a R5). Before this, an
+    // exhibition layer did not know what it held: the staging record that
+    // knew was refilled by the very act that hung it, so the answer was
+    // already gone one statement after the question could be asked.
+    //
+    // ONE FACT, ONE HOME, ONE WRITER — authored_pop, at the moment it hands a
+    // layer over — and one clearing site, release_exhibition_layer. A layer
+    // holding a snapshot, or nothing, reads UINT32_MAX and is never written
+    // by the pop, which is why the snapshot path needs no line at all.
+    //
+    // IT IS A STRUCT AND NOT A BARE uint32_t ARRAY FOR ONE REASON: a bare
+    // array value-initialises to ZERO, and zero is a legal disk index, so
+    // forty layers would boot claiming to hold painting 0. A member
+    // initialiser makes "nothing" the default — the same idiom, for the same
+    // reason, as AuthoredStagingRecord's own UINT32_MAX fields.
+    struct ExhibitionName { uint32_t disk_index = UINT32_MAX; };
+    ExhibitionName exhibition_name[Dim::EXHIBITION_LAYERS]{};
 
     PendingPromotion pending_promotions[MAX_PROMOTIONS_PER_FRAME]{};
     uint32_t         pending_promotion_count = 0;
@@ -973,6 +996,22 @@ inline uint32_t find_free_exhibition_layer(const GalleryState& gs) {
     for (uint32_t i = 0; i < Dim::EXHIBITION_LAYERS; i++)
         if (!gs.exhibition_occupied[i]) return i;
     return UINT32_MAX;
+}
+
+// ONE ROAD OUT OF THE EXHIBITION (REPEAT_0a U2), beside the one road in.
+// Three sites freed a layer before this existed — evict_paintings_for_patch,
+// clear_wall_paintings and teardown_gallery — and each would have needed its
+// own copy of the two facts and, at U3, its own copy of the line that says
+// them. The occupancy bit and the painting's name are one event, so they get
+// one home.
+//
+// A layer that held nothing, or held a snapshot, clears to the same state it
+// was already in; the verb is idempotent and does not care which kind of
+// content it is releasing.
+inline void release_exhibition_layer(GalleryState& gs, uint32_t exh) {
+    if (exh >= Dim::EXHIBITION_LAYERS) return;
+    gs.exhibition_occupied[exh] = false;
+    gs.exhibition_name[exh].disk_index = UINT32_MAX;
 }
 
 inline void queue_promotion(GalleryState& gs,
@@ -1859,7 +1898,7 @@ inline void evict_paintings_for_patch(GalleryState& gs, MachineCtx* c, int32_t g
             // walking down to nothing as patches churned, and the playlist
             // has no pool to walk down.
             uint32_t exh = gs.painting_slots[i].texture_layer;
-            gs.exhibition_occupied[exh] = false;
+            release_exhibition_layer(gs, exh);
 
             if (gs.painting_slots[i].form_type == FormType::WALL_FRAME) {
                 gs.wall_frame_count--;
@@ -2826,6 +2865,12 @@ inline uint32_t authored_pop(GalleryState& gs, uint32_t exh) {
     // re-aims.
     const uint32_t hung_disk = head.shown_disk_index;
 
+    // AND THE LAYER LEARNS ITS NAME (REPEAT_0a R5). This is the ONLY writer:
+    // the exhibition's half of the window is written by the same act that
+    // fills it, from the same value the witness prints, so the two can never
+    // disagree about what is on the wall.
+    if (exh < Dim::EXHIBITION_LAYERS) gs.exhibition_name[exh].disk_index = hung_disk;
+
     // THE CURSOR IS TAKEN AND ADVANCED IN ONE ACT, BEFORE THE APPEND. The
     // append can reach authored_fetch_release_slot synchronously (a fetch that
     // refuses to start unwinds through it) and that function takes from the
@@ -3334,7 +3379,7 @@ inline void clear_wall_paintings(GalleryState& gs, GalleryDeps* c, wgpu::Queue& 
             gs.painting_slots[i].patch_gx == INT32_MAX &&
             gs.painting_slots[i].patch_gz == INT32_MAX) {
             uint32_t exh = gs.painting_slots[i].texture_layer;
-            gs.exhibition_occupied[exh] = false;
+            release_exhibition_layer(gs, exh);
             gs.painting_slots[i].is_active = 0;
             c->gpuState_.deactivate_painting_slot(queue, i);
         }
@@ -3486,7 +3531,7 @@ inline void teardown_gallery(GalleryState& gs, GalleryDeps* c, wgpu::Queue& queu
     // Free all exhibition layers (staging persists across worlds) — except
     // the ones the atrium holds, which outlive every world (ATRIUM_7).
     for (uint32_t i = 0; i < Dim::EXHIBITION_LAYERS; i++)
-        gs.exhibition_occupied[i] = false;
+        release_exhibition_layer(gs, i);
     // TEARDOWN FORGETS THE AUTHORED SIDE ENTIRELY (REPEAT_0 U5). Two things
     // stood here: the rotation, and a loop clearing the claims the rotation
     // read. Both are gone, and the staging array crosses a world boundary
