@@ -2497,3 +2497,49 @@ Nothing to optimize, and nothing the dead mask breaks.
   sentences, since every URL-bearing `[Authored]` line already contains
   "paintings" by way of `EXHIBITION_PAINTINGS_DIR`. Unblocked by any campaign
   that opens the veil's classifier.
+
+### WHAT THE REFUTER FOUND ON REPEAT_0a (P3)
+
+Five lenses over the landed diff — the dead mask and the cursor, liveness and
+exhaustion, the exhibition name and its count, ordering and re-entrancy, and
+the web_dist witness — each finding handed to an independent skeptic told to
+refute it. The web_dist lens returned **zero findings**. Of the rest:
+
+- **CONFIRMED, AND PAID: THE LEDGER DEBT.** Three lenses independently found
+  that the campaign edited `gallery.hpp` and had not yet regenerated the
+  ledgers that pin it. Paid in the closing commit. **And the verifier found a
+  gap in the gate table while checking it:** `tools/binding_ledger.py --check`
+  reports `STALE` and exits 1, but `tools/command_census.py --check` **exits 0
+  while carrying the same stale digest** — it writes `sha256:` rows and has no
+  pin-comparison logic at all. So `COMMAND_LEDGER.md` can be silently wrong
+  with every gate row green. That is why D9's three-tool cascade is right and
+  the STALE message's two-tool advice is short by one: `command_census` must
+  be re-run even though nothing complains when it is not. **Unblocked by a
+  gates round that gives command_census the pin check its siblings have.**
+
+- **REFUTED, AND IT SAVED A REGRESSION: THE EVICT LINE STAYS UNGUARDED.** One
+  lens found `[Authored] Evict` firing from the patch-streaming path — true —
+  and proposed putting it behind `INSTRUMENTS.stream_witness`, which is where
+  this file puts steady-path chatter. The refutation holds on three checks:
+  `stream_witness` governs a NAMED family (`core/instruments.hpp`:
+  "`[Ribbon] SPAWN/REJECT/EVICT`, `[Gallery] slot=` and `[Agents] Respawn`")
+  that `[Authored]` has never been in; `[Authored] Pop` is already unguarded
+  on the same patch path and carries its own note calling it a standing
+  exhibition-guard candidacy; and evict lines are bounded 1:1 by pop lines,
+  since the pop is the name's only writer. **Decisively: guarding only the
+  evict half would restore the exact asymmetry R6 was written to close** —
+  `hung=` climbing on an unguarded line and falling on a silent one. If the
+  volume ever wants quieting it is a family-wide ruling taken at both ends at
+  once, which is the candidacy the code already records. **Unblocked by Jean
+  hearing it and disliking it.**
+
+- **REFUTED, AND WORTH ONE NUMBER: THE 30 s TIMEOUT.** A lens argued the fetch
+  timeout is a fifth road into the dead mask, so a slow phone would delete
+  paintings that exist. It is not a fifth road — the timeout routes into
+  `authored_image_onerror`, which is road one, and REPEAT_0 U7 already said so
+  in place. The hazard class it names is the one `authored_manifest_dead`'s own
+  comment and R4 above both enumerate. The useful residue is the magnitude:
+  for the timeout to fire on a ~500 KB painting the link must sustain under
+  ~17 KB/s per lane against four lanes — roughly half a megabit aggregate,
+  which is a link on which the exhibition cannot run at all. R4's one-counter
+  reversal covers this arm for free if it is ever built.
