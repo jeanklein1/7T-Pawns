@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `9f71716ae22257b5fc68acc241bee6200f62d677` |
-| | GATES_2c: caller-table hashes become enforced pins (sha256: prefix = the contract); bare hashes outlawed by a fourth red; generators self-pin |
+| source commit | `7d56eda8a1d323d6358f63c4d19b6ceda528de87` |
+| | audit — ledgers converged on REPEAT_0 (the three that pin gallery.hpp) |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:a52f41dd72b4cacfa576f406c318fccbc66b42fb21587023f4802aad7a03df20` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:b48364246f02747908ee7ca8084d9de1bf0f53ed481ef31820ba0d5686766047` |
