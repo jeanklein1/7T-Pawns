@@ -1021,6 +1021,36 @@ inline uint32_t authored_ring_size(const GalleryState& gs) {
     const uint32_t m = (uint32_t)gs.authored_disk_manifest.size();
     return m < Dim::STAGING_LAYERS ? m : Dim::STAGING_LAYERS;
 }
+
+// HOW MANY THE ROW CAN TAKE, WITHOUT TAKING ANY (REPEAT_0 U2). The count of
+// records that are `valid && !pending` CONTIGUOUSLY from the head — it stops
+// at the first that is not, because the row stops there too (R3). This is
+// what every content gate asks now, and it replaces `authored_hangable` at
+// each of them.
+//
+// CONTIGUOUS IS THE WHOLE WORD, AND IT IS WHY FOUR FETCH LANES ARE HARMLESS.
+// R9 wanted one lane so arrivals would be FIFO; the constant has been 4 since
+// OVERTURE_0 R-E and arrivals can land out of order. It does not matter,
+// because the ORDER THAT MATTERS IS THE POP'S, not the fetch's: pops walk the
+// ring, so the records still in flight are always the k most recently popped,
+// which from the head are the LAST k positions. Out-of-order arrival can only
+// make this number smaller than the true count of ready records, never
+// larger, and a small number under-hangs a row — the already-legal thin room.
+inline uint32_t authored_ready_depth(const GalleryState& gs) {
+    const uint32_t ring = authored_ring_size(gs);
+    uint32_t depth = 0u;
+    while (depth < ring) {
+        const auto& r = gs.authored_staging[(gs.authored_head + depth) % ring];
+        if (!r.valid || r.pending) break;
+        depth++;
+    }
+    return depth;
+}
+
+// THE POP-AND-APPEND — the playlist's whole verb, and after this campaign the
+// ONLY authored supply verb. Defined beside the fill, because it is the fill
+// continued by one layer at a time. See its body for the contract.
+inline uint32_t authored_pop(GalleryState& gs);
 inline uint32_t count_unused_authored(const GalleryState& gs, const bool usedAuthored[]);
 inline uint32_t pick_authored_staging(GalleryState& gs, uint32_t seed, uint32_t prop);
 
@@ -2580,6 +2610,50 @@ inline void load_authored_textures(GalleryState& gs) {
     recount_authored_staged(gs);
     std::cout << "[Authored] Staged " << gs.authored_staged_count
         << "/" << manifest_size << " images\n";
+}
+
+// THE POP-AND-APPEND — the playlist's whole verb. The caller has already
+// secured an exhibition layer; this takes the head, hands it back for
+// promotion, and refills the vacated layer from the cursor in the same act.
+// Vacancy is never observable.
+//
+// ORDERING LAW AT EVERY CALL SITE: SECURE THE EXHIBITION LAYER FIRST, THEN
+// POP. A pop with no layer to promote into would advance the playlist past a
+// painting nobody ever saw — the one way this design can lose a picture.
+//
+// Returns UINT32_MAX if the head is not `valid && !pending` (R3). A pending
+// head stops authored supply for that site exactly as a dry pool did before
+// it: the row ends, the snapshot fallback and every other row-end behaviour
+// are unchanged, and NOTHING skips past the head to a deeper record. Order is
+// semantics here — the playlist is a sequence, not a pool.
+//
+// THE APPEND CANNOT RACE THE READ THE CALLER IS ABOUT TO MAKE. The caller
+// reads `aspect_ratio` and the two uv scales off the popped record after this
+// returns. Those three are written in exactly one place —
+// authored_stage_decoded_image, reached only from pump_authored_valve, which
+// is a FRAME verb (AUBADE U5c) and cannot run inside this call. What this
+// function does to the record is set `pending` and re-aim `disk_index`; the
+// picture and its shape stay put until the round trip lands and overwrites
+// them, which is the WALLS_2 guarantee, here merely harmless. And by then the
+// frame that hung it owns its own pixels in its own exhibition layer (R0), so
+// there is nothing left for a late arrival to disturb.
+inline uint32_t authored_pop(GalleryState& gs) {
+    const uint32_t ring = authored_ring_size(gs);
+    if (ring == 0u) return UINT32_MAX;          // no exhibition yet — nothing to play
+    if (gs.authored_head >= ring) gs.authored_head = 0u;
+
+    const uint32_t layer = gs.authored_head;
+    const AuthoredStagingRecord& head = gs.authored_staging[layer];
+    if (!head.valid || head.pending) return UINT32_MAX;   // R3 — the row ends here
+
+    const uint32_t manifest_size = (uint32_t)gs.authored_disk_manifest.size();
+    const uint32_t disk = gs.authored_disk_cursor % manifest_size;
+    load_authored_image_to_staging(gs, layer, disk,
+        gs.authored_disk_manifest[disk].c_str());
+
+    gs.authored_disk_cursor = (disk + 1u) % manifest_size;
+    gs.authored_head = (layer + 1u) % ring;
+    return layer;
 }
 
 inline void rotate_authored_staging(GalleryState& gs, GalleryDeps* c, wgpu::Queue& queue) {
