@@ -1420,16 +1420,22 @@ inline float gallery_fan_radius(uint32_t count) {
 //     from the head of select. Below three photographs the snapshot pool is
 //     zero — which is what makes a boot patch resolve to the authored pool
 //     rather than refuse the family outright.
-//   · THE AUTHORED POOL IS WHAT COMMIT CAN ACTUALLY HANG. authored_hangable
-//     is `valid && !consumed`; authored_staged_count is a tally of `valid`
-//     alone, so it counted records already on a wall and place reserved
-//     against paintings that were never coming.
+//   · THE AUTHORED POOL IS WHAT COMMIT CAN ACTUALLY HANG. That used to be
+//     `valid && !consumed` over all 32 records; since REPEAT_0 it is the
+//     READY DEPTH — how many the playlist can hand out before it hits a
+//     pending head. authored_staged_count is still a tally of `valid` alone
+//     and still answers a different question (is there an exhibition at
+//     all), which is why the READY floor keeps reading it and this does not.
+//
+//     THE RESERVATION IS A COUNTER HELD AGAINST THAT DEPTH, and it stays one:
+//     staging_reserved names no record, only a number, so nothing here had to
+//     learn about the ring (G5).
 inline uint32_t gallery_available_staging(const GalleryState& gs, uint32_t site_type) {
     uint32_t snaps = 0;
     if (gs.snapshot_count >= GalleryConfig::MIN_POOL_SIZE)
         for (uint32_t i = 0; i < Dim::STAGING_LAYERS; i++)
             if (gs.snapshot_staging[i].valid && !gs.snapshot_staging[i].consumed) snaps++;
-    const uint32_t auth = authored_hangable(gs);   // valid && !consumed — what commit hangs
+    const uint32_t auth = authored_ready_depth(gs);   // contiguous from the head — what commit hangs
     uint32_t pool = (site_type == GallerySiteType::SNAPSHOT_ONLY) ? snaps
                   : (site_type == GallerySiteType::AUTHORED_ONLY) ? auth
                   : snaps + auth;
@@ -1550,7 +1556,7 @@ inline void commit_gallery(GalleryState& gs, MachineCtx* c,
     // empty a candidate list place counted as full. Each releases the ground
     // place claimed.
     bool have_snapshots = candidate_count > 0;
-    bool have_authored = authored_hangable(gs) > 0;
+    bool have_authored = authored_ready_depth(gs) > 0;
     if ((site_type == GallerySiteType::SNAPSHOT_ONLY && !have_snapshots)
         || (site_type == GallerySiteType::AUTHORED_ONLY && !have_authored)
         || (site_type == GallerySiteType::MIXED && !have_snapshots && !have_authored)) {
@@ -1597,16 +1603,18 @@ inline void commit_gallery(GalleryState& gs, MachineCtx* c,
     // mono-tier curation (per-gallery) and the authored texture load (a GPU
     // write, barred from place). Both only ever REDUCE.
     //
-    // THE AUTHORED CEILING IS authored_hangable, NOT authored_staged_count
-    // (OVERTURE_0). The tally counts every VALID record, a wall's included, so
-    // it answered "how many pictures are staged" where this line asks "how
-    // many can this gallery hang". The difference widened row_start — the fan
-    // was laid out for paintings that were never coming, and the row read
-    // off-centre by half a ROW_SPACING for every consumed record it counted.
+    // THE AUTHORED CEILING IS THE READY DEPTH, NOT authored_staged_count
+    // (OVERTURE_0, repointed by REPEAT_0). The tally counts every VALID
+    // record, a wall's included, so it answered "how many pictures are
+    // staged" where this line asks "how many can this gallery hang". The
+    // difference widened row_start — the fan was laid out for paintings that
+    // were never coming, and the row read off-centre by half a ROW_SPACING for
+    // every record it wrongly counted. Ready depth asks the exact question and
+    // is one walk from the head rather than a scan of 32.
     uint32_t painting_count = plan.reserved_count;
-    uint32_t max_available = candidate_count + authored_hangable(gs);
+    uint32_t max_available = candidate_count + authored_ready_depth(gs);
     if (site_type == GallerySiteType::SNAPSHOT_ONLY) max_available = candidate_count;
-    if (site_type == GallerySiteType::AUTHORED_ONLY) max_available = authored_hangable(gs);
+    if (site_type == GallerySiteType::AUTHORED_ONLY) max_available = authored_ready_depth(gs);
     if (painting_count > max_available) painting_count = max_available;
 
     // Layout
@@ -1623,7 +1631,12 @@ inline void commit_gallery(GalleryState& gs, MachineCtx* c,
         : 0.0f;
 
     uint32_t placed = 0;
-    bool usedAuthored[Dim::STAGING_LAYERS]{};
+    // `usedAuthored[Dim::STAGING_LAYERS]` stood here and is DELETED
+    // (REPEAT_0 U4). It existed to stop one commit picking the same record
+    // twice; the playlist cannot, because each pop advances the head before
+    // the next iteration asks. The depth read below is live for the same
+    // reason — unlike the indoor hang there is no plan pass to count forward
+    // through, so every question is asked of the ring as it stands.
 
     for (uint32_t p = 0; p < painting_count; p++) {
         // Outdoor takes from the whole pool: it is the path the reserve
@@ -1648,11 +1661,11 @@ inline void commit_gallery(GalleryState& gs, MachineCtx* c,
             || (site_type == GallerySiteType::MIXED
                 && cpu_hash_f(p_seed, GalleryPaintingProp::MIX_AUTHOR_ROLL) < GalleryConfig::OUTDOOR_MIX_AUTHORED_CHANCE);
 
-        if (use_authored && count_unused_authored(gs, usedAuthored) == 0) {
+        if (use_authored && authored_ready_depth(gs) == 0) {
             use_authored = false;
         }
         if (!use_authored && snap_cursor >= candidate_count) {
-            if (count_unused_authored(gs, usedAuthored) > 0) {
+            if (authored_ready_depth(gs) > 0) {
                 use_authored = true;
             }
             else {
@@ -1664,29 +1677,20 @@ inline void commit_gallery(GalleryState& gs, MachineCtx* c,
         bool placed_this = false;
 
         if (use_authored) {
-            uint32_t auth_stg = pick_authored_staging(gs, p_seed, GalleryPaintingProp::AUTH_STG_PICK);
-            if (auth_stg == UINT32_MAX || usedAuthored[auth_stg]) {
-                // Lowest SHOWN index first — pick_authored_staging's order,
-                // and by the same argument: this puts a picture on a wall
-                // (WALLS_3).
-                uint32_t best = UINT32_MAX, best_disk = UINT32_MAX;
-                for (uint32_t a = 0; a < Dim::STAGING_LAYERS; a++) {
-                    if (!usedAuthored[a] && gs.authored_staging[a].valid && !gs.authored_staging[a].consumed
-                        && gs.authored_staging[a].shown_disk_index != UINT32_MAX
-                        && gs.authored_staging[a].shown_disk_index < best_disk) {
-                        best_disk = gs.authored_staging[a].shown_disk_index;
-                        best = a;
-                    }
-                }
-                if (best == UINT32_MAX) { use_authored = false; }
-                else { auth_stg = best; }
-            }
+            // THE LAYER FIRST, THEN THE POP (U2's ordering law). Two selectors
+            // stood here — pick_authored_staging and a hand-rolled twin of it
+            // masked by usedAuthored[] — and both are gone. The playlist does
+            // not choose; it advances.
+            uint32_t exh = find_free_exhibition_layer(gs);
+            if (exh == UINT32_MAX) break;
+
+            const uint32_t auth_stg = authored_pop(gs);
+            // A PENDING HEAD FALLS THROUGH TO THE SNAPSHOT, not out of the row
+            // (R3): `exh` was never marked occupied, so the snapshot branch
+            // below claims the same layer one line later and nothing leaks.
+            if (auth_stg == UINT32_MAX) { use_authored = false; }
 
             if (use_authored) {
-                uint32_t exh = find_free_exhibition_layer(gs);
-                if (exh == UINT32_MAX) break;
-
-                usedAuthored[auth_stg] = true;
                 const auto& img = gs.authored_staging[auth_stg];
                 float jitter = (cpu_hash_f(p_seed, GalleryPaintingProp::SIZE_JITTER_A)
                     + cpu_hash_f(p_seed, GalleryPaintingProp::SIZE_JITTER_B)
@@ -1704,11 +1708,10 @@ inline void commit_gallery(GalleryState& gs, MachineCtx* c,
                 s.geometry_seed = cpu_hash_f(p_seed, GalleryPaintingProp::GEOMETRY_SEED);
 
                 gs.exhibition_occupied[exh] = true;
-                gs.authored_staging[auth_stg].consumed = true;
-                // THE CLAIM, WHOLE (OVERTURE_0): on a wall now, hung this
-                // world, and shown at this layer.
-                gs.authored_staging[auth_stg].hung_this_world = true;
-                gs.authored_staging[auth_stg].exhibition_layer = exh;
+                // NO CLAIM IS WRITTEN — the outdoor twin of U3's cut. The
+                // triad OVERTURE_0 called "THE CLAIM, WHOLE" dies with
+                // selection (R7): there is no pool to mark, no rotation to
+                // signal, and no record to hand back.
                 queue_promotion(gs, false, auth_stg, exh);
                 gs.wall_frame_count++;
                 placed_this = true;
