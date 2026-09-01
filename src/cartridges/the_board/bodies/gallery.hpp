@@ -1043,12 +1043,25 @@ inline uint32_t authored_hung_count(const GalleryState& gs) {
 
 // THE LAW: NO LAYER OUTLIVES ITS WORLD (REPEAT_0b R1/U3).
 //
-// Swept once per world entry, at the choke point every authored hang passes
-// through, against the stamp U1 put on each layer. A layer still named by an
-// older world when a new world asks for its first painting is illegal, and
-// the response is a FORCED RELEASE AND A LOUD LINE — never a stall (R2). A
-// gallery visitor is not a debugger: the piece heals itself and the console
-// carries the accusation.
+// Swept once per world entry, at the head of each hang road, against the
+// stamp U1 put on each layer. A layer still named by an older world when a
+// new world begins to hang is illegal, and the response is a FORCED RELEASE
+// AND A LOUD LINE — never a stall (R2). A gallery visitor is not a debugger:
+// the piece heals itself and the console carries the accusation.
+//
+// IT SITS AT THE HEAD OF THE HANG, NOT INSIDE authored_pop, AND THE REASON IS
+// THE FAILURE IT EXISTS FOR. Both hang roads secure an exhibition layer and
+// `break` when none is free — BEFORE they call the pop. So a saturated
+// exhibition, which is precisely what a leak accumulates to, would have made
+// the pop unreachable and disarmed a law living inside it at the exact moment
+// it was needed. The law must run before a layer is asked for, not after one
+// is granted. (Found by the U4 refuter; the first draft had it in the pop.)
+//
+// AND BECAUSE IT SITS THERE IT CAN HEAL WHOLE. Every other release in this
+// file retires the frame that samples the layer; a release that did not would
+// hand a freed layer to the allocator while a live frame still read it, and
+// the next promotion would paint a new picture into an old frame. The head of
+// a hang road has the device, so this one retires the frame too.
 //
 // THIS LINE MUST NEVER PRINT, AND RECON SAYS WHY IT CANNOT. teardown_gallery
 // releases all Dim::EXHIBITION_LAYERS unconditionally, before apply_mood hangs
@@ -1062,7 +1075,8 @@ inline uint32_t authored_hung_count(const GalleryState& gs) {
 // the road and the capture that holds it is the next campaign's first
 // exhibit. If it never prints, that is the leak's absence stated by the
 // program rather than argued by a reading.
-inline void authored_enforce_world_law(GalleryState& gs, uint32_t world_gen);
+inline void authored_enforce_world_law(GalleryState& gs, GPUState& gpu,
+    wgpu::Queue& queue, uint32_t world_gen);
 
 inline void release_exhibition_layer(GalleryState& gs, uint32_t exh) {
     if (exh >= Dim::EXHIBITION_LAYERS) return;
@@ -1217,22 +1231,44 @@ inline uint32_t authored_take_next(GalleryState& gs) {
     return idx;
 }
 
-inline void authored_enforce_world_law(GalleryState& gs, uint32_t world_gen) {
+inline void authored_enforce_world_law(GalleryState& gs, GPUState& gpu,
+    wgpu::Queue& queue, uint32_t world_gen) {
     if (gs.authored_law_world == world_gen) return;   // this world is already answered for
     gs.authored_law_world = world_gen;
+    bool retired_any = false;
     for (uint32_t i = 0; i < Dim::EXHIBITION_LAYERS; i++) {
-        // TAKEN BY VALUE, because the release two statements down clears the
-        // very record a reference would still be pointing at.
+        // TAKEN BY VALUE, because the release below clears the very record a
+        // reference would still be pointing at.
         const uint32_t disk = gs.exhibition_name[i].disk_index;
         const uint32_t w    = gs.exhibition_name[i].world;
         if (disk == UINT32_MAX) continue;   // unnamed — a snapshot layer, or free
-        if (w == world_gen) continue;       // this world's own, and legal
+        // THE CURRENT WORLD'S OWN IS LEGAL. Unreachable as the memo above
+        // stands — the sweep runs at the first hang of a world, when nothing
+        // yet carries its stamp — and kept because the law should read as the
+        // law, not as an artefact of when it happens to be called.
+        if (w == world_gen) continue;
         std::cout << "[Authored] LATE EVICT exh=" << i
             << " disk=" << disk
             << " w=" << w << "<" << world_gen
             << " — released by law, report the road\n";
+        // RETIRE THE FRAME BEFORE FREEING THE LAYER. A stale layer implies a
+        // stale frame; freeing the layer alone would put it back in the
+        // allocator's hand while that frame still sampled it, and the next
+        // promotion would paint a live picture into a dead room.
+        for (uint32_t sl = 0; sl < Dim::PAINTING_MAX_SLOTS; sl++) {
+            if (gs.painting_slots[sl].is_active == 0) continue;
+            if (gs.painting_slots[sl].texture_layer != i) continue;
+            if (gs.painting_slots[sl].form_type == FormType::WALL_FRAME
+                && gs.wall_frame_count > 0) gs.wall_frame_count--;
+            if (gs.active_painting_count > 0) gs.active_painting_count--;
+            gs.painting_slots[sl].is_active = 0;
+            gpu.deactivate_painting_slot(queue, sl);
+            retired_any = true;
+        }
         release_exhibition_layer(gs, i);
     }
+    // Only paid when the law actually fired — which, per Phase 0, is never.
+    if (retired_any) recompute_slot_high_water(gs);
 }
 
 // THE POP-AND-APPEND — the playlist's whole verb, and after this campaign the
@@ -1700,6 +1736,11 @@ inline void commit_gallery(GalleryState& gs, MachineCtx* c,
     const GalleryPlacement& plan,
     int32_t trigger_gx, int32_t trigger_gz, wgpu::Queue& queue)
 {
+    // THE LAW BEFORE ANYTHING ELSE (REPEAT_0b U3). commit_gallery is the
+    // outdoor road's head and runs on the streaming cadence, so in an open
+    // world this is the earlier of the two sweeps.
+    authored_enforce_world_law(gs, c->gpuState_, queue, c->world_state_.world_gen);
+
     uint32_t seed = plan.trigger_gx != INT32_MAX
         ? tile_seed(c->world_state_.active_seed, plan.trigger_gx, plan.trigger_gz) : 0u;
     int32_t gx = plan.trigger_gx, gz = plan.trigger_gz;
@@ -2926,12 +2967,6 @@ inline void load_authored_textures(GalleryState& gs) {
 // frame that hung it owns its own pixels in its own exhibition layer (R0), so
 // there is nothing left for a late arrival to disturb.
 inline uint32_t authored_pop(GalleryState& gs, uint32_t exh, uint32_t world_gen) {
-    // THE LAW FIRST, BEFORE SUPPLY IS EVEN ASKED ABOUT (R1). This is the one
-    // verb every authored hang passes through, so it is the one place a new
-    // world's first claim can be caught standing over an old world's layer.
-    // It runs even when the pop then declines: the law binds the ATTEMPT.
-    authored_enforce_world_law(gs, world_gen);
-
     const uint32_t ring = authored_ring_size(gs);
     if (ring == 0u) return UINT32_MAX;          // no exhibition yet — nothing to play
     if (gs.authored_head >= ring) gs.authored_head = 0u;
@@ -3057,6 +3092,12 @@ inline uint32_t authored_pop(GalleryState& gs, uint32_t exh, uint32_t world_gen)
 
 inline void place_wall_paintings(GalleryState& gs, GalleryDeps* c, wgpu::Queue& queue,
     float bmin, float bmax, float wall_height) {
+    // THE LAW BEFORE ANYTHING ELSE (REPEAT_0b U3), and before
+    // clear_wall_paintings in particular: that verb would silently release a
+    // stale INDOOR layer one statement later, and the law would never see the
+    // road that left it.
+    authored_enforce_world_law(gs, c->gpuState_, queue, c->world_state_.world_gen);
+
     // Clear any existing wall paintings first (indoor→indoor transitions)
     clear_wall_paintings(gs, c, queue);
 
