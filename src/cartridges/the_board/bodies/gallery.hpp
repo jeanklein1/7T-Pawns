@@ -2136,6 +2136,12 @@ struct AuthoredFetchCtx {
 };
 
 inline void pump_authored_fetches(GalleryState& gs);
+// THE CLAIM AND THE QUEUEING, WITHOUT THE PUMP. Split out of
+// load_authored_image_to_staging at REPEAT_0 U7 so the failure path can
+// append without re-entering a pump that may be its own caller. See the
+// helper's body for the whole of the distinction.
+inline void authored_enqueue_fetch(GalleryState& gs, uint32_t staging_layer,
+    uint32_t disk_index, const char* path);
 
 // authored_staged_count is a tally of valid records, and on this twin
 // records become valid at arrival time rather than at call time — so
@@ -2148,37 +2154,60 @@ inline void recount_authored_staged(GalleryState& gs) {
 }
 
 
-// A SLOT THAT FAILED MUST STAY REACHABLE. Native's failure was final and
-// harmless — the file was on disk or it was not, and a second read would
-// have failed the same way. A network failure is a different animal: a
-// 502, a dropped connection on a phone, a name that lost its file
-// between two dist runs. Left as {valid=false, pending=false,
-// hung_this_world=false} the slot would be unreachable forever:
-// load_authored_textures has latched, and rotate only revisits slots that
-// hung something this world. So a failure marks the slot hung — still
-// invalid, so nothing can pick it, but now exactly the shape the rotation
-// is looking for, and the next world change re-asks. The disk claim is dropped with
-// it so the cursor is free to hand that painting to whichever slot comes
-// up.
-inline void authored_fetch_release_slot(GalleryState& gs, uint32_t staging_layer) {
+// A FAILED FETCH DROPS ITS ENTRY AND HEALS THE HOLE IN PLACE (REPEAT_0 R4).
+//
+// WHY THE HOLE IS FATAL AND NOT MERELY UNTIDY. Native's failure was final and
+// harmless — the file was on disk or it was not. A network failure is a
+// different animal, and under the playlist it is worse than it was under the
+// rotation: a layer left {valid=false, pending=false} is an INVALID HEAD when
+// the playhead reaches it, and an invalid head ends every authored row for the
+// rest of the session (R3). The rotation could revisit such a slot at the next
+// world change. There is no next-world re-ask any more, so the cure has to
+// happen here, at the failure, or not at all.
+//
+// SO THE ENTRY IS DROPPED AND THE NEXT ONE TAKES ITS PLACE. The claim falls
+// back to what is actually SHOWN — WALLS_3's fix, kept: this used to blank the
+// slot, which threw away the picture it was still holding, and on venue wifi
+// that was a bare wall for the rest of the world. Then the cursor advances and
+// its entry is appended into this same layer. The painting that slipped is not
+// retried now; it comes back on the next lap, which is exactly what a playlist
+// does with a track it could not read.
+//
+// IT APPENDS WITHOUT PUMPING, AND THAT IS LOAD-BEARING. One of this function's
+// four callers is start_authored_fetch's synchronous-failure arm, which runs
+// INSIDE pump_authored_fetches. Appending through the pumping helper would
+// re-enter that loop from underneath itself, and against an environment where
+// emscripten_fetch fails on every call that is unbounded recursion, not a
+// retry. Queueing alone cannot recurse: the pump's own while-loop takes the
+// new request on its next turn, and every other caller reaches the pump
+// through authored_fetch_finish a line later.
+//
+// AND `pending` COMES DOWN HERE. It used to be cleared by each caller
+// afterwards (AUBADE U5c), which cannot work now — the append would find the
+// slot still spoken for and decline. One home for "the journey ended badly",
+// and the three callers that cleared it by hand no longer do.
+inline void authored_fetch_release_slot(GalleryState& gs, uint32_t staging_layer, long status) {
+    if (staging_layer >= Dim::STAGING_LAYERS) return;
     auto& rec = gs.authored_staging[staging_layer];
-    // A DIFFERENT PAINTING FAILED TO ARRIVE. This used to blank the slot,
-    // which threw away the picture it was still holding — on venue wifi, a
-    // bare wall for the rest of the world. It could not be fixed by deletion
-    // while one field carried both facts: the claim to restore already named
-    // the painting that did not come.
-    //
-    // Now it can. The claim falls back to what is actually shown, so the
-    // record is self-consistent again and the rotation will not hand that
-    // picture to a second slot.
-    //
-    // THE MARK FOR THE ROTATION IS GONE WITH THE ROTATION (REPEAT_0 U5/U6).
-    // `rec.hung_this_world = true;` stood here to put the slot in the shape
-    // the rotation looked for, so the next world would re-ask. There is no
-    // next-world re-ask any more, and a record left merely self-consistent is
-    // a HOLE in the ring — U7 gives this path its real cure.
+    const uint32_t slipped = rec.disk_index;
+
+    rec.pending = false;
     rec.disk_index = rec.shown_disk_index;
     rec.valid = (rec.shown_disk_index != UINT32_MAX);
+
+    const uint32_t manifest_size = (uint32_t)gs.authored_disk_manifest.size();
+    if (manifest_size == 0u) return;   // nothing to append from
+    const uint32_t next = gs.authored_disk_cursor % manifest_size;
+    gs.authored_disk_cursor = (next + 1u) % manifest_size;
+
+    // Autonomous stdout — the slip is named once, and it names both halves:
+    // which painting was lost and which one took its place in the ring.
+    std::cout << "[Authored] Slipped disk=" << slipped
+        << " (HTTP " << status << "), appended disk=" << next
+        << " into layer " << staging_layer << "\n";
+
+    authored_enqueue_fetch(gs, staging_layer, next,
+        gs.authored_disk_manifest[next].c_str());
 }
 
 // One exit for both outcomes: the lane is freed, the context is
@@ -2232,10 +2261,10 @@ inline void authored_image_onsuccess(emscripten_fetch_t* fetch) {
         return;
     }
 
+    const long status = fetch->status;
     std::cerr << "[Authored] Failed to load: " << ctx->url << " (empty body)\n";
     emscripten_fetch_close(fetch);
-    authored_fetch_release_slot(*ctx->gs, ctx->staging_layer);
-    ctx->gs->authored_staging[ctx->staging_layer].pending = false;
+    authored_fetch_release_slot(*ctx->gs, ctx->staging_layer, status);
     authored_fetch_finish(ctx);
 }
 
@@ -2244,12 +2273,11 @@ inline void authored_image_onerror(emscripten_fetch_t* fetch) {
     std::cerr << "[Authored] Failed to load: " << ctx->url
         << " (HTTP " << fetch->status << ")\n";
     emscripten_fetch_close(fetch);
-    // The record stays invalid, and it is handed back to the rotation
-    // rather than abandoned — see authored_fetch_release_slot. The
-    // journey really is over here, so this path clears `pending` itself
-    // (AUBADE U5c moved the ordinary clear into the valve).
-    authored_fetch_release_slot(*ctx->gs, ctx->staging_layer);
-    ctx->gs->authored_staging[ctx->staging_layer].pending = false;
+    // The hole is healed rather than abandoned — see
+    // authored_fetch_release_slot, which now clears `pending` itself because
+    // the append it makes would otherwise find the slot spoken for.
+    // The 30 s timeout routes here, and the lane-must-return law is untouched.
+    authored_fetch_release_slot(*ctx->gs, ctx->staging_layer, fetch->status);
     authored_fetch_finish(ctx);
 }
 
@@ -2282,21 +2310,36 @@ inline void start_authored_fetch(GalleryState& gs,
     if (!emscripten_fetch(&attr, ctx->url.c_str())) {
         std::cerr << "[Authored] Failed to load: " << ctx->url << " (fetch not started)\n";
         if (gs.authored_fetch_inflight > 0) gs.authored_fetch_inflight--;
-        gs.authored_staging[req.staging_layer].pending = false;
-        authored_fetch_release_slot(gs, req.staging_layer);
+        // 0 — no round trip happened, so there is no HTTP status to name.
+        // The append this makes is QUEUED ONLY; the while-loop calling us
+        // takes it on its next turn, which is why this cannot recurse.
+        authored_fetch_release_slot(gs, req.staging_layer, 0);
         delete ctx;
     }
 }
 
 inline void pump_authored_fetches(GalleryState& gs) {
+    // ONE PUMP CALL DOES BOUNDED WORK, AND REPEAT_0 U7 IS WHY IT HAS TO (P1).
+    // The healing append re-queues on failure, and start_authored_fetch's
+    // synchronous-failure arm reaches that append from inside this very loop.
+    // Against an environment where emscripten_fetch refuses every call — an
+    // allocation failure, a shut-down page — each turn would remove one
+    // request and add one, so the queue would never empty and this would spin
+    // for the life of the frame. The ceiling costs nothing in ordinary
+    // service: the lane cap stops the loop after at most
+    // AUTHORED_FETCH_INFLIGHT_CAP starts, long before 32. When it does bind,
+    // the queue survives to the next pump — the work is deferred, never lost.
+    uint32_t started = 0;
     // Front-erase on a vector, deliberately: the queue is bounded by
     // STAGING_LAYERS (32), so the copy is a rounding error next to a
     // container choice that would need its own include.
     while (gs.authored_fetch_inflight < AUTHORED_FETCH_INFLIGHT_CAP
-        && !gs.authored_fetch_queue.empty()) {
+        && !gs.authored_fetch_queue.empty()
+        && started < Dim::STAGING_LAYERS) {
         GalleryState::AuthoredFetchRequest req = gs.authored_fetch_queue.front();
         gs.authored_fetch_queue.erase(gs.authored_fetch_queue.begin());
         start_authored_fetch(gs, req);
+        started++;
     }
 }
 
@@ -2306,7 +2349,8 @@ inline void pump_authored_fetches(GalleryState& gs) {
 // already reads the slot through `valid`, so the weakening is invisible
 // to all of them — a not-yet-arrived painting is the no-content case
 // they have always handled.
-inline void load_authored_image_to_staging(GalleryState& gs, uint32_t staging_layer, uint32_t disk_index, const char* path) {
+inline void authored_enqueue_fetch(GalleryState& gs, uint32_t staging_layer,
+    uint32_t disk_index, const char* path) {
     if (staging_layer >= Dim::STAGING_LAYERS) return;
     auto& rec = gs.authored_staging[staging_layer];
     if (rec.pending) return;   // already spoken for; a second request would race its own slot
@@ -2329,9 +2373,15 @@ inline void load_authored_image_to_staging(GalleryState& gs, uint32_t staging_la
     // (R0), so the staging texture can be replaced underneath a hung
     // frame with no visible effect.
     rec.pending = true;
-    rec.disk_index = disk_index;   // the slot advertises its claim to the rotation cursor
+    rec.disk_index = disk_index;   // the slot advertises its claim to the playlist cursor
 
     gs.authored_fetch_queue.push_back({ staging_layer, disk_index, std::string(path) });
+}
+
+// AND THE ORDINARY ENTRY POINT: claim, queue, PUMP. Every caller that is not
+// already inside the pump uses this one — the boot fill and authored_pop.
+inline void load_authored_image_to_staging(GalleryState& gs, uint32_t staging_layer, uint32_t disk_index, const char* path) {
+    authored_enqueue_fetch(gs, staging_layer, disk_index, path);
     pump_authored_fetches(gs);
 }
 
@@ -2377,8 +2427,10 @@ inline void pump_authored_valve(GalleryState& gs, GPUState& gpu, wgpu::Queue& qu
         h.bytes.data(), (int)h.bytes.size(), &width, &height, &channels, 4);
     if (!data) {
         std::cerr << "[Authored] Failed to decode: " << h.url << "\n";
-        authored_fetch_release_slot(gs, h.staging_layer);
-        gs.authored_staging[h.staging_layer].pending = false;
+        // 0 — the bytes arrived and stb refused them; the failure is not the
+        // network's, and the ring is healed the same way regardless.
+        authored_fetch_release_slot(gs, h.staging_layer, 0);
+        pump_authored_fetches(gs);
         recount_authored_staged(gs);
         return;
     }
