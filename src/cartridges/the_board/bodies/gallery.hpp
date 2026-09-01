@@ -2270,14 +2270,18 @@ inline void authored_image_onsuccess(emscripten_fetch_t* fetch) {
 
 inline void authored_image_onerror(emscripten_fetch_t* fetch) {
     AuthoredFetchCtx* ctx = (AuthoredFetchCtx*)fetch->userData;
+    // TAKEN BEFORE THE CLOSE. emscripten_fetch_close frees the struct, so the
+    // status has to be a value before it is a second reader's argument — the
+    // shape exhibition_manifest_onerror already uses one screen up.
+    const long status = fetch->status;
     std::cerr << "[Authored] Failed to load: " << ctx->url
-        << " (HTTP " << fetch->status << ")\n";
+        << " (HTTP " << status << ")\n";
     emscripten_fetch_close(fetch);
     // The hole is healed rather than abandoned — see
     // authored_fetch_release_slot, which now clears `pending` itself because
     // the append it makes would otherwise find the slot spoken for.
     // The 30 s timeout routes here, and the lane-must-return law is untouched.
-    authored_fetch_release_slot(*ctx->gs, ctx->staging_layer, fetch->status);
+    authored_fetch_release_slot(*ctx->gs, ctx->staging_layer, status);
     authored_fetch_finish(ctx);
 }
 
