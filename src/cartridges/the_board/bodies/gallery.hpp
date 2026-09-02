@@ -760,6 +760,21 @@ struct GalleryCenter {
     int32_t patch_gx = INT32_MAX, patch_gz = INT32_MAX;
     int32_t host_gx = 0, host_gz = 0;   // host patch (for entity_refs eviction)
     bool active = false;
+    // WHEN THIS SITE LAST TOOK ITS PAINTINGS (REPEAT_2 U1). TimeState::seconds
+    // at the end of the dress, which is the tide's whole input: a gallery that
+    // has held the same pictures longer than the interval, and that nobody is
+    // looking at, is the one the sequence takes back.
+    //
+    // Written by commit_gallery and by nothing else, because commit_gallery is
+    // the only road that has a GalleryCenter to write. Negative means never
+    // dressed — a record that select reserved and place released still reads
+    // its default, and the tide skips it on `active` long before it reads this.
+    //
+    // THE STRUCT IS CPU-ONLY. gallery_centers[] lives in GalleryState and is
+    // read by select_gallery_for_patch's exclusion scan and by evict_gallery;
+    // it is uploaded nowhere, so this member is not a mirror change and
+    // world.wgsl does not learn a new word.
+    float dressed_at = -1.0f;
 };
 inline constexpr uint32_t MAX_GALLERIES = 48;
 
@@ -2064,6 +2079,11 @@ inline void commit_gallery(GalleryState& gs, MachineCtx* c,
     gc.z = gallery_cz;
     gc.host_gx = plan.host_gx;
     gc.host_gz = plan.host_gz;
+    // REPEAT_2 U1 — THE AGE STARTS HERE, at the end of the dress rather than
+    // at its start, so a site that spent frames waiting on a pool is not aged
+    // for the wait. A re-dress overwrites it through this same line: the tide
+    // needs no clear of its own, because there is only one writer.
+    gc.dressed_at = c->time_state_.seconds;
 
     if (placed == 0) {
         // Reachable when the mono-tier filter empties the candidate list after
