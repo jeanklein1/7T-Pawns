@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `7e616a42e7318c2b2ca8e5396cc6caf80aacc44c` |
-| | PLUMB_0 U5: the closing refuter's findings, fixed |
+| source commit | `b38dd1aed1c7b4ec90548cd05a99a0b5ce57ccb2` |
+| | audit — ledgers converged on PLUMB_0 |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:a52f41dd72b4cacfa576f406c318fccbc66b42fb21587023f4802aad7a03df20` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:57b66ef95dcabd4eaedd19c1b06fcc8894bd0b2c387c36de9a28c28221a19d7e` |
