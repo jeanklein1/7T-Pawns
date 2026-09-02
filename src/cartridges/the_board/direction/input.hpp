@@ -104,6 +104,12 @@ struct KeyState {
     // held. The four above already carry held state; this is the fifth, and
     // it exists to make R a DOWN EDGE.
     bool ride_held = false;
+    // PULSE_1 — SPACE's held flag, the sixth, and for the same reason:
+    // the pulse is a STRIKE, not a switch and not a stream. Under
+    // autorepeat an unguarded key-down would issue a pulse every repeat
+    // tick and hold the live card's writer awake for as long as a thumb
+    // rested on the bar.
+    bool pulse_held = false;
 };
 
 // Mouse drag state — on_mouse_move reads these to decide which
@@ -178,6 +184,7 @@ void on_touch_zoom(InputDeps* c, float delta);
 // root addresses them at the call site through the owner doors.
 void on_touch_tap_left(InputDeps* c, PawnState& pawn_state, PawnDeps& pawn_deps);
 void on_touch_tap_right(InputDeps* c, AgentState& agent_state, AgentsDeps& agents_deps);
+void request_radial_pulse(InputDeps* c);   // the pulse's owner door (SPACE + the lone tap)
 void on_touch_tap_pulse(InputDeps* c);
 void on_mouse_button(InputDeps* c, int button, bool pressed);
 void on_scroll(InputDeps* c, float delta);
@@ -240,6 +247,9 @@ void nudge_look_sensitivity(InputDeps* c, bool up);   // KP_+ / KP_- — multipl
 #ifndef GLFW_KEY_V
 #define GLFW_KEY_V  86
 #endif
+#ifndef GLFW_KEY_SPACE
+#define GLFW_KEY_SPACE  32
+#endif
 
 
 // ═══ KEY DISPATCH ════════════════════════════════════════════════
@@ -276,6 +286,15 @@ inline void on_key_down(InputDeps* c, int key,
     case GLFW_KEY_LEFT_BRACKET:   set_render_radius(c, c->world_state_.active_radius - 1); break;
     case GLFW_KEY_RIGHT_BRACKET:  set_render_radius(c, c->world_state_.active_radius + 1); break;
     case GLFW_KEY_V:              toggle_veil_dither(c);                                   break;  // THE RIM: icing tint <-> dither-dissolve
+    // SPACE RINGS THE GROUND. Down edge only — the held flag above is
+    // why. Momentary by ruling: the pulse is an event, not a mode, so
+    // there is no toggle here and MMODE_RADIAL_PULSE is not replaced.
+    case GLFW_KEY_SPACE:
+        if (!c->keys_.pulse_held) {
+            c->keys_.pulse_held = true;
+            request_radial_pulse(c);   // one door, two mouths — the glass's is the other
+        }
+        break;
 
     // ── Look dial (numpad) ───────────────────────────────────────
     case GLFW_KEY_KP_ADD:      nudge_look_sensitivity(c, true);   break;
@@ -314,6 +333,7 @@ inline void on_key_up(InputDeps* c, int key) {
     case GLFW_KEY_A: c->keys_.left = false;     break;
     case GLFW_KEY_D: c->keys_.right = false;    break;
     case GLFW_KEY_R: c->keys_.ride_held = false; break;
+    case GLFW_KEY_SPACE: c->keys_.pulse_held = false; break;
     }
     update_movement_intent(c);
 }
@@ -392,14 +412,23 @@ inline void on_touch_tap_right(InputDeps* c, AgentState& agent_state, AgentsDeps
     try_possess_nearest(agent_state, &agents_deps, q);
 }
 
-// EITHER HALF, one finger, clean tap — the pulse (SPACE's door). It
-// RAISES AN INTENT rather than stamping the ring: the onset's origin is
-// the point and its time is the frame's, and neither is this door's to
-// know. The frame spends it in phase_live_card_write, where both are in
-// hand and where the rest law reads the ring immediately after — the
-// drain idiom the analog deltas already use.
-inline void on_touch_tap_pulse(InputDeps* c) {
+// THE PULSE'S OWNER DOOR. Published here at its SECOND consumer (the
+// standing law): the lone tap raised it, SPACE joined, and a thumb and a
+// keyboard reach one implementation rather than two — the arrangement
+// key 3 / CAPS_LOCK already keep with toggle_aura and try_possess_nearest.
+//
+// It RAISES AN INTENT rather than stamping the ring. The onset's origin
+// is the point and its time is the frame's, and neither is an input
+// door's to know; the frame spends it in phase_live_card_write, where
+// both are in hand and where the rest law reads the ring immediately
+// after — the drain idiom the analog deltas already use.
+inline void request_radial_pulse(InputDeps* c) {
     c->inputState_.pulse_pending = true;
+}
+
+// EITHER HALF, one finger, clean tap — the pulse (SPACE's twin mouth).
+inline void on_touch_tap_pulse(InputDeps* c) {
+    request_radial_pulse(c);
 }
 
 // ═══ MOVEMENT INTENT + DELTA CLEAR ═══════════════════════════════
