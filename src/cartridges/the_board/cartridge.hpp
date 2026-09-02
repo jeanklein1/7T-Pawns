@@ -3292,6 +3292,9 @@ namespace t7 {
                 case InputEvent::Type::TouchTapRight:
                     on_touch_tap_right(&input_deps_, agent_state_, agents_deps_);
                     break;
+                case InputEvent::Type::TouchTapPulse:
+                    on_touch_tap_pulse(&input_deps_);
+                    break;
                 }
             }
 

@@ -34,7 +34,8 @@ struct InputEvent {
         TouchLook,      // x, y = look delta, LOOK_SENS_TOUCH already applied
         TouchZoom,      // y    = zoom delta, PINCH_SENS already applied
         TouchTapLeft,   // a clean two-finger-left tap  — the aura verb
-        TouchTapRight   // a clean two-finger-right tap — the possession verb
+        TouchTapRight,  // a clean two-finger-right tap — the possession verb
+        TouchTapPulse   // a clean LONE-finger tap, either half — the pulse verb
     };
     
     Type type;

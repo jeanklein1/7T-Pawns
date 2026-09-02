@@ -261,6 +261,12 @@ namespace t7 {
         // Separation change past this declares a pinch immediately,
         // without waiting out TAP_MS.
         static constexpr float PINCH_DECLARE   = 8.0f;
+        // PULSE_1 — THE PULSE TAP'S DEBOUNCE, and it is here rather than
+        // on the bus deliberately: rate-limiting belongs to the input that
+        // has a bounce problem, which is the finger. A musician firing two
+        // notes 40 ms apart is entitled to both, and a bus that swallowed
+        // one would be a defect authored on purpose.
+        static constexpr double PULSE_DEBOUNCE_MS = 80.0;
     };
 
     // ONE TRACKED FINGER. `left` is decided once, at birth, and never
@@ -276,6 +282,12 @@ namespace t7 {
         float    x0 = 0.0f, y0 = 0.0f;   // where it landed
         double   t0 = 0.0;               // when it landed, ms
         bool     slopped = false;        // has moved past TAP_SLOP since landing
+        // PULSE_1 — WAS THIS PRESS EVER ALONE? Latched at birth and cleared
+        // the moment any other finger lands; never re-set while the press
+        // lives. The pulse is the LONE-finger verb, and "lone" has to mean
+        // "alone for its whole life" — a finger that was half of a pinch and
+        // outlived its partner must not become a tap on the way up.
+        bool     alone   = true;
     };
 
     // The port's default canvas selector (Config.h kDefaultCanvasSelector).
@@ -2159,6 +2171,9 @@ namespace t7 {
             rightTapPending_ = false;
             tapAuraPending_ = false;
             tapPossessPending_ = false;
+            // lastPulseMs_ is NOT cleared: it is the debounce's memory, and a
+            // cancel is exactly when a spurious second tap is most likely.
+            tapPulsePending_ = false;
         }
 
         // ── U4: the right-half pair ──────────────────────────────
@@ -2204,6 +2219,17 @@ namespace t7 {
                     slot->y = slot->y0 = py;
                     slot->t0      = e.timestamp;
                     slot->slopped = false;
+                    // PULSE_1 — THE LONE LATCH. This finger is alone only if
+                    // it is the only one tracked; and its arrival ends
+                    // everyone else's solitude. Cleared in both directions
+                    // here, at the one site a finger is born, so no press can
+                    // acquire the latch after the fact.
+                    slot->alone   = true;
+                    for (TouchPoint& other : touches_) {
+                        if (&other == slot || !other.active) continue;
+                        other.alone = false;
+                        slot->alone = false;
+                    }
 
                     // U4 — THE PAIR FORMS. Undecided on purpose: two
                     // fingers on the right half are a pinch, a possess
@@ -2334,6 +2360,26 @@ namespace t7 {
             const bool clean = !t.slopped
                 && (now_ms - t.t0) <= TouchControls::TAP_MS;
 
+            // PULSE — A PRESS THAT GOES NOWHERE, ALONE, ON EITHER HALF. One
+            // word, two mouths: whichever thumb is free speaks, and the
+            // player never learns which half of the glass owns it.
+            //
+            // SEPARABLE FROM THE OTHER TWO VERBS WITHOUT COSTING EITHER ANY
+            // LATENCY, and the proof is in their own conditions, not in a
+            // timer this had to add:
+            //   aura    — fires on a left finger that is NOT the primary, so
+            //             it needs a SECOND left finger down; `alone` is
+            //             false for both of them.
+            //   possess — fires on the second of a right-half PAIR, so both
+            //             its fingers have had company; `alone` is false.
+            // Neither verb has to wait to find out whether a tap was meant,
+            // and this one resolves at lift like they do.
+            if (clean && t.alone
+                && (now_ms - lastPulseMs_) >= TouchControls::PULSE_DEBOUNCE_MS) {
+                lastPulseMs_    = now_ms;
+                tapPulsePending_ = true;
+            }
+
             if (t.left) {
                 // AURA — the SECOND left finger. Never the stick: the
                 // primary is the stick whether it is dragging or resting,
@@ -2456,6 +2502,12 @@ namespace t7 {
                 e.type = InputEvent::Type::TouchTapRight;
                 inputEvents_.push_back(e);
                 tapPossessPending_ = false;
+            }
+            if (tapPulsePending_) {
+                InputEvent e{};
+                e.type = InputEvent::Type::TouchTapPulse;
+                inputEvents_.push_back(e);
+                tapPulsePending_ = false;
             }
         }
 
@@ -2582,6 +2634,8 @@ namespace t7 {
         bool       rightTapPending_ = false;// one of a clean pair has lifted; waiting on the other
         bool       tapAuraPending_ = false; // edge-fired verbs, spent on the next tick
         bool       tapPossessPending_ = false;
+        bool       tapPulsePending_ = false;  // PULSE_1 — the lone-finger verb
+        double     lastPulseMs_ = -1e9;       // the debounce's memory; survives a cancel
         uint32_t initialWidth_ = 0;
         uint32_t initialHeight_ = 0;
         // CONFIGURE INTENT — what the app asks the surface for (ACQ_0).

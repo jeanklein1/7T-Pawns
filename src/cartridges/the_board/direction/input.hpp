@@ -178,6 +178,7 @@ void on_touch_zoom(InputDeps* c, float delta);
 // root addresses them at the call site through the owner doors.
 void on_touch_tap_left(InputDeps* c, PawnState& pawn_state, PawnDeps& pawn_deps);
 void on_touch_tap_right(InputDeps* c, AgentState& agent_state, AgentsDeps& agents_deps);
+void on_touch_tap_pulse(InputDeps* c);
 void on_mouse_button(InputDeps* c, int button, bool pressed);
 void on_scroll(InputDeps* c, float delta);
 // Per-frame
@@ -389,6 +390,16 @@ inline void on_touch_tap_left(InputDeps* c, PawnState& pawn_state, PawnDeps& paw
 inline void on_touch_tap_right(InputDeps* c, AgentState& agent_state, AgentsDeps& agents_deps) {
     wgpu::Queue q = c->device_.GetQueue();
     try_possess_nearest(agent_state, &agents_deps, q);
+}
+
+// EITHER HALF, one finger, clean tap — the pulse (SPACE's door). It
+// RAISES AN INTENT rather than stamping the ring: the onset's origin is
+// the point and its time is the frame's, and neither is this door's to
+// know. The frame spends it in phase_live_card_write, where both are in
+// hand and where the rest law reads the ring immediately after — the
+// drain idiom the analog deltas already use.
+inline void on_touch_tap_pulse(InputDeps* c) {
+    c->inputState_.pulse_pending = true;
 }
 
 // ═══ MOVEMENT INTENT + DELTA CLEAR ═══════════════════════════════
