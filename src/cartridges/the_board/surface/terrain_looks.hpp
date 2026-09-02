@@ -145,10 +145,10 @@ inline constexpr std::uint32_t PULSE_RING_SLOTS   = 8;    // WGSL: array<vec4<f3
 inline constexpr std::uint32_t PULSE_RING_FLOATS  = PULSE_RING_SLOTS * 4;
 inline constexpr float         PULSE_MAX_AGE      = 8.0f; // WGSL: const PULSE_MAX_AGE
 inline constexpr float         PULSE_MIN_AMPLITUDE = 0.001f;  // WGSL: the p.w early-exit
-// THE TAP'S IMPULSE IS FLAT (PULSE_1 ruling 3). Speed-scaling it to the
-// point's velocity is the attractive next move and it is refused until a
-// measurement asks for it.
-inline constexpr float         PULSE_TAP_AMPLITUDE = 1.0f;
+// THE TAP'S IMPULSE IS NOT HERE: it is a DIAL, and the ORGAN may not
+// include this file, so it lives in contracts/control_panel.hpp as
+// PANEL_LIVE.pulse.amplitude (the possession-reach precedent). The four
+// numbers above are shader MIRRORS, not dials, which is why they stay.
 
 // ── ROWS 3-8 — see the WGSL room (world.wgsl §2.2 TERRAIN_LOOKS) ────
 //   ROW 3 PALETTE COMPOSITION: PALETTE_DOMINANT_WEIGHT / _MINOR_WEIGHT

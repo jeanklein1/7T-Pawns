@@ -605,6 +605,14 @@ ORGAN_PARAM(PANEL, PanelSurface, camera.scroll_zoom_scale, F32, 0.0f,  8.0f,  0.
 // console; the `_SQ` twin is derived at its one read from the live value.
 // The floor is one step, because a zero reach makes the search unwinnable.
 ORGAN_PARAM(PANEL, PanelSurface, possession.radius, F32, 0.5f, 80.0f, 0.5f, "Interaction · Possession", "reach")
+// THE PULSE'S IMPULSE (PULSE_1 D). The ring's SHAPE — speed, sharpness,
+// damping, age decay — is NOT here: those are world.wgsl consts and
+// ORGAN_2b's business, and enrolling them from this campaign would put
+// four dials on a contributor this campaign only gave a writer to. This
+// one row is what PULSE_1 introduced. Floor is 0, which is a legal
+// reading and not a defect: it silences the tap without silencing the
+// bus, so a soundtrack writer would still be heard.
+ORGAN_PARAM(PANEL, PanelSurface, pulse.amplitude, F32, 0.0f, 4.0f, 0.05f, "Interaction · Pulse", "tap impulse")
 
 // ─── Camera · Chase ─────────────────────────────────────────────────
 // THE WITNESS'S OWN BEHAVIOUR, not its pose and not its input grammar

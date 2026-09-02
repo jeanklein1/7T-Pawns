@@ -2574,7 +2574,7 @@ namespace t7 {
 
             // The verb, as the glass and the keyboard issue it.
             void issue_pulse_from_point() {
-                emit_radial_pulse(point_.x, point_.z, terrain_looks::PULSE_TAP_AMPLITUDE);
+                emit_radial_pulse(point_.x, point_.z, PANEL_LIVE.pulse.amplitude);
             }
 
             // THE COUNT MUST RETIRE, and this is the whole reason:

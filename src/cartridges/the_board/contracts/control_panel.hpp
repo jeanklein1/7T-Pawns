@@ -198,6 +198,9 @@ struct PanelSurface {
     struct Possession {
         float radius;            // how far the POINT reaches to take a body
     } possession;
+    struct Pulse {
+        float amplitude;         // the impulse a player tap stamps on the ring
+    } pulse;
 };
 
 // ═══ POSSESSION (ORGAN_4 P3b) ═════════════════════════════════════
@@ -206,6 +209,23 @@ struct PanelSurface {
 // The square does not come with it: a second constant is the whole
 // defect, and the one read site squares the LIVE value instead.
 inline constexpr float POSSESSION_RADIUS = 20.0f;
+
+// ═══ THE PULSE TAP (PULSE_1 D) ════════════════════════════════════
+// THE IMPULSE A PLAYER'S TAP STAMPS, and it is here for the reason the
+// paragraph above gives about possession's reach: the tap is INPUT
+// GRAMMAR — how much a gesture does, beside how far a wheel notch zooms
+// — and this file is "THE PANEL — one home, every room". It began the
+// campaign in surface/terrain_looks.hpp beside the ring's shader
+// mirrors, WHICH THE ORGAN MAY NOT INCLUDE, so a dial on it was
+// impossible until it had a contracts home. The ring's other numbers
+// stay there: they are mirrors of what the shader draws, not dials.
+//
+// FLAT, BY RULING (PULSE_1 ruling 3). Speed-scaling the impulse to the
+// point's velocity is refused until a measurement asks for it — which
+// is a statement about the AUTHORED rest, not about the dial: the panel
+// exists so Jean can find the number by eye, and the range below is what
+// he may look through.
+inline constexpr float PULSE_TAP_AMPLITUDE = 1.0f;
 
 inline constexpr PanelSurface PANEL_TABLE = {
     { FIELD_BEACON_R0, FIELD_BEACON_R, FIELD_BEACON_S, FIELD_BEACON_LIFT },
@@ -216,6 +236,7 @@ inline constexpr PanelSurface PANEL_TABLE = {
                                      // and left the readers behind, so these
                                      // four wrote a home nothing read
     { POSSESSION_RADIUS },           // ORGAN_4 P3b
+    { PULSE_TAP_AMPLITUDE },         // PULSE_1 D
 };
 
 inline PanelSurface PANEL_LIVE = PANEL_TABLE;
@@ -223,7 +244,8 @@ static_assert(PANEL_TABLE.beacon.r0 == FIELD_BEACON_R0
            && PANEL_TABLE.beacon.r  == FIELD_BEACON_R
            && PANEL_TABLE.beacon.s  == FIELD_BEACON_S
            && PANEL_TABLE.beacon.lift == FIELD_BEACON_LIFT
-           && PANEL_TABLE.possession.radius == POSSESSION_RADIUS,
+           && PANEL_TABLE.possession.radius == POSSESSION_RADIUS
+           && PANEL_TABLE.pulse.amplitude == PULSE_TAP_AMPLITUDE,
     "PANEL_TABLE's beacon and possession rows are seeded FROM the authored "
     "rests above — one fact, one home; if they can disagree the seeding is "
     "wrong");
