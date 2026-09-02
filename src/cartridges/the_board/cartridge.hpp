@@ -2563,12 +2563,22 @@ namespace t7 {
                 pulseRing_[base + 2] = time_state_.gpu_seconds();
                 pulseRing_[base + 3] = amplitude;
                 pulseWriteIdx_++;
-                // Slots fill 0..N-1 from a zeroed ring, so the count is the
-                // write index saturated at the ring — never a live-scan,
-                // because the shader's own early-exit retires dead slots and
-                // retire_aged_pulses returns the whole ring to rest.
-                pulseCount_ = (pulseWriteIdx_ < terrain_looks::PULSE_RING_SLOTS)
-                    ? pulseWriteIdx_ : terrain_looks::PULSE_RING_SLOTS;
+                // Slots fill 0..N-1 from a zeroed ring, so the count CLIMBS
+                // to the ring and stays — never a live-scan, because the
+                // shader's own early-exit skips dead slots and
+                // retire_aged_pulses returns the whole ring to rest at once.
+                // Climbing rather than deriving it from pulseWriteIdx_ is
+                // deliberate: the index is unbounded and the count must not
+                // follow it back down through a wrap.
+                if (pulseCount_ < terrain_looks::PULSE_RING_SLOTS) pulseCount_++;
+                // ONE FRAME TO THE GPU. This dirties the config, and
+                // upload_config runs at U8 — an UPDATE row, so the write
+                // lands at the NEXT frame's upload rather than this one's.
+                // The ring is therefore seen ~16 ms after the tap, on top of
+                // the point's own frame of staleness (law E-4). Both are
+                // imperceptible on a wavefront and neither is worth a second
+                // upload path; the CPU-side count is current immediately,
+                // which is what the rest law below reads.
                 gpuState_.set_pulse_data(pulseCount_, pulseRing_);
 
                 // THE PULSE IS A TEMPORAL CHANGE, so its witness reads a
