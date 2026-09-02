@@ -817,7 +817,12 @@ inline void commit_ribbon(RibbonState& rs, MachineCtx* c,
     r.anchor[0] = plan.cx;
     r.anchor[1] = 0.0f;
     r.anchor[2] = plan.cz;
-    r.time = c->time_state_.seconds;
+    // PLUMB_0 B2 — GPURibbonState::time is a BIRTH STAMP the shader
+    // differences against signal.t_seconds (world.wgsl: `ribbon.time - t *
+    // total_length / propagation_speed`), so the two must share a base. Both
+    // now take it from gpu_seconds(), and a ribbon cannot outlive its epoch:
+    // teardown_ribbon runs in the same TEARDOWN arm that re-stamps it.
+    r.time = c->time_state_.gpu_seconds();
     r.cube_count = plan.cube_count;
     r.cube_size = plan.cube_size;
     r.height = plan.height;

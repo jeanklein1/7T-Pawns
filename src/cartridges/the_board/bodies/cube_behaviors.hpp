@@ -1302,7 +1302,7 @@ inline void zoetrope_service(CubeBehaviorsState& cbs, GPUState& gpu, wgpu::Queue
 // ─── Readback mirror reconciliation (owner verb) ─
 // the cube half of the floater-readback funnel.
 inline void reconcile_cube_mirror(CubeBehaviorsState& cs, CubeDeps* c, const GPUFloatingEntityState* data) {
-    float now = c->time_state_.seconds;
+    const double now = c->time_state_.seconds;   // PLUMB_0 B1
     // Cubes: slots [CUBE_SLOT_OFFSET, TOTAL_FLOATING_SLOTS)
     for (uint32_t i = 0; i < Dim::MAX_CUBE_INSTANCES; i++) {
         bool gpu_active = (data[Dim::CUBE_SLOT_OFFSET + i].is_active != 0u);

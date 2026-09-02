@@ -56,7 +56,11 @@ struct GroundFootprint {
     uint32_t family = UINT32_MAX;  // PopFamily index
     uint32_t slot = UINT32_MAX;    // slot within that family — (family, slot) IS the owner
     uint32_t tier = 0;             // tier index within family
-    float spawn_time = 0.0f;       // time_state_.seconds at registration
+    // PLUMB_0 B1 — double, because it is DIFFERENCED against
+    // time_state_.seconds, which is now double. A float here would compile
+    // (the census only prints ages) but would re-introduce the resolution
+    // loss on the one side of the subtraction that is allowed to keep it.
+    double spawn_time = 0.0;       // time_state_.seconds at registration
     bool active = false;
 };
 
@@ -185,7 +189,7 @@ struct SpawnEngineState {
     PlacementEntry   placementResults_[SPAWN_QUEUE_MAX]{};
     uint32_t         placementCount_ = 0;
     GroundFootprint  footprints_[MAX_FOOTPRINTS]{};
-    float lastCensusDump_ = -999.0f;
+    double lastCensusDump_ = -999.0;   // PLUMB_0 B1 — differenced against TimeState::seconds
 };
 
 // ═══ MODULE FUNCTIONS ══════════════════════════════════════════════
@@ -824,7 +828,7 @@ inline void dump_entity_census(MachineCtx* c, const char* trigger) {
     // means the same thing at every trigger. Sub-frame slop is expected and
     // deliberately untreated — the periodic gate fires at 30.0-30.02s, so an
     // arrival may miss its window by a frame. No epsilon.
-    struct CensusEntry { uint32_t fp_idx; float spawn_time; };
+    struct CensusEntry { uint32_t fp_idx; double spawn_time; };  // PLUMB_0 B1 — matches GroundFootprint::spawn_time
     CensusEntry entries[MAX_FOOTPRINTS];
     uint32_t n = 0;
     for (uint32_t i = 0; i < MAX_FOOTPRINTS; i++) {

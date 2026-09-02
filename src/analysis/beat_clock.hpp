@@ -25,10 +25,32 @@ namespace t7 {
 struct BeatClock {
     float bpm = 100.0f;   // variable BPM — Jean's amendment; one home
 
+    // PLUMB_0 B1 — THE ACCUMULATORS ARE DOUBLE; THE CONTRACT'S FIELDS ARE
+    // SNAPSHOTS OF THEM.
+    //
+    // AnalysisSignal's layout is a documented 4128-byte contract with
+    // t_seconds at offset 0, size 4 — it crosses a boundary and does not
+    // move. But it was also the ACCUMULATOR, and a float accumulator stops
+    // once dt falls below half an ulp (524288.0 s, 4.8 days at 60 fps).
+    // Accumulating in double and narrowing on each write keeps the contract
+    // byte-identical while the number behind it never stalls: the field
+    // quantizes at long runtime, which is a resolution cost, instead of
+    // freezing, which is a stopped world.
+    //
+    // TimeState::seconds is the WALL CLOCK OF RECORD and is accumulated
+    // separately at U1 from the same dt (see spine_state.hpp). These two
+    // agree by construction — one dt, one order — and neither reads the
+    // other, so the music contract and the world clock cannot drift into
+    // each other's business.
+    double t_seconds_d = 0.0;
+    double t_beats_d   = 0.0;
+
     void update(float dt) {
         signal_.dt = dt;
-        signal_.t_seconds += dt;
-        signal_.t_beats += dt * (bpm / 60.0f);
+        t_seconds_d += (double)dt;
+        t_beats_d   += (double)dt * ((double)bpm / 60.0);
+        signal_.t_seconds = (float)t_seconds_d;
+        signal_.t_beats   = (float)t_beats_d;
     }
 
     // Every time-bearing field of the surviving contract, from the

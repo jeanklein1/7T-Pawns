@@ -436,7 +436,7 @@ namespace t7 {
             // and the residue-report cadence timer. Read only by the residue
             // check when ROSTER.gol is disabled (proves the buffers pristine).
             uint64_t rosterGolZoneRuns_ = 0;
-            float    rosterGolResidueDump_ = 0.0f;
+            double   rosterGolResidueDump_ = 0.0;   // PLUMB_0 B1 — differenced against TimeState::seconds
 
             // ═══ FAMILY DISPATCH TABLE ═══════════════════════════════════
             //
@@ -1002,7 +1002,18 @@ namespace t7 {
                 auto& gpuSignal = c.gpuSignal;
                 auto& signal = c.signal;
                 auto aspect_ratio = c.aspect_ratio;
-                gpuSignal.t_seconds = signal.t_seconds;
+                // PLUMB_0 B1 — THE WALL CLOCK ADVANCES HERE, IN DOUBLE, AND
+                // BEFORE ANYTHING READS IT. U1 is the first update row and is
+                // enabled by a literal true, so this runs on every frame that
+                // updates at all; the O-5a static_assert already pins U1
+                // before U3, which is why the accumulation moved up from
+                // phase_advance_clock rather than staying beside the beats.
+                // Accumulating from signal.dt rather than copying
+                // signal.t_seconds is the whole unit: the copy inherited a
+                // float accumulator that stops after 4.8 days.
+                time_state_.seconds += (double)signal.dt;
+                // PLUMB_0 B2 — the shader gets the young number (RULING-3).
+                gpuSignal.t_seconds = time_state_.gpu_seconds();
                 gpuSignal.t_beats = signal.t_beats;
                 // RIBBON_2 P0 1.2b — THE PENDING dt (RIBBON_3). The signal is
                 // written every update; the compute pass that consumes it is
@@ -1106,7 +1117,13 @@ namespace t7 {
             void phase_advance_clock(UpdateCtx& c) {
                 auto& signal = c.signal;
                 time_state_.beats = signal.t_beats;
-                time_state_.seconds = signal.t_seconds;
+                // PLUMB_0 B1 — `seconds` is NOT copied here any more. It is
+                // accumulated at U1 from signal.dt, one row earlier, so that
+                // U1's own GPU write already sees this frame's value rather
+                // than the previous frame's. AnalysisSignal::t_seconds stays
+                // the music contract's field at offset 0; it is no longer the
+                // wall clock of record and no longer has a reader in this
+                // file.
                 time_state_.dt = signal.dt;
                 // The frame's third clock (PANORAMA_1) — advanced HERE, with
                 // the other two, so there is one place a frame begins.
@@ -1330,6 +1347,15 @@ namespace t7 {
                         //   spine-owned.
 
                         world_state_.world_gen++;
+                        // PLUMB_0 B2 — THE GPU'S ZERO MOVES WITH THE WORLD
+                        // (RULING-3). Stamped beside the serial it belongs to:
+                        // both say "a new world begins here", and a reader who
+                        // finds one without the other has found a bug. Every
+                        // GPU-resident time is re-stamped after this point —
+                        // teardown_ribbon and teardown_orbs have just removed
+                        // the only carriers that could have held an older
+                        // base — so the rebase cannot tear a live animation.
+                        time_state_.world_epoch = time_state_.seconds;
                         // OPT_1a: the new world's rest field must be written
                         // once even if no zone ever goes live there.
                         liveCardRestClean_ = false;
@@ -1635,7 +1661,7 @@ namespace t7 {
                                         if constexpr (INSTRUMENTS.passer_witness) {
                                             if (self->mood_state_.active == MOOD_ATRIUM) {
                                                 static float last_passer_print = -1e9f;
-                                                const float now = self->time_state_.seconds;
+                                                const double now = self->time_state_.seconds;   // PLUMB_0 B1
                                                 if (now - last_passer_print >= 4.0f) {
                                                     last_passer_print = now;
                                                     dump_passer_census(self->agent_state_, &self->agents_deps_);
@@ -1779,7 +1805,7 @@ namespace t7 {
             // ONE EM_ASM PER SECOND, and only with ?bootinfo=1 — it rides
             // the census phase's cadence rather than growing one, and
             // card_live rewrites a single div rather than appending.
-            float lastCardTick_ = -1.0f;
+            double lastCardTick_ = -1.0;   // PLUMB_0 B1 — differenced against TimeState::seconds
 
             void card_patch_tick_() {
                 if (!t7::boot_params().bootinfo) return;

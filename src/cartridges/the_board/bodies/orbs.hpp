@@ -791,7 +791,11 @@ inline void dispatch_orb_dynamics(OrbsState& os, OrbsDeps* c, wgpu::CommandEncod
     wgpu::Queue& queue) {
     if (!os.active || os.count == 0) return;
 
-    c->gpuState_.upload_orb_frame(queue, c->time_state_.dt, c->time_state_.seconds);
+    // PLUMB_0 B2 — the orb config's clock is a GPU seam, so it takes the
+    // rebased number like the frame signal does. orb_config.t_seconds drives
+    // the twinkle phase and salts a per-frame seed; both want a small float.
+    c->gpuState_.upload_orb_frame(queue, c->time_state_.dt,
+                                  c->time_state_.gpu_seconds());
 
     wgpu::ComputePassDescriptor cpd{};
     cpd.label = "Orb Dynamics";

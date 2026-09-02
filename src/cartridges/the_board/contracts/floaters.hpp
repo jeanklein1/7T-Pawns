@@ -82,7 +82,7 @@ static_assert(SphereProp::SPAWN_ROLL == 100u && SphereProp::ANCHOR_X == 101u
 struct ActiveSphere {
     int32_t patch_gx = 0, patch_gz = 0;
     int32_t host_gx = 0, host_gz = 0;
-    float   last_alloc_time = -1000.0f;
+    double  last_alloc_time = -1000.0;   // PLUMB_0 B1 — differenced against TimeState::seconds
     // ── FIELD_2: the live harvest ── GPU truth, one frame stale,
     // written by reconcile_sphere_mirror from the readback the funnel
     // already maps. live_body_radius == 0 marks "not yet harvested"
@@ -137,7 +137,7 @@ static_assert(CubeProp::SPAWN_ROLL == 130u && CubeProp::ANCHOR_X == 131u
 struct ActiveCube {
     int32_t patch_gx = 0, patch_gz = 0;
     int32_t host_gx = 0, host_gz = 0;
-    float   last_alloc_time = -1000.0f;
+    double  last_alloc_time = -1000.0;   // PLUMB_0 B1 — differenced against TimeState::seconds
     // ── THE MIRROR IS THE PRIOR (C6R V2 + G5 V1) ── the spawn law's
     // tier draws, seated at write_active; the zoetrope's release walks
     // every possessed scalar back to these. CPU mirror only —

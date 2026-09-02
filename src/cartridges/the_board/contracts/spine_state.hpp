@@ -26,7 +26,40 @@ namespace the_board {
 // monotonically; dt is the most recent frame delta.
 struct TimeState {
     float beats   = 0.0f;
-    float seconds = 0.0f;
+    // PLUMB_0 B1 — THE WALL CLOCK ACCUMULATES IN DOUBLE, AND THIS IS WHY.
+    //
+    // It was a float fed from AnalysisSignal::t_seconds, itself a float
+    // accumulator (`signal_.t_seconds += dt` in BeatClock). A float
+    // accumulator STOPS when dt falls below half an ulp: measured at
+    // 524288.0 s — 4.8 days at 60 fps, sooner at higher refresh. Past that
+    // every cooldown stays cooling for ever, every retry stamp is in the
+    // future for ever, and anything keyed on an age never matures. The piece
+    // is permanently hosted; four days is not a hypothetical.
+    //
+    // Accumulated at U1 (phase_fill_signal) from signal.dt, which is the
+    // first update row and is enabled by a literal true, so this advances on
+    // every frame that updates at all. A double at 60 fps is exact past any
+    // horizon the exhibition has.
+    double seconds = 0.0;
+    // THE GPU'S ZERO (PLUMB_0 B2, RULING-3). Shaders take
+    // float(seconds - world_epoch), stamped at world birth, so the number
+    // they animate on stays young however long the session runs — a float at
+    // 5e5 s resolves to 0.03 s, which is visible stepping in a sin(t) twinkle
+    // even though the clock behind it is exact.
+    //
+    // REBASING IS SAFE HERE AND ONLY HERE. It would break any GPU-resident
+    // time stamped in one world and differenced in the next; B-G1's census
+    // found the three seams that carry one — the frame signal, the orb config
+    // and GPURibbonState::time — and all three die at TEARDOWN
+    // (teardown_ribbon, teardown_orbs), so no promise crosses the boundary.
+    // The pulse ring would be a fourth, but set_pulse_data is only ever
+    // called with zeros; it is inert.
+    double world_epoch = 0.0;
+    // THE ONE PLACE THE CLOCK NARROWS. Every CPU consumer reads `seconds`;
+    // every GPU seam reads this. Two homes for one number is exactly the
+    // drift this campaign is closing, so there is one function and the seams
+    // call it rather than each doing its own subtraction.
+    float gpu_seconds() const { return (float)(seconds - world_epoch); }
     float dt      = 0.016f;
     // Musical tempo follower: beats/sec, HELD-LAST through silence
     // and stopped transport; defaults to 100 BPM (the calibration

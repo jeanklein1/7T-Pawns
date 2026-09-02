@@ -250,7 +250,7 @@ inline void dispatch_commit_sphere_generic(MachineCtx* self, PlacementEntry& pe,
 // funnel: release CPU mirror slots the GPU deactivated, honoring the
 // spawn-protection window (SPAWN_PROTECTION_S, floaters.hpp).
 inline void reconcile_sphere_mirror(SphereState& ss, SphereDeps* c, const GPUFloatingEntityState* data) {
-    float now = c->time_state_.seconds;
+    const double now = c->time_state_.seconds;   // PLUMB_0 B1
     // Spheres: slots [0, MAX_SPHERE_INSTANCES)
     for (uint32_t i = 0; i < Dim::MAX_SPHERE_INSTANCES; i++) {
         bool gpu_active = (data[i].is_active != 0u);

@@ -20,6 +20,7 @@ Last commit touching any scanned file: `6261bb04c7f7c8187dc39840b21a9dcd988f06be
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:a3bde8f506af81f67844572f51e88f2f0cb9336b9cfbddbc946883faef8d4a0c` |
 | `src/the_board.cpp` | `sha256:12a89ca138da2724f66ae4fd646e2a773caaa169cba3998a9323f14c37baad2b` |
 | `src/console/console.hpp` | `sha256:dbedbbe0f039fea13583ffd5a6417389e7cddee9653ab69e3fb82ac89f47ac04` |
+| `tools/command_census.py` | `sha256:12935786c902a9938c7fe7ec21e2b46991d0cc622aa863198edaef00bf484d42` |
 
 The handoff named `render_passes.hpp` and `renderer.hpp`; the
 tree places pass encoders more widely, so the census scans the
@@ -100,10 +101,15 @@ every landing.
 The boot-time site configures the surface once; the per-frame
 trigger is the resize branch of `Console::begin_frame`, quoted
 verbatim (`src/console/console.hpp:1657`) — its branch is what feeds the `[FRAME_1]`
-print. This is the debounce ruling's evidence: the condition is
-a bare not-equal on the capped framebuffer size, so any size
-flutter reconfigures the surface and recreates the depth buffer
-that same frame, with no settling window.
+print. This is the debounce ruling's evidence, and it reads the
+other way now: the size test is a bare not-equal on the capped
+framebuffer size, but it only ARMS the reconfigure — the branch
+below counts `stableFrames_` and acts once the size has held
+still for `RECONFIGURE_SETTLE_FRAMES` consecutive frames, so a
+size flutter costs a counter rather than a surface reconfigure
+and a depth-buffer recreation. The settling window is quoted
+directly below; this paragraph said there was none for as long
+as the quote beneath it said otherwise (PLUMB_0 A5).
 
 ```cpp
                     if (++stableFrames_ >= RECONFIGURE_SETTLE_FRAMES) {

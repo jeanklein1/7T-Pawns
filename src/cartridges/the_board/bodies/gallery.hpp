@@ -642,7 +642,7 @@ struct PhotographerState {
     // seconds; negative means "not waiting". One member, and it is the
     // whole state machine: a want that cannot be served yet remembers when
     // it started wanting, so the ceiling can be measured from it.
-    float defer_since = -1.0f;
+    double defer_since = -1.0;   // PLUMB_0 B1 — differenced against TimeState::seconds
     std::mt19937 rng{ 7742u };
 
     float uniform(float lo, float hi) {
@@ -789,7 +789,7 @@ struct GalleryCenter {
     // read by select_gallery_for_patch's exclusion scan and by evict_gallery;
     // it is uploaded nowhere, so this member is not a mirror change and
     // world.wgsl does not learn a new word.
-    float dressed_at = -1.0f;
+    double dressed_at = -1.0;
 };
 inline constexpr uint32_t MAX_GALLERIES = 48;
 
@@ -875,7 +875,7 @@ struct GalleryState {
     // failures, so time is the cooldown. Bounded by construction: one fetch
     // per index per AUTHORED_DEAD_COOLDOWN_S, measured at 2.0 fetches/s
     // with every entry failing. The model is in the commit message.
-    std::vector<float>       authored_manifest_dead_until;
+    std::vector<double>      authored_manifest_dead_until;
     // WHEN THE EXHAUSTION SENTENCE WAS LAST SAID (REPEAT_0c U-S2). It was a
     // bool, because exhaustion was terminal and a terminal fact is said once
     // and never again. Under the cooldown it is a PASSING state, so a bool
@@ -884,13 +884,13 @@ struct GalleryState {
     // rate, one every 1.8 s, drowning the pop lines the console exists for.
     // A stamp lets the sentence carry a floor of one per cooldown while
     // still being said the instant a NEW outage begins. Negative = unsaid.
-    float                 authored_exhausted_said_at = -1.0f;
+    double                authored_exhausted_said_at = -1.0;
     // THE LAST FRAME'S CLOCK, SO A FETCH CALLBACK CAN STAMP ONE. Failures
     // arrive on browser events, which have no frame and no TimeState. This
     // is refreshed once a frame at the conductor's deferred-hang head; a
     // stamp is therefore at most one frame stale against a 30 s cooldown,
     // which is nothing. One writer, one reader-family, no second clock.
-    float                 authored_now = 0.0f;
+    double                authored_now = 0.0;
     // THE WORLD THE LAW LAST SWEPT FOR (REPEAT_0b U3). Not a second copy of
     // world_gen — a memo of the last serial the law has already answered for,
     // so the sweep runs ONCE per world entry rather than once per pop.
@@ -951,8 +951,8 @@ struct GalleryState {
     // error arrives on a browser event, not a frame, and `now` lives on the
     // frame. So the error records HOW LONG to wait and the tick — which has
     // the clock — turns that into WHEN. Both negative means nothing is armed.
-    float authored_manifest_retry_delay = -1.0f;
-    float authored_manifest_retry_at    = -1.0f;
+    double authored_manifest_retry_delay = -1.0;
+    double authored_manifest_retry_at    = -1.0;
     // The manifest's absence is a true fact every time it is asked before the
     // fetch lands; it is only worth SAYING once (scan_paintings_folder).
     bool authored_absence_logged = false;
@@ -1260,6 +1260,17 @@ inline uint32_t authored_ready_depth(const GalleryState& gs) {
 // failing that is 1.9 fetches/s against the 4-lane inflight cap — bounded,
 // and it recovers the instant the origin does.
 //
+// IT IS RENDERED TIME, NOT WALL TIME, AND THAT IS THE DESIGN (PLUMB_0 B3).
+// The sizing argument above quietly treats the two as one quantity, and they
+// are not: AUTHORED_FETCH_TIMEOUT_MS is the browser's own wall clock, while
+// this is denominated in TimeState::seconds, which accumulates the frame's dt
+// — clamped at a 0.1 s ceiling, and not advanced at all while the tab is
+// backgrounded. So a visitor who switches away for an hour returns to the
+// cooldowns they left rather than to a lap of expired ones, and a machine
+// dropping frames stretches the sentence instead of spending it on requests
+// it cannot service. A retry burnt while nobody is watching is a retry
+// wasted. The behaviour was right; the banner was not.
+//
 // IT LIVES HERE, NOT BESIDE THE FETCH CONSTANTS, because the three functions
 // that read it are all below this line and a constant declared after its
 // readers does not compile. The fetch constants are its argument, not its
@@ -1471,7 +1482,7 @@ inline void update_photographer(GalleryState& gs, GalleryDeps* c, wgpu::Queue& q
         // IT. A +10 ms pass on a 0-headroom frame still drops that frame.
         // What it buys is that the pass lands on frames that can afford
         // it, and that the ones that cannot are not made worse.
-        const float now = c->time_state_.seconds;
+        const double now = c->time_state_.seconds;
         if (gs.photographer.defer_since < 0.0f) gs.photographer.defer_since = now;
         const bool headroom = (t7::g_served_k == PhotographerCaptureConfig::PHOTO_HEADROOM_K);
         const bool ceiling  = (now - gs.photographer.defer_since)
@@ -3070,7 +3081,7 @@ inline void kick_exhibition_manifest_fetch(GalleryState& gs) {
 // Two-step on purpose: the first sighting turns a DELAY into an INSTANT, the
 // second fires. Nothing here can fire early, and a delay recorded while the
 // world was mid-transition still gets its full wait.
-inline void tick_exhibition_manifest_retry(GalleryState& gs, float now) {
+inline void tick_exhibition_manifest_retry(GalleryState& gs, double now) {
     if (gs.authored_manifest_retry_delay >= 0.0f) {
         gs.authored_manifest_retry_at = now + gs.authored_manifest_retry_delay;
         gs.authored_manifest_retry_delay = -1.0f;
