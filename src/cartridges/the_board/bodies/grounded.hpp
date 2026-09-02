@@ -507,28 +507,28 @@ struct EntitiesState {
     // ── Arch ─────────────────────────────────────────────────────
     ActiveArch arches[Dim::MAX_ARCH_INSTANCES]{};
     bool       arch_mesh_gen_pending = false;
-    float      arch_mesh_gen_since = -1.0f;   // the settle's stamp (PANORAMA_1)
+    double      arch_mesh_gen_since = -1.0;   // PLUMB_0 refuter — double, like ts.seconds   // the settle's stamp (PANORAMA_1)
 
     // ── Column + Antenna (sibling families, shared mesh-gen flag) ─
     ActiveColumn columns[Dim::MAX_COLUMN_ONLY]{};
     ActiveColumn antennas[Dim::MAX_ANTENNA_ONLY]{};
     bool         column_mesh_gen_pending = false;  // shared by column + antenna
-    float        column_mesh_gen_since = -1.0f;
+    double        column_mesh_gen_since = -1.0;   // PLUMB_0 refuter — double, like ts.seconds
 
     // ── Palm ─────────────────────────────────────────────────────
     ActivePalm palms[Dim::MAX_PALM_INSTANCES]{};
     bool       palm_mesh_gen_pending = false;
-    float      palm_mesh_gen_since = -1.0f;
+    double      palm_mesh_gen_since = -1.0;   // PLUMB_0 refuter — double, like ts.seconds
 
     // ── Cactus ───────────────────────────────────────────────────
     ActiveCactus cacti[Dim::MAX_CACTUS_INSTANCES]{};
     bool         cactus_mesh_gen_pending = false;
-    float        cactus_mesh_gen_since = -1.0f;
+    double        cactus_mesh_gen_since = -1.0;   // PLUMB_0 refuter — double, like ts.seconds
 
     // ── Blade ────────────────────────────────────────────────────
     ActiveBlade blades[Dim::MAX_BLADE_INSTANCES]{};
     bool        blade_mesh_gen_pending = false;
-    float       blade_mesh_gen_since = -1.0f;
+    double       blade_mesh_gen_since = -1.0;   // PLUMB_0 refuter — double, like ts.seconds
 
     // ── Pyramid ──────────────────────────────────────────────────
     ActivePyramid   pyramids[Dim::MAX_PYRAMID_INSTANCES]{};
@@ -608,10 +608,13 @@ uint32_t force_spawn_portal_arch(EntitiesState& es, MachineCtx* c, wgpu::Queue& 
 // it.
 inline constexpr float MESH_GEN_SETTLE_S = 0.133f;
 
-inline bool mesh_gen_settled(bool& pending, float& since, const TimeState& ts,
+// PLUMB_0 refuter — `since` is double because ts.seconds is. It was float,
+// and `since = ts.seconds` narrowed silently: not a braced initializer, so
+// -Wc++11-narrowing could not see it and B1's census walked past it.
+inline bool mesh_gen_settled(bool& pending, double& since, const TimeState& ts,
                              const WorldState& ws) {
     if (!pending) return false;
-    if (since < 0.0f) since = ts.seconds;
+    if (since < 0.0) since = ts.seconds;
     if (!ws.world_young && ts.seconds - since < MESH_GEN_SETTLE_S) return false;
     pending = false;
     since = -1.0f;

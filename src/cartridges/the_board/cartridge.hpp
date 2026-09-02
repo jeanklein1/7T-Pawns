@@ -1341,6 +1341,17 @@ namespace t7 {
             // finite_radius were in-struct defaults at boot, correct by luck
             // while the boot mood was open).
             void become_destination(const PortalDestination& d) {
+                // PLUMB_0 B2 (RULING-3) — THE GPU'S ZERO MOVES WITH THE WORLD,
+                // and this is the ONE door every world enters by: the boot call
+                // and the TEARDOWN call both land here. Stamped in the arm
+                // alone it missed the boot world entirely, which is the session
+                // shape the rebase most exists for.
+                //
+                // Every GPU-resident time is re-stamped after this: the ribbon
+                // table and the orb state are cleared by their teardown verbs
+                // in the same arm, and the frame signal is written fresh every
+                // frame, so the rebase cannot tear a live animation.
+                time_state_.world_epoch = time_state_.seconds;
                 world_state_.active_seed   = d.seed;
                 world_state_.finite_mode   = d.finite;
                 world_state_.finite_radius = d.finite_radius;
@@ -1375,15 +1386,13 @@ namespace t7 {
                         //   spine-owned.
 
                         world_state_.world_gen++;
-                        // PLUMB_0 B2 — THE GPU'S ZERO MOVES WITH THE WORLD
-                        // (RULING-3). Stamped beside the serial it belongs to:
-                        // both say "a new world begins here", and a reader who
-                        // finds one without the other has found a bug. Every
-                        // GPU-resident time is re-stamped after this point —
-                        // teardown_ribbon and teardown_orbs have just removed
-                        // the only carriers that could have held an older
-                        // base — so the rebase cannot tear a live animation.
-                        time_state_.world_epoch = time_state_.seconds;
+                        // PLUMB_0 B2's epoch stamp MOVED to become_destination
+                        // (closing refuter): stamped here it never fired on the
+                        // BOOT world, so a session that never changed world ran
+                        // with epoch 0 and the rebase was inert — exactly the
+                        // long-session case it exists for. become_destination
+                        // is called at boot AND from this arm, so it is the one
+                        // door every world enters by.
                         // OPT_1a: the new world's rest field must be written
                         // once even if no zone ever goes live there.
                         liveCardRestClean_ = false;
@@ -1401,10 +1410,22 @@ namespace t7 {
                             pawnReadbackState_ = PawnReadbackState::IDLE;
                         if (floaterReadbackState_ == FloaterReadbackState::COPIED)
                             floaterReadbackState_ = FloaterReadbackState::IDLE;
-                        if constexpr (INSTRUMENTS.camera_witness) {   // ATRIUM_11 — same cancel
-                            if (cameraReadbackState_ == CameraReadbackState::COPIED)
-                                cameraReadbackState_ = CameraReadbackState::IDLE;
-                        }
+                        // ATRIUM_11 — same cancel. UNGATED (PLUMB_0 refuter):
+                        // C1 promoted the copy, the map and the buffer and left
+                        // this cancel under the instrument. With the witness
+                        // off, a copy staged before the boundary would survive
+                        // it and the next map would read the OLD world's camera
+                        // — half a promotion again, in the same commit that
+                        // named the phrase.
+                        if (cameraReadbackState_ == CameraReadbackState::COPIED)
+                            cameraReadbackState_ = CameraReadbackState::IDLE;
+                        // AND THE POSE ITSELF IS NO LONGER TRUE. `valid` was
+                        // set once and never cleared, so the tide's "no eye
+                        // yet" guard could not fire again and the first sweep
+                        // of a new world read the last world's camera. The
+                        // CameraPose banner states this rule; nothing enforced
+                        // it until now.
+                        camera_pose_ = CameraPose{};
 
                         // Capture return seed + mood + radius before overwrite
                         mood_state_.back_portal_return_seed = world_state_.active_seed;

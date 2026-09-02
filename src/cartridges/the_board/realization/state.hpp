@@ -4507,9 +4507,12 @@ namespace t7 {
                     sizeof(GPUDrawPlanParams),
                     wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst);
                 if (!drawPlanBuffer_) return false;
-                if constexpr (INSTRUMENTS.camera_witness) {
-                    if (!cameraReadbackStaging_) return false;   // ATRIUM_11
-                }
+                // ATRIUM_11 — UNGATED (PLUMB_0 closing refuter). C1 made the
+                // buffer unconditional and left its null-check under the
+                // instrument, so with the witness off a failed allocation went
+                // unreported and the promoted copy would have run against
+                // nothing. The third residue of the same half-promotion.
+                if (!cameraReadbackStaging_) return false;
 
                 return signalBuffer_ && configBuffer_ &&
                     agentStateBuffer_ && agentStateReadbackStaging_ &&

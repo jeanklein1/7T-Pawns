@@ -817,11 +817,18 @@ inline void commit_ribbon(RibbonState& rs, MachineCtx* c,
     r.anchor[0] = plan.cx;
     r.anchor[1] = 0.0f;
     r.anchor[2] = plan.cz;
-    // PLUMB_0 B2 — GPURibbonState::time is a BIRTH STAMP the shader
-    // differences against signal.t_seconds (world.wgsl: `ribbon.time - t *
-    // total_length / propagation_speed`), so the two must share a base. Both
-    // now take it from gpu_seconds(), and a ribbon cannot outlive its epoch:
-    // teardown_ribbon runs in the same TEARDOWN arm that re-stamps it.
+    // PLUMB_0 B2, CORRECTED BY THE CLOSING REFUTER. B-G1 called this a BIRTH
+    // STAMP the shader differences against signal.t_seconds. It is neither.
+    // It is the SEED of ActiveRibbon::phase, which ribbon_frame_tick
+    // accumulates (`par.phase += phase_rate * dt`) and re-uploads into
+    // rs.gpu[i].time EVERY FRAME — so the GPU field is a live phase, not a
+    // birth time, and nothing differences it against the frame clock.
+    //
+    // TAKING IT FROM gpu_seconds() IS STILL RIGHT, for a smaller reason than
+    // the one first given: the seed only has to reproduce the 100 BPM anchor,
+    // and a young number seeds a float accumulator better than an old one.
+    // There is no cross-world promise here to break — teardown_ribbon clears
+    // the table in the same arm that re-stamps the epoch.
     r.time = c->time_state_.gpu_seconds();
     r.cube_count = plan.cube_count;
     r.cube_size = plan.cube_size;

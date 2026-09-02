@@ -1426,6 +1426,30 @@ def coverage(reg_info, wgsl_info, state_info, pipe_info, groups, invokes,
 # holds.
 _CITE_RE = re.compile(r"(?<![\w/.-])((?:src|tools|web|audit)/[A-Za-z0-9_./+-]+"
                       r"\.(?:hpp|cpp|h|cc|inc|wgsl|py|js|html|md|json))")
+# AND THE BARE ONES, WHICH ARE THE ROWS THIS EXISTS TO PROTECT (closing
+# refuter). The M7 and M1 rows cite `gallery.hpp:2165`, `state.hpp:7390` —
+# basename plus line, no directory — and the prefixed regex above cannot see
+# them. Every one of the seven files A2 first added came from ONE prose
+# sentence, not from the rows whose line numbers go stale. A bare basename is
+# resolved against an index of the tree and pinned ONLY when it is unique:
+# an ambiguous name names nothing, and pinning the wrong file would be worse
+# than pinning none.
+_BARE_RE = re.compile(r"(?<![\w/.-])([A-Za-z0-9_+-]+\.(?:hpp|cpp|h|cc|inc|wgsl|py|js|html))"
+                      r"(?![\w.-])")
+
+
+def _basename_index():
+    idx = {}
+    for d in ("src", "tools", "web", "audit"):
+        root_d = os.path.join(REPO, d)
+        if not os.path.isdir(root_d):
+            continue
+        for root, dirs, files in os.walk(root_d):
+            dirs.sort()
+            for f in sorted(files):
+                rel = os.path.relpath(os.path.join(root, f), REPO).replace(os.sep, "/")
+                idx.setdefault(f, []).append(rel)
+    return {k: v[0] for k, v in idx.items() if len(v) == 1}
 
 
 def cited_paths(text):
@@ -1440,6 +1464,11 @@ def cited_paths(text):
     for m in _CITE_RE.finditer(text):
         rel = m.group(1)
         if os.path.isfile(os.path.join(REPO, rel.replace("/", os.sep))):
+            out.add(rel)
+    bare = _basename_index()
+    for m in _BARE_RE.finditer(text):
+        rel = bare.get(m.group(1))
+        if rel:
             out.add(rel)
     return sorted(out)
 
@@ -1942,8 +1971,11 @@ def emit(path, wb, wm, counts, surfaces, reg_info, wgsl_info, state_info,
     text = "\n".join(L)
     if not text.endswith("\n"):
         text += "\n"
-    with open(path, "w", encoding="utf-8", newline="\n") as f:
-        f.write(text)
+    # PLUMB_0 closing refuter — emit() COMPOSES; only main() writes. It used to
+    # do both, which A2's two-pass turned into two real writes of a real
+    # artifact: the draft, carrying only the eight INPUT pins, hit disk first,
+    # and an interrupted run left THAT as the committed ledger. Composition and
+    # publication are now separate acts.
     return text
 
 
@@ -2072,6 +2104,17 @@ def main():
                 state_info, pipe_info, m2, m3, m4rows, m5rows, groups,
                 invokes, varied, per_slot, layouts, c, acc_map, handle_rows,
                 m7, extra_pins=cited_paths(draft))
+    # `path` by name, not by accident: witness ML-2w greps this module for the
+    # writer's own call shape to prove it pins the terminator, and the write
+    # moved here from emit() when the draft pass stopped hitting disk.
+    #
+    # AND THIS COMMENT MUST NOT SPELL THAT SHAPE. A first draft quoted the
+    # pattern verbatim, the witness's regex matched the COMMENT before the
+    # code, and ML-2w went red reporting a writer that pins nothing — a
+    # witness defeated by prose about itself.
+    path = args.out
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(text)
     print("")
     print("PHASE 4 — THE ARTIFACT")
     print("  wrote %s (%d lines, %d bytes)"

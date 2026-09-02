@@ -376,6 +376,31 @@ inline constexpr float TIDE_R_LEGIBLE = 300.0f;
 // renews AROUND the gaze and never under it, and the cheap failure here is a
 // tide that fires too rarely, not one that changes a painting being watched.
 inline constexpr float TIDE_CONE_COS = 0.0f;
+// A GALLERY IS A ROW, NOT A POINT (closing refuter). GalleryCenter stores one
+// (x,z); the site fans out. Both tests below therefore measure to the site's
+// NEAREST REACH, not its centre — otherwise a row whose far end is behind the
+// eye reads as wholly behind while its near end is still on screen, and a
+// centre at 305 wu with a 59 wu fan reads as "beyond legibility" with its
+// nearest painting at 246.
+//
+// THE NUMBER IS DERIVED, NOT CHOSEN. gallery_fan_radius =
+// sqrt(half_span^2 + half_depth^2) + PAINTING_HALF + FAN_MARGIN, and the
+// COUNT CEILING IS 4, NOT PAINTINGS_MAX_BY_ARCHETYPE's {8,10,12,12}: those
+// are structurally unreachable, because count_raw = PAINTINGS_MEAN(3) +
+// (h1+h2+h3-1.5)*PAINTINGS_SIGMA(1) with each h in [0,1] spans [1.5, 4.5] and
+// rounds to at most 4. So half_span = 3*0.5*ROW_SPACING(26) +
+// ROW_LATERAL_JITTER(2) = 41, half_depth = ROW_DEPTH_MIN(8) +
+// ROW_DEPTH_RANGE(4) = 12, and the fan reaches
+// sqrt(41^2 + 12^2) + 13 + 3 = 58.72 wu. 60 covers it with room, and
+// over-stating only makes the tide fire less often — the safe direction.
+inline constexpr float TIDE_SITE_REACH = 60.0f;
+// Beyond this pitch the ground-plane facing test stops meaning anything: with
+// the eye looking steeply down, forward's horizontal component is nearly zero
+// and its normalized direction no longer says which way the viewer is facing
+// — a gallery dead centre on screen can read as "behind" purely from azimuth.
+// Past this the distance half decides alone. (Camera elevation clamps at 1.5
+// rad, so this band is reachable.)
+inline constexpr float TIDE_MAX_PITCH_FOR_CONE = 0.8f;
 // One candidate sweep per this many frames (R4). The sweep is 48 records and
 // costs nothing; the cadence exists so the fetch lane is never asked for a
 // burst, and so two galleries maturing together do not both go at once.
@@ -850,15 +875,29 @@ inline bool gallery_unwatched(const CameraPose& cam, const GalleryCenter& gc) {
     if (!cam.valid) return false;
     const float dx = gc.x - cam.eye[0];
     const float dz = gc.z - cam.eye[2];
-    const float d2 = dx * dx + dz * dz;
-    if (d2 > TIDE_R_LEGIBLE * TIDE_R_LEGIBLE) return true;
-    const float d = std::sqrt(d2);
-    if (d < 1e-3f) return false;              // the eye is inside the site
-    // Ground projection of -(cos_el*sin_az, sin_el, cos_el*cos_az); already
-    // unit length, so no second normalize.
+    const float d  = std::sqrt(dx * dx + dz * dz);
+    // Beyond legibility — measured to the row's near end, not its centre.
+    if (d - TIDE_SITE_REACH > TIDE_R_LEGIBLE) return true;
+    // Degenerate only — the eye exactly on the centre. Standing INSIDE the
+    // site is handled by TIDE_SITE_REACH above and below, not here; an earlier
+    // draft labelled this millimetre test as the inside-the-site case, which
+    // is the sort of label that gets believed.
+    if (d < 1e-3f) return false;
+    // A steeply pitched view has no meaningful ground facing; distance alone
+    // decides there, and distance has already said "watched".
+    if (std::fabs(cam.elevation) > TIDE_MAX_PITCH_FOR_CONE) return false;
+    // Ground projection of -(cos_el*sin_az, sin_el, cos_el*cos_az), verified
+    // against world.wgsl's build_view_projection_matrix and
+    // compose_camera_position_from_orbit: it reduces to (-sin az, -cos az),
+    // already unit length, and cos_el > 0 across the whole clamp so the sign
+    // cannot invert.
     const float fx = -std::sin(cam.azimuth);
     const float fz = -std::cos(cam.azimuth);
-    return ((dx / d) * fx + (dz / d) * fz) < TIDE_CONE_COS;
+    // Signed distance along the view axis. The site is wholly behind only when
+    // its NEAREST point is: dot*d is the centre's, and the row reaches
+    // TIDE_SITE_REACH toward the eye.
+    const float along = ((dx / d) * fx + (dz / d) * fz) * d;
+    return along + TIDE_SITE_REACH < TIDE_CONE_COS;
 }
 
 
@@ -1040,11 +1079,17 @@ struct GalleryState {
     // easily as a frame does, so the two-step and its second field are gone.
     //
     // WALL, NOT RENDERED, AND THAT DISTINCTION IS THE UNIT. The world clock
-    // does not start until first light — ~4.4 s of pipeline compile — while
-    // OVERTURE_READY_TIMEOUT_S spends its 5 s from boot. A ladder in rendered
-    // time therefore could not fire its 2 s rung before the veil lifted on an
-    // empty room, however early the packet was dropped. Against steady_clock
-    // the rung is already DUE when the first tick runs, and fires on it.
+    // does not advance until first light — the render spine is below that gate
+    // — so a rung armed at 0.3 s could not begin counting until ~4.4 s of
+    // pipeline compile had passed. Measured against steady_clock it is already
+    // DUE when the first tick runs, and fires on it instead of starting then.
+    //
+    // THE DEADLINE IT RACES IS NOT MEASURED FROM BOOT, and an earlier draft
+    // said it was (closing refuter): offer_controls_when_ready computes its
+    // wait from app->world_live, stamped inside init_world — device-ready, not
+    // process start. So the margin is narrower than the first telling
+    // suggested and this change buys the rung its full backoff rather than a
+    // guaranteed win. The direction is right; the arithmetic was flattering.
     // (AUTHORED_DEAD_COOLDOWN_S keeps rendered time on purpose: a retry that
     // must beat a boot deadline and a sentence that must not burn while
     // nobody is watching are different clocks, and now they say so.)
@@ -1778,6 +1823,13 @@ inline bool select_gallery_for_patch(GalleryState& gs, MachineCtx* c, int32_t gx
     gs.gallery_centers[gallery_slot].active = true;
     gs.gallery_centers[gallery_slot].patch_gx = gx;
     gs.gallery_centers[gallery_slot].patch_gz = gz;
+    // THE TRAP THE BANNER NAMED, NOW PAID (closing refuter). evict_gallery
+    // clears only `active`, so a reused slot carried the PREVIOUS occupant's
+    // stamp — and this line sets active=true while commit_gallery is still a
+    // call away. Between the two the record reads "an active gallery N seconds
+    // old" holding nothing, which is exactly the predicate the tide evaluates.
+    // Intra-frame today; the tide is the reader that would have found it.
+    gs.gallery_centers[gallery_slot].dressed_at = -1.0;
 
     // NO RADIUS HERE. It was computed from PAINTINGS_MAX_BY_ARCHETYPE — the
     // archetype MAXIMUM — before commit capped the count to available content,
@@ -2623,8 +2675,16 @@ inline constexpr unsigned long AUTHORED_FETCH_TIMEOUT_MS = 30000;
 // PLUMB_0 D4 — THE LADDER'S CLOCK, AND IT IS NOT THE WORLD'S. steady_clock
 // is monotonic, immune to the render spine's gates, and readable from a fetch
 // callback — the three properties a network retry needs and TimeState::seconds
-// has none of. Zeroed at first call, which is boot: the manifest fetch is
-// kicked from the cartridge constructor and this is first read on that path.
+// has none of.
+//
+// ITS ZERO IS THE FIRST CALL, WHICH IS NOT NECESSARILY BOOT, and an earlier
+// draft of this comment claimed otherwise (closing refuter). On the success
+// path nothing here is read until the first frame tick; on the failure path
+// it is read from the refused-start arm. Either way the ORIGIN IS IRRELEVANT
+// to correctness: every use is a DIFFERENCE (stamp + backoff, compared later
+// against another reading), so the ladder measures elapsed seconds whatever
+// the zero happens to be. It is stated because the reader deserves to know
+// the number is not a boot clock and must not be printed as one.
 inline double authored_wall_seconds() {
     static const auto t0 = std::chrono::steady_clock::now();
     return std::chrono::duration<double>(
@@ -2731,10 +2791,17 @@ inline void authored_fetch_release_slot(GalleryState& gs, uint32_t staging_layer
         && slipped < (uint32_t)gs.authored_manifest_dead_until.size()) {
         gs.authored_manifest_dead_until[slipped] =
             gs.authored_now + AUTHORED_DEAD_COOLDOWN_S;
+        // THE WINDOW CLOSES WHETHER OR NOT IT SPOKE (closing refuter). The
+        // counter was reset only inside the printing branch, so a quiet
+        // stretch carried its tally forward and the next line said "+N more
+        // this window" of failures that happened windows ago.
+        const bool window_open =
+            gs.authored_sleep_said_at >= 0.0
+            && gs.authored_now - gs.authored_sleep_said_at
+                 < AUTHORED_DEAD_COOLDOWN_S;
+        if (!window_open) gs.authored_slept_since = 0;
         gs.authored_slept_since++;
-        if (gs.authored_sleep_said_at < 0.0
-            || gs.authored_now - gs.authored_sleep_said_at
-                 >= AUTHORED_DEAD_COOLDOWN_S) {
+        if (!window_open) {
             std::cout << "[Authored] Sleeping disk=" << slipped
                 << " (HTTP " << status << ") — back in "
                 << AUTHORED_DEAD_COOLDOWN_S << "s";
@@ -3221,14 +3288,16 @@ inline void kick_exhibition_manifest_fetch(GalleryState& gs) {
     }
 }
 
-// THE HALF OF THE WAIT THAT HAS A CLOCK (REPEAT_0c U-S1). Called every frame
-// from the conductor's deferred-hang head — the one place the exhibition is
-// already asked for — so the retry needs no timer of its own and speaks the
-// tree's own dialect of time (TimeState::seconds).
+// THE LADDER'S TICK (REPEAT_0c U-S1, rewritten by PLUMB_0 D4). Called every
+// frame from the conductor's deferred-hang head — the one place the exhibition
+// is already asked for.
 //
-// Two-step on purpose: the first sighting turns a DELAY into an INSTANT, the
-// second fires. Nothing here can fire early, and a delay recorded while the
-// world was mid-transition still gets its full wait.
+// THE TWO-STEP IS GONE. U-S1 recorded a DELAY and let this function turn it
+// into an instant, because a fetch callback had no clock. D4 gave it one:
+// authored_wall_seconds() is steady_clock, so the error stamps its own due
+// time and this only compares. A rung armed before first light is therefore
+// already DUE when the first tick runs, which is the whole point of the
+// change — see authored_manifest_retry_at.
 inline void tick_exhibition_manifest_retry(GalleryState& gs) {
     if (gs.authored_manifest_retry_at < 0.0) return;
     if (authored_wall_seconds() < gs.authored_manifest_retry_at) return;
@@ -3505,7 +3574,15 @@ inline uint32_t authored_pop(GalleryState& gs, uint32_t exh, uint32_t world_gen)
         // So `hung=33` beside a full exhibition read as 7 free layers when
         // there were none, and the room could thin silently while every
         // number on this line looked healthy. `occ` is the whole occupancy.
-        << " occ=" << exhibition_occupied_count(gs)
+        // +1 BECAUSE THE CALLER HAS NOT MARKED IT YET (closing refuter). Both
+        // hang roads secure `exh`, call this, and write
+        // exhibition_occupied[exh] = true only AFTER the pop returns — so a
+        // bare count here is always one low and would have read 39/40 on the
+        // frame the room actually filled. The layer is spoken for the instant
+        // this line runs; counting it is the honest number. Marking it inside
+        // the pop instead is not available: the pending-head fall-through
+        // hands the SAME exh to the snapshot arm, which needs it unclaimed.
+        << " occ=" << (exhibition_occupied_count(gs) + 1u)
         << "/" << Dim::EXHIBITION_LAYERS << "\n";
     return layer;
 }
@@ -3540,8 +3617,12 @@ inline uint32_t authored_pop(GalleryState& gs, uint32_t exh, uint32_t world_gen)
 inline void place_wall_paintings(GalleryState& gs, GalleryDeps* c, wgpu::Queue& queue,
     float bmin, float bmax, float wall_height) {
     // REPEAT_2 D3 — the wall road's twin of commit_gallery's flag; the
-    // indoor break was silent in exactly the same way.
+    // indoor break was silent in exactly the same way. The tally rides with
+    // it so this road's sentence carries the same count the outdoor one does
+    // (closing refuter: the commit message claimed both roads report it and
+    // only one did).
     bool exhibition_full = false;
+    uint32_t wall_unfilled = 0;
     // THE LAW BEFORE ANYTHING ELSE (REPEAT_0b U3), and before
     // clear_wall_paintings in particular: that verb would silently release a
     // stale INDOOR layer one statement later, and the law would never see the
@@ -3928,6 +4009,8 @@ inline void place_wall_paintings(GalleryState& gs, GalleryDeps* c, wgpu::Queue& 
         // bare reads as a slightly thin room rather than as the specific
         // thing it is — a selected wall that got nothing. Always-on, on
         // stderr, and it says which of the two ran out.
+        wall_unfilled += (effective_count > wall_placed)
+            ? (effective_count - wall_placed) : 0u;
         if (wall_placed == 0) {
             uint32_t snaps_free = 0;
             for (uint32_t i = 0; i < Dim::STAGING_LAYERS; i++)
@@ -3949,9 +4032,12 @@ inline void place_wall_paintings(GalleryState& gs, GalleryDeps* c, wgpu::Queue& 
     // and falling through — a zero `auth_free`, which since REPEAT_0 means a
     // PENDING HEAD rather than an empty pool — which is the one thing here
     // worth seeing from the console.
-    // REPEAT_2 D3 — the wall road's twin of commit_gallery's sentence.
+    // REPEAT_2 D3 — the wall road's twin of commit_gallery's sentence, count
+    // and all. Summed across walls, because the ceiling is the ROOM's and a
+    // per-wall figure would understate what the room lost.
     if (exhibition_full) {
-        std::cout << "[Authored] Hang ended: exhibition full"
+        std::cout << "[Authored] Hang ended: exhibition full, "
+                  << wall_unfilled << " frames unfilled"
                   << " (occ=" << exhibition_occupied_count(gs)
                   << "/" << Dim::EXHIBITION_LAYERS << ")\n";
     }
@@ -4031,8 +4117,23 @@ inline void dispatch_commit_gallery(MachineCtx* self,
     }
     else {
         // Host patch gone — release by owner (the patch key can never match).
+        //
+        // AND THE RESERVATION WITH IT (closing refuter). place_gallery_from_
+        // selection is the only site that ADDS to staging_reserved and
+        // commit_gallery is the only site that subtracts — so this arm, which
+        // skips commit entirely, leaked the reservation. A leak here ratchets:
+        // once staging_reserved passes the pool, gallery_available_staging
+        // returns 0 for ever, every place returns DEFERRED, no gallery is ever
+        // placed again and no authored_pop ever runs. It is the one path in
+        // this machine that can hard-stall coverage, and REPEAT_2's G3 recon
+        // traced it closed on the spawn road only. The tide is a second caller
+        // and re-selects its own host, so "unreachable" stopped being an
+        // argument. Released by the same value place reserved.
+        auto& gs = self->gallery_state_;
+        gs.staging_reserved = gs.staging_reserved > pe.gallery.reserved_count
+            ? gs.staging_reserved - pe.gallery.reserved_count : 0u;
         unregister_footprint_for(self, PopFamily::GALLERY, pe.gallery.slot);
-        self->gallery_state_.gallery_centers[pe.gallery.slot].active = false;
+        gs.gallery_centers[pe.gallery.slot].active = false;
     }
 }
 
@@ -4216,9 +4317,26 @@ inline void tick_gallery_tide(MachineCtx* c, wgpu::Queue& queue) {
     EntityQueueEntry e{};
     e.family = PopFamily::GALLERY;
     e.gx = gx; e.gz = gz;
-    if (!dispatch_select_gallery(c, gx, gz, e)) return;
+    // BOTH REFUSALS ARE LOUD (closing refuter). These fire AFTER the evict has
+    // already released the layers and retired the frames, so a silent return
+    // leaves a site bare with nothing said — a gallery destroyed by the tide
+    // and no line to show it. select refuses when the pool is dry or the site
+    // no longer rolls one; place refuses or defers when staging is short, and
+    // a DEFERRED place raises gallery_deferred so tick_gallery_deferred_hang
+    // finishes the re-dress on a later frame. Both are recoverable; neither
+    // should be invisible.
+    if (!dispatch_select_gallery(c, gx, gz, e)) {
+        std::cout << "[Tide] Recycle gallery=(" << gx << "," << gz
+                  << ") ABANDONED at select — site left bare until the"
+                     " streamer re-dresses it\n";
+        return;
+    }
     PlacementEntry pe{};
-    if (!dispatch_place_gallery(c, e, pe)) return;
+    if (!dispatch_place_gallery(c, e, pe)) {
+        std::cout << "[Tide] Recycle gallery=(" << gx << "," << gz
+                  << ") deferred at place — the deferred hang owns it now\n";
+        return;
+    }
     dispatch_commit_gallery(c, pe, queue);
     // The Y-correction a gallery landing on an already-generated patch would
     // otherwise never get — the deferred hang raises this for the same reason.
