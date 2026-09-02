@@ -1405,10 +1405,57 @@ def coverage(reg_info, wgsl_info, state_info, pipe_info, groups, invokes,
 # PROVENANCE AND THE WRITER
 # ═══════════════════════════════════════════════════════════════════════
 
-def provenance():
+# PLUMB_0 A2 — WHAT IS CITED IS PINNED.
+#
+# This census WALKS ALL OF src/ for its M7 usage rows and then cites what it
+# found by file and line — but INPUTS names only the eight load-bearing
+# mirrors, so `--check` reported "the ledger's pins match the live inputs" and
+# exited 0 while seven cited files had moved underneath it. REPEAT_0c moved
+# gallery.hpp by 178 lines and every M7 row naming it was ~83 lines wrong,
+# green. A check that cannot see the thing it cites is a report.
+#
+# The cure is the one the artifact can maintain itself: the pin set is INPUTS
+# plus every repo file the emission NAMES. A citation added tomorrow is
+# pinned the moment it is written, with no edit here — the same law GATES_2b
+# gave the binding ledger when it stopped comparing a hardcoded list.
+#
+# IT IS A FIXED POINT, which is why one extra pass is enough. Pass one emits
+# with INPUTS alone and is scanned; pass two emits with INPUTS + cited. The
+# rows pass two adds name paths that are, by construction, already in the set,
+# so scanning pass two yields the same set. G2's two-runs-one-tree identity
+# holds.
+_CITE_RE = re.compile(r"(?<![\w/.-])((?:src|tools|web|audit)/[A-Za-z0-9_./+-]+"
+                      r"\.(?:hpp|cpp|h|cc|inc|wgsl|py|js|html|md|json))")
+
+
+def cited_paths(text):
+    """Every repo-relative path the emission names AND that exists on disk.
+
+    Existence is the filter, not the regex: this census's prose names
+    directories, globs and files that were deleted campaigns ago, and a pin
+    on a path that is not there would red the gate for a sentence rather
+    than for a fact. Sorted, because the stanza's order is the artifact's.
+    """
+    out = set()
+    for m in _CITE_RE.finditer(text):
+        rel = m.group(1)
+        if os.path.isfile(os.path.join(REPO, rel.replace("/", os.sep))):
+            out.add(rel)
+    return sorted(out)
+
+
+def provenance(extra=()):
     """Same law as the binding ledger's: the SHA is the last commit that
     touched any INPUT — not HEAD, which moves when this file lands. The
-    content hashes are the authoritative provenance."""
+    content hashes are the authoritative provenance.
+
+    `extra` carries PLUMB_0 A2's cited set. It joins the pin table but NOT
+    the source-commit query: the commit answers "were my inputs edited", and
+    a file this census merely counts `bind::` mentions in is not an input in
+    that sense — widening the query would restamp the ledger on edits that
+    cannot change a single row. The pin still catches those, which is the
+    half that was missing.
+    """
     rel = [os.path.relpath(p, REPO) for p in INPUTS]
     try:
         sha = subprocess.run(["git", "-C", REPO, "log", "-1", "--format=%H", "--"] + rel,
@@ -1417,7 +1464,12 @@ def provenance():
                               capture_output=True, text=True, check=True).stdout.strip()
     except Exception:
         sha, subj = "(git unavailable)", ""
-    return sha, subj, [(r, BL.sha256(p)) for r, p in zip(rel, INPUTS)]
+    pins = [(r.replace(os.sep, "/"), BL.sha256(p)) for r, p in zip(rel, INPUTS)]
+    have = {r for r, _ in pins}
+    for r in extra:
+        if r not in have:
+            pins.append((r, BL.sha256(os.path.join(REPO, r.replace("/", os.sep)))))
+    return sha, subj, pins
 
 
 def writer_pins_lf(w):
@@ -1447,8 +1499,8 @@ def code(s):
 
 def emit(path, wb, wm, counts, surfaces, reg_info, wgsl_info, state_info,
          pipe_info, m2, m3, m4rows, m5rows, groups, invokes, varied_slots,
-         per_slot, layouts, cen, acc_map, handle_rows, m7):
-    sha, subj, hashes = provenance()
+         per_slot, layouts, cen, acc_map, handle_rows, m7, extra_pins=()):
+    sha, subj, hashes = provenance(extra_pins)
     L = []
     A = L.append
 
@@ -2009,10 +2061,17 @@ def main():
               "inputs, nothing written.")
         return 0
 
+    # PLUMB_0 A2 — TWO PASSES, ONE FIXED POINT. Pass one is never written;
+    # it exists to be read for the paths this census cites. Pass two pins
+    # them. See cited_paths() for why one extra pass is provably enough.
+    draft = emit(args.out, wb, wm, counts, surfaces, reg_info, wgsl_info,
+                 state_info, pipe_info, m2, m3, m4rows, m5rows, groups,
+                 invokes, varied, per_slot, layouts, c, acc_map, handle_rows,
+                 m7)
     text = emit(args.out, wb, wm, counts, surfaces, reg_info, wgsl_info,
                 state_info, pipe_info, m2, m3, m4rows, m5rows, groups,
                 invokes, varied, per_slot, layouts, c, acc_map, handle_rows,
-                m7)
+                m7, extra_pins=cited_paths(draft))
     print("")
     print("PHASE 4 — THE ARTIFACT")
     print("  wrote %s (%d lines, %d bytes)"
