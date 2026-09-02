@@ -2759,6 +2759,16 @@ Prologue built (U-S1, U-S2), U1 built, **U2/U3/U4 STOPPED at the order's own
 G1 stop condition.** Phase 0's six gates ran read-only, each with an
 adversarial refuter over it; what follows is what survived refutation.
 
+> **RESOLVED 2026-09-02 by PLUMB_0 RULING-1 (Jean's), built as Phase C+D.**
+> Option B was taken in its honest form: the camera readback — which already
+> ran in every instrument column including the shipped `off` — is promoted out
+> of `INSTRUMENTS.camera_witness` and its pose kept as a contracts-tier
+> `CameraPose`. `dump_camera_orbit` keeps its retirement warrant as a printer.
+> The tide reads that pose, so the facing half of R3's test is implementable
+> and the distance half measures from the EYE rather than from `point_`. The
+> analysis below is kept because it is what the ruling was made on — read it
+> as the argument, not as live state.
+
 ### The stop condition, and why it fired
 
 The order: *"G1 finds no CPU-visible camera direction **and** distance-only
@@ -2929,14 +2939,12 @@ is architecture, not execution, so it stopped here.
   after printing a suspect list. CLAUDE.md's gate table lists the organ
   ledger as an assertion; today it is a report. (Sibling of the already-open
   `command_census.py --check` finding, which exits 0 carrying a stale digest.)
-- **`apply_mood_arrival` is declared and never defined or called.** Three
-  comments in `cartridge.hpp` and `state.hpp` reference it as if it were
-  live. It is the one symbol that would let the CPU author an azimuth.
-- **A stale banner in `phase_witness_capture`.** It reads *"The camera copy
-  is CAMERA-HOST ONLY (the pawn-host frame encodes no camera copy)"*; the
-  code below has no host test at all — only the `if constexpr`. The copy
-  runs in every host. Harmless today, and it is exactly the sentence someone
-  pricing option B would trust.
+- ~~`apply_mood_arrival` is declared and never defined or called~~ — **CLOSED
+  by PLUMB_0 C3.** Deleted, with all three citations corrected in place. The
+  CPU no longer needs to author an azimuth; RULING-1 makes it read one.
+- ~~A stale banner in `phase_witness_capture`~~ — **CLOSED by PLUMB_0 C2**,
+  and it was exactly the sentence someone pricing RULING-1 would have
+  trusted.
 
 ### REPEAT_0c — what U5's refuter found and I did NOT fix
 
@@ -2946,49 +2954,50 @@ the two manifest roads into silence, two false banners of my own). These are
 the rest — recorded because they are true, not fixed because each is either
 outside this campaign's reach or Jean's to price.
 
-- **THE WALL CLOCK IS A FLOAT ACCUMULATOR AND IT STOPS.**
-  `TimeState::seconds` is fed by `signal_.t_seconds += dt` in
-  `BeatClock::update` — a float32 accumulator, never reset. Once `t_seconds`
-  is large enough that `dt` falls below half an ulp, the clock **freezes**:
-  measured at 524288.0 s ≈ **4.8 days at 60 fps**, sooner at higher refresh.
-  Every campaign artefact hangs off it — `authored_now`,
-  `authored_manifest_dead_until`, `authored_manifest_retry_at`, `dressed_at`
-  — so past the freeze every cooling index stays cooling for ever (R1
-  restored, silently), the exhaustion sentence never repeats, and a future
-  tide keyed on `dressed_at` never fires. Well before it, resolution
-  degrades: ulp is 7.8 ms at 36 h and larger than a frame at ~5·10⁵ s.
-  **This is tree-wide and pre-existing** — it is the clock everything reads,
-  not something this campaign introduced — but the audience is a permanently
-  hosted piece, so it is Jean's call whether a kiosk tab lives that long.
-  (The addition itself is safe: `(now + 30.0f) == now` needs 2²⁹ s ≈ 17
-  years. It is the accumulator that fails, not the arithmetic.)
-- **THE COOLDOWN IS DENOMINATED IN RENDERED TIME, THE TIMEOUT IN WALL TIME.**
-  `dt` is clamped (ceiling 0.1 s), so `TimeState::seconds` runs slower than
-  the wall when frames are slow and **pauses entirely in a backgrounded tab**,
-  while `AUTHORED_FETCH_TIMEOUT_MS` is the browser's own wall clock. The two
-  are sized against each other in `AUTHORED_DEAD_COOLDOWN_S`'s banner and are
-  not the same quantity. Arguably right — a paused tab should not burn
-  retries — but it is not what the banner says.
-- **THE RETRY LADDER IS HOSTED ON THE RENDER SPINE.**
-  `tick_exhibition_manifest_retry` runs only inside `stream_patches`, i.e.
-  inside `render()`, below `the_board.cpp`'s first-light gate. The manifest is
-  kicked from the cartridge constructor, long before. So a manifest that fails
-  300 ms into boot does not begin its 2 s wait until first light (~4.4 s of
-  pipeline compile), and `OVERTURE_READY_TIMEOUT_S` (5 s) always wins — the
-  veil lifts on an empty gallery even in the dropped-packet case the 2 s rung
-  exists to heal. A tab whose surface acquire keeps failing freezes the ladder
-  outright. A network retry parked on the render spine.
-- **A SECOND GATE BLIND SPOT, sibling of the `command_census` one already
-  open.** `tools/mirror_census.py` walks all of `src/` for its usage census
-  and emits rows citing `gallery.hpp:<line>`, but pins only eight files by
-  digest — and `gallery.hpp` is not one of them. So `--check` reports *"the
-  ledger's pins match the live inputs"* and exits 0 while eight of its rows
-  point at lines this campaign moved by ~83. `COMMAND_LEDGER` has the same
-  disease at two rows. Both tools are listed in CLAUDE.md's gate table as
-  assertions; on this file they are reports.
-- **`organ_ledger.py --check` and `organ_readers.py` cannot fail.** Both
-  `return 0` on every path; neither compares its emission against
-  `audit/ORGAN.md`. A missing READERS row prints a SUSPECT and exits clean.
+- ~~THE WALL CLOCK IS A FLOAT ACCUMULATOR AND IT STOPS~~ — **CLOSED by
+  PLUMB_0 B1.** `TimeState::seconds` and BeatClock's accumulators are double.
+  The freeze was measured, not estimated: 524288 s = **6.07 days** at 60 fps,
+  frame 24,986,956; the double is still advancing after 400 simulated days.
+  Every CPU field differenced against the clock widened with it. The GPU seam
+  is rebased per world (`world_epoch`, `gpu_seconds()`), so the float a shader
+  animates on stays young as well.
+
+- ~~THE COOLDOWN IS DENOMINATED IN RENDERED TIME, THE TIMEOUT IN WALL TIME~~
+  — **CLOSED by PLUMB_0 B3 and D4.** Two clocks, and the tree now says which
+  is which: `AUTHORED_DEAD_COOLDOWN_S` keeps rendered time on purpose (a retry
+  burnt while nobody is watching is a retry wasted; `console.hpp` clamps dt at
+  0.1 s and a backgrounded tab does not advance), while the manifest ladder
+  moved to `steady_clock`, because a ladder that must beat a boot deadline
+  cannot speak a clock that starts at first light.
+
+- **THE RETRY LADDER IS STILL HOSTED ON THE RENDER SPINE — half closed by
+  PLUMB_0 D4(a), and the half that remains is named rather than glossed.** The
+  order asked for the tick to MOVE off the spine. It did not move; its
+  denomination changed. Measured against `steady_clock`, a rung armed at 0.3 s
+  is already DUE when the first post-first-light tick runs (~4.4 s) and fires
+  on it, ahead of `OVERTURE_READY_TIMEOUT_S`'s 5 s — which is the outcome the
+  order wanted. STILL OPEN: a tab whose surface acquire keeps failing, or a
+  device-lost session, freezes the tick entirely, because `render()` sits
+  below the acquire gate. Moving the call needs a pre-first-light per-frame
+  site with the gallery in scope, which today means widening the
+  `RenderCartridge` virtual — out of this order's reach and not worth that on
+  its own. Unblocked by anything else that wants a pre-light cartridge tick.
+
+- ~~A SECOND GATE BLIND SPOT (mirror_census cites what it does not pin)~~ —
+  **CLOSED by PLUMB_0 A2.** The pin set is now INPUTS plus every repo file the
+  emission NAMES, computed from the emission in a two-pass fixed point; pins
+  went 8 -> 15 and cited-but-unpinned is 0. The command census's twin is closed
+  by A1/A3 (`report_stale` wired into `--check`, own source pinned, 10 -> 11).
+  Both proved to LOSE on a perturbed tree and to pass restored.
+
+- ~~organ_ledger.py --check and organ_readers.py cannot fail~~ — **CLOSED by
+  PLUMB_0 A4.** `organ_ledger --check` compares its emission against
+  `audit/ORGAN.md` byte for byte and names the first differing line;
+  `organ_readers` exits 1 on any suspect and on an unmapped family. CLAUDE.md's
+  gate table was wrong in three places and is rewritten: the organ ledger's row
+  carried the READERS' claim, organ_readers had no row, and THE COMMAND CENSUS
+  HAD NO ROW AT ALL — which is why A1's stale digest survived two refuters.
+
 - **The dead-mask reads fail-OPEN but writes fail-CLOSED.**
   `authored_next_live` treats an index the mask cannot speak for as live
   (deliberate, and its comment prices it); `authored_fetch_release_slot`
@@ -3009,7 +3018,67 @@ outside this campaign's reach or Jean's to price.
   absent, where the old code printed 5 and stopped. Correct as information,
   and a candidate for the same floor the exhaustion sentence now has if Jean
   finds it noisy.
-- **`GalleryCenter::dressed_at` is write-only** until U2/U3 land, and **no
-  gate can see that** — G-LAW 2 parses `world.wgsl` only, and nothing else
-  audits unread C++ members. Under L28's "living matter only" it is either
-  fed a reader by the next unit or returned to the attic.
+- ~~GalleryCenter::dressed_at is write-only~~ — **CLOSED by PLUMB_0 D5.**
+  `tick_gallery_tide` differences it against `TIDE_INTERVAL_S` once per
+  candidate sweep. The other half of that entry STANDS and is not closed: no
+  gate can see an unread C++ member — G-LAW 2 parses `world.wgsl` only, and
+  nothing audits dead C++ fields. Unblocked by someone wanting that gate.
+
+
+## PLUMB_0 — THE INSTRUMENTS STOP LYING, THE TIDE STARTS MOVING
+
+Every unit closed a line already recorded here or in the ledgers; the closes
+are marked at their lines above, per L32. What follows is only what this
+campaign leaves open or learned.
+
+### The drift register — where the tree disagreed with the order
+
+- **A3 walked into a trap the order did not know about.** Adding the census's
+  own source to `INPUTS` broke witnesses C-3 and C-6, because two passes read
+  `INPUTS[-1]` meaning "console.hpp" and one read `INPUTS[1]` meaning
+  "renderer.hpp". The append silently re-aimed all three at the new file, and
+  the failure message talked about the TREE ("NO begin_frame reconfigure site
+  found") rather than about the list. `RENDERER_HPP` and `CONSOLE_HPP` are now
+  named; no positional index into `INPUTS` survives. A one-line unit found a
+  latent bug by stepping on it.
+- **A2 could not "pin the full read set" literally.** `mirror_census` walks all
+  of `src/` — pinning every file it opens would be a hundred-row stanza that
+  churns on any edit anywhere. What closes the actual defect is narrower and
+  self-maintaining: pin every file the emission NAMES. The order's own second
+  clause ("or stop citing what is not pinned") is what this satisfies.
+- **B1 could not widen `AnalysisSignal::t_seconds`.** Its layout is a
+  documented 4128-byte contract with `t_seconds` at offset 0, size 4, and it
+  crosses a boundary. BeatClock accumulates in double and narrows into the
+  contract instead, so the field is a snapshot of an exact number rather than
+  a drifting accumulation. `TimeState::seconds` is accumulated separately at
+  U1 from the same `dt`; the two agree by construction and neither reads the
+  other.
+- **B1 moved the accumulation from U3 to U1**, which the order did not
+  specify. U1 writes the GPU's clock, so accumulating at U3 would have handed
+  the shader the PREVIOUS frame's value. The O-5a static_assert already pins
+  U1 before U3.
+- **C1 had to promote the BUFFER too.** `cameraReadbackStaging_` was also
+  `if constexpr`-gated ("created only when the witness is armed"). Promoting
+  the copy alone would have been a `CopyBufferToBuffer` into a null buffer the
+  day the witness took the retirement its own banner promises — a crash
+  planted by the unit that exists to survive that retirement.
+- **C1 projected the pose into contracts rather than carrying `GPUCameraState`
+  into `MachineCtx`.** `GPUCameraState` is a realization type; a body reading
+  it would invert the tier order. `CameraPose` (eye, azimuth, elevation, valid)
+  is the projection; the raw 48 bytes still die with the mapping.
+- **D4(a) did not do what it was asked.** The order said move the tick off the
+  render spine. It did not move — see the standing entry above for what
+  changed instead, what that buys, and what is still open.
+
+### What this campaign leaves open
+
+- **ORGAN_2c** — `ORGAN_BLOCK_GALLERY`, the contracts-tier bank, the
+  `RibbonSpawnSurface` charter, the first gallery READERS row, the
+  `ORGAN_PARAM_RO` meter. `TIDE_INTERVAL_S`, `TIDE_R_LEGIBLE` and
+  `TIDE_CONE_COS` land as named constants per RULING-4; the enrollment debt is
+  recorded, not paid.
+- **REPEAT_1** — cells ruled (RULING-2), padding counted, ramp idiom named.
+  Awaiting only Jean's call.
+- **The tide is unproven in the world.** Everything here is gates and models;
+  no build, no visual. The statue test, the turn, and the finite world are
+  Jean's, and until they run the tide is a machine that compiles.
