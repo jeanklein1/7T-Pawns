@@ -882,7 +882,20 @@ struct GalleryState {
     std::vector<AuthoredHeld> authored_held;
     // The manifest is requested once per session, at the earliest
     // instant a GalleryState exists (the cartridge constructor).
+    //
+    // REPEAT_0c U-S1 — "ONCE" IS NOW "ONCE AT A TIME". The latch still admits
+    // exactly one request in flight; what changed is that a failure can open
+    // it again, up to AUTHORED_MANIFEST_MAX_RETRIES times.
     bool authored_manifest_requested = false;
+    // How many requests have LEFT, counting the first. The retry number the
+    // console says is this minus nothing: attempt 1 failing is "retry 1/3".
+    uint32_t authored_manifest_attempts = 0;
+    // THE WAIT, IN TWO HALVES, BECAUSE THE CALLBACK HAS NO CLOCK. A fetch
+    // error arrives on a browser event, not a frame, and `now` lives on the
+    // frame. So the error records HOW LONG to wait and the tick — which has
+    // the clock — turns that into WHEN. Both negative means nothing is armed.
+    float authored_manifest_retry_delay = -1.0f;
+    float authored_manifest_retry_at    = -1.0f;
     // The manifest's absence is a true fact every time it is asked before the
     // fetch lands; it is only worth SAYING once (scan_paintings_folder).
     bool authored_absence_logged = false;
@@ -2350,6 +2363,22 @@ inline constexpr uint32_t AUTHORED_FETCH_INFLIGHT_CAP = 4;
 // fetching a half-megabyte JPEG is the normal case this must not kill.
 inline constexpr unsigned long AUTHORED_FETCH_TIMEOUT_MS = 30000;
 
+// REPEAT_0c U-S1 — ONE PACKET IS NOT A VERDICT. The manifest fetch had no
+// timeout and no second chance: `authored_manifest_requested` latched before
+// the request left, and the error path only printed. A visitor whose first
+// packet was dropped therefore spent the whole session in a world with no
+// paintings in it — the one failure that costs everything rather than one
+// picture. The painting fetches have carried a timeout since EXHIBIT_0; this
+// is the same end, given to the request that matters most.
+//
+// FOUR REQUESTS, THREE WAITS. The backoffs are the retries, so the first
+// attempt is not one of them: 2s covers a dropped packet, 8s a stalled
+// handshake, 30s a venue router that needs a moment. Past that the absence
+// is real and the already-legal no-paintings state stands.
+inline constexpr uint32_t AUTHORED_MANIFEST_MAX_RETRIES = 3;
+inline constexpr float AUTHORED_MANIFEST_BACKOFF_S[AUTHORED_MANIFEST_MAX_RETRIES]
+    = { 2.0f, 8.0f, 30.0f };
+
 // The fetch's own copy of everything the answer will need. The pointer
 // outlives every fetch by construction: GalleryState is a member of the
 // Cartridge, which is a member of App, heap-allocated in main() and never
@@ -2775,6 +2804,12 @@ inline void exhibition_manifest_onsuccess(emscripten_fetch_t* fetch) {
     // disagree about how long the sequence is.
     gs->authored_manifest_dead.assign(gs->authored_disk_manifest.size(), false);
     gs->authored_exhausted_logged = false;
+    // REPEAT_0c U-S1 — the arrival disarms the wait. Nothing can be in flight
+    // beside this one (the latch admits one at a time), so this is belt to the
+    // latch's braces: a retry armed by an earlier failure must not fire behind
+    // a manifest that has already landed.
+    gs->authored_manifest_retry_delay = -1.0f;
+    gs->authored_manifest_retry_at    = -1.0f;
 
     std::cout << "[Authored] Scanned " << EXHIBITION_MANIFEST_URL
         << " — found " << paintings.size() << " paintings\n";
@@ -2811,11 +2846,31 @@ inline void exhibition_manifest_onsuccess(emscripten_fetch_t* fetch) {
 }
 
 inline void exhibition_manifest_onerror(emscripten_fetch_t* fetch) {
-    long status = fetch->status;
+    // BOTH READS BEFORE THE CLOSE (REPEAT_0 U7b's lesson, kept). `fetch` is
+    // freed by emscripten_fetch_close; every field this function wants is
+    // lifted out first, userData included — it was never read here before.
+    GalleryState* gs = (GalleryState*)fetch->userData;
+    const long status = fetch->status;
     emscripten_fetch_close(fetch);
+
+    // REPEAT_0c U-S1 — THE LATCH OPENS, UP TO THREE TIMES. The wait is
+    // recorded, not stamped: see authored_manifest_retry_delay for why.
+    if (gs != nullptr
+        && gs->authored_manifest_attempts >= 1u
+        && gs->authored_manifest_attempts <= AUTHORED_MANIFEST_MAX_RETRIES) {
+        const uint32_t n = gs->authored_manifest_attempts;
+        gs->authored_manifest_retry_delay = AUTHORED_MANIFEST_BACKOFF_S[n - 1u];
+        std::cout << "[Authored] Manifest retry " << n
+            << "/" << AUTHORED_MANIFEST_MAX_RETRIES
+            << " in " << AUTHORED_MANIFEST_BACKOFF_S[n - 1u] << "s"
+            << " (" << EXHIBITION_MANIFEST_URL << ", HTTP " << status << ")\n";
+        return;
+    }
+
     // An exhibition that did not arrive is an exhibition that is not
     // there — the same sentence, and the same already-legal state, as
-    // a missing folder on the native twin.
+    // a missing folder on the native twin. It is only said once the
+    // retries are spent, so it now means what it says.
     std::cout << "[Authored] No paintings folder found"
         << " (" << EXHIBITION_MANIFEST_URL << ", HTTP " << status << ")\n";
 }
@@ -2829,14 +2884,40 @@ inline void kick_exhibition_manifest_fetch(GalleryState& gs) {
     if (gs.authored_manifest_requested) return;
     gs.authored_manifest_requested = true;
 
+    gs.authored_manifest_attempts++;
+
     emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
     std::strncpy(attr.requestMethod, "GET", sizeof(attr.requestMethod) - 1);
     attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+    // A request that never answers held the whole exhibition forever, because
+    // this one has no lane to free and no sibling to take its place.
+    attr.timeoutMSecs = AUTHORED_FETCH_TIMEOUT_MS;
     attr.onsuccess = exhibition_manifest_onsuccess;
     attr.onerror = exhibition_manifest_onerror;
     attr.userData = &gs;
     emscripten_fetch(&attr, EXHIBITION_MANIFEST_URL);
+}
+
+// THE HALF OF THE WAIT THAT HAS A CLOCK (REPEAT_0c U-S1). Called every frame
+// from the conductor's deferred-hang head — the one place the exhibition is
+// already asked for — so the retry needs no timer of its own and speaks the
+// tree's own dialect of time (TimeState::seconds).
+//
+// Two-step on purpose: the first sighting turns a DELAY into an INSTANT, the
+// second fires. Nothing here can fire early, and a delay recorded while the
+// world was mid-transition still gets its full wait.
+inline void tick_exhibition_manifest_retry(GalleryState& gs, float now) {
+    if (gs.authored_manifest_retry_delay >= 0.0f) {
+        gs.authored_manifest_retry_at = now + gs.authored_manifest_retry_delay;
+        gs.authored_manifest_retry_delay = -1.0f;
+        return;
+    }
+    if (gs.authored_manifest_retry_at < 0.0f) return;
+    if (now < gs.authored_manifest_retry_at) return;
+    gs.authored_manifest_retry_at = -1.0f;
+    gs.authored_manifest_requested = false;   // exactly one more request
+    kick_exhibition_manifest_fetch(gs);
 }
 
 // SAME NAME, SAME CONTRACT: "make authored_disk_manifest current".
@@ -3608,6 +3689,11 @@ inline void tick_gallery_deferred_hang(MachineCtx* c, wgpu::Queue& queue) {
     // decoded must not be held hostage to a room that has nowhere to put
     // it yet. One painting, this frame, and only after first present.
     pump_authored_valve(gs, c->gpuState_, queue);
+    // REPEAT_0c U-S1 — beside the valve and the fill, for the same reason they
+    // are here: this is the one place per frame the exhibition is asked for,
+    // and a manifest that has not arrived is the only thing that can make
+    // everything below it moot.
+    tick_exhibition_manifest_retry(gs, c->time_state_.seconds);
     load_authored_textures(gs);
     if (gallery_available_staging(gs, GallerySiteType::MIXED) == 0) return;   // the pool's sum
     PatchCandidate cands[Dim::MAX_ACTIVE_PATCHES];
