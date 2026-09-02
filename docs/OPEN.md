@@ -3082,3 +3082,51 @@ campaign leaves open or learned.
 - **The tide is unproven in the world.** Everything here is gates and models;
   no build, no visual. The statue test, the turn, and the finite world are
   Jean's, and until they run the tide is a machine that compiles.
+
+### PLUMB_0's closing refuter — what it found that is NOT fixed
+
+Fourteen findings were real and landed as `7e616a42`. These are the rest,
+recorded because they are true and because each is a ruling or a campaign
+rather than an edit.
+
+- **THE PIN-ONLY TOOLS STILL CANNOT SEE A HAND EDIT.** A4 gave
+  `organ_ledger --check` a byte-for-byte comparison against its artifact. A1
+  and A2 gave their tools the GATES_2b shape instead: `--check` re-derives
+  nothing about the artifact's BODY, it reads `_PIN_ROW` out of the stanza and
+  hashes the inputs. So a hand edit to a row, a count, or a witness verdict in
+  `COMMAND_LEDGER.md` or `MIRROR_LEDGER.md` passes green — L28's "never
+  hand-edited" is enforced for `audit/ORGAN.md` alone. The cure is the one A4
+  already demonstrates: compare the emission. It was not carried across here
+  because both censuses embed a git-derived provenance stamp, and an emission
+  comparison would then red the gate for the documented stamp lag rather than
+  for a defect. Unblocked by splitting the stamp out of the compared body.
+- **`report_stale` READS ITS SCOPE FROM THE ARTIFACT**, so widening a tool's
+  `INPUTS` is inert until someone regenerates. That is GATES_2b's deliberate
+  design ("the stanza is the list") and it is why the cascade is a step rather
+  than a nicety — but it means a tool and its artifact can disagree about what
+  is even being checked for exactly one commit.
+- **`mirror_census` READS FILES IT NEVER NAMES.** A2 pins what the emission
+  NAMES. The census also reads every `.py` under `tools/` and every file under
+  `src/` to count `bind::` mentions; a file that is read, contributes to a
+  count, and is never cited stays unpinned, so a change to its mention count
+  moves the artifact with nothing to say the artifact was owed. Narrower than
+  the blind spot A2 closed, and the same shape. Unblocked by a read-recording
+  wrapper around the census's own file access.
+- **A RED `organ_readers` CAN BE COMMITTED INTO `ORGAN.md`.** The organ
+  ledger's emission embeds `tail_of("organ_readers.py", 16)` and `tail_of`
+  ignores the return code — which is what makes A4's exit change safe. But it
+  also means a run with suspects can be baked into the artifact, after which
+  `organ_ledger --check` compares that text and passes. The two gates must be
+  read together; only the readers row is the verdict.
+- **D4(a) is half done** — see the standing entry above.
+
+### One refuter finding REFUTED
+
+The fan-radius report priced a gallery's reach at ~150 wu from
+`PAINTINGS_MAX_BY_ARCHETYPE` `{8,10,12,12}`. Those ceilings are structurally
+unreachable: `count_raw = PAINTINGS_MEAN(3) + (h1+h2+h3-1.5)*PAINTINGS_SIGMA(1)`
+with each `h` in [0,1] spans [1.5, 4.5] and rounds to at most 4, and the clamp
+never binds. The true maximum fan is
+`sqrt(41² + 12²) + PAINTING_HALF(13) + FAN_MARGIN(3) = 58.72` wu, which is
+what `TIDE_SITE_REACH` is derived from. The finding's SUBSTANCE stood — the
+predicate did measure to the centre — and is fixed; only its number was wrong.
