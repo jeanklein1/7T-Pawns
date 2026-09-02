@@ -2400,17 +2400,15 @@ it said so, this campaign's whole question would have been answered at dist
 time, on Jean's machine, months ago. Instrument before mechanism: U0b adds
 the assertion instead of the filter it turns out not to need.
 
-### R4 — OUTAGE RECOVERY, PRICED NOT BUILT
+### R4 — OUTAGE RECOVERY — **CLOSED 2026-09-02, BUILT AS REPEAT_0c U-S2/U-S2b**
 
-Session-scoped death (R1) means a total network outage ends the authored
-exhibition until reload. The cure is two facts and no new mechanism: a
-`uint32_t authored_dead_stamp[…]` (or one session-wide timestamp beside the
-mask) and a reset of the mask when the sequence exhausts, so an exhaustion
-that happened during an outage is retried once the outage is over. **Priced
-at one counter and one reset; not built, because nothing has measured how
-long a real outage lasts against how long a visitor stays.** Instrument
-before mechanism. Unblocked by a field measurement — or immediately, if
-Jean's U0 test returns 200 and hypothesis (B) is the live one.
+Was: priced at one counter and one reset, not built, waiting on a field
+measurement. The measurement came back (B) and it was built — but not as
+priced. A stamp *per index* rather than one session-wide, denominated in wall
+seconds rather than in laps, plus `authored_pump_cooled_layers`, which the
+pricing did not foresee and which is the half that actually recovers: the
+reset the old entry describes has no caller in the state it exists for. See
+§ REPEAT_0c / REPEAT_2 below for the measurements and for what is still open.
 
 ### THE ≤32 NO-OP REFILL IS UNAFFECTED
 
@@ -2452,7 +2450,7 @@ Nothing to optimize, and nothing the dead mask breaks.
   | case | result |
   | --- | --- |
   | the live defect — 57 named, 24 on the server | boot 65 fetches, **exactly 33 failures, one per ghost**; then 420 fetches over 60 rooms with **zero** failures; all 24 live paintings exhibited, never a dead one |
-  | every entry dead | 88 fetches ever, exhaustion logged **once**, then not one further fetch for the session |
+  | every entry dead | 88 fetches ever, exhaustion logged **once**, then not one further fetch for the session — *superseded by U-S2/U-S2b: the sentence now repeats at most once per 30 s cooldown, and the pump does keep asking* |
   | a single ghost | **one** failed request, ever; the other 56 all hang |
   | an honest manifest | zero failures, indices still ascend by one and wrap — REPEAT_0's gates 2 and 3 intact |
   | two live entries of 57 | only the pair is hung, 82 failures, then silence |
@@ -2939,3 +2937,79 @@ is architecture, not execution, so it stopped here.
   code below has no host test at all — only the `if constexpr`. The copy
   runs in every host. Harmless today, and it is exactly the sentence someone
   pricing option B would trust.
+
+### REPEAT_0c — what U5's refuter found and I did NOT fix
+
+Five lenses, read-only, over `b9f476f4` / `ec9aa085` / `cd29f952`. Three
+findings were real and landed as `6261bb04` (the cooldown's missing caller,
+the two manifest roads into silence, two false banners of my own). These are
+the rest — recorded because they are true, not fixed because each is either
+outside this campaign's reach or Jean's to price.
+
+- **THE WALL CLOCK IS A FLOAT ACCUMULATOR AND IT STOPS.**
+  `TimeState::seconds` is fed by `signal_.t_seconds += dt` in
+  `BeatClock::update` — a float32 accumulator, never reset. Once `t_seconds`
+  is large enough that `dt` falls below half an ulp, the clock **freezes**:
+  measured at 524288.0 s ≈ **4.8 days at 60 fps**, sooner at higher refresh.
+  Every campaign artefact hangs off it — `authored_now`,
+  `authored_manifest_dead_until`, `authored_manifest_retry_at`, `dressed_at`
+  — so past the freeze every cooling index stays cooling for ever (R1
+  restored, silently), the exhaustion sentence never repeats, and a future
+  tide keyed on `dressed_at` never fires. Well before it, resolution
+  degrades: ulp is 7.8 ms at 36 h and larger than a frame at ~5·10⁵ s.
+  **This is tree-wide and pre-existing** — it is the clock everything reads,
+  not something this campaign introduced — but the audience is a permanently
+  hosted piece, so it is Jean's call whether a kiosk tab lives that long.
+  (The addition itself is safe: `(now + 30.0f) == now` needs 2²⁹ s ≈ 17
+  years. It is the accumulator that fails, not the arithmetic.)
+- **THE COOLDOWN IS DENOMINATED IN RENDERED TIME, THE TIMEOUT IN WALL TIME.**
+  `dt` is clamped (ceiling 0.1 s), so `TimeState::seconds` runs slower than
+  the wall when frames are slow and **pauses entirely in a backgrounded tab**,
+  while `AUTHORED_FETCH_TIMEOUT_MS` is the browser's own wall clock. The two
+  are sized against each other in `AUTHORED_DEAD_COOLDOWN_S`'s banner and are
+  not the same quantity. Arguably right — a paused tab should not burn
+  retries — but it is not what the banner says.
+- **THE RETRY LADDER IS HOSTED ON THE RENDER SPINE.**
+  `tick_exhibition_manifest_retry` runs only inside `stream_patches`, i.e.
+  inside `render()`, below `the_board.cpp`'s first-light gate. The manifest is
+  kicked from the cartridge constructor, long before. So a manifest that fails
+  300 ms into boot does not begin its 2 s wait until first light (~4.4 s of
+  pipeline compile), and `OVERTURE_READY_TIMEOUT_S` (5 s) always wins — the
+  veil lifts on an empty gallery even in the dropped-packet case the 2 s rung
+  exists to heal. A tab whose surface acquire keeps failing freezes the ladder
+  outright. A network retry parked on the render spine.
+- **A SECOND GATE BLIND SPOT, sibling of the `command_census` one already
+  open.** `tools/mirror_census.py` walks all of `src/` for its usage census
+  and emits rows citing `gallery.hpp:<line>`, but pins only eight files by
+  digest — and `gallery.hpp` is not one of them. So `--check` reports *"the
+  ledger's pins match the live inputs"* and exits 0 while eight of its rows
+  point at lines this campaign moved by ~83. `COMMAND_LEDGER` has the same
+  disease at two rows. Both tools are listed in CLAUDE.md's gate table as
+  assertions; on this file they are reports.
+- **`organ_ledger.py --check` and `organ_readers.py` cannot fail.** Both
+  `return 0` on every path; neither compares its emission against
+  `audit/ORGAN.md`. A missing READERS row prints a SUSPECT and exits clean.
+- **The dead-mask reads fail-OPEN but writes fail-CLOSED.**
+  `authored_next_live` treats an index the mask cannot speak for as live
+  (deliberate, and its comment prices it); `authored_fetch_release_slot`
+  guards its write on the same bound, so a short mask would give an unbounded
+  retry loop rather than the one wasted round trip the comment promises.
+  Unreachable today — both are sized in one breath in
+  `exhibition_manifest_onsuccess` — and recorded because "unreachable" is the
+  word that gets campaigns written.
+- **Two guards that cannot be false.** `authored_manifest_attempts >= 1u` in
+  `exhibition_manifest_onerror` (the counter increments before the request
+  leaves) and `gs != nullptr` in the same condition (`userData` is taken from
+  a reference). Both are defence for the `n - 1u` array index rather than live
+  flow, and the second is worse than dead: as the first conjunct, a null would
+  fall through to the terminal absence line rather than to a diagnostic.
+- **`Sleeping disk=` is louder than `Dead disk=` was.** The old line printed
+  once per index for the session; the new one prints once per index per
+  cooldown — measured at ~100 lines in ten minutes with 5 files genuinely
+  absent, where the old code printed 5 and stopped. Correct as information,
+  and a candidate for the same floor the exhaustion sentence now has if Jean
+  finds it noisy.
+- **`GalleryCenter::dressed_at` is write-only** until U2/U3 land, and **no
+  gate can see that** — G-LAW 2 parses `world.wgsl` only, and nothing else
+  audits unread C++ members. Under L28's "living matter only" it is either
+  fed a reader by the next unit or returned to the attic.
