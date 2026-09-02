@@ -60,9 +60,19 @@ python3 and clang++ do.
 | WGSL gate | `python3 tools/wgsl_gate.py` | naga parses, scopes and validates the raw module | PASS |
 | binding surface | `python3 tools/binding_gen.py --check` | schema ↔ tree ↔ emitters agree; S-6 also wants a clean tree at the pushed tip | PASS |
 | organ gap | `python3 tools/organ_gap.py --gate` | no graduated pair kept a surviving runtime reader | PASS |
-| organ ledger | `python3 tools/organ_ledger.py --check` | every enrolled dial's field is named by a declared reader | PASS |
+| organ readers | `python3 tools/organ_readers.py` | every enrolled dial's field is named by a declared reader; red on a suspect or an unmapped family | PASS |
+| organ ledger | `python3 tools/organ_ledger.py --check` | `audit/ORGAN.md` matches the tool's emission on the live tree | PASS |
+| command census | `python3 tools/command_census.py --check` | the pass/submit witnesses hold, and every pin COMMAND_LEDGER carries matches the live file | PASS |
 | mirror census | `python3 tools/mirror_census.py --check` | the C++↔WGSL mirror and the binding idioms hold, and every pin MIRROR_LEDGER carries matches the live file | GREEN |
 | binding ledger | `python3 tools/binding_ledger.py --check` | the reach census holds, and every pin BINDING_LEDGER carries matches the live file | GREEN |
+
+Three of those rows were untrue until PLUMB_0 A1–A4. The organ ledger's row
+carried the organ READERS' claim while the ledger tool compared nothing; both
+organ tools returned 0 on every path; and the command census — which writes
+`audit/COMMAND_LEDGER.md` — had no row at all, so the one gate that could have
+caught its stale digest did not exist. **A gate that cannot lose is a report.**
+Each row above is now backed by a non-zero exit on a perturbed tree; that is
+the standard a row must meet to be listed here.
 
 **Every row green, and the room rebuilds.** Delete the five files in `audit/`,
 run the five tools above, and the tree is byte-identical again (L33's standing

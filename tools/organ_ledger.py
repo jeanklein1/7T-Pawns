@@ -265,13 +265,50 @@ def emit():
 
 
 def main():
+    """PLUMB_0 A4 — `--check` compares; it used to narrate.
+
+    It wrote the emission to stdout and returned 0. That is a REPORT: it
+    proved the tool still runs, and nothing else. CLAUDE.md's gate table
+    listed it as an assertion, so audit/ORGAN.md could drift from the
+    enrollment list for a whole campaign with the row green — the same
+    disease A1 cured in the command census, in the same family of tools.
+
+    The comparison is against the ARTIFACT, byte for byte, because for this
+    tool the emission IS the claim: there is no separate pin stanza to
+    check. A mismatch names the first differing line, which is the one thing
+    a reader needs to tell a stale regeneration from a hand edit (L28).
+    """
     text = emit()
-    if "--check" in sys.argv:
-        sys.stdout.write(text)
-        return 0
     out = OUT
     if "-o" in sys.argv:
         out = sys.argv[sys.argv.index("-o") + 1]
+    rel = os.path.relpath(out, ROOT).replace(os.sep, "/")
+    if "--check" in sys.argv:
+        try:
+            with open(out, "r", encoding="utf-8", newline="") as f:
+                live = f.read()
+        except OSError:
+            print("STALE: %s is absent, so it asserts nothing. "
+                  "Regenerate: python3 tools/organ_ledger.py" % rel)
+            return 1
+        if live != text:
+            want = text.split("\n")
+            have = live.split("\n")
+            n = 0
+            while n < len(want) and n < len(have) and want[n] == have[n]:
+                n += 1
+            print("STALE: %s disagrees with this tool's emission on the live "
+                  "tree, from line %d." % (rel, n + 1))
+            print("  committed: %s"
+                  % (have[n].rstrip() if n < len(have) else "(end of file)"))
+            print("  emitted:   %s"
+                  % (want[n].rstrip() if n < len(want) else "(end of file)"))
+            print("  Regenerate: python3 tools/organ_ledger.py "
+                  "(and never hand-edit audit/ — L28).")
+            return 1
+        print("--check: %s matches this tool's emission on the live tree, "
+              "%d lines, nothing written." % (rel, text.count("\n")))
+        return 0
     with open(out, "w", encoding="utf-8", newline="\n") as f:
         f.write(text)
     # G2-eol, the binding_ledger precedent: the writer pins the terminator

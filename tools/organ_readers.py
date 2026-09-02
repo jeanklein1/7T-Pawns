@@ -475,10 +475,31 @@ def main():
               % counted["unmapped"])
     print()
 
-    if not suspects:
+    # PLUMB_0 A4 — THE VERDICT IS AN EXIT CODE NOW.
+    #
+    # Every path here returned 0, including the one that had just printed a
+    # list of suspects. CLAUDE.md's gate table calls this tool an assertion —
+    # "every enrolled dial's field is named by a declared reader" — so a
+    # dial whose reader could not be proved passed the gate that exists to
+    # ask exactly that. An UNMAPPED family is red for the same reason and is
+    # worse: it means the reader table does not cover the tree it audits.
+    #
+    # THE PROSE BELOW STANDS UNCHANGED AND IS NOT SOFTENED. "A suspect is a
+    # question, not a verdict" is advice about how to FIX one — read the body
+    # before deleting a dial — not a claim that it should pass. A question
+    # the tree cannot answer is exactly what a gate is for.
+    if not suspects and not counted["unmapped"]:
         print("NO SUSPECTS. Every enrolled dial's field is named in the body of")
         print("a function this tool can read.")
         return 0
+
+    if counted["unmapped"] and not suspects:
+        print("UNMAPPED FAMILIES: %d. The reader table has no row for a family"
+              % counted["unmapped"])
+        print("this tool was asked to prove, so the proof is incomplete rather")
+        print("than passing. Add the row, or say in the table why it cannot be")
+        print("read.")
+        return 1
 
     print("THE SUSPECTS, each with its second pass (mechanical -> fix now,")
     print("semantic -> ledger the anatomy)")
@@ -510,7 +531,13 @@ def main():
     print("acting: a helper that takes the value by parameter names it at the")
     print("call site, and a reader this table forgot is a stale table rather")
     print("than a dead dial.")
-    return 0
+    print()
+    print("STOP — %d suspect(s)%s. The gate is red until each is either given"
+          % (len(suspects),
+             (" and %d unmapped family/ies" % counted["unmapped"])
+             if counted["unmapped"] else ""))
+    print("its reader, given a READERS row that names one, or retired.")
+    return 1
 
 
 if __name__ == "__main__":
