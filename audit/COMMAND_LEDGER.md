@@ -5,21 +5,21 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `7e616a42e7318c2b2ca8e5396cc6caf80aacc44c`
-(PLUMB_0 U5: the closing refuter's findings, fixed)
+Last commit touching any scanned file: `56dddcace65bd45eb462781a1c82155660935c32`
+(PULSE_1 E: the witness reads a timeline; OPEN carries the debt)
 
 | file scanned | sha256 |
 |---|---|
 | `src/cartridges/the_board/realization/render_passes.hpp` | `sha256:e4d6b62cb1d1936d57322d2c4ef4372bbc27dd1404a29117d9431938e9c84149` |
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:fc3137898e0dc6f0f2edd938cd40681cfc4fe8c272fb9fc4920f71b34643f48e` |
-| `src/cartridges/the_board/cartridge.hpp` | `sha256:88db08b8cd34ba3ac70cc0f1ad2a0243cd3bf8eb4a2036f93c44f5df5fc58e47` |
+| `src/cartridges/the_board/cartridge.hpp` | `sha256:8c5e9e6e5e767065641f61572da1ee8360b43697aa64867304a587b6cc969b0d` |
 | `src/cartridges/the_board/surface/patch_system.hpp` | `sha256:1be3569e8b942fccc6a5ad003a6f227b2c413897b33a947bdcfa986947653b3c` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:335d9c5a1d7c34aff37f3010abe8b88aa04290c8db487b70828c9c83e8588719` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
 | `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:91902a4fab8247a9bf99585147981d852768e81849417b782d7438408687c796` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:cfee1651530c4e431f7b08ca751e7e9d4f8b326677a0e79cf28567b14fde96bb` |
 | `src/the_board.cpp` | `sha256:12a89ca138da2724f66ae4fd646e2a773caaa169cba3998a9323f14c37baad2b` |
-| `src/console/console.hpp` | `sha256:dbedbbe0f039fea13583ffd5a6417389e7cddee9653ab69e3fb82ac89f47ac04` |
+| `src/console/console.hpp` | `sha256:8aec4ad7cdfdf4b8bb3115cb4ff1dca7b7457fdd124a450b9d737c9398915cd6` |
 | `tools/command_census.py` | `sha256:09a61baed23a5caeedb44ee293461875f2e759832353f887187be35a7ae8d7cb` |
 
 The handoff named `render_passes.hpp` and `renderer.hpp`; the
@@ -40,7 +40,7 @@ in `console.hpp`.
 | 4 | Shadow Atlas | render | `render_shadow_pass` | `src/cartridges/the_board/realization/render_passes.hpp:414` | (none: depth-only) | Clear/Store, readOnly (absent) → `(tex == 0) ? c->gpuState_.shadow_map_view() : c->gpuState_.spot_shadow_map_view()` | (no stencil aspect) |
 | 5 | Shadow Pass | render | `render_shadow_pass` | `src/cartridges/the_board/realization/render_passes.hpp:465` | (none: depth-only) | Clear/Store, readOnly (absent) → `c->gpuState_.shadow_map_view()` | (no stencil aspect) |
 | 6 | Rasterized Scene | render | `render_main_pass` | `src/cartridges/the_board/realization/render_passes.hpp:826` | Clear/Store or Discard → `backbuffer or msaaColor` resolve → `backbuffer` | Clear/Discard, readOnly (absent) → `depth` | (no stencil aspect) |
-| 7 | Entity Mesh Gen | compute | `phase_entity_mesh_gen` | `src/cartridges/the_board/cartridge.hpp:2266` | — | — | — |
+| 7 | Entity Mesh Gen | compute | `phase_entity_mesh_gen` | `src/cartridges/the_board/cartridge.hpp:2278` | — | — | — |
 | 8 | Patch Bake (fused) | compute | `generate_patch_batch` | `src/cartridges/the_board/surface/patch_system.hpp:186` | — | — | — |
 | 9 | Zone Derive Params | compute | `flush_zone_derive_requests` | `src/cartridges/the_board/bodies/gol_zones.hpp:904` | — | — | — |
 | 10 | GoL Zone Sync | compute | `dispatch_zone_sync` | `src/cartridges/the_board/bodies/gol_zones.hpp:992` | — | — | — |
@@ -94,13 +94,13 @@ every landing.
 
 | # | enclosing function | site |
 |---|---|---|
-| 1 | `initSurface` | `src/console/console.hpp:1371` |
-| 2 | `reassert_canvas_target` | `src/console/console.hpp:1528` |
-| 3 | `begin_frame` | `src/console/console.hpp:1667` |
+| 1 | `initSurface` | `src/console/console.hpp:1383` |
+| 2 | `reassert_canvas_target` | `src/console/console.hpp:1540` |
+| 3 | `begin_frame` | `src/console/console.hpp:1679` |
 
 The boot-time site configures the surface once; the per-frame
 trigger is the resize branch of `Console::begin_frame`, quoted
-verbatim (`src/console/console.hpp:1657`) — its branch is what feeds the `[FRAME_1]`
+verbatim (`src/console/console.hpp:1669`) — its branch is what feeds the `[FRAME_1]`
 print. This is the debounce ruling's evidence, and it reads the
 other way now: the size test is a bare not-equal on the capped
 framebuffer size, but it only ARMS the reconfigure — the branch

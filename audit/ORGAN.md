@@ -394,6 +394,7 @@ generator, so the book and the manifest cannot disagree. `driven` is an
 | Interaction · Camera | look sens range | `PANEL.camera.look_sens_range` | PANEL | F32 | 1 … 32 | 0.25 | live | none |  |
 | Interaction · Camera | scroll zoom | `PANEL.camera.scroll_zoom_scale` | PANEL | F32 | 0 … 8 | 0.05 | live | none |  |
 | Interaction · Possession | reach | `PANEL.possession.radius` | PANEL | F32 | 0.5 … 80 | 0.5 | live | none |  |
+| Interaction · Pulse | tap impulse | `PANEL.pulse.amplitude` | PANEL | F32 | 0 … 4 | 0.05 | live | none |  |
 | Camera · Chase | feed-forward | `CONFIG.camera_chase_ff` | CONFIG | F32 | 0 … 1 | 0.01 | live | none |  |
 | Camera · Presence | push gain | `CONFIG.camera_push_gain` | CONFIG | F32 | 0 … 40 | 0.25 | live | none |  |
 | Camera · Presence | push radius | `CONFIG.camera_push_radius` | CONFIG | F32 | 0 … 80 | 0.5 | live | none |  |
@@ -409,14 +410,14 @@ generator, so the book and the manifest cannot disagree. `driven` is an
 
 | | |
 | --- | --- |
-| entries | **381** |
-| by section | Agents 118 · Atmosphere 73 · Ribbon 55 · Sky & Light 42 · Terrain 42 · Interaction 23 · Pawn 18 · Debug 4 · Camera 3 · Measure 3 |
-| by cadence | boundary 188 · driven 20 · gen 42 · live 131 |
-| by macro form | PARAM 135 · PARAM_DEF 110 · PARAM_DEFONLY 74 · PARAM_GEN 42 · PARAM_RO 20 |
-| definition kinds | BEHAVIOR 78 · MOOD 55 · NONE 197 · ORB_MOOD 19 · TIER 32 |
+| entries | **382** |
+| by section | Agents 118 · Atmosphere 73 · Ribbon 55 · Sky & Light 42 · Terrain 42 · Interaction 24 · Pawn 18 · Debug 4 · Camera 3 · Measure 3 |
+| by cadence | boundary 188 · driven 20 · gen 42 · live 132 |
+| by macro form | PARAM 136 · PARAM_DEF 110 · PARAM_DEFONLY 74 · PARAM_GEN 42 · PARAM_RO 20 |
+| definition kinds | BEHAVIOR 78 · MOOD 55 · NONE 198 · ORB_MOOD 19 · TIER 32 |
 | witnesses (`ro`) | 20 |
 | blocks and sentinels used | AGENT_ROOM, CANVAS, CONFIG, DRIVERS, INDOOR, LIGHTING, NONE (255), NONE_ORB (254), ORBS, PANEL, PAWN, RIBBON, RIBBON_SPAWN, WORLD |
-| namespaces | canvas 15 · the_board 366 |
+| namespaces | canvas 15 · the_board 367 |
 
 ### Doors
 
@@ -455,7 +456,7 @@ reader — the class of defect this witness exists to catch.
         constexpr derivation  src/cartridges/the_board/bodies/gallery.hpp:550  : MOOD_TABLE[MOOD_INDOOR_VAULT].shape.finite_radius_max;
   ORB_CONSOLE          definition=1 seed=1 comment=2              
   ORB_MOOD_TABLE       definition=1 seed=7 comment=6              
-  PANEL_TABLE          definition=1 seed=1 static_assert=6 comment=2 
+  PANEL_TABLE          definition=1 seed=1 static_assert=7 comment=2 
   PAWN_AURA_DEFAULT    definition=1 seed=1 static_assert=1 comment=3 
   RIBBON_SPAWN_TABLE   definition=1 seed=1 static_assert=2        
   RIBBON_TABLE         definition=1 seed=1 static_assert=3 comment=2 
@@ -483,7 +484,7 @@ verbatim:
 
 THE ANSWER, ROW BY ROW
 ------------------------------------------------------------------------
-  proved    280   a declared reader names the field
+  proved    281   a declared reader names the field
   SUSPECT     0   no declared reader names it
   witness    20   an _RO meter: the question is inverted (blind spot 5)
   scope      81   GPU-side or whole-struct (blind spots 2, 3)
