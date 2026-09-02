@@ -434,8 +434,7 @@ namespace t7 {
             // the convention build_view_projection_matrix,
             // compose_camera_position_from_orbit and the camera-host fly
             // branch already share, so there is no per-mode fork.
-            GPUCameraState camera_pose_{};
-            bool camera_pose_valid_ = false;
+            CameraPose camera_pose_{};
             // The point readback (option A): runs ONLY in
             // camera-host — the camera's GPU position IS the point's, so
             // it must reach the CPU for the viewpoint set (streaming,
@@ -558,7 +557,8 @@ namespace t7 {
                                 mood_state_, patch_system_state_, spawn_engine_state_,
                                 entities_state_, sphere_state_, cube_behaviors_state_,
                                 ribbon_state_, gol_state_, gallery_state_,
-                                time_state_, player_, point_, gpuState_, renderer_ }
+                                time_state_, player_, point_, camera_pose_,
+                                gpuState_, renderer_ }
                 , tile_world_deps_{ world_state_, mood_state_, gpuState_ }
                 , sphere_deps_{ time_state_ }
                 , pawn_deps_{ player_, time_state_, gpuState_, renderer_ }
@@ -1774,11 +1774,17 @@ namespace t7 {
                                         self->gpuState_.camera_readback_staging().GetConstMappedRange(
                                             0, GPUState::camera_state_buffer_size()));
                                     if (cam) {
-                                        self->camera_pose_ = *cam;
-                                        self->camera_pose_valid_ = true;
+                                        // The four numbers worth keeping; the
+                                        // raw struct dies with the mapping,
+                                        // as it always did.
+                                        self->camera_pose_.eye[0]   = cam->pos[0];
+                                        self->camera_pose_.eye[1]   = cam->pos[1];
+                                        self->camera_pose_.eye[2]   = cam->pos[2];
+                                        self->camera_pose_.azimuth  = cam->azimuth;
+                                        self->camera_pose_.elevation = cam->elevation;
+                                        self->camera_pose_.valid    = true;
                                         if constexpr (INSTRUMENTS.camera_witness)
-                                            dump_camera_orbit(self->camera_pose_,
-                                                              Idle::PAWN_HEADING,
+                                            dump_camera_orbit(*cam, Idle::PAWN_HEADING,
                                                               (float)self->time_state_.seconds);
                                     }
                                 }

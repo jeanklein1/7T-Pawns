@@ -47,6 +47,7 @@ struct EntitiesState;         struct SphereState;
 struct CubeBehaviorsState;    struct RibbonState;
 struct GoLState;              struct GalleryState;
 struct TimeState;             struct PlayerState;
+struct CameraPose;
 struct PointState;
 class GPUState;               class Renderer;
 
@@ -69,6 +70,9 @@ struct MachineCtx {
     const TimeState&         time_state_;
     const PlayerState&       player_;
     const PointState&        point_;         // THE POINT's house (POINT_1): position mirror + bubble sensor
+    // PLUMB_0 C1 (RULING-1) — where the eye is and where it looks, one frame
+    // stale, filled by the witness harvest. The tide's whole input.
+    const CameraPose&        camera_pose_;
     // realization
     GPUState&                gpuState_;
     Renderer&                renderer_;

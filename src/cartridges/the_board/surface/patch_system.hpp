@@ -903,6 +903,12 @@ inline void stream_patches(MachineCtx* c, wgpu::CommandEncoder& encoder, wgpu::Q
     // gallery's owner verb; the verb owns the fill, the pool test and the
     // retry. ROSTER-gated like every gallery consumer.
     if constexpr (ROSTER.gallery) tick_gallery_deferred_hang(c, queue);
+    // THE TIDE (REPEAT_2 D2) — the second driver, beside the first. It hangs
+    // off the FRAME, not off displacement: this call sits at function-body
+    // depth, outside `if (gridChanged)`, so it runs for a motionless visitor
+    // and in the finite world where centerX is pinned and no patch ever
+    // leaves. That placement is the whole unit.
+    if constexpr (ROSTER.gallery) tick_gallery_tide(c, queue);
 
     // ─── HEIGHTFIELD GENERATION — ONE ARM (RIBBON_6) ─────────────
     //

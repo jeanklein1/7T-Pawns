@@ -24,6 +24,35 @@ namespace the_board {
 // ═══ TIME STATE ══════════════════════════════════════════════════
 // Per-frame clock state used everywhere. beats/seconds advance
 // monotonically; dt is the most recent frame delta.
+// ═══ THE CAMERA POSE (PLUMB_0 C1, RULING-1) ═══════════════════════
+//
+// The eye and the two angles, on the CPU, once a frame. GPUCameraState is a
+// realization type and stays there; this is the CONTRACTS-tier projection of
+// it, so a body (the gallery's tide) can ask where the viewer is looking
+// without the bodies tier learning a realization struct.
+//
+// ONE HOME. The harvest fills this from the mapped readback and drops the raw
+// struct, exactly as it always dropped it — what changed is that the four
+// numbers worth keeping now survive the callback.
+//
+// THE FORWARD VECTOR, for every reader:
+//     -(cos(el)*sin(az), sin(el), cos(el)*cos(az))
+// whose ground projection is the already-normalized (-sin(az), -cos(az)).
+// That is the convention build_view_projection_matrix,
+// compose_camera_position_from_orbit and the camera-host fly branch all
+// share, so one formula is right in FPV, orbit, fly and chase alike.
+//
+// ONE FRAME STALE by the same law as PointState — the copy is encoded at R11
+// and mapped at R1 of the following frame. `valid` is false until the first
+// map lands; a reader that cannot tell where the eye is must not conclude
+// that nobody is looking.
+struct CameraPose {
+    float eye[3]    = { 0.0f, 0.0f, 0.0f };
+    float azimuth   = 0.0f;
+    float elevation = 0.0f;
+    bool  valid     = false;
+};
+
 struct TimeState {
     float beats   = 0.0f;
     // PLUMB_0 B1 — THE WALL CLOCK ACCUMULATES IN DOUBLE, AND THIS IS WHY.
