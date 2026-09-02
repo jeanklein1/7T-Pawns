@@ -197,7 +197,13 @@ void apply_mood(MoodDeps* c, uint32_t mood, wgpu::Queue& queue,
 // calls it before this file in the cohort); the definition is below.
 // Appliers (apply_mood's four named sub-functions; each takes only
 // the targets its own fan drives)
-void apply_mood_arrival(MoodDeps* c, const MoodProfile& m, wgpu::Queue& queue);  // ATRIUM_9 — the orbit, first
+// apply_mood_arrival (ATRIUM_9, "the orbit, first") IS DELETED — PLUMB_0 C3.
+// It was DECLARED here and never defined and never called, in any TU, for the
+// life of the campaign that named it; three comments elsewhere described its
+// behaviour as if it ran. It was the one symbol that would have let the CPU
+// AUTHOR an azimuth, and RULING-1 removes the need: the CPU now READS one
+// (Cartridge::camera_pose_). A declaration with no definition is not a plan,
+// it is a claim the linker never had to test.
 void apply_mood_regime(MoodDeps* c, const MoodProfile& m);     // REGIME_1 — the roll, first
 void apply_mood_lighting(MoodDeps* c, const MoodProfile& m, wgpu::Queue& queue);
 void apply_mood_spot_lights(MoodDeps* c, const MoodProfile& m, wgpu::Queue& queue);

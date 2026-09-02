@@ -408,6 +408,34 @@ namespace t7 {
             enum class CameraReadbackState { IDLE, COPIED, MAPPING };
             CameraReadbackState cameraReadbackState_ = CameraReadbackState::IDLE;
             uint32_t cameraReadbackGen_ = 0;
+            // PLUMB_0 C1 (RULING-1) — THE POSE IS A FACT NOW, NOT A PRINT.
+            //
+            // The readback above already ran in EVERY instrument column
+            // including `off` — camera_witness is one of the two arms true in
+            // the shipped frame — and the 48 bytes it brought back were handed
+            // to dump_camera_orbit and dropped. So the camera's pose has been
+            // crossing to the CPU every frame all along, unusable only because
+            // nothing kept it.
+            //
+            // THIS LEGALIZES A FACT; IT DOES NOT ADD A READBACK. The copy and
+            // the map move out from under the `if constexpr` because they were
+            // never conditional in practice; what stays under it is
+            // dump_camera_orbit, which is the printer, and which keeps its
+            // retirement warrant ("RETIRE IT once the arrival row is settled")
+            // without taking the pose down with it.
+            //
+            // ONE FRAME STALE, BY THE SAME LAW AS point_. The copy is encoded
+            // at R11 and mapped at R1 of the following frame, so a reader gets
+            // the pose the world had last frame — the staleness class the
+            // streamer has always worked in.
+            //
+            // The forward vector, for whoever wants one:
+            //   -(cos(el)*sin(az), sin(el), cos(el)*cos(az))
+            // the convention build_view_projection_matrix,
+            // compose_camera_position_from_orbit and the camera-host fly
+            // branch already share, so there is no per-mode fork.
+            GPUCameraState camera_pose_{};
+            bool camera_pose_valid_ = false;
             // The point readback (option A): runs ONLY in
             // camera-host — the camera's GPU position IS the point's, so
             // it must reach the CPU for the viewpoint set (streaming,
@@ -1715,34 +1743,50 @@ namespace t7 {
                 // witness is unarmed.
                 //
                 // THE BASE IS Idle::PAWN_HEADING, not point_.heading: the
-                // arrival row's azimuth is an offset on the ARRIVAL gaze, a
-                // constant, and apply_mood_arrival adds it to exactly this.
-                // A printed offset against the live heading would be a
-                // different number from the one the panel takes, which is
-                // the one way this instrument could lie.
-                if constexpr (INSTRUMENTS.camera_witness) {
-                    if (cameraReadbackState_ == CameraReadbackState::COPIED) {
-                        cameraReadbackState_ = CameraReadbackState::MAPPING;
-                        cameraReadbackGen_ = world_state_.world_gen;
-                        gpuState_.camera_readback_staging().MapAsync(
-                            wgpu::MapMode::Read, 0, GPUState::camera_state_buffer_size(),
-                            wgpu::CallbackMode::AllowSpontaneous,
-                            [](wgpu::MapAsyncStatus status, wgpu::StringView, Cartridge* self) {
-                                if (status == wgpu::MapAsyncStatus::Success) {
-                                    if (self->cameraReadbackGen_ == self->world_state_.world_gen) {
-                                        const auto* cam = static_cast<const GPUCameraState*>(
-                                            self->gpuState_.camera_readback_staging().GetConstMappedRange(
-                                                0, GPUState::camera_state_buffer_size()));
-                                        if (cam)
-                                            dump_camera_orbit(*cam, Idle::PAWN_HEADING,
-                                                              self->time_state_.seconds);
+                // arrival row's azimuth is an offset on the ARRIVAL gaze,
+                // which is a constant. A printed offset against the LIVE
+                // heading would be a different number from the one the panel
+                // takes, which is the one way this instrument could lie.
+                //
+                // PLUMB_0 C3 — this said "and apply_mood_arrival adds it to
+                // exactly this", of a function that was declared and never
+                // defined. The base is Idle::PAWN_HEADING because that is the
+                // arrival gaze, full stop; there was never an applier reading
+                // it back.
+                // PLUMB_0 C1 — the map is unconditional; the PRINT is not.
+                // The pose lands in camera_pose_ first, so a build with the
+                // witness off still has the fact and merely says nothing.
+                if (cameraReadbackState_ == CameraReadbackState::COPIED) {
+                    cameraReadbackState_ = CameraReadbackState::MAPPING;
+                    cameraReadbackGen_ = world_state_.world_gen;
+                    gpuState_.camera_readback_staging().MapAsync(
+                        wgpu::MapMode::Read, 0, GPUState::camera_state_buffer_size(),
+                        wgpu::CallbackMode::AllowSpontaneous,
+                        [](wgpu::MapAsyncStatus status, wgpu::StringView, Cartridge* self) {
+                            if (status == wgpu::MapAsyncStatus::Success) {
+                                // THE STALE-CALLBACK GUARD STAYS ON THE STORE,
+                                // not just on the print: a pose mapped for the
+                                // world before last is not this world's pose,
+                                // and storing it would hand a reader a camera
+                                // that no longer exists.
+                                if (self->cameraReadbackGen_ == self->world_state_.world_gen) {
+                                    const auto* cam = static_cast<const GPUCameraState*>(
+                                        self->gpuState_.camera_readback_staging().GetConstMappedRange(
+                                            0, GPUState::camera_state_buffer_size()));
+                                    if (cam) {
+                                        self->camera_pose_ = *cam;
+                                        self->camera_pose_valid_ = true;
+                                        if constexpr (INSTRUMENTS.camera_witness)
+                                            dump_camera_orbit(self->camera_pose_,
+                                                              Idle::PAWN_HEADING,
+                                                              (float)self->time_state_.seconds);
                                     }
-                                    self->gpuState_.camera_readback_staging().Unmap();
                                 }
-                                self->cameraReadbackState_ = CameraReadbackState::IDLE;
-                            },
-                            this);
-                    }
+                                self->gpuState_.camera_readback_staging().Unmap();
+                            }
+                            self->cameraReadbackState_ = CameraReadbackState::IDLE;
+                        },
+                        this);
                 }
             }
 
@@ -2290,9 +2334,16 @@ namespace t7 {
             }
 
             // R11 — WITNESS CAPTURE (O-2: staging copies AFTER compute; feeds
-            // next frame's HARVEST). The camera copy is CAMERA-HOST ONLY (the
-            // pawn-host frame encodes no camera copy; that path stays
-            // byte-untouched).
+            // next frame's HARVEST).
+            //
+            // PLUMB_0 C2 — THE BANNER SAID "the camera copy is CAMERA-HOST
+            // ONLY (the pawn-host frame encodes no camera copy; that path
+            // stays byte-untouched)" AND THE CODE BELOW HAS NO HOST TEST. It
+            // never had one: the only guard was `if constexpr
+            // (INSTRUMENTS.camera_witness)`, and that arm is true in every
+            // column. The copy runs in every host and always has. Corrected
+            // rather than implemented — a host test would now break C1's
+            // promise that the pose is available whoever holds the point.
             void phase_witness_capture(RenderCtx& c) {
                 auto& encoder = c.encoder;
                 // Copy full agent buffer from GPU to staging (for readback next frame)
@@ -2316,14 +2367,14 @@ namespace t7 {
                 // encoder and after the same dispatches. update_camera_vp has
                 // written camera_state by now, exactly as it has written the
                 // agent buffer above.
-                if constexpr (INSTRUMENTS.camera_witness) {
-                    if (cameraReadbackState_ == CameraReadbackState::IDLE) {
-                        encoder.CopyBufferToBuffer(
-                            gpuState_.camera_buffer(), 0,
-                            gpuState_.camera_readback_staging(), 0,
-                            GPUState::camera_state_buffer_size());
-                        cameraReadbackState_ = CameraReadbackState::COPIED;
-                    }
+                // PLUMB_0 C1 — no longer instrument-gated: the pose is a
+                // spine fact and the shipped column already paid for it.
+                if (cameraReadbackState_ == CameraReadbackState::IDLE) {
+                    encoder.CopyBufferToBuffer(
+                        gpuState_.camera_buffer(), 0,
+                        gpuState_.camera_readback_staging(), 0,
+                        GPUState::camera_state_buffer_size());
+                    cameraReadbackState_ = CameraReadbackState::COPIED;
                 }
             }
 

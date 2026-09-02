@@ -1155,11 +1155,12 @@ namespace t7 {
         //
         // IT SPEAKS THE ARRIVAL ROW'S THREE NAMES, so a pose made by hand
         // can be read off and authored: distance, elevation in degrees, and
-        // the azimuth as an OFFSET on the gaze. The base is whatever
-        // apply_mood_arrival adds the offset to and nothing else — pass
-        // Idle::PAWN_HEADING, the ARRIVAL gaze, not the live heading — or
-        // the number printed is not the number to type and the instrument
-        // lies.
+        // the azimuth as an OFFSET on the gaze. The base is the ARRIVAL
+        // gaze and nothing else — pass Idle::PAWN_HEADING, not the live
+        // heading — or the number printed is not the number to type and the
+        // instrument lies. (PLUMB_0 C3: this named apply_mood_arrival as the
+        // thing that adds the offset. That function was declared and never
+        // defined; the base is a constant, not a function's input.)
         //
         // Printed on CHANGE and no faster than 4 Hz: a settled camera says
         // nothing, and silence is the resting state.
@@ -2353,7 +2354,7 @@ namespace t7 {
             wgpu::Buffer agentStateBuffer_;
             wgpu::Buffer agentStateReadbackStaging_;
             wgpu::Buffer floatingEntityReadbackStaging_;
-            wgpu::Buffer cameraReadbackStaging_;   // ATRIUM_11 — created only when the witness is armed
+            wgpu::Buffer cameraReadbackStaging_;   // ATRIUM_11 — always created; the pose is a spine fact (PLUMB_0 C1)
             // CHORD_1 — THE AGENTS' ROOM, one buffer where five stood
             // (portals, behaviors, tier gains, and the two occupier
             // windows). agentRoomStage_ is the sovereign CPU copy: every
@@ -4389,14 +4390,21 @@ namespace t7 {
                     Dim::TOTAL_FLOATING_SLOTS * sizeof(GPUFloatingEntityState),
                     wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::MapRead);
                 // ATRIUM_11 — THE THIRD READBACK, and the smallest: 48 bytes,
-                // once per frame, and only when the witness is armed. The
-                // camera's source already carries CopySrc for the CHORD_3
-                // block copy, so nothing else changes to make this legal.
-                if constexpr (INSTRUMENTS.camera_witness) {
-                    cameraReadbackStaging_ = makeBuffer("Camera State Readback Staging",
-                        sizeof(GPUCameraState),
-                        wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::MapRead);
-                }
+                // once per frame. The camera's source already carries CopySrc
+                // for the CHORD_3 block copy, so nothing else changes to make
+                // this legal.
+                //
+                // PLUMB_0 C1 (RULING-1) — UNGATED, BECAUSE THE POSE IS NOW A
+                // SPINE FACT AND NOT AN INSTRUMENT. It was created "only when
+                // the witness is armed", which was harmless while
+                // camera_witness was true in every column — and would have
+                // become a copy into a null buffer the day the witness took
+                // the retirement its own banner promises, or the day a column
+                // turned it off. Promoting the copy without promoting the
+                // buffer is half a promotion and the wrong half.
+                cameraReadbackStaging_ = makeBuffer("Camera State Readback Staging",
+                    sizeof(GPUCameraState),
+                    wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::MapRead);
                 // THE FRAME METER — GPU half. Created only when the
                 // instruments dial arms the meter AND the device carries
                 // timestamp-query (the cartridge prints the loud boot line
