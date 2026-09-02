@@ -2371,6 +2371,14 @@ response 403` — so CC cannot run it):
 3. In DevTools → Network, filter `paintings/`, and read the failed rows'
    status column: `404` is A; `(failed) net::ERR_…` is B.
 
+> **SUPERSEDED 2026-09-02 — REPEAT_0c U-S2 TOOK THE REVERSAL.** Jean's field
+> measurement came back (B): the ghosts were a dying dev server, not absences.
+> A failed fetch now sleeps for `AUTHORED_DEAD_COOLDOWN_S` (30 s) instead of
+> dying for the session, and `authored_manifest_dead` (`std::vector<bool>`) is
+> now `authored_manifest_dead_until` (`std::vector<float>`). The paragraph
+> below is kept because its reasoning is what licensed the reversal — read it
+> as the argument, not as the live rule.
+
 **AND THE ANSWER CHANGES R1, WHICH IS WHY IT MATTERS BEFORE U1 SHIPS.** R1
 rules that a failed fetch is dead for the session, priced on "a picture that
 is not there this minute is not there in ten." That is exactly right under
@@ -2538,11 +2546,15 @@ refute it. The web_dist lens returned **zero findings**. Of the rest:
   paintings that exist. It is not a fifth road — the timeout routes into
   `authored_image_onerror`, which is road one, and REPEAT_0 U7 already said so
   in place. The hazard class it names is the one `authored_manifest_dead`'s own
-  comment and R4 above both enumerate. The useful residue is the magnitude:
+  comment and R4 above both enumerate. (That symbol is now
+  `authored_manifest_dead_until` — REPEAT_0c U-S2.) The useful residue is the
+  magnitude:
   for the timeout to fire on a ~500 KB painting the link must sustain under
   ~17 KB/s per lane against four lanes — roughly half a megabit aggregate,
   which is a link on which the exhibition cannot run at all. R4's one-counter
-  reversal covers this arm for free if it is ever built.
+  reversal covers this arm for free if it is ever built. **It was built —
+  REPEAT_0c U-S2 — so this arm is covered: a timeout now costs one painting
+  for 30 s rather than for the session.**
 
 ## REPEAT_0b — THE ROOM THAT WOULDN'T LEAVE
 

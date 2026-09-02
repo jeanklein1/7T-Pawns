@@ -766,9 +766,24 @@ struct GalleryCenter {
     // looking at, is the one the sequence takes back.
     //
     // Written by commit_gallery and by nothing else, because commit_gallery is
-    // the only road that has a GalleryCenter to write. Negative means never
-    // dressed — a record that select reserved and place released still reads
-    // its default, and the tide skips it on `active` long before it reads this.
+    // the only road that has a GalleryCenter to write.
+    //
+    // NEGATIVE MEANS NEVER DRESSED **ONLY UNTIL THE SLOT IS REUSED**, AND THIS
+    // IS A TRAP LAID FOR WHOEVER BUILDS THE TIDE. An earlier draft of this
+    // banner claimed the default protects a reserved-but-undressed record and
+    // that `active` protects the reader. Both are false. evict_gallery clears
+    // only `active`, so a recycled slot keeps the previous occupant's stamp
+    // (and its x/z — the MIN_GALLERY_DISTANCE scan already reads those stale).
+    // select_gallery_for_patch then takes the first !active index and sets
+    // `active = true` while writing only patch_gx/patch_gz, so between select
+    // and commit the record is ACTIVE, carrying a stale non-negative stamp,
+    // and holding no paintings. Only teardown_gallery's whole-struct reset
+    // restores the -1.
+    //
+    // Today that window is intra-frame — select, place and commit run in one
+    // iteration of spawn_selected_patches — so nothing observes it. A tide
+    // reading `active && now - dressed_at > interval` is exactly the reader
+    // that would, and it must stamp or clear at select rather than trust this.
     //
     // THE STRUCT IS CPU-ONLY. gallery_centers[] lives in GalleryState and is
     // read by select_gallery_for_patch's exclusion scan and by evict_gallery;
@@ -1278,11 +1293,18 @@ inline uint32_t authored_next_live(const GalleryState& gs, uint32_t from) {
 // different road: the ring stops appending, popped layers go invalid, rows
 // end, the deferred hang idles.
 //
-// IT IS NO LONGER A TERMINAL STATE, so the latch is no longer terminal
-// either. Under the cooldown every exhaustion has an end — the earliest
-// stamp — and authored_take_next re-arms this the moment the sequence hands
-// out anything again. Still no reload logic and still no timer of its own:
-// the cooldown IS the timer, and it is already ticking.
+// IT IS NO LONGER A TERMINAL STATE, so the sentence is no longer terminal
+// either. Under the cooldown every exhaustion has an end — the earliest stamp
+// — and authored_pump_cooled_layers is what asks again when it arrives.
+//
+// NOTHING RE-ARMS THIS. An earlier draft cleared the stamp at a successful
+// take, and then at a successful arrival; both were measured and both were
+// wrong (1084 lines in ten minutes of outage, then 337 under a 30% flake).
+// The stamp is left to age instead, which makes the floor absolute: one
+// sentence per AUTHORED_DEAD_COOLDOWN_S, whatever else happens. The cost,
+// stated: a second outage beginning within 30 s of a reported one is silent.
+// Still no reload logic and still no timer of its own — the cooldown IS the
+// timer, and it is already ticking.
 inline void authored_report_exhausted(GalleryState& gs) {
     if (gs.authored_exhausted_said_at >= 0.0f
         && gs.authored_now - gs.authored_exhausted_said_at
@@ -2892,6 +2914,36 @@ inline void exhibition_manifest_onsuccess(emscripten_fetch_t* fetch) {
     // disagree about how long the sequence is.
     gs->authored_manifest_dead_until.assign(gs->authored_disk_manifest.size(), -1.0f);
     gs->authored_exhausted_said_at = -1.0f;
+
+    // A 200 CARRYING THE WRONG BYTES IS NOT AN ANSWER (REPEAT_0c U-S1b).
+    //
+    // This is the emscripten SUCCESS arm, so every 2xx lands here whatever the
+    // body is, and parse_exhibition_array returns silently empty on a body with
+    // no "paintings" key. A captive portal, a corporate proxy, or an SPA-style
+    // rewrite that answers exhibition.json with 200 and an HTML page therefore
+    // reached here, emptied the manifest, DISARMED the ladder and left the
+    // latch shut — a paintingless session with three unspent retries sitting at
+    // -1.0f. U-S1's whole premise is that one packet is not a verdict, and a
+    // 200 with the wrong bytes is still one packet.
+    //
+    // An empty parse is routed to the failure path rather than trusted: the
+    // ladder is left armed and the latch re-opened, so the tick asks again.
+    // A genuinely empty exhibition — a deploy with no paintings in it — costs
+    // four requests and then says so, which is the same price a missing file
+    // pays and a great deal less than a silent session.
+    if (gs->authored_disk_manifest.empty()
+        && gs->authored_manifest_attempts <= AUTHORED_MANIFEST_MAX_RETRIES) {
+        const uint32_t n = gs->authored_manifest_attempts;
+        gs->authored_manifest_retry_delay = AUTHORED_MANIFEST_BACKOFF_S[n - 1u];
+        gs->authored_manifest_retry_at    = -1.0f;
+        std::cout << "[Authored] Manifest retry " << n
+            << "/" << AUTHORED_MANIFEST_MAX_RETRIES
+            << " in " << AUTHORED_MANIFEST_BACKOFF_S[n - 1u] << "s"
+            << " (" << EXHIBITION_MANIFEST_URL
+            << ", HTTP 200 named no paintings)\n";
+        return;
+    }
+
     // REPEAT_0c U-S1 — the arrival disarms the wait. Nothing can be in flight
     // beside this one (the latch admits one at a time), so this is belt to the
     // latch's braces: a retry armed by an earlier failure must not fire behind
@@ -2984,7 +3036,30 @@ inline void kick_exhibition_manifest_fetch(GalleryState& gs) {
     attr.onsuccess = exhibition_manifest_onsuccess;
     attr.onerror = exhibition_manifest_onerror;
     attr.userData = &gs;
-    emscripten_fetch(&attr, EXHIBITION_MANIFEST_URL);
+    // THE START CAN FAIL, AND THEN NO CALLBACK EVER RUNS (REPEAT_0c U-S1b).
+    // start_authored_fetch has tested this since EXHIBIT_0 and says so in
+    // those words; this call discarded the same return. A refused start left
+    // authored_manifest_requested latched with no onsuccess and no onerror to
+    // open it — a silent, session-long, paintingless world reached through the
+    // one door U-S1 did not close. Unwound by hand into the same ladder the
+    // error path uses, so a refusal is a retry rather than a verdict.
+    if (!emscripten_fetch(&attr, EXHIBITION_MANIFEST_URL)) {
+        const uint32_t n = gs.authored_manifest_attempts;
+        if (n >= 1u && n <= AUTHORED_MANIFEST_MAX_RETRIES) {
+            gs.authored_manifest_retry_delay = AUTHORED_MANIFEST_BACKOFF_S[n - 1u];
+            gs.authored_manifest_retry_at    = -1.0f;
+            std::cout << "[Authored] Manifest retry " << n
+                << "/" << AUTHORED_MANIFEST_MAX_RETRIES
+                << " in " << AUTHORED_MANIFEST_BACKOFF_S[n - 1u] << "s"
+                << " (" << EXHIBITION_MANIFEST_URL
+                << ", the request would not start)\n";
+        }
+        else {
+            std::cout << "[Authored] No paintings folder found"
+                << " (" << EXHIBITION_MANIFEST_URL
+                << ", the request would not start)\n";
+        }
+    }
 }
 
 // THE HALF OF THE WAIT THAT HAS A CLOCK (REPEAT_0c U-S1). Called every frame
@@ -3103,6 +3178,47 @@ inline void load_authored_textures(GalleryState& gs) {
     recount_authored_staged(gs);
     std::cout << "[Authored] Staged " << gs.authored_staged_count
         << "/" << manifest_size << " images\n";
+}
+
+// THE COOLDOWN NEEDS A CALLER, AND IT DID NOT HAVE ONE (REPEAT_0c U-S2b).
+//
+// U-S2 gave a failed index a 30 s sentence and stopped there, on a model that
+// called authored_take_next every tick. The tree does not. Its three callers
+// are authored_fetch_release_slot — which needs a fetch already in flight to
+// fail — and authored_pop's two arms, and BOTH hang roads refuse to reach the
+// pop when the ring is dry: commit_gallery forces `use_authored = false` at
+// `authored_ready_depth(gs) == 0`, and reads the same depth as its
+// max_available for an AUTHORED_ONLY site. So in the one case the cooldown
+// exists for — every entry failed, every layer invalid, ready depth zero —
+// nothing asked again when the sentences expired, and the session stayed
+// paintingless. That is R1 restored by accident, which is the whole of what
+// U-S2 set out to end.
+//
+// THIS IS THE THIRD TIME THIS SHAPE HAS COME BACK. REPEAT_0 U7c left a
+// selector reachable only through the state it repaired; REPEAT_0b U3 put the
+// world law inside authored_pop, where saturation — the leak's own terminal
+// symptom — made the witness unreachable. A recovery gated on the health it
+// restores is not a recovery. So this one hangs off the frame instead of off
+// the hang: it runs whether or not anything wants a painting.
+//
+// ONE LAYER A FRAME, FROM THE HEAD. The head's hole is the one that ends every
+// row (R3), so it heals first. authored_take_next returns UINT32_MAX while
+// every index is still cooling, so the whole cost during an outage is one ring
+// scan per frame and not one request; when the sentences expire it issues one
+// fetch a frame until the ring is whole, paced below by AUTHORED_FETCH_INFLIGHT_CAP.
+inline void authored_pump_cooled_layers(GalleryState& gs) {
+    if (gs.authored_disk_manifest.empty()) return;
+    const uint32_t ring = authored_ring_size(gs);
+    for (uint32_t i = 0; i < ring; i++) {
+        const uint32_t layer = (gs.authored_head + i) % ring;
+        const AuthoredStagingRecord& r = gs.authored_staging[layer];
+        if (r.valid || r.pending) continue;
+        const uint32_t disk = authored_take_next(gs);
+        if (disk == UINT32_MAX) return;     // still cooling — nothing is owed yet
+        load_authored_image_to_staging(gs, layer, disk,
+            gs.authored_disk_manifest[disk].c_str());
+        return;                             // one a frame, and only one
+    }
 }
 
 // THE POP-AND-APPEND — the playlist's whole verb. The caller has already
@@ -3776,17 +3892,25 @@ inline void tick_gallery_deferred_hang(MachineCtx* c, wgpu::Queue& queue) {
     // return below is about the HANGING, and a painting waiting to be
     // decoded must not be held hostage to a room that has nowhere to put
     // it yet. One painting, this frame, and only after first present.
+    // REPEAT_0c U-S2 — THE CLOCK FIRST, ABOVE EVERYTHING THAT CAN STAMP ONE.
+    // The frame hands the clock to the fetch callbacks, which have none of
+    // their own. It sits above pump_authored_valve because the valve's
+    // decode-failure arm reaches authored_fetch_release_slot, which stamps a
+    // cooldown — with last frame's clock if this line came after it. One frame
+    // against thirty seconds is nothing, but the ordering claim was written
+    // down before it was true, and a claim like that is what the next campaign
+    // leans on.
+    gs.authored_now = c->time_state_.seconds;
     pump_authored_valve(gs, c->gpuState_, queue);
     // REPEAT_0c U-S1 — beside the valve and the fill, for the same reason they
     // are here: this is the one place per frame the exhibition is asked for,
     // and a manifest that has not arrived is the only thing that can make
     // everything below it moot.
-    // REPEAT_0c U-S2 — the frame hands the clock to the fetch callbacks, which
-    // have none of their own. Before the fill and before any hang, so nothing
-    // downstream can read a stamp from the previous frame.
-    gs.authored_now = c->time_state_.seconds;
-    tick_exhibition_manifest_retry(gs, c->time_state_.seconds);
+    tick_exhibition_manifest_retry(gs, gs.authored_now);
     load_authored_textures(gs);
+    // REPEAT_0c U-S2b — the cooldown's caller. Off the frame, not off the
+    // hang, because the hang refuses to run in exactly the state this repairs.
+    authored_pump_cooled_layers(gs);
     if (gallery_available_staging(gs, GallerySiteType::MIXED) == 0) return;   // the pool's sum
     PatchCandidate cands[Dim::MAX_ACTIVE_PATCHES];
     const uint32_t n = collect_sorted_patches(c, cands, c->point_.x, c->point_.z,
