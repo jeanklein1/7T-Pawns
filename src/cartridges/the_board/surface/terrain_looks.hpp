@@ -125,6 +125,31 @@ inline constexpr float REST_CHECKER_VARIANCE = 0.0f;
 // pin sources it from here).
 inline constexpr std::uint32_t REST_PULSE_COUNT = 0;
 
+// ── THE PULSE BUS's CPU ROOM (PULSE_1) ──────────────────────────────
+// WHAT: the ring's shape, its liveness test, and the tap's impulse, on
+//   the CPU side of the seam. The RING ITSELF lives on the spine
+//   (Cartridge::pulseRing_) because stamping an onset needs the clock
+//   and the point, and both are the spine's; what lives here are the
+//   numbers, beside the rest pin they retire to.
+// MIRROR: the first four are CPU faces of world.wgsl's
+//   `pulse_data: array<vec4<f32>, 8>` and of contrib_radial_pulses_at's
+//   own early-exit — `age < 0.0 || age > PULSE_MAX_AGE || p.w < 0.001`.
+//   THE TWO ROOMS MUST AGREE OR THE COUNT OUTLIVES THE RINGS IT COUNTS:
+//   the CPU retires the ring to REST_PULSE_COUNT using exactly the test
+//   the shader draws by, and pulse_count is a conjunct of the live-card
+//   rest law (Cartridge::live_card_is_live), so a CPU that thought a
+//   pulse still alive would hold the card's writer awake over a world
+//   drawing nothing.
+// CONSUMER: Cartridge::emit_radial_pulse / retire_aged_pulses.
+inline constexpr std::uint32_t PULSE_RING_SLOTS   = 8;    // WGSL: array<vec4<f32>, 8>
+inline constexpr std::uint32_t PULSE_RING_FLOATS  = PULSE_RING_SLOTS * 4;
+inline constexpr float         PULSE_MAX_AGE      = 8.0f; // WGSL: const PULSE_MAX_AGE
+inline constexpr float         PULSE_MIN_AMPLITUDE = 0.001f;  // WGSL: the p.w early-exit
+// THE TAP'S IMPULSE IS FLAT (PULSE_1 ruling 3). Speed-scaling it to the
+// point's velocity is the attractive next move and it is refused until a
+// measurement asks for it.
+inline constexpr float         PULSE_TAP_AMPLITUDE = 1.0f;
+
 // ── ROWS 3-8 — see the WGSL room (world.wgsl §2.2 TERRAIN_LOOKS) ────
 //   ROW 3 PALETTE COMPOSITION: PALETTE_DOMINANT_WEIGHT / _MINOR_WEIGHT
 //     (the dominant-branch matrix) + PALETTE_COMPLEXITY (the pinned

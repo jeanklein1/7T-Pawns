@@ -81,8 +81,11 @@ struct TimeState {
     // found the three seams that carry one — the frame signal, the orb config
     // and GPURibbonState::time — and all three die at TEARDOWN
     // (teardown_ribbon, teardown_orbs), so no promise crosses the boundary.
-    // The pulse ring would be a fourth, but set_pulse_data is only ever
-    // called with zeros; it is inert.
+    // THE PULSE RING IS THE FOURTH, and since PULSE_1 it is no longer
+    // inert: the glass tap and the SPACE key stamp real onsets in this
+    // clock. It is cleared in become_destination — the one door every
+    // world enters by, and the line above this one — so the promise still
+    // does not cross the boundary.
     double world_epoch = 0.0;
     // THE ONE PLACE THE CLOCK NARROWS. Every CPU consumer reads `seconds`;
     // every GPU seam reads this. Two homes for one number is exactly the
@@ -169,6 +172,14 @@ struct InputState {
     float zoom_delta = 0.0f;
     float pan_x_delta = 0.0f;
     float pan_y_delta = 0.0f;
+    // PULSE_1 — THE TAP'S INTENT, not a delta: an EDGE, raised by the
+    // glass tap and the SPACE key, spent exactly once by the frame
+    // (phase_live_card_write) and therefore NOT cleared by
+    // clear_input_deltas. It is a bool rather than a count because the
+    // glass debounce is 80 ms and the key is a down-edge, so two taps
+    // cannot reach one frame; a musician wanting both would call
+    // emit_radial_pulse directly, which is what the bus is for.
+    bool  pulse_pending = false;
 };
 
 

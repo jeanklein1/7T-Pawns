@@ -1352,6 +1352,18 @@ namespace t7 {
                 // in the same arm, and the frame signal is written fresh every
                 // frame, so the rebase cannot tear a live animation.
                 time_state_.world_epoch = time_state_.seconds;
+                // PULSE_1 — THE FOURTH SEAM, NOW THAT IT IS ARMED. B-G1's
+                // census found three GPU-resident times that cross a rebase
+                // and named the ring a fourth "but set_pulse_data is only
+                // ever called with zeros; it is inert" (TimeState's own
+                // comment, corrected there). It is not inert any more: an
+                // onset stamped in the world we are leaving would be
+                // differenced against the new world's epoch. The ribbon table
+                // and the orb state are cleared by their teardown verbs in
+                // this same arm; the ring is cleared HERE, at the one door
+                // every world enters by, because that is where the epoch
+                // moves — so boot is covered by the same line.
+                clear_pulse_ring();
                 world_state_.active_seed   = d.seed;
                 world_state_.finite_mode   = d.finite;
                 world_state_.finite_radius = d.finite_radius;
@@ -2317,6 +2329,18 @@ namespace t7 {
             void phase_live_card_write(RenderCtx& c) {
                 (void)c;
 
+                // PULSE_1 — THE RING IS DRAINED AND RETIRED BEFORE THE LAW
+                // READS IT, so the rest law sees this frame's truth rather
+                // than last frame's. The tap arrives as an intent on the
+                // input organ (InputState::pulse_pending) and is spent here,
+                // where the clock and the point are both in hand — the drain
+                // idiom the analog deltas already use, not a mid-event write.
+                if (inputState_.pulse_pending) {
+                    inputState_.pulse_pending = false;
+                    issue_pulse_from_point();
+                }
+                retire_aged_pulses();
+
                 const bool card_live = live_card_is_live();
 
                 // PROCESS P6 — every switch has a witness. This is the arm
@@ -2503,6 +2527,85 @@ namespace t7 {
                         }
                     }
                 }
+            }
+
+            // ═══ THE PULSE BUS (PULSE_1) ═════════════════════════════
+            //
+            // ONE RING, MANY WRITERS. contrib_radial_pulses_at never asks who
+            // stamped a slot: a thumb-tap and a note-on are the same event to
+            // it — a position, a time, an amplitude. The writer today is the
+            // player (the glass tap, the SPACE key). A soundtrack onset
+            // writer joins by calling emit_radial_pulse and needs nothing
+            // else: no second home, no struct change, no shader change.
+            //
+            // NO DEBOUNCE HERE. Rate-limiting belongs to the input that has a
+            // bounce problem, which is the finger, not the bus — a musician
+            // firing two notes 40 ms apart is entitled to both, and a bus
+            // that swallowed one would be a defect authored on purpose.
+            //
+            // THE RING IS THE SPINE'S because stamping an onset needs the
+            // clock (time_state_.gpu_seconds — the SAME number the shader
+            // differences against, PLUMB_0 B2) and the point; the numbers it
+            // is shaped by live in terrain_looks, beside the rest pin.
+            float    pulseRing_[terrain_looks::PULSE_RING_FLOATS] = {};
+            uint32_t pulseWriteIdx_ = 0;
+            uint32_t pulseCount_    = 0;   // the count the GPU reads; a rest-law conjunct
+
+            // THE ORIGIN IS THE POINT, ONE FRAME STALE (law E-4). On a
+            // wavefront expanding at PULSE_SPEED (30 wu/s) one frame of drift
+            // at walking pace is sub-pixel, so no GPU-side stamp and no
+            // second readback is bought for it.
+            void emit_radial_pulse(float world_x, float world_z, float amplitude) {
+                const uint32_t slot = pulseWriteIdx_ % terrain_looks::PULSE_RING_SLOTS;
+                const uint32_t base = slot * 4u;
+                pulseRing_[base + 0] = world_x;
+                pulseRing_[base + 1] = world_z;
+                pulseRing_[base + 2] = time_state_.gpu_seconds();
+                pulseRing_[base + 3] = amplitude;
+                pulseWriteIdx_++;
+                // Slots fill 0..N-1 from a zeroed ring, so the count is the
+                // write index saturated at the ring — never a live-scan,
+                // because the shader's own early-exit retires dead slots and
+                // retire_aged_pulses returns the whole ring to rest.
+                pulseCount_ = (pulseWriteIdx_ < terrain_looks::PULSE_RING_SLOTS)
+                    ? pulseWriteIdx_ : terrain_looks::PULSE_RING_SLOTS;
+                gpuState_.set_pulse_data(pulseCount_, pulseRing_);
+            }
+
+            // The verb, as the glass and the keyboard issue it.
+            void issue_pulse_from_point() {
+                emit_radial_pulse(point_.x, point_.z, terrain_looks::PULSE_TAP_AMPLITUDE);
+            }
+
+            // THE COUNT MUST RETIRE, and this is the whole reason:
+            // pulse_count > 0 is the FIRST conjunct of live_card_is_live, so
+            // a ring that never falls back to rest holds the live-card
+            // writer — 819,200 invocations a frame — awake for the rest of
+            // the session over a world that has stopped drawing rings. One
+            // tap would have cost OPT_1a's rest skip permanently.
+            //
+            // The liveness test is the shader's, exactly (age < 0 is dead
+            // there too, which is the rebase net below saying the same thing
+            // twice). One survivor is enough to keep the ring.
+            void retire_aged_pulses() {
+                if (pulseCount_ == 0u) return;
+                const float now = time_state_.gpu_seconds();
+                for (uint32_t i = 0; i < pulseCount_; i++) {
+                    const float age = now - pulseRing_[i * 4u + 2];
+                    if (age >= 0.0f && age <= terrain_looks::PULSE_MAX_AGE
+                        && pulseRing_[i * 4u + 3] >= terrain_looks::PULSE_MIN_AMPLITUDE) return;
+                }
+                clear_pulse_ring();
+            }
+
+            // Back to the rest the boot pin writes — one config write on the
+            // transition into rest, the live card's own idiom.
+            void clear_pulse_ring() {
+                if (pulseCount_ == 0u && pulseWriteIdx_ == 0u) return;
+                pulseWriteIdx_ = 0;
+                pulseCount_    = 0;
+                for (float& f : pulseRing_) f = 0.0f;
+                gpuState_.set_pulse_data(terrain_looks::REST_PULSE_COUNT, pulseRing_);
             }
 
             uint32_t zoneRectsInCorePrev_ = 0;   // P6 witness memory (transitions only)
