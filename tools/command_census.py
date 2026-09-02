@@ -48,9 +48,17 @@ BOARD = os.path.join(REPO, "src", "cartridges", "the_board")
 # Order is the ledger's row order: the two files the handoff named
 # first, then the encoders the tree actually carries, then the two
 # files that hold the submit tail and the reconfigure trigger.
+# NAMED, NOT POSITIONAL (PLUMB_0 A3). Two censuses read INPUTS[-1] meaning
+# "console.hpp" and one read INPUTS[1] meaning "renderer.hpp" — so appending a
+# tenth input silently re-aimed both at the new file and two witnesses failed
+# with a message about the tree rather than about the list. A scanned file
+# that some pass needs BY IDENTITY gets a name; the list is for iteration.
+RENDERER_HPP = os.path.join(BOARD, "realization", "renderer.hpp")
+CONSOLE_HPP = os.path.join(REPO, "src", "console", "console.hpp")
+
 INPUTS = [
     os.path.join(BOARD, "realization", "render_passes.hpp"),
-    os.path.join(BOARD, "realization", "renderer.hpp"),
+    RENDERER_HPP,
     os.path.join(BOARD, "cartridge.hpp"),
     os.path.join(BOARD, "surface", "patch_system.hpp"),
     os.path.join(BOARD, "bodies", "gol_zones.hpp"),
@@ -58,7 +66,13 @@ INPUTS = [
     os.path.join(BOARD, "bodies", "gallery.hpp"),
     os.path.join(BOARD, "bodies", "orbs.hpp"),
     os.path.join(REPO, "src", "the_board.cpp"),
-    os.path.join(REPO, "src", "console", "console.hpp"),
+    CONSOLE_HPP,
+    # PLUMB_0 A3 — A GENERATOR IS AN INPUT TO ITS OWN ARTIFACT. GATES_2c gave
+    # the mirror census this rule and left the command census without it, so
+    # COMMAND_LEDGER named `tools/command_census.py` in its own first line and
+    # pinned everything except that. An edit to the census's rules changed the
+    # artifact with nothing to say the artifact was owed.
+    os.path.abspath(__file__),
 ]
 
 DEFAULT_OUT = os.path.join(REPO, "audit", "COMMAND_LEDGER.md")
@@ -111,7 +125,86 @@ def verify_bytes(path):
             "trailing": d.endswith(b"\n") and not d.endswith(b"\n\n")}
 
 
-def provenance():
+# PLUMB_0 A1/A3 — A CHECK THAT CANNOT FAIL IS A REPORT.
+#
+# `--check` ran the witnesses and returned 0. The witnesses ask whether the
+# TREE is consistent; nothing asked whether the ARTIFACT was taken from this
+# tree. So COMMAND_LEDGER shipped a stale digest through every campaign that
+# edited a scanned file — the REPEAT_0a refuter found it, REPEAT_0c re-found
+# it, and both times the row was green. GATES_2b gave the binding ledger this
+# comparison and it was never carried across; this is the carry.
+#
+# THE STANZA IS THE LIST, as it is there: whatever the artifact pins is
+# checked, so a pin added tomorrow is enforced with no edit here.
+_PIN_ROW = re.compile(r"^\|\s*`([^`]+)`\s*\|\s*`sha256:([0-9a-f]{64})`\s*\|\s*$",
+                      re.M)
+
+_CITE_RE = re.compile(r"(?<![\w/.-])((?:src|tools|web|audit)/[A-Za-z0-9_./+-]+"
+                      r"\.(?:hpp|cpp|h|cc|inc|wgsl|py|js|html|md|json))")
+
+
+def cited_paths(text):
+    """Every repo file the emission NAMES — the pin set beyond INPUTS.
+
+    Existence is the filter, not the regex: prose names directories and
+    files that died campaigns ago, and a pin on a path that is not there
+    would red the gate for a sentence rather than for a fact.
+    """
+    out = set()
+    for m in _CITE_RE.finditer(text):
+        rel = m.group(1)
+        if os.path.isfile(os.path.join(REPO, rel.replace("/", os.sep))):
+            out.add(rel)
+    return sorted(out)
+
+
+def pinned_inputs(ledger_md):
+    """Read back every pin the artifact wrote about its own inputs."""
+    try:
+        with open(ledger_md, "r", encoding="utf-8") as f:
+            text = f.read()
+    except OSError:
+        return None
+    return [(pp.replace("\\", "/"), h) for pp, h in _PIN_ROW.findall(text)]
+
+
+def report_stale(ledger_md):
+    """True when the artifact disagrees with the tree. The caller exits red.
+
+    Same shape and same message form as binding_ledger.report_stale — one
+    voice across the ledger family — and the same three verdicts: an absent
+    artifact pins nothing, a stanza with no pins claims nothing, and a pin
+    that disagrees is stale. The cure names the ORDER, because the three
+    tools have one.
+    """
+    rel_led = os.path.relpath(ledger_md, REPO).replace(os.sep, "/")
+    cure = ("Regenerate in input order: binding_ledger, command_census, "
+            "then mirror_census.")
+    pins = pinned_inputs(ledger_md)
+    bad = []
+    if pins is None:
+        bad.append("STALE: %s is absent, so nothing is pinned. %s"
+                   % (rel_led, cure))
+    elif not pins:
+        bad.append("STALE: %s pins nothing; its provenance stanza carries no "
+                   "sha256 row. %s" % (rel_led, cure))
+    else:
+        for rel, want in pins:
+            live_path = os.path.join(REPO, rel.replace("/", os.sep))
+            if not os.path.isfile(live_path):
+                bad.append("STALE: %s pins %s for %s; that file is not on "
+                           "disk. %s" % (rel_led, want[:8], rel, cure))
+                continue
+            live = sha256(live_path)
+            if live != want:
+                bad.append("STALE: %s pins %s for %s; live is %s. %s"
+                           % (rel_led, want[:8], rel, live[:8], cure))
+    for line in bad:
+        print(line)
+    return bool(bad)
+
+
+def provenance(extra=()):
     """Commit SHA + content hashes of the scanned files.
 
     NOT `HEAD` (the G2 pattern, binding_ledger.py): re-running on an
@@ -127,7 +220,12 @@ def provenance():
                               capture_output=True, text=True, check=True).stdout.strip()
     except Exception:
         sha, subj = "(git unavailable)", ""
-    return sha, subj, [(r, sha256(p)) for r, p in zip(rel, INPUTS)]
+    pins = [(r.replace(os.sep, "/"), sha256(p)) for r, p in zip(rel, INPUTS)]
+    have = {r for r, _ in pins}
+    for r in extra:
+        if r not in have:
+            pins.append((r, sha256(os.path.join(REPO, r.replace("/", os.sep)))))
+    return sha, subj, pins
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -396,7 +494,7 @@ def census_reconfigure(w):
     condition in Console::begin_frame whose branch reconfigures the
     surface and fires frame1_report — the code that feeds the [FRAME_1]
     print. Quoted verbatim."""
-    path = INPUTS[-1]
+    path = CONSOLE_HPP
     text = read_raw(path)
     relp = os.path.relpath(path, REPO)
     sites = []
@@ -469,7 +567,7 @@ def finding_d_discard(w, rows):
     # enter a bind group at all.
     depth_rows = depth_bindings_from_binding_ledger()
     syms = sorted(s for s, _ in depth_rows)
-    console_text = read_raw(INPUTS[-1])
+    console_text = read_raw(CONSOLE_HPP)
     m = re.search(r"depthDesc\.usage = ([^;]+);", console_text)
     usage = _norm(m.group(1)) if m else "(not found)"
     b_no = (syms == ["shadow_map", "spot_shadow_map"]
@@ -489,14 +587,15 @@ def finding_d_discard(w, rows):
 # EMISSION
 # ═══════════════════════════════════════════════════════════════════════
 
-def emit(w, rows, subs, reconf_sites, trigger, dd, encoders, bundles):
+def emit(w, rows, subs, reconf_sites, trigger, dd, encoders, bundles,
+         extra_pins=()):
     A = []
     A.append("# COMMAND_LEDGER — the pass census (DOMESDAY_0 A4)")
     A.append("")
     A.append("Generated by `tools/command_census.py` — do not hand-edit.")
     A.append("Read-only: a census of the program's pass and submit surface.")
     A.append("")
-    sha, subj, hashes = provenance()
+    sha, subj, hashes = provenance(extra_pins)
     A.append("## Provenance")
     A.append("")
     A.append("Last commit touching any scanned file: `%s`" % sha)
@@ -604,10 +703,15 @@ def emit(w, rows, subs, reconf_sites, trigger, dd, encoders, bundles):
     A.append("trigger is the resize branch of `Console::begin_frame`, quoted")
     A.append("verbatim (`%s:%d`) — its branch is what feeds the `[FRAME_1]`"
              % (trigger["file"], trigger["line"]))
-    A.append("print. This is the debounce ruling's evidence: the condition is")
-    A.append("a bare not-equal on the capped framebuffer size, so any size")
-    A.append("flutter reconfigures the surface and recreates the depth buffer")
-    A.append("that same frame, with no settling window.")
+    A.append("print. This is the debounce ruling's evidence, and it reads the")
+    A.append("other way now: the size test is a bare not-equal on the capped")
+    A.append("framebuffer size, but it only ARMS the reconfigure — the branch")
+    A.append("below counts `stableFrames_` and acts once the size has held")
+    A.append("still for `RECONFIGURE_SETTLE_FRAMES` consecutive frames, so a")
+    A.append("size flutter costs a counter rather than a surface reconfigure")
+    A.append("and a depth-buffer recreation. The settling window is quoted")
+    A.append("directly below; this paragraph said there was none for as long")
+    A.append("as the quote beneath it said otherwise (PLUMB_0 A5).")
     A.append("")
     A.append("```cpp")
     A.append(trigger["quote"])
@@ -667,7 +771,7 @@ def main():
     rows = census_passes(w)
     subs = census_submits()
     reconf_sites, trigger = census_reconfigure(w)
-    renderer_hits = len(BEGIN_RE.findall(read_raw(INPUTS[1])))
+    renderer_hits = len(BEGIN_RE.findall(read_raw(RENDERER_HPP)))
     w.record("C-4", renderer_hits == 0,
              "renderer.hpp encodes no pass of its own (Begin*Pass sites: %d)"
              % renderer_hits)
@@ -689,8 +793,23 @@ def main():
         print("STOP — %d witness(es) failed; the ledger is not to be trusted "
               "until ruled on." % len(w.failures()))
         return 1
+    if args.check:
+        # PLUMB_0 A1 — the witnesses passed on the TREE; now ask whether the
+        # ARTIFACT was taken from it. This is the comparison that was missing.
+        print("")
+        if report_stale(args.out):
+            return 1
+        print("--check: all witnesses pass, the ledger's pins match the live "
+              "inputs, nothing written.")
+        return 0
+
     if not args.check:
-        text = emit(w, rows, subs, reconf_sites, trigger, dd, encoders, bundles)
+        # PLUMB_0 A3 — two passes, one fixed point: pass one is read for the
+        # paths this census names, pass two pins them. The rows pass two adds
+        # name paths already in the set, so a third pass would change nothing.
+        draft = emit(w, rows, subs, reconf_sites, trigger, dd, encoders, bundles)
+        text = emit(w, rows, subs, reconf_sites, trigger, dd, encoders, bundles,
+                    extra_pins=cited_paths(draft))
         with open(args.out, "w", encoding="utf-8", newline="\n") as f:
             f.write(text)
         bx = verify_bytes(args.out)
