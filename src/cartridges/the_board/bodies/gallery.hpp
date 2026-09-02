@@ -820,20 +820,47 @@ struct GalleryState {
     // the exhibition out for the session.
     bool                  authored_textures_loaded = false;
     std::vector<std::string> authored_disk_manifest;    // scanned lazily on first load, sorted numerically
-    // WHICH ENTRIES HAVE NOTHING BEHIND THEM (REPEAT_0a R1). Sized and
+    // WHEN EACH ENTRY MAY BE ASKED FOR AGAIN (REPEAT_0c U-S2). Sized and
     // cleared where the manifest is written, because they are two facts
-    // about one thing. A fetch that fails kills its index FOR THE SESSION:
-    // a picture that is not there this minute is not there in ten, and the
-    // alternative is one failed round trip per ghost per lap, forever.
+    // about one thing. Negative means "never failed"; otherwise it is the
+    // second the index comes back into the sequence.
     //
-    // THE COST OF BEING WRONG IS PRICED AND REVERSIBLE. If the failures are
-    // transient rather than absences — a refused burst rather than a missing
-    // file — this drops a live painting for the session. That is R4's
-    // one-counter reversal, recorded in docs/OPEN.md and deliberately not
-    // built: nothing has measured a real outage yet.
-    std::vector<bool>        authored_manifest_dead;
-    // Exhaustion is a LEGAL state (R3), and worth saying exactly once.
-    bool                  authored_exhausted_logged = false;
+    // R4'S REVERSAL, CALLED IN. REPEAT_0a R1 made a failed fetch kill its
+    // index FOR THE SESSION, and priced being wrong: "if the failures are
+    // transient rather than absences, this drops a live painting for the
+    // session ... nothing has measured a real outage yet." Something has
+    // now — the ghosts were a dying dev server, not a manifest of absences
+    // — so the reversal is taken and death becomes a cooldown.
+    //
+    // THE STAMP IS A CLOCK, NOT A LAP, AND THAT IS A DEPARTURE FROM THE
+    // ORDER. U-S2 asked for a lap stamp (cursor wrap count) and asked for
+    // it to be re-proved in the model first. It was, and it failed both
+    // ways: a lap that only advances on a completed step DEADLOCKS (every
+    // index stamped with the current lap, nothing left to advance the
+    // cursor, and a ten-second outage then costs the whole session — worse
+    // than what it replaces), while a lap that also advances when the SCAN
+    // wraps never sleeps at all (measured 120 fetches/s against a dead
+    // origin — the retry storm REPEAT_0 U7c and REPEAT_0a R2 were built to
+    // stop). Time is the only quantity here that moves independently of the
+    // failures, so time is the cooldown. Bounded by construction: one fetch
+    // per index per AUTHORED_DEAD_COOLDOWN_S, measured at 2.0 fetches/s
+    // with every entry failing. The model is in the commit message.
+    std::vector<float>       authored_manifest_dead_until;
+    // WHEN THE EXHAUSTION SENTENCE WAS LAST SAID (REPEAT_0c U-S2). It was a
+    // bool, because exhaustion was terminal and a terminal fact is said once
+    // and never again. Under the cooldown it is a PASSING state, so a bool
+    // says it once per episode — and the model measured what "episode" then
+    // means under a flaky origin: 337 lines in ten minutes at a 30% failure
+    // rate, one every 1.8 s, drowning the pop lines the console exists for.
+    // A stamp lets the sentence carry a floor of one per cooldown while
+    // still being said the instant a NEW outage begins. Negative = unsaid.
+    float                 authored_exhausted_said_at = -1.0f;
+    // THE LAST FRAME'S CLOCK, SO A FETCH CALLBACK CAN STAMP ONE. Failures
+    // arrive on browser events, which have no frame and no TimeState. This
+    // is refreshed once a frame at the conductor's deferred-hang head; a
+    // stamp is therefore at most one frame stale against a 30 s cooldown,
+    // which is nothing. One writer, one reader-family, no second clock.
+    float                 authored_now = 0.0f;
     // THE WORLD THE LAW LAST SWEPT FOR (REPEAT_0b U3). Not a second copy of
     // world_gen — a memo of the last serial the law has already answered for,
     // so the sweep runs ONCE per world entry rather than once per pop.
@@ -1196,6 +1223,19 @@ inline uint32_t authored_ready_depth(const GalleryState& gs) {
     return depth;
 }
 
+// REPEAT_0c U-S2 — HOW LONG A FAILED PAINTING SLEEPS. Sized against
+// AUTHORED_FETCH_TIMEOUT_MS: a request that dies of timeout has already spent
+// 30 s, so a 30 s cooldown means a genuinely absent file costs at most one
+// wasted round trip per half-minute. With every entry of a 57-entry manifest
+// failing that is 1.9 fetches/s against the 4-lane inflight cap — bounded,
+// and it recovers the instant the origin does.
+//
+// IT LIVES HERE, NOT BESIDE THE FETCH CONSTANTS, because the three functions
+// that read it are all below this line and a constant declared after its
+// readers does not compile. The fetch constants are its argument, not its
+// home.
+inline constexpr float AUTHORED_DEAD_COOLDOWN_S = 30.0f;
+
 // THE CURSOR STEPS OVER THE DEAD (REPEAT_0a U1). The first live index at or
 // after `from`, walking the manifest at most once; UINT32_MAX when a full lap
 // finds nothing — which is EXHAUSTION, a legal state (R3) and not an error.
@@ -1210,20 +1250,30 @@ inline uint32_t authored_next_live(const GalleryState& gs, uint32_t from) {
     if (n == 0u) return UINT32_MAX;
     uint32_t i = from % n;
     for (uint32_t step = 0; step < n; step++) {
-        if (i >= (uint32_t)gs.authored_manifest_dead.size()
-            || !gs.authored_manifest_dead[i]) return i;
+        if (i >= (uint32_t)gs.authored_manifest_dead_until.size()
+            || gs.authored_manifest_dead_until[i] < 0.0f
+            || gs.authored_now >= gs.authored_manifest_dead_until[i]) return i;
         i = (i + 1u) % n;
     }
     return UINT32_MAX;
 }
 
-// EXHAUSTION SPEAKS ONCE (R3). Every entry dead is the "no paintings folder"
-// state reached by a different road: the ring stops appending, popped layers
-// go invalid, rows end, the deferred hang idles. No reload logic, no timer.
+// EXHAUSTION SPEAKS ONCE PER EPISODE (R3, as amended by REPEAT_0c U-S2).
+// Every entry cooling is the "no paintings folder" state reached by a
+// different road: the ring stops appending, popped layers go invalid, rows
+// end, the deferred hang idles.
+//
+// IT IS NO LONGER A TERMINAL STATE, so the latch is no longer terminal
+// either. Under the cooldown every exhaustion has an end — the earliest
+// stamp — and authored_take_next re-arms this the moment the sequence hands
+// out anything again. Still no reload logic and still no timer of its own:
+// the cooldown IS the timer, and it is already ticking.
 inline void authored_report_exhausted(GalleryState& gs) {
-    if (gs.authored_exhausted_logged) return;
-    gs.authored_exhausted_logged = true;
-    std::cout << "[Authored] Sequence exhausted — every entry is dead\n";
+    if (gs.authored_exhausted_said_at >= 0.0f
+        && gs.authored_now - gs.authored_exhausted_said_at
+             < AUTHORED_DEAD_COOLDOWN_S) return;
+    gs.authored_exhausted_said_at = gs.authored_now;
+    std::cout << "[Authored] Sequence exhausted — every entry is cooling\n";
 }
 
 // THE ONE PLACE THE PLAYLIST STEPS FORWARD (REPEAT_0a U1). Takes the next
@@ -2306,6 +2356,23 @@ inline void authored_stage_decoded_image(GalleryState& gs, GPUState& gpu, wgpu::
     // slot showing nothing, or a slot showing a picture it no longer holds.
     rec.shown_disk_index = rec.disk_index;
 
+    // AN ARRIVAL CLEARS THIS INDEX'S SENTENCE AND NOTHING ELSE (REPEAT_0c
+    // U-S2). The cooldown is spent — a later failure here earns a fresh full
+    // one rather than inheriting a stale stamp.
+    //
+    // IT DELIBERATELY DOES NOT RE-ARM THE EXHAUSTION LINE. Three versions
+    // were measured over ten simulated minutes: re-arming on a successful
+    // TAKE printed the sentence 1084 times under total outage (every
+    // expiring cooldown read as a fresh episode); re-arming HERE printed it
+    // 337 times under a 30% flake, because arrivals kept clearing the floor
+    // faster than the floor could bite. Leaving the stamp alone makes the
+    // floor absolute — at most one sentence per AUTHORED_DEAD_COOLDOWN_S,
+    // measured at 20 lines in ten minutes of total outage and 20 under
+    // flake. The cost, stated: a second outage beginning inside 30 s of a
+    // reported one is silent, which is the same outage by any honest name.
+    if (disk_index < (uint32_t)gs.authored_manifest_dead_until.size())
+        gs.authored_manifest_dead_until[disk_index] = -1.0f;
+
     // AUBADE U1 — HOW MUCH OF THE DARK WAS PAINTING DECODE. R6 found the
     // authored path decodes with stb_image ON THE MAIN THREAD, so this is
     // the number that separates "the paintings did it" from a device-side
@@ -2472,11 +2539,12 @@ inline void authored_fetch_release_slot(GalleryState& gs, uint32_t staging_layer
     // rec.disk_index between the request and any of these returns. Guarded
     // against UINT32_MAX and against an index the mask cannot speak for.
     if (slipped != UINT32_MAX
-        && slipped < (uint32_t)gs.authored_manifest_dead.size()
-        && !gs.authored_manifest_dead[slipped]) {
-        gs.authored_manifest_dead[slipped] = true;
-        std::cout << "[Authored] Dead disk=" << slipped
-            << " (HTTP " << status << ") — dropped for the session\n";
+        && slipped < (uint32_t)gs.authored_manifest_dead_until.size()) {
+        gs.authored_manifest_dead_until[slipped] =
+            gs.authored_now + AUTHORED_DEAD_COOLDOWN_S;
+        std::cout << "[Authored] Sleeping disk=" << slipped
+            << " (HTTP " << status << ") — back in "
+            << AUTHORED_DEAD_COOLDOWN_S << "s\n";
     }
 
     // THE HEAL NOW ASKS FOR A LIVE INDEX, and the dead mask is what bounds it.
@@ -2802,8 +2870,8 @@ inline void exhibition_manifest_onsuccess(emscripten_fetch_t* fetch) {
     // The dead mask is meaningless without the manifest it indexes, so it is
     // sized here and nowhere else — there is no second place for the two to
     // disagree about how long the sequence is.
-    gs->authored_manifest_dead.assign(gs->authored_disk_manifest.size(), false);
-    gs->authored_exhausted_logged = false;
+    gs->authored_manifest_dead_until.assign(gs->authored_disk_manifest.size(), -1.0f);
+    gs->authored_exhausted_said_at = -1.0f;
     // REPEAT_0c U-S1 — the arrival disarms the wait. Nothing can be in flight
     // beside this one (the latch admits one at a time), so this is belt to the
     // latch's braces: a retry armed by an earlier failure must not fire behind
@@ -3693,6 +3761,10 @@ inline void tick_gallery_deferred_hang(MachineCtx* c, wgpu::Queue& queue) {
     // are here: this is the one place per frame the exhibition is asked for,
     // and a manifest that has not arrived is the only thing that can make
     // everything below it moot.
+    // REPEAT_0c U-S2 — the frame hands the clock to the fetch callbacks, which
+    // have none of their own. Before the fill and before any hang, so nothing
+    // downstream can read a stamp from the previous frame.
+    gs.authored_now = c->time_state_.seconds;
     tick_exhibition_manifest_retry(gs, c->time_state_.seconds);
     load_authored_textures(gs);
     if (gallery_available_staging(gs, GallerySiteType::MIXED) == 0) return;   // the pool's sum
