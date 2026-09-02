@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `29e9afde07c17686fa42272eec52b7e718565f49` |
-| | PLUMB_0 C1-C3: the pose is a spine fact; the phantom author dies |
+| source commit | `7e616a42e7318c2b2ca8e5396cc6caf80aacc44c` |
+| | PLUMB_0 U5: the closing refuter's findings, fixed |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:a52f41dd72b4cacfa576f406c318fccbc66b42fb21587023f4802aad7a03df20` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:57b66ef95dcabd4eaedd19c1b06fcc8894bd0b2c387c36de9a28c28221a19d7e` |
@@ -24,8 +24,8 @@ carry those facts, or leave them in place and patch around them.
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:fc3137898e0dc6f0f2edd938cd40681cfc4fe8c272fb9fc4920f71b34643f48e` |
 | `tools/binding_ledger.py` | `sha256:6d9fc58da755a8416bbcfe8efe5360f97ec11fb4a81a9d60ee41f80a2316f790` |
 | `tools/mirror_census.py` | `sha256:6991163f42dc06a0b633fe41606514b33ed616a70ec244eff6640992518cef2a` |
-| `audit/BINDING_LEDGER.md` | `sha256:592b596643d6ea6635389b843e85d362761d3e8c6b3ebe7b2ba60be4555596f2` |
-| `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:4adf38a866673f984b1e29c74beb746ad3359576169dc1ed5b1ac9da63bb266a` |
+| `audit/BINDING_LEDGER.md` | `sha256:7267b11112646e8d7126d3f9176da12b5436c7985858ddd164819c116a453699` |
+| `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:91902a4fab8247a9bf99585147981d852768e81849417b782d7438408687c796` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:335d9c5a1d7c34aff37f3010abe8b88aa04290c8db487b70828c9c83e8588719` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:cfee1651530c4e431f7b08ca751e7e9d4f8b326677a0e79cf28567b14fde96bb` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
@@ -1059,14 +1059,14 @@ wrapper, 18 wrapper calls) and are not recounted here.
 |---|---|---|---|---|
 | `cartridge.hpp:2268` | `phase_entity_mesh_gen` | 0 | `worldGroup_` | — |
 | `cartridge.hpp:2269` | `phase_entity_mesh_gen` | 1 | `frameCGroup_` | — |
-| `gallery.hpp:2334` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
-| `gallery.hpp:2335` | `render_snapshot_pass` | 1 | `frameCGroup_` | — |
-| `gallery.hpp:2406` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
-| `gallery.hpp:2407` | `render_snapshot_pass` | 1 | `framePhotographerGroup_` | `1, &kFrameSlotZero` |
-| `gallery.hpp:2408` | `render_snapshot_pass` | 2 | `sceneStateGroup_` | — |
-| `gallery.hpp:2409` | `render_snapshot_pass` | 3 | `sceneTexturesGroup_` | — |
-| `gallery.hpp:2453` | `render_snapshot_pass` | 2 | `galleryStateGroup_` | — |
-| `gallery.hpp:2454` | `render_snapshot_pass` | 3 | `galleryTexturesGroup_` | — |
+| `gallery.hpp:2353` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
+| `gallery.hpp:2354` | `render_snapshot_pass` | 1 | `frameCGroup_` | — |
+| `gallery.hpp:2425` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
+| `gallery.hpp:2426` | `render_snapshot_pass` | 1 | `framePhotographerGroup_` | `1, &kFrameSlotZero` |
+| `gallery.hpp:2427` | `render_snapshot_pass` | 2 | `sceneStateGroup_` | — |
+| `gallery.hpp:2428` | `render_snapshot_pass` | 3 | `sceneTexturesGroup_` | — |
+| `gallery.hpp:2472` | `render_snapshot_pass` | 2 | `galleryStateGroup_` | — |
+| `gallery.hpp:2473` | `render_snapshot_pass` | 3 | `galleryTexturesGroup_` | — |
 | `gol_zones.hpp:906` | `flush_zone_derive_requests` | 0 | `worldGroup_` | — |
 | `gol_zones.hpp:907` | `flush_zone_derive_requests` | 1 | `frameCGroup_` | — |
 | `gol_zones.hpp:994` | `dispatch_zone_sync` | 0 | `worldGroup_` | — |

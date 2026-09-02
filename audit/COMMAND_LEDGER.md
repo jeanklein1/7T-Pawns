@@ -5,22 +5,22 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `6261bb04c7f7c8187dc39840b21a9dcd988f06be`
-(REPEAT_0c U-S1b/U-S2b: the refuter's three, and the cooldown gets a caller)
+Last commit touching any scanned file: `7e616a42e7318c2b2ca8e5396cc6caf80aacc44c`
+(PLUMB_0 U5: the closing refuter's findings, fixed)
 
 | file scanned | sha256 |
 |---|---|
 | `src/cartridges/the_board/realization/render_passes.hpp` | `sha256:e4d6b62cb1d1936d57322d2c4ef4372bbc27dd1404a29117d9431938e9c84149` |
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:fc3137898e0dc6f0f2edd938cd40681cfc4fe8c272fb9fc4920f71b34643f48e` |
-| `src/cartridges/the_board/cartridge.hpp` | `sha256:0171c1d13bca6dbc7cc51a6e79282e6125bc360339d5e0b34ffada4dc0977ea6` |
-| `src/cartridges/the_board/surface/patch_system.hpp` | `sha256:a0ca287c9590726e87956c9d30ba7eeb09e984e89e0eb80648e83f5df0fb4bdf` |
+| `src/cartridges/the_board/cartridge.hpp` | `sha256:88db08b8cd34ba3ac70cc0f1ad2a0243cd3bf8eb4a2036f93c44f5df5fc58e47` |
+| `src/cartridges/the_board/surface/patch_system.hpp` | `sha256:1be3569e8b942fccc6a5ad003a6f227b2c413897b33a947bdcfa986947653b3c` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:335d9c5a1d7c34aff37f3010abe8b88aa04290c8db487b70828c9c83e8588719` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
-| `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:d5f75c54c277ff1684d5bf109ed36a0cb3d9adc23f4c8d2ffce7cd845eab13da` |
-| `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:a3bde8f506af81f67844572f51e88f2f0cb9336b9cfbddbc946883faef8d4a0c` |
+| `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:91902a4fab8247a9bf99585147981d852768e81849417b782d7438408687c796` |
+| `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:cfee1651530c4e431f7b08ca751e7e9d4f8b326677a0e79cf28567b14fde96bb` |
 | `src/the_board.cpp` | `sha256:12a89ca138da2724f66ae4fd646e2a773caaa169cba3998a9323f14c37baad2b` |
 | `src/console/console.hpp` | `sha256:dbedbbe0f039fea13583ffd5a6417389e7cddee9653ab69e3fb82ac89f47ac04` |
-| `tools/command_census.py` | `sha256:12935786c902a9938c7fe7ec21e2b46991d0cc622aa863198edaef00bf484d42` |
+| `tools/command_census.py` | `sha256:09a61baed23a5caeedb44ee293461875f2e759832353f887187be35a7ae8d7cb` |
 
 The handoff named `render_passes.hpp` and `renderer.hpp`; the
 tree places pass encoders more widely, so the census scans the
@@ -40,18 +40,18 @@ in `console.hpp`.
 | 4 | Shadow Atlas | render | `render_shadow_pass` | `src/cartridges/the_board/realization/render_passes.hpp:414` | (none: depth-only) | Clear/Store, readOnly (absent) → `(tex == 0) ? c->gpuState_.shadow_map_view() : c->gpuState_.spot_shadow_map_view()` | (no stencil aspect) |
 | 5 | Shadow Pass | render | `render_shadow_pass` | `src/cartridges/the_board/realization/render_passes.hpp:465` | (none: depth-only) | Clear/Store, readOnly (absent) → `c->gpuState_.shadow_map_view()` | (no stencil aspect) |
 | 6 | Rasterized Scene | render | `render_main_pass` | `src/cartridges/the_board/realization/render_passes.hpp:826` | Clear/Store or Discard → `backbuffer or msaaColor` resolve → `backbuffer` | Clear/Discard, readOnly (absent) → `depth` | (no stencil aspect) |
-| 7 | Entity Mesh Gen | compute | `phase_entity_mesh_gen` | `src/cartridges/the_board/cartridge.hpp:2169` | — | — | — |
+| 7 | Entity Mesh Gen | compute | `phase_entity_mesh_gen` | `src/cartridges/the_board/cartridge.hpp:2266` | — | — | — |
 | 8 | Patch Bake (fused) | compute | `generate_patch_batch` | `src/cartridges/the_board/surface/patch_system.hpp:186` | — | — | — |
 | 9 | Zone Derive Params | compute | `flush_zone_derive_requests` | `src/cartridges/the_board/bodies/gol_zones.hpp:904` | — | — | — |
 | 10 | GoL Zone Sync | compute | `dispatch_zone_sync` | `src/cartridges/the_board/bodies/gol_zones.hpp:992` | — | — | — |
 | 11 | GoL Zone Evolve | compute | `dispatch_zone_evolve` | `src/cartridges/the_board/bodies/gol_zones.hpp:1005` | — | — | — |
 | 12 | Pawn Aura | compute | `dispatch_pawn_aura` | `src/cartridges/the_board/bodies/pawn.hpp:168` | — | — | — |
-| 13 | Photographer VP Compute | compute | `render_snapshot_pass` | `src/cartridges/the_board/bodies/gallery.hpp:2163` | — | — | — |
-| 14 | Photographer Snapshot | render | `render_snapshot_pass` | `src/cartridges/the_board/bodies/gallery.hpp:2228` | Clear/Store or Discard → `c->gpuState_.offscreen_color_view() or c->gpuState_.offscreen_msaa_color_view()` resolve → `c->gpuState_.offscreen_color_view()` | Clear/Discard, readOnly (absent) → `c->gpuState_.offscreen_depth_view()` | (no stencil aspect) |
+| 13 | Photographer VP Compute | compute | `render_snapshot_pass` | `src/cartridges/the_board/bodies/gallery.hpp:2351` | — | — | — |
+| 14 | Photographer Snapshot | render | `render_snapshot_pass` | `src/cartridges/the_board/bodies/gallery.hpp:2416` | Clear/Store or Discard → `c->gpuState_.offscreen_color_view() or c->gpuState_.offscreen_msaa_color_view()` resolve → `c->gpuState_.offscreen_color_view()` | Clear/Discard, readOnly (absent) → `c->gpuState_.offscreen_depth_view()` | (no stencil aspect) |
 | 15 | Orb Init | compute | `dispatch_orb_init` | `src/cartridges/the_board/bodies/orbs.hpp:744` | — | — | — |
 | 16 | Orb Recolor | compute | `dispatch_orb_recolor` | `src/cartridges/the_board/bodies/orbs.hpp:765` | — | — | — |
 | 17 | Orb Copy Prev | compute | `dispatch_orb_copy_prev` | `src/cartridges/the_board/bodies/orbs.hpp:780` | — | — | — |
-| 18 | Orb Dynamics | compute | `dispatch_orb_dynamics` | `src/cartridges/the_board/bodies/orbs.hpp:799` | — | — | — |
+| 18 | Orb Dynamics | compute | `dispatch_orb_dynamics` | `src/cartridges/the_board/bodies/orbs.hpp:803` | — | — | — |
 
 18 passes: 4 render, 14 compute.
 
@@ -106,8 +106,13 @@ other way now: the size test is a bare not-equal on the capped
 framebuffer size, but it only ARMS the reconfigure — the branch
 below counts `stableFrames_` and acts once the size has held
 still for `RECONFIGURE_SETTLE_FRAMES` consecutive frames, so a
-size flutter costs a counter rather than a surface reconfigure
-and a depth-buffer recreation. The settling window is quoted
+size flutter costs a counter rather than a surface reconfigure.
+(The old sentence also said the branch recreates the depth
+buffer. It does not, and had not since ACQ_0 moved the depth
+buffer to the first acquire: the branch writes the canvas
+backing store and calls Configure, nothing more. A5 corrected
+the timing half and carried the dead half forward; this is
+both.) The settling window is quoted
 directly below; this paragraph said there was none for as long
 as the quote beneath it said otherwise (PLUMB_0 A5).
 
