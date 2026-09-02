@@ -2742,3 +2742,188 @@ One more, worth adding: **a `LATE EVICT` line is always followed by an
 ordinary `Evict` line for the same layer** — the accusation and the release
 are two lines about one event. The pop-minus-evict reconciliation still works
 because only the second is an `] Evict `.
+
+## REPEAT_0c / REPEAT_2 — SUPPLY HARDENING AND THE TIDE
+
+Prologue built (U-S1, U-S2), U1 built, **U2/U3/U4 STOPPED at the order's own
+G1 stop condition.** Phase 0's six gates ran read-only, each with an
+adversarial refuter over it; what follows is what survived refutation.
+
+### The stop condition, and why it fired
+
+The order: *"G1 finds no CPU-visible camera direction **and** distance-only
+gating would recycle galleries the viewer plausibly watches at range → land
+U1 only, FLAG, report options."* Both clauses hold.
+
+**No CPU-visible camera direction.** The pose is GPU-sovereign:
+`update_camera_vp` in `world.wgsl` is the only author of `camera_state`, and
+nothing on the CPU retains an azimuth. `PlayerState`'s own banner says it
+outright — *"THE CAMERA HAS NO CPU MIRROR — it lives GPU-resident"*.
+`CameraControls` is a sensitivity panel, not a pose.
+
+**`PointState::heading` is not the gaze**, though it is the near miss worth
+naming. It exists on the CPU and is already consumed trigonometrically
+(`patch_system.hpp`'s look-ahead computes `gen_cx` from `cos(point_.heading)`).
+But it is the possessed **body's** heading: authored only inside
+`phase_witness_harvest`'s `if (host != PointHost::CAMERA)` arm, held-last and
+stale in camera-host, and in orbit the eye's azimuth is free of it entirely.
+A body walking north while the camera looks south is an ordinary frame.
+
+**No radius satisfies both R1 and R3.** Galleries only exist inside
+`Dim::EXIST_RADIUS` (350), so the whole usable band is 0–350. At
+`R_legible` = 300 roughly 0.2 galleries qualify at any moment — the tide
+would essentially never fire, and R1 ("the playlist advances for a statue")
+goes unmet. Lower the radius until it fires and it is recycling pictures in
+plain sight: at 150 wu a 10 wu piece subtends ~3.8°, plainly a picture, and
+R3 ("a watched gallery never changes") goes. The distance-only fallback is
+not a weaker tide; it is a tide that either does nothing or breaks its own
+law.
+
+The eye is not the point, either: a distance keyed on `point_` under-measures
+by up to `CAMERA_MAX_DISTANCE` (100 wu) of zoom, and by an unbounded amount
+under accumulated pan (`coupling_input_to_camera_pan` has no clamp).
+
+### THE OPENING — the pose already crosses the CPU every frame
+
+`GPUCameraState` is 48 bytes (`pos[3]`, `azimuth`, `elevation`, `distance`,
+`pan_x`, `pan_y`, `aim_point[3]`). It is copied GPU→staging in
+`phase_witness_capture` and mapped in `phase_witness_harvest`, both under
+`if constexpr (INSTRUMENTS.camera_witness)` — and `camera_witness` is **true
+in every instrument column including `off`**, which is what `the-board-web`
+builds (`CMakeLists.txt` caches `T7_INSTRUMENTS "off"`; only
+`the-board-web-meter` overrides). The mapped struct is handed to
+`dump_camera_orbit`, printed, and dropped.
+
+So the gaze is **one member assignment** from being CPU-visible, at exactly
+the staleness class `point_.x/z` already carries by law (one frame). The
+forward vector needs no per-mode fork — `forward = -(cos_el·sin_az, sin_el,
+cos_el·cos_az)` is the same convention in `build_view_projection_matrix`,
+`compose_camera_position_from_orbit` and the camera-host fly branch, and
+every branch of `update_camera_vp` writes `camera.azimuth`.
+
+**The objection, and it is Jean's to rule on.** `camera_witness`'s own banner
+says *"RETIRE IT once the arrival row is settled — that is the whole of its
+warrant."* Building the tide's gaze on it makes an instrument marked for
+retirement load-bearing. The honest form is the reverse: promote the pose
+into the spine as a first-class fact and let the witness read *that*. Which
+is architecture, not execution, so it stopped here.
+
+### The three options, priced
+
+| option | cost | what it buys | what it costs |
+| --- | --- | --- | --- |
+| **A — the body's heading** | zero new machinery | a real facing test in FPV, where body and eye are coupled | wrong in orbit (azimuth is free of the body), stale in camera-host. Recycles watched galleries whenever the camera is not behind the pawn. |
+| **B — promote the pose** | one member assignment onto spine-resident state, plus the ruling above | the exact test R3 asks for, in every camera mode, at one-frame staleness | makes a retirement-marked instrument load-bearing unless the pose is promoted out of it first |
+| **C — distance only** | zero | nothing | starves at a safe radius, breaks R3 at a firing one. Measured above. |
+
+### What the other five gates settled
+
+- **G2 — the table.** `GalleryCenter` is CPU-only: zero mentions in
+  `world.wgsl`, zero in `tools/binding_schema.py`, no bind-group entry, no
+  upload verb. `dressed_at` is not a mirror change; U1 landed on that basis.
+  The record is a bare site key — it does **not** know which exhibition
+  layers or painting slots it owns; a recycler must scan `painting_slots`
+  for the patch pair, exactly as `evict_paintings_for_patch` already does.
+- **G2 — THE SENTINEL TRAP, and it is a landmine for whoever builds U3.**
+  `GalleryCenter`'s default patch pair is `(INT32_MAX, INT32_MAX)` — the
+  *same* sentinel `place_wall_paintings` stamps on indoor wall slots. Any
+  age sweep that walks the table and calls `evict_paintings_for_patch` on a
+  record without first testing `gc.active` will pass the sentinel pair and
+  **destroy the entire indoor wall hang**. Test `active` first, always.
+- **G3 — the re-dress road is OPEN, and this is the campaign's good news.**
+  The three hang verbs (`select_gallery_for_patch`,
+  `place_gallery_from_selection`, `commit_gallery`) read and write **no**
+  patch-system state. Only the two funnels do: `dispatch_place_gallery`
+  writes `ActivePatch::gallery_deferred`, `dispatch_commit_gallery` writes
+  `ActivePatch::entity_refs` via `record_entity`. **G3's stop condition does
+  not fire** — no extraction is needed at all, because
+  `tick_gallery_deferred_hang` already calls the trio directly for an
+  existing patch without touching `entityQueue_` / `placementResults_`.
+- **G3 — the one seam has a designed door.** `record_entity` does not
+  dedupe (cap `MAX_ENTITY_REFS` = 16, loud drop on overflow), so a gallery
+  re-dressed repeatedly would overflow its host patch's refs. The door
+  already exists: `ActivePatch::unrecord_entity`, whose banner names its
+  intended caller shape exactly — *"owner-side death verbs outside any patch
+  loop"*, which is the tide. A recycle must `unrecord_entity` before
+  re-dressing.
+- **G3 — evict-before-redress is forced, and it is visible.**
+  `select_gallery_for_patch` refuses a gallery against itself three ways: a
+  scan for any active `painting_slot` with the patch pair, a scan for any
+  active `gallery_center` with it, and `check_position`'s separation. So
+  there is no road that keeps the old pictures up while the new ones are
+  prepared — a recycled site goes bare and refills. Whether that reads as
+  breathing or as a glitch is a visual question, not a code one.
+- **G3 — the gallery slot is not stable across a cycle.** `select` takes
+  the first free `gallery_centers` index, so a recycled gallery generally
+  changes slot. Any tide bookkeeping keyed on slot must survive renumbering.
+- **G4 — R5 confirmed.** One flat 48-slot table, same trio, finite or open;
+  no separate finite-mode boot fill. A table-walking recycler never asks the
+  patch grid anything, so the pinned `centerX` is irrelevant to it. And the
+  lock is real: in a finite outdoor world `stream_patches` pins
+  `centerX = centerZ = 0`, every allocated patch satisfies
+  `in_render_window`, `evict_gallery` never fires, and the exhibition holds
+  its first fill for the life of the world.
+- **G5 — wall seconds, `TimeState::seconds`.** Confirmed monotonic across a
+  world transition. Reached from gallery code as `GalleryState::authored_now`,
+  which REPEAT_0c added.
+
+### Two corrections to things this session said out loud
+
+- **`GalleryState::frame_counter` is NOT motion-gated.** I said earlier it
+  "lives inside `update_photographer` behind the step guard" and so could not
+  drive the tide. Wrong: the guard is `if (step > 5.0f) return;` — a
+  **teleport** guard, not a "did the pawn move" test. A stationary pawn has
+  `step == 0`, passes it, and increments. It is still the wrong dialect for
+  the tide (it skips the init frame and every teleport frame, and it is
+  `ROSTER.gallery`-gated), but not for the reason given.
+- **REPEAT_0c did not land a motion-gated cooldown.**
+  `tick_gallery_deferred_hang` is called from `stream_patches` at
+  function-body depth — the `if (gridChanged)` block opens and closes well
+  above it (braces verified by column scan). `authored_now` therefore
+  refreshes every frame, stationary or not, and U-S2's cooldown ticks for a
+  statue. This was checked because it would have been a bug shipped in the
+  same campaign that names displacement as the enemy.
+
+### Priced, not built
+
+- **G6 — the interval cannot be enrolled in one line.** Not in
+  `config_` / `lightingStage_` / `agentRoomStage_`: `organ_readers.py`
+  classifies all three as GPU-side and **out of scope to the reader proof**,
+  so a CPU-read dial parked there would pass vacuously — an enrollment
+  stating a belief no instrument can test. The lawful home is a new
+  contracts-tier bank behind a new `ORGAN_BLOCK_GALLERY = 12`: a new header,
+  `ORGAN_BLOCK_COUNT` 12→13, a `block_base()` case, an include, HOMES/PAIRS
+  rows in `organ_gap.py`, a READERS row in `organ_readers.py`, and the
+  `docs/ORGAN.md` tables. Registry surgery, and its own campaign.
+- **`gallery.hpp` reads no graduated bank today** — zero `_LIVE` hits, zero
+  mentions in `organ_readers.py`. The tide's dial would be the gallery body's
+  first runtime read of any ORGAN bank and its first READERS row ever.
+- **The tide needs two dials, not one.** The predicate is "aged **and**
+  unwatched"; a bank minted for `recycle_interval_s` would need `R_legible`
+  immediately. `Dim::EXIST_RADIUS` lives in `realization/state.hpp` and is
+  not a bank, so it is not enrollable in place.
+- **`ORGAN_PARAM_RO` was never considered and sidesteps a blocker.** A
+  witness carries no range, so "the range is Jean's" does not apply to a
+  meter. A tide that silently recycles resident galleries is exactly what an
+  operator wants a meter for.
+- **`RibbonSpawnSurface` is the charter template**, not merely the scope
+  precedent: a per-spawn bank for one body, seated in that body's existing
+  contracts header, flushed destructively. A re-dress *is* the gallery's
+  spawn event.
+
+### Three defects found in passing, none fixed
+
+- **`organ_ledger.py --check` has no teeth.** It writes its text and
+  `return 0`; it never compares the emission against `audit/ORGAN.md`.
+  `organ_readers.py` likewise returns 0 on both the NO-SUSPECTS branch and
+  after printing a suspect list. CLAUDE.md's gate table lists the organ
+  ledger as an assertion; today it is a report. (Sibling of the already-open
+  `command_census.py --check` finding, which exits 0 carrying a stale digest.)
+- **`apply_mood_arrival` is declared and never defined or called.** Three
+  comments in `cartridge.hpp` and `state.hpp` reference it as if it were
+  live. It is the one symbol that would let the CPU author an azimuth.
+- **A stale banner in `phase_witness_capture`.** It reads *"The camera copy
+  is CAMERA-HOST ONLY (the pawn-host frame encodes no camera copy)"*; the
+  code below has no host test at all — only the `if constexpr`. The copy
+  runs in every host. Harmless today, and it is exactly the sentence someone
+  pricing option B would trust.
