@@ -3130,3 +3130,81 @@ never binds. The true maximum fan is
 `sqrt(41² + 12²) + PAINTING_HALF(13) + FAN_MARGIN(3) = 58.72` wu, which is
 what `TIDE_SITE_REACH` is derived from. The finding's SUBSTANCE stood — the
 predicate did measure to the centre — and is fixed; only its number was wrong.
+
+## PULSE_1 — THE RING HAS A WRITER AGAIN
+
+`contrib_radial_pulses_at` was whole and DRIVERLESS: every consumer reached it,
+and it returned `0.0` at every point in the world because its only writer was
+the boot zero-pin. PULSE_1 gave it a PLAYER writer — a lone clean tap on either
+half of the glass, and SPACE on the keyboard — and changed nothing in WGSL.
+
+### Pulse bus — one writer
+
+THE RING IS A BUS: `contrib_radial_pulses_at` does not ask who stamped a slot.
+A thumb-tap and a note-on are the same event to it — a position, a time, an
+amplitude. LIGATURE_1 adds the soundtrack onset writer by calling
+`emit_radial_pulse`. It needs no second home, no struct change and no shader
+change — only a source of onsets and a point position, both of which the
+cartridge already holds. There is deliberately no debounce on the bus: a
+musician firing two notes 40 ms apart is entitled to both, and the rate-limit
+lives at the finger, which is the input that bounces.
+
+THE ONSET DETECTOR WAS ALREADY GONE when this campaign opened — no
+`pulseRing_`, no `pulseWriteIdx_`, no `prevPolyphony_`, no `signal.stats[0]`
+block. The order that authorised PULSE_1 expected to delete it and instead
+found the deletion done, which is why this entry records a debt rather than a
+deletion. The ring PULSE_1 built is new, and it is the first one the player
+can write.
+
+### Two things arming the ring made true that were false before
+
+- **THE REST LAW NOW HAS A MOVING CONJUNCT.** `pulse_count > 0` is the first
+  test in `live_card_is_live`, and its own comment said the conjunct was
+  "structurally pinned at rest (O0-d: the ring's only writer is the boot
+  zero-pin)" and was "checked anyway so a future re-arming of either conjunct
+  wakes the writer without an edit here". That future is here: the check was
+  right and no edit was needed, but the ring must now RETIRE or OPT_1a's rest
+  skip — 819,200 invocations a frame — is lost for the session on the first
+  tap. `retire_aged_pulses` runs at the head of `phase_live_card_write` using
+  the shader's own liveness test.
+- **THE FOURTH REBASE SEAM IS LIVE.** `TimeState`'s `world_epoch` comment named
+  the ring as a fourth GPU-resident time crossing a world rebase and dismissed
+  it — "but `set_pulse_data` is only ever called with zeros; it is inert". It
+  is not inert now. The ring is cleared in `become_destination`, the one door
+  every world enters by and the line the epoch moves on; the comment is
+  corrected where it stands.
+
+### What PULSE_1 did not take
+
+- **The glass's dials cannot be ORGAN rows.** `TAP_MS`, `TAP_SLOP` and
+  `PULSE_DEBOUNCE_MS` live in `src/console/console.hpp`, which contains zero
+  occurrences of `the_board` — the console is cartridge-blind by construction
+  and ORGAN is the cartridge's panel. No `TouchControls` dial is enrolled, so
+  the pulse's three are in the same position as every other glass dial and this
+  campaign opened no gap. Unblocked by giving the console a panel of its own,
+  which is a campaign and not a line.
+- **The pulse's SHAPE is unenrolled.** `PULSE_SPEED`, `PULSE_RING_SHARPNESS`,
+  `PULSE_DAMPING`, `PULSE_AGE_DECAY` are `world.wgsl` consts with no ORGAN row.
+  They are ORGAN_2b's business; PULSE_1 gave the contributor a writer, not a
+  face. Only `PANEL.pulse.amplitude` — the thing this campaign introduced — is
+  enrolled.
+- **The reference sheet has no pulse glyph.** The pulse is the first MOMENTARY
+  verb on the glass; aura and possess are toggles, which is why both were drawn
+  with double-headed arcs. A strike is not a switch and needs its own mark.
+  That is a design sitting with Jean, not a CC round — and it lands in the same
+  place as "THE DOOR TEACHES; THE WORLD STILL DOES NOT", above, which this
+  campaign adds a third unteachable verb to.
+- **Amplitude is flat.** Speed-scaling the impulse to the point's velocity is
+  the attractive next move and is refused until a measurement asks for it.
+  Jean's word opens it; the dial is already on the panel to look through.
+
+### Owed — Jean, and the campaign is not closed without it
+
+THE VISUAL WITNESS IS THE WHOLE POINT and no gate can stand in for it: tap
+once, and the ground should ring outward from the point, the pawn ride its own
+wavefront, and the camera clamp lift with it. One tap, whole frame answers.
+Everything landed here is gates and a compile — `glaw1` GREEN at every phase —
+and the piece has not been seen doing it. `-DT7_INSTRUMENTS=full` prints
+`[Pulse] emit x= z= amp= slot= count= t=` once per tap; five taps in rhythm
+must show the slots advancing and wrapping at 8, and `t` rising by the gaps
+played.

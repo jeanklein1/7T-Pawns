@@ -2570,6 +2570,25 @@ namespace t7 {
                 pulseCount_ = (pulseWriteIdx_ < terrain_looks::PULSE_RING_SLOTS)
                     ? pulseWriteIdx_ : terrain_looks::PULSE_RING_SLOTS;
                 gpuState_.set_pulse_data(pulseCount_, pulseRing_);
+
+                // THE PULSE IS A TEMPORAL CHANGE, so its witness reads a
+                // TIMELINE: a grep that finds this call proves the call
+                // exists, not that a wavefront ever left the point. Tap in
+                // rhythm and the slots must advance and wrap at
+                // PULSE_RING_SLOTS, with t rising by the gaps you played.
+                //
+                // stream_witness, which is the per-EVENT arm: a blocking
+                // console write per tap is exactly what `meter` drops by the
+                // dial's own doctrine, and the shipped frame is silent.
+                if constexpr (t7::INSTRUMENTS.stream_witness) {
+                    std::cout << "[Pulse] emit"
+                              << " x=" << pulseRing_[base + 0]
+                              << " z=" << pulseRing_[base + 1]
+                              << " amp=" << pulseRing_[base + 3]
+                              << " slot=" << slot
+                              << " count=" << pulseCount_
+                              << " t=" << pulseRing_[base + 2] << "\n";
+                }
             }
 
             // The verb, as the glass and the keyboard issue it.
