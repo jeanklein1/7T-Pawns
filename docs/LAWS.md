@@ -1101,3 +1101,20 @@ mistaken for the disease is worse than none.
 *Paid for by:* IOS_5. `?bundles=0` and `?sunpass=0` intersected to name a
 single `ExecuteBundles` call on a device with no console, no inspector and
 no cable.
+
+## L50 — THE AUTHORED DATUM LAW
+
+A value authored relative to a datum is never re-derived against a measured
+one. `home = ground + orbit_height` makes `orbit_height` the clearance BY
+CONSTRUCTION; asking the world "how high am I" reintroduces a free parameter
+whose one question — which ground — has more than one true answer.
+
+The corollary is the one RETRACT_2 paid for: when a runtime guard silently
+raises an authored value, the cure is to resolve the authored value at
+spawn, in the guard's own constants, so both rooms read one number. It is
+NOT to have the readers ask the world. The guard stays; it stops being the
+only place the truth lives.
+
+*Paid for by:* the cube orbit floor (`77fb4228`). The tier authored a
+Monolith at 12, the GPU clamp held it at 18, and every CPU reader — the
+shove gate included — was reading the dead 12.

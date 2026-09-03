@@ -3208,3 +3208,67 @@ and the piece has not been seen doing it. `-DT7_INSTRUMENTS=full` prints
 `[Pulse] emit x= z= amp= slot= count= t=` once per tap; five taps in rhythm
 must show the slots advancing and wrapping at 8, and `t` rising by the gaps
 played.
+
+## RETRACT_2 — FOUR ITEMS HALTED, THEIR SUBJECTS UNREACHABLE
+
+RETRACT_2 ordered five commits. Three landed (the cube orbit resolve, L50 +
+the FLOOR banner's scope note, the pulse tune). Four items halted under P17 —
+unreachable subject, which stops the ITEM and never the round — and they are
+recorded here because the order's own close (its 4.3) asked for a RETRACT
+entry in this file that has never existed.
+
+THE ORDER WAS WRITTEN AGAINST A TREE THIS REPOSITORY HAS NEVER BEEN. Two of
+its named symbols return zero hits from `git log --all -S`: they were never
+added and never removed anywhere in history. The cited RETRACT_1 sha
+`fc032c9b` is not a valid object here either. Whatever tree RETRACT_1 read,
+it was not this one, and that is the finding — not a drift, an absence.
+
+- **The automaton fetch divisors (commit 1).** `AUTO_GRID_MAX` does not
+  exist; neither does the two-site divisor pair it was to replace, nor any
+  "texel 143 where it wants 79" addressing. The nearest real thing is
+  `world_box_clamp_xz`'s documented half-open `floor(bmax / PATCH_EXTENT)`
+  hazard, which is guarded by every caller passing a positive margin and is
+  not this. Unblocked by Jean naming the real site, or by withdrawing the
+  item.
+- **The carve fade stamp (commit 2.2).** `gol_carve_fade` does not exist.
+  This tree has exactly TWO suppression centres — `pawn_gol_suppression` and
+  `witness_gol_suppression` (the eye, KITE_1) — and NO cube-driven carve at
+  all. There is no fade reading `fe.orbit_height + fe.bob_amplitude` to stamp.
+- **`CUBE_REACH_CEILING` redefined as `2.0 * ZONE_SUPPRESS_OUTER`
+  (commit 2.1).** The anchor MATCHES and the value is identical (30.0 both
+  ways), so this one halted on judgement rather than on reach, and it is
+  Jean's call. In the order's tree the redefinition tied the ceiling to a
+  cube carve fade's zero point. Here `CUBE_REACH_CEILING` has ONE reader —
+  `row_cube_push`'s `reach_ok`, the shove-eligibility gate — and
+  `ZONE_SUPPRESS_OUTER` is the GoL suppression radius the EYE fades over.
+  Binding them by definition would mean a future tune of the eye's carve
+  reach silently re-classifies which cubes the point can shove, against the
+  constant's own comment ("Jean-tunable"). The coincidence at 30 is a
+  coincidence. Unblocked by Jean ruling the two reaches one idea.
+- **Closing RETRACT in `docs/OPEN.md` (commit 4.3).** There was no RETRACT
+  entry to close — `grep -in retract docs/OPEN.md` was empty before this one.
+  The deferred question the close names (whether cubes should descend into
+  their carve) is answered by the FLOOR banner's new scope note regardless.
+
+### What the landed half found that the order did not predict
+
+- **The Monolith gets its bob back.** Before the resolve the clamp ate it
+  whole — `min_drift_y = 6 - bob_y` forced `drift.y` to track `bob_y` exactly
+  and the cube sat dead still at ground+18. After, `min_drift_y = -bob_y`
+  clamps only the lower half, so it bobs in [ground+18, ground+19.2]. The
+  order predicted "positions do not change"; they change by a 1.2 wu
+  half-wave that the tier table authored and the clamp had been eating.
+  Jean's to accept or refuse — refusing it means clamping `home.y` rather
+  than `drift.y`, which is a different edit.
+- **All four cube tiers can resolve, not Monolith alone.** At the tier MEANS
+  only Monolith fires (12 against a floor of 18). But ORBIT_HEIGHT is a
+  Gaussian floored at 3.0 by `CUBE_PARAM_DEFS`, so a low draw puts any tier
+  under its own body floor: SmallCube below ~4.8, MedCube below ~7.0,
+  LargeCube below ~11.0. No position changes in any of them — the clamp was
+  already holding them there — so what fires is the honesty of the number.
+- **The retract value is outside the predicted bracket, and the prediction
+  was unreachable anyway.** The order predicted fade(19.2) in 0.40–0.75. The
+  only fade of that shape in the tree is the EYE's height fade,
+  `1 - smoothstep(ZONE_SUPPRESS_OUTER, 2*ZONE_SUPPRESS_OUTER, h)`, which
+  gives 0.8087 at 19.2 — and it never reads a cube's altitude. Reported, not
+  tuned.

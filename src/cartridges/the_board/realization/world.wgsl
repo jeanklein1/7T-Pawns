@@ -3592,6 +3592,16 @@ fn query_ground_walker_agent(xz: vec2<f32>, qi: QueryInputs) -> f32 {
 //   the answer. This kernel is one invocation a frame; clarity is the right
 //   purchase, and the second evaluation keeps manifold_overlay_stack the
 //   single authored fold rather than open-coding a rival sum.
+//
+//   SCOPE (RETRACT_2, Jean's ruling 2026-09-02): THE PAWN AND THE EYE STAND
+//   IN THE PICTURE; FLYERS HOLD STATION OVER IT. This banner's conjunction
+//   binds the two rooms that must agree about a surface something RESTS on.
+//   A flyer has no such obligation: POLICY_FLYER carries no
+//   CONTRIB_GOL_SUPPRESSION — flyers do not flatten GoL at their own
+//   position — and its altitude is authored against the raw field, resolved
+//   at spawn from spawn constants (L50). So a cube riding above a standing
+//   GoL field is not a violation of this banner; it is the SECOND DATUM,
+//   and the two are not in competition.
 fn query_ground_walker_witness(xz: vec2<f32>, qi: QueryInputs) -> f32 {
     let aura   = contrib_pawn_aura_at_external(xz);
     let ground = manifold_overlay_stack(xz, qi, 0.0) + aura;
