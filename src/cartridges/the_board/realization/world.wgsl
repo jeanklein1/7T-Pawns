@@ -1892,7 +1892,12 @@ struct DesignConfig {
     // type. Read by sample_shadow_pcf, and the ONE mask field this room
     // actually reads. Was _pad720_0.
     shadow_pcf_taps: u32,           // 708
-    _pad720_1: f32,                 // 712
+    // STATURE_0 — the possessed figure's own height, world units. Mirror of
+    // GPUDesignConfig — GROWTH LAW, same commit, same position, same type.
+    // Read by compute_photographer_vp, which frames a subject whose height
+    // this room cannot derive: scene_constants.figure_profiles (g2:200) is a
+    // render-VS uniform and no compute layout binds it. Was _pad720_1.
+    possessed_height: f32,          // 712
     _pad720_2: f32,                 // 716
 }
 
@@ -11580,6 +11585,14 @@ fn build_lookat_vp(eye: vec3<f32>, aim_pt: vec3<f32>, fov_rad: f32, aspect: f32)
 }
 
 // --- Photographer VP Compute (camera only — entity placement is separate)
+// STATURE_0 — WHERE THE PHOTOGRAPHER AIMS ON THE SUBJECT, as a fraction of
+// the subject's own height. Two thirds lands on the upper shank/collar,
+// which is what the 1.0 literal meant on figure 0 and reproduces there to
+// the bit (2/3 * 1.5 rounds to 1.0 in f32). The EYE lift needs no partner
+// constant: it was always exactly ONE subject height (1.5 on figure 0), so
+// it reads subject_h directly.
+const PHOTO_AIM_FRACTION: f32 = 2.0 / 3.0;
+
 // Dispatched only on snapshot frames. Builds the photographer camera VP
 // and light VP for the snapshot render pass.
 @compute @workgroup_size(1)
@@ -11598,9 +11611,19 @@ fn compute_photographer_vp() {
     let cos_az = cos(cfg.azimuth);
     let sin_az = sin(cfg.azimuth);
 
+    // STATURE_0 — THE SUBJECT'S OWN STATURE. The lift was 1.5 and the aim
+    // 1.0: figure 0's height, and two thirds of it, written as literals. The
+    // table spans 1.45 to 3.80, so a tall figure was framed at its knees and
+    // cropped at the neck in every tier that exists to hold a figure.
+    // CAMERA-HOST FALLS BACK ON PURPOSE: in free-fly the point IS the camera
+    // and there is no subject, so the conventional figure keeps the
+    // travelogue's framing identical to before.
+    let subject_h = select(config.possessed_height, PAWN_HEIGHT,
+                           point_camera_hosted());
+
     let eye_raw = point_p + vec3(
         cfg.distance * cos_el * sin_az,
-        cfg.distance * sin_el + 1.5,
+        cfg.distance * sin_el + subject_h,
         cfg.distance * cos_el * cos_az
     );
 
@@ -11615,7 +11638,7 @@ fn compute_photographer_vp() {
     let eye = vec3(eye_raw.x, max(eye_raw.y, terrain_at_cam + 0.1), eye_raw.z);
 
     // --- Build VP looking at the point, with frame offset
-    let aim_base = point_p + vec3(0.0, 1.0, 0.0);
+    let aim_base = point_p + vec3(0.0, subject_h * PHOTO_AIM_FRACTION, 0.0);
 
     // Derive camera frame from initial eye→point direction
     let fwd_init = normalize(aim_base - eye);

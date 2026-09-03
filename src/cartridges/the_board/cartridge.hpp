@@ -716,6 +716,8 @@ namespace t7 {
                     // guard against a reachable frame-1 hazard.
                     gpuState_.config().fpv_eye_height =
                         FPV_EYE_RATIO * PAWN_FIGURES[0].height;
+                    gpuState_.config().possessed_height =
+                        PAWN_FIGURES[0].height;
                     gpuState_.mark_config_dirty();
                 }
 
@@ -1130,11 +1132,23 @@ namespace t7 {
                     // skin lands on the conventional figure rather than at
                     // ground level. Guarded like set_pawn_tilt_tau: the config
                     // only dirties when the possessed figure actually changes.
-                    const float eye = FPV_EYE_RATIO
-                        * (sid < PAWN_FIGURE_COUNT ? PAWN_FIGURES[sid].height
-                                                   : PAWN_FIGURES[0].height);
+                    const float fig_h =
+                        (sid < PAWN_FIGURE_COUNT ? PAWN_FIGURES[sid].height
+                                                 : PAWN_FIGURES[0].height);
+                    const float eye = FPV_EYE_RATIO * fig_h;
                     if (gpuState_.config().fpv_eye_height != eye) {
                         gpuState_.config().fpv_eye_height = eye;
+                        gpuState_.mark_config_dirty();
+                    }
+                    // STATURE_0 — THE SAME FIGURE'S HEIGHT, UNSCALED. The
+                    // photographer frames the subject at its own fractions
+                    // (compute_photographer_vp), so it needs the fact and not
+                    // the FPV camera's ratio of it. One selection now serves
+                    // both, on the same guard and the same out-of-range arm:
+                    // an unknown skin frames as the conventional figure rather
+                    // than at ground level.
+                    if (gpuState_.config().possessed_height != fig_h) {
+                        gpuState_.config().possessed_height = fig_h;
                         gpuState_.mark_config_dirty();
                     }
                 }

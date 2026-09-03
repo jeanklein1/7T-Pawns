@@ -337,6 +337,7 @@ ORGAN_PARAM(PAWN, PawnAuraProfile, delta_mode,       U32, 0.0f, 1.0f,  1.0f,   "
 ORGAN_PARAM_RO(CONFIG, GPUDesignConfig, pawn_tilt_tau,    F32,  "Pawn · Figure (driven)", "tilt tau")
 ORGAN_PARAM_RO(CONFIG, GPUDesignConfig, pawn_body_radius, F32,  "Pawn · Figure (driven)", "body radius")
 ORGAN_PARAM_RO(CONFIG, GPUDesignConfig, fpv_eye_height,   F32,  "Pawn · Figure (driven)", "eye height")
+ORGAN_PARAM_RO(CONFIG, GPUDesignConfig, possessed_height, F32,  "Pawn · Figure (driven)", "figure height")
 
 // ─── Ribbon · Head / Wander ─────────────────────────────────────────
 // THE FLIGHT DIALS MOVED HOME AT RIBBON_1, and it is the FIELD'S OWN

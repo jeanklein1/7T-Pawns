@@ -925,7 +925,16 @@ namespace t7 {
             // A pad is consumed IN PLACE, so sizeof 720 is unmoved.
             // Was _pad720_0.
             uint32_t shadow_pcf_taps;      // 708
-            float _pad720_1;               // 712
+            // STATURE_0 — the possessed figure's own height, world units.
+            // THE FACT fpv_eye_height IS A RATIO OF, shipped in its own right:
+            // the photographer frames the same subject at a different fraction,
+            // and two rooms scaling one transported number cannot drift the way
+            // two literals did. CPU-derived from PAWN_FIGURES on the wire
+            // pawn_tilt_tau / pawn_body_radius / fpv_eye_height already ride.
+            // Reuses the first tail pad in place — same position, same type,
+            // sizeof 720 UNMOVED (the fpv_eye_height / pawn_body_radius
+            // precedent). Was _pad720_1.
+            float possessed_height;        // 712
             float _pad720_2;               // 716
         };
 
