@@ -225,7 +225,7 @@ inline constexpr float POSSESSION_RADIUS = 20.0f;
 // is a statement about the AUTHORED rest, not about the dial: the panel
 // exists so Jean can find the number by eye, and the range below is what
 // he may look through.
-inline constexpr float PULSE_TAP_AMPLITUDE = 1.0f;
+inline constexpr float PULSE_TAP_AMPLITUDE = 1.5f;
 
 inline constexpr PanelSurface PANEL_TABLE = {
     { FIELD_BEACON_R0, FIELD_BEACON_R, FIELD_BEACON_S, FIELD_BEACON_LIFT },
