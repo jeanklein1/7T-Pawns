@@ -724,10 +724,59 @@ inline SpawnGateOutput cube_run_gate(MachineCtx* c, int32_t gx, int32_t gz) {
     return gate_from_traits(c, gx, gz, CUBE_TRAITS, c->cube_behaviors_state_.activeCubes_);
 }
 
+// ── THE CUBE FLOOR, CPU SIDE (RETRACT_2) ───────────────────────────
+// TWO ROOMS, AND THE GPU'S IS THE ORIGINAL: world.wgsl's
+// CUBE_TERRAIN_CLEARANCE (const, 3.0) and the clamp beneath it,
+//   let cube_floor_y = ground + CUBE_TERRAIN_CLEARANCE
+//                    + fe.body_radius * fe.aspect_y;
+// The clamp is a per-frame guard against dynamic dips and it STAYS. What
+// this constant exists for is the REST case: the floor a cube is holding
+// at when nothing is pushing it, which is a spawn fact and belongs where
+// the spawn constants are. Every term but `ground` is drawn at spawn, so
+// the rest floor can be resolved once instead of rediscovered per frame.
+//
+// If the WGSL constant moves, this moves with it. It is a lockstep
+// mirror and it is declared as one rather than pretended away — the GPU
+// const is not reachable from C++, and the alternative (staging it
+// through the config uniform) would buy a second transport for a number
+// that has never changed.
+inline constexpr float CUBE_TERRAIN_CLEARANCE_CPU = 3.0f;  // twin of world.wgsl CUBE_TERRAIN_CLEARANCE
+
+// THE CUBE'S REST FLOOR — the altitude the GPU clamp holds it at when
+// drift is zero, in the clamp's own terms and constants.
+inline constexpr float cube_rest_floor(float body_radius, float aspect_y) {
+    return CUBE_TERRAIN_CLEARANCE_CPU + body_radius * aspect_y;
+}
+
 inline void cube_compute_solid_half(EntityInstance& inst, const TierProfile&) {
     inst.solid_half = inst.params[CubeIdx::BODY_RADIUS];
     inst.ground_y_offset = 0.0f;
     inst.burial = 0.0f;
+
+    // ── ONE HOME FOR EFFECTIVE ALTITUDE (RETRACT_2) ────────────────
+    // The tier authors an orbit_height the runtime clamp then overrides
+    // in silence: a Monolith authored at 12 rides at 18, because its own
+    // body (3.0 x 5.0 aspect_y) plus the terrain clearance is taller than
+    // the altitude it was given. TWO HOMES, DISAGREEING — and every CPU
+    // reader of the authored number was reading the dead one, the shove
+    // gate's `reach_ok` (world.wgsl row_cube_push, orbit_height +
+    // bob_amplitude vs CUBE_REACH_CEILING) included.
+    //
+    // Resolved HERE because this is the family's one hook between the
+    // draw and the writers: apply_indoor_rescale has already run (so an
+    // indoor cap cannot be undone by this), and write_active and
+    // write_gpu have not (so the CPU mirror and the GPU state inherit
+    // ONE number). Resolving in either writer alone would author the
+    // very split this closes — and the zoetrope walk round-trips
+    // ac.orbit_height back to the GPU, so a CPU mirror left at the
+    // authored value would eventually overwrite the resolved one.
+    //
+    // The runtime clamp STAYS. It remains the guard for dynamic dips;
+    // it simply stops being a silent overrider at rest.
+    inst.params[CubeIdx::ORBIT_HEIGHT] = std::max(
+        inst.params[CubeIdx::ORBIT_HEIGHT],
+        cube_rest_floor(inst.params[CubeIdx::BODY_RADIUS],
+                        inst.params[CubeIdx::ASPECT_Y]));
 }
 
 inline void cube_compute_colors(EntityInstance& inst, const EntityFamilyTraits&, const TierProfile& /*tier*/) {
