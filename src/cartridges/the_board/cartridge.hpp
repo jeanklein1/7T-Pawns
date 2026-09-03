@@ -2729,11 +2729,15 @@ namespace t7 {
                 // SCOPE: curtains exist ONLY in the LOD0 index buffer. The
                 // cap-only choice is correct on a clean LOD0 patch because no
                 // cell there lifts — not because a lift without a curtain is
-                // harmless. In the LOD1 ring cells lift and own no curtain;
-                // what seals those seams is the rim curtain (WALL_1 — skirt
-                // ring copies stand on unlifted ground). The rev1 flag asked
-                // "any zone anywhere" and was therefore inert: zones are alive
-                // globally almost always, so it never released.
+                // harmless. The LOD1 ring owns per-cell curtains too: the zoned
+                // build appends the stride-2 perimeter tail after the clean
+                // prefix, so every seam a lift opens is sealed by the cell that
+                // opened it, at both LODs. The rim skirt seals the PATCH edge and
+                // nothing else — it hangs from base twins on unlifted ground
+                // (WALL_1) and carries no lift of its own (SKIRT_WELD_1/P; it hung
+                // from cap verts until then, which is what made it ramp). The rev1
+                // flag asked "any zone anywhere" and was therefore inert: zones are
+                // alive globally almost always, so it never released.
                 //
                 // Conservative by one patch: each zone's world AABB is
                 // inflated by PATCH_EXTENT before the disc test, and the

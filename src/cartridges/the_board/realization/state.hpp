@@ -4595,7 +4595,53 @@ namespace t7 {
                         else if (k < 3 * n) { lx = n - (k - 2 * n); lz = n; }
                         else                { lx = 0;               lz = n - (k - 3 * n); }
                     };
-                    auto skirt_cap_index = [](uint32_t k) {
+                    // THE INVERSE OF cell_perimeter — a cap-perimeter local (lx,lz)
+                    // to its base-band slot k. Well-defined because every skirt ring
+                    // vertex sits on a cell perimeter by construction, at either
+                    // stride: the ring walks vz==0, vx==N, vz==N, vx==0, and
+                    // N/UG_QUADS_PER_CELL lands on a cell edge with cx/cz clamped to
+                    // 15, so lx or lz is 0 or 4 at every slot. LOD1's stride-2 locals
+                    // are the subset {0,2,4}, and a function total over all 16
+                    // perimeter positions is total over any subset of them. Branch
+                    // ORDER carries the four corners: (0,0) is claimed by the bottom
+                    // walk, not the left, exactly as cell_perimeter emits it at k=0.
+                    constexpr auto cell_perimeter_slot = [](uint32_t lx, uint32_t lz) -> uint32_t {
+                        const uint32_t n = Dim::UG_QUADS_PER_CELL;          // 4
+                        if (lz == 0 && lx <  n) return lx;                  // bottom (0..3, 0)
+                        if (lx == n && lz <  n) return n + lz;              // right  (4, 0..3)
+                        if (lz == n && lx >  0) return 2 * n + (n - lx);    // top    (4..1, 4)
+                        return 3 * n + (n - lz);                            // left   (0, 4..1)
+                    };
+                    static_assert(Dim::UG_QUADS_PER_CELL == 4 && Dim::UG_BASE_VERTS_PER_CELL == 16,
+                                  "SKIRT_WELD_1/P: cell_perimeter_slot is written for n=4/16 slots");
+                    // THE INVERSE IS ASSERTED, NOT ASSUMED — all sixteen slots round
+                    // trip, and the sixteen results are 0..15 each exactly once, so
+                    // the map is a bijection of the cap perimeter onto the base band.
+                    // The right-hand column IS cell_perimeter's emission, which §4
+                    // freezes; stated as literals because cell_perimeter is a runtime
+                    // lambda and cannot be called from a constant expression without
+                    // editing it, which this campaign may not do.
+                    static_assert(
+                        cell_perimeter_slot(0, 0) ==  0 && cell_perimeter_slot(1, 0) ==  1 &&
+                        cell_perimeter_slot(2, 0) ==  2 && cell_perimeter_slot(3, 0) ==  3 &&
+                        cell_perimeter_slot(4, 0) ==  4 && cell_perimeter_slot(4, 1) ==  5 &&
+                        cell_perimeter_slot(4, 2) ==  6 && cell_perimeter_slot(4, 3) ==  7 &&
+                        cell_perimeter_slot(4, 4) ==  8 && cell_perimeter_slot(3, 4) ==  9 &&
+                        cell_perimeter_slot(2, 4) == 10 && cell_perimeter_slot(1, 4) == 11 &&
+                        cell_perimeter_slot(0, 4) == 12 && cell_perimeter_slot(0, 3) == 13 &&
+                        cell_perimeter_slot(0, 2) == 14 && cell_perimeter_slot(0, 1) == 15,
+                        "SKIRT_WELD_1/P: cell_perimeter_slot must invert cell_perimeter on all 16 slots");
+
+                    // SKIRT_WELD_1/P — the ring's top edge on the BASE band. It hung
+                    // on cap verts, and cap verts are CELL-OWNED (UNIFIED_GROUND_1):
+                    // ring slot k and k+1 straddle a cell seam at every multiple of
+                    // UG_QUADS_PER_CELL, so one live cell turned that quad into a ramp
+                    // from ground+alive_height to ground — an extra triangle, dragged
+                    // up by a cell it does not belong to, on top of a curtain that
+                    // already sealed the same edge. Base twins carry wall = 1 ->
+                    // lift_scale = 0 (WALL_1): they never lift, so the ring is one
+                    // surface again and the discontinuity stays the curtain's job.
+                    auto skirt_base_index = [&](uint32_t k) {
                         const uint32_t N = Dim::PATCH_MESH_N;
                         uint32_t vx, vz;
                         if      (k < N)     { vx = k;               vz = 0; }
@@ -4606,8 +4652,9 @@ namespace t7 {
                         uint32_t cz = vz / Dim::UG_QUADS_PER_CELL; if (cz > 15) cz = 15;
                         uint32_t lx = vx - Dim::UG_QUADS_PER_CELL * cx;
                         uint32_t lz = vz - Dim::UG_QUADS_PER_CELL * cz;
-                        return Dim::UG_CAP_BASE + (cz * Dim::PATCH_CELL_N + cx) * Dim::UG_CAP_VERTS_PER_CELL
-                             + lz * Dim::UG_CAP_STRIDE_C + lx;
+                        return Dim::UG_BASE_BASE
+                             + (cz * Dim::PATCH_CELL_N + cx) * Dim::UG_BASE_VERTS_PER_CELL
+                             + cell_perimeter_slot(lx, lz);
                     };
 
                 // LOD-0: cap tiles + curtains + skirt — ~50,688 indices
@@ -4661,14 +4708,14 @@ namespace t7 {
                             idx.push_back(static_cast<uint16_t>(b)); idx.push_back(static_cast<uint16_t>(sb)); idx.push_back(static_cast<uint16_t>(sa));
                         }
                     }
-                    // SKIRT RING — the legacy loop; top edge = cap outer verts;
-                    // copies keep the legacy ring slots (their decode changes in U3).
+                    // SKIRT RING — the legacy loop; top edge = BASE-band twins
+                    // (SKIRT_WELD_1/P), copies keep the legacy ring slots.
                     constexpr uint32_t SKIRT_RING_N = 4 * Dim::PATCH_MESH_N;
                     constexpr uint32_t SKIRT_GRID_V = (Dim::PATCH_MESH_N + 1) * (Dim::PATCH_MESH_N + 1);
                     for (uint32_t k = 0; k < SKIRT_RING_N; k++) {
                         uint32_t k1 = (k + 1) % SKIRT_RING_N;
-                        uint32_t a  = skirt_cap_index(k);
-                        uint32_t b  = skirt_cap_index(k1);
+                        uint32_t a  = skirt_base_index(k);
+                        uint32_t b  = skirt_base_index(k1);
                         uint32_t sa = SKIRT_GRID_V + k;
                         uint32_t sb = SKIRT_GRID_V + k1;
                         idx.push_back(static_cast<uint16_t>(a)); idx.push_back(static_cast<uint16_t>(b)); idx.push_back(static_cast<uint16_t>(sa));
@@ -4734,12 +4781,12 @@ namespace t7 {
                             }
                         }
                     }
-                    // skirt: the stride-2 ring — top edge on the cap lattice,
-                    // copies on the matching legacy ring slots
+                    // skirt: the stride-2 ring — top edge on the BASE band
+                    // (SKIRT_WELD_1/P), copies on the matching legacy ring slots
                     for (uint32_t k = 0; k < SKIRT_RING; k += s) {
                         uint32_t k1 = (k + s) % SKIRT_RING;
-                        uint32_t a  = skirt_cap_index(k);
-                        uint32_t b  = skirt_cap_index(k1);
+                        uint32_t a  = skirt_base_index(k);
+                        uint32_t b  = skirt_base_index(k1);
                         uint32_t sa = SKIRT_GRID_VERTS + k;
                         uint32_t sb = SKIRT_GRID_VERTS + k1;
                         idx.push_back(static_cast<uint16_t>(a)); idx.push_back(static_cast<uint16_t>(b)); idx.push_back(static_cast<uint16_t>(sa));

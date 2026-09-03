@@ -5,14 +5,14 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `78ccd5f1887d75a5d42d29c06044fe7d874c7476`
-(PULSE_1 U1: two the refuter found — a count that could fall, and a latency that was true but unsaid)
+Last commit touching any scanned file: `e55af22fe75d8f90d00104e2b21f698816b5ae1d`
+(STATURE_0 — the photographer frames the subject at its own height)
 
 | file scanned | sha256 |
 |---|---|
 | `src/cartridges/the_board/realization/render_passes.hpp` | `sha256:e4d6b62cb1d1936d57322d2c4ef4372bbc27dd1404a29117d9431938e9c84149` |
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:fc3137898e0dc6f0f2edd938cd40681cfc4fe8c272fb9fc4920f71b34643f48e` |
-| `src/cartridges/the_board/cartridge.hpp` | `sha256:b043989a256da7e9612a3dfe36ec5d5973011c6696f7b1be06766f4140158442` |
+| `src/cartridges/the_board/cartridge.hpp` | `sha256:56ce86ebbbe9db2c591b12064288fe51aba11d24c181641d9fbabb26ea0c4a64` |
 | `src/cartridges/the_board/surface/patch_system.hpp` | `sha256:1be3569e8b942fccc6a5ad003a6f227b2c413897b33a947bdcfa986947653b3c` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:335d9c5a1d7c34aff37f3010abe8b88aa04290c8db487b70828c9c83e8588719` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |

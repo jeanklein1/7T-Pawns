@@ -7464,7 +7464,21 @@ fn apply_gol_color(base_color: vec3<f32>, zp: GoLZoneConfig, cx: u32, cy: u32, b
     let dark_factor = GOL_BLACK_DARK_BASE + dark_variation;
     let r_shift = f32((h >> 8u) & 0xFFu) / 255.0 * GOL_BLACK_R_SHIFT_RANGE - GOL_BLACK_R_SHIFT_RANGE * 0.5;
     let g_shift = f32((h >> 16u) & 0xFFu) / 255.0 * GOL_BLACK_G_SHIFT_RANGE - GOL_BLACK_G_SHIFT_RANGE * 0.5;
-    let alive_color = clamp(base_color * dark_factor + vec3(r_shift, g_shift, -r_shift), vec3(0.0), vec3(1.0));
+    // THE VARIATION IS A GAIN, NOT AN OFFSET. Added AFTER the darkening
+    // multiply, an offset stops being a variation wherever the base is near
+    // zero — it becomes the whole colour, and the clamp beneath it then
+    // deleted G and B asymmetrically, so a cell holding max r_shift painted
+    // saturated red out of black ground. As a gain the scatter is
+    // proportional to what is there: black stays black, blue stays blue, and
+    // the authored red<->blue seesaw survives intact.
+    //
+    // AND THE CLAMP IS NOW UNREACHABLE. Ceiling is
+    // GOL_BLACK_DARK_BASE + GOL_BLACK_DARK_RANGE = 0.55, times
+    // (1 + GOL_BLACK_R_SHIFT_RANGE * 0.5) = 1.05, against a base <= 1: 0.578.
+    // Floor is >= 0 because every factor is. So it is EXCISED rather than
+    // kept as a lie about what this line can produce.
+    let gain = vec3(1.0 + r_shift, 1.0 + g_shift, 1.0 - r_shift);
+    let alive_color = base_color * dark_factor * gain;
     return mix(base_color, alive_color, blend * GOL_TINT_STRENGTH);
 }
 

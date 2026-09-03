@@ -2,6 +2,87 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## SKIRT_WELD_1/P — THE PERIMETER SKIRT HANGS FROM THE BASE BAND (landed; one seam held)
+
+Sibling of SKIRT_WELD_1 on 7T-Music, landed there at `be0eb28f`. The patch
+perimeter skirt hung its top edge on **cap** verts, and cap verts are
+cell-owned (UNIFIED_GROUND_1): ring slot `k` and `k+1` straddle a cell seam at
+every multiple of `UG_QUADS_PER_CELL`, so one live zone cell turned that quad
+into a ramp from `ground + alive_height` down to `ground` — an extra triangle
+dragged up by a cell it does not belong to, over a curtain that had already
+sealed the same edge. The ring now hangs from the **base** band, whose twins
+carry `wall = 1 → lift_scale = 0` (WALL_1) and never lift. **Zero mirrors, zero
+bindings, zero organ rows, and the four index counts are byte-identical** — the
+emission pushes six indices per quad either way, so only the index VALUES moved.
+
+**1 · THE INVERSE IS ASSERTED, NOT ASSUMED.** `cell_perimeter_slot` (the new
+`(lx,lz) → k` inverse of `cell_perimeter`) is `constexpr` and carries a
+sixteen-term `static_assert` that is simultaneously a round-trip check and a
+bijection proof: the sixteen results are `0..15`, each exactly once. Stride-2
+totality comes free — LOD1's locals are the subset `{0,2,4}`, and a function
+total over all 16 perimeter positions is total over any subset.
+
+**2 · ALL THREE EMISSION PATHS GOT THE SAME RE-AIM.** `build_lod0_ib` is one
+lambda serving the curtained and cap-only buffers, so LOD0's single call-site
+pair covers two of them; LOD1's stride-2 ring is the third. The curtain-less
+variants are the two lift-conservative switches (`curtainsActive_` off
+`zone_rects_in_core()`, `zonesActiveAnywhere_` off `zones_active_anywhere()`),
+not dead alternates.
+
+**3 · A STALE CLAIM DIED WITH IT.** `cartridge.hpp` said *"In the LOD1 ring
+cells lift and own no curtain; what seals those seams is the rim curtain
+(WALL_1 — skirt ring copies stand on unlifted ground)."* False at HEAD: LOD1's
+zoned build appends a full per-cell stride-2 curtain tail after the clean
+prefix. It was **the one document in the tree saying the skirt ring performs
+sealing work**, and a careful reader would have refused this fix on its
+authority. Corrected in the same commit as the re-aim. Prose is Jean's gate.
+
+**4 · THE TINT'S VARIATION IS A GAIN NOW, NOT AN OFFSET.** `apply_gol_color`'s
+BLACKISH branch added `vec3(r_shift, g_shift, -r_shift)` **after** the
+darkening multiply. On near-black ground the base term is ~0, so the offset
+became the whole colour and the `clamp` beneath it deleted G and B
+asymmetrically — a cell holding max `r_shift` painted saturated red out of
+black ground. As a gain the scatter is proportional to what is there. The clamp
+is EXCISED: ceiling `0.55 * 1.05 = 0.578` against a base ≤ 1, floor ≥ 0 because
+every factor is. Neither `_SHIFT_RANGE` value moved. The edit is inside the
+branch that reads neither `zp` nor a per-zone field, which is why it is
+byte-portable between the two trees.
+
+**5 · ONE RESIDUAL, AND ONE PREDICTED RESIDUAL THAT DOES NOT OCCUR.**
+- `in.skirt` was `0 → 1` across a skirt quad (cap top, ring-copy bottom) and is
+  now the constant `1` (both ends carry `wall = 1`). `DEBUG_VIEW = 3u`
+  therefore paints the whole skirt quad magenta including its top edge —
+  truer as an instrument, and a changed picture in that debug view. Sole
+  consumer; the art does not move.
+- **The skirt's baked cell colour does NOT change.** The handoff predicted it
+  would, on the premise that skirt fragments took `owned_texel` from the
+  floored world position (`cell_local.z == 0`) and would now take the flat cell
+  index. They never took the floored position: `cell_local` is
+  `@interpolate(flat)`, whose provoking vertex is the primitive's first, and
+  the emission is `a, b, sa` / `b, sb, sa` — `a` and `b` were cap verts
+  (`z = 1`) before and are base verts (`z = 1`) after. Both bands decode the
+  same `cellx`/`cellz` for the same ring slot, so `owned_texel` is bit-identical
+  across the change. What survives is the per-triangle cell **step** at a seam
+  — `a` in cell *c*, `b` in cell *c+1*, split along the quad's diagonal — which
+  was true before the re-aim too. The re-aim removed the ramp it was riding on.
+
+**6 · HELD — THE SHADING NORMAL EXCLUDES THE ZONE LIFT.** Both terrain VS sum
+`out.gradients = height_data.yz + live.yz`; the lift rides the card's `.w`,
+nearest-sampled at the cell centre, and contributes nothing to the gradient.
+Every cap and curtain is therefore lit with the flat ground's normal. Real,
+second-order, and superseded by SKIRT_WELD_1/P — the picture must be re-shot
+with the ramps gone before this is scoped, because the ramps were producing
+tone splits of their own. Held identically in 7T-Music.
+
+**7 · THE RECORD RITUAL WAS NOT RUN, DELIBERATELY.** The handoff asks for
+`glaw2 --record`. One name retires here — `skirt_cap_index` — and it is
+**C++**, which glaw2 does not see; the campaign adds no WGSL entry point and no
+WGSL const, and glaw2 is GREEN without a re-record. The tombstone is the
+diff's. The handoff also predicted `sha256_gate` would red by construction: it
+does not. That gate proves `src/core/sha256.hpp` agrees with `hashlib` — it
+uses `world.wgsl` as an input vector, it does not pin a recorded digest — and
+it is PASS on the edited shader with nothing to re-record.
+
 ## THE iOS BLACK SCREEN — CLOSED 2026-08-28 (IOS_5)
 
 **A render bundle with `colorFormatCount = 0` — depth-only, a
