@@ -5,8 +5,8 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `56dddcace65bd45eb462781a1c82155660935c32`
-(PULSE_1 E: the witness reads a timeline; OPEN carries the debt)
+Last commit touching any scanned file: `78ccd5f1887d75a5d42d29c06044fe7d874c7476`
+(PULSE_1 U1: two the refuter found — a count that could fall, and a latency that was true but unsaid)
 
 | file scanned | sha256 |
 |---|---|
