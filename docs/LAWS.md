@@ -146,13 +146,33 @@ Field ORDER is the cross-room contract — `world.wgsl`'s `DesignConfig` mirrors
 New knobs join a cadence: dirty-config for slow dials, a bespoke hot writer
 for per-frame voices. And see L4 before choosing the position.
 
-## L6 — THE BINDING-NUMBER LAW
+## L6 — THE BINDING-NUMBER CONVENTIONS
+
+**These are conventions, not a law** — softened from THE BINDING-NUMBER LAW
+on Jean's call, 2026-09-03: it read stricter than the practice warranted.
+Depart from an item with a reason and the tree stays sound. The NUMBER and
+the item numbering are unchanged, because `binding_registry.hpp`,
+`world.wgsl` and `binding_schema.py` all cite them by hand — one of them by
+"L6 item 5".
 
 `tools/binding_schema.py` **authors** the GPU binding numbers (L22);
 `binding_gen.py --write` emits `realization/binding_registry.hpp` from it.
 The registry is the numbers' **one home in C++** and every consumer reads
 it — but it is a generated mirror, and a hand edit does not survive
-`--check`. This law governs the numbers' shape and their mirrors.
+`--check`. What follows is what the numbers' shape should be, and why each
+item earns its keep.
+
+**HALF OF IT IS NOT ACTUALLY DISCRETIONARY, AND SAYING SO IS THE POINT.**
+Softening this prose disarms nothing: items 1, 3 and 6 are held by
+machinery that did not change, and a suggestion that can still stop a build
+is a law wearing a costume. Item 1 is the compiler's — a binding integer
+typed twice is an undefined symbol at glaw1. Item 3's `render = compute +
+200` band is a `static_assert` at the foot of the registry. Item 6's mirror
+lockstep is `binding_gen.py --check` witness S-3, with S-7 closing every
+emitted expression over its include point. **Items 2, 4 and 5 are shape and
+taste, and those are the three a reason may override.** Anyone wanting the
+other three to be genuinely optional has to go and disarm their gates,
+which is a separate decision and a larger one.
 
 1. Every bind-group layout entry and its matching group entry reference the
    **same named constant**. The "binding integer typed twice" hazard becomes an
@@ -163,9 +183,10 @@ it — but it is a generated mirror, and a hand edit does not survive
 3. Numbers are **authored, not computed**. The `render = compute + 200` band is
    a `static_assert` witness at the foot of the registry: it CHECKS the
    authored literals and is never their source.
-4. One constant per **site**, named for the WGSL variable it mirrors — not one
-   per buffer. The same buffer wears several names because each name is one
-   `(group, slot)`.
+4. **Prefer** one constant per **site**, named for the WGSL variable it
+   mirrors — not one per buffer. The same buffer wears several names because
+   each name is one `(group, slot)`. (Discretionary: nothing machine-checks
+   the naming, and a site that reads better another way may have it.)
 5. **A retired number is free.** Numbers are not reserved and comments do not
    reserve them; the registry shows what is taken, git shows what was.
    Precedent: 149 was retired and its neighbors 190/191 were reborn as the cmg
