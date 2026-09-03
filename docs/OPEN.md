@@ -3272,3 +3272,15 @@ it was not this one, and that is the finding — not a drift, an absence.
   `1 - smoothstep(ZONE_SUPPRESS_OUTER, 2*ZONE_SUPPRESS_OUTER, h)`, which
   gives 0.8087 at 19.2 — and it never reads a cube's altitude. Reported, not
   tuned.
+
+## STATURE_0 — the aim fraction is a constant, not a dial
+
+PHOTO_AIM_FRACTION (world.wgsl, 2/3) and the implicit eye lift of one
+subject height are the photographer's framing choices, and unlike the
+capture cadence they ARE seen — they are the painting. They sit as a WGSL
+const and a bare expression because no measurement has asked for a dial
+yet. What unblocks the graduation is ORGAN sovereignty: a panel subject
+lives in config_, lightingStage_ or agentRoomStage_, so promoting them
+means two more floats on GPUDesignConfig and two rows in
+organ_params.inc — worth doing when Jean wants to taste the framing live,
+not before. · STATURE_0 · a visual complaint about where shots land.
