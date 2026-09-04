@@ -128,14 +128,12 @@ ORGAN_PARAM(CONDUCTOR, OrbConductorConsole, states[1].duration_beats,  F32,  1.0
 ORGAN_PARAM(CONDUCTOR, OrbConductorConsole, states[1].jitter_beats,    F32,  0.0f,   64.0f,    1.0f,   "Conductor · frozen", "jitter (± beats)")
 
 ORGAN_PARAM(CONDUCTOR, OrbConductorConsole, states[2].gesture,         U32,  0.0f,   7.0f,     1.0f,   "Conductor · flocking", "gesture")
-ORGAN_PARAM(CONDUCTOR, OrbConductorConsole, states[2].noise,           F32,  0.0f,   3.0f,     0.01f,  "Conductor · flocking", "noise")
 ORGAN_PARAM(CONDUCTOR, OrbConductorConsole, states[2].speed_mult,      F32,  0.0f,   4.0f,     0.01f,  "Conductor · flocking", "speed mult")
 ORGAN_PARAM(CONDUCTOR, OrbConductorConsole, states[2].duration_beats,  F32,  1.0f,   128.0f,   1.0f,   "Conductor · flocking", "duration (beats)")
 ORGAN_PARAM(CONDUCTOR, OrbConductorConsole, states[2].jitter_beats,    F32,  0.0f,   64.0f,    1.0f,   "Conductor · flocking", "jitter (± beats)")
 
 ORGAN_PARAM(CONDUCTOR, OrbConductorConsole, states[3].gesture,         U32,  0.0f,   3.0f,     1.0f,   "Conductor · orbital", "gesture")
 ORGAN_PARAM(CONDUCTOR, OrbConductorConsole, states[3].orbital_speed,   F32,  0.0f,   2.0f,     0.01f,  "Conductor · orbital", "orbital speed")
-ORGAN_PARAM(CONDUCTOR, OrbConductorConsole, states[3].noise,           F32,  0.0f,   3.0f,     0.01f,  "Conductor · orbital", "noise")
 ORGAN_PARAM(CONDUCTOR, OrbConductorConsole, states[3].speed_mult,      F32,  0.0f,   4.0f,     0.01f,  "Conductor · orbital", "speed mult")
 ORGAN_PARAM(CONDUCTOR, OrbConductorConsole, states[3].duration_beats,  F32,  1.0f,   128.0f,   1.0f,   "Conductor · orbital", "duration (beats)")
 ORGAN_PARAM(CONDUCTOR, OrbConductorConsole, states[3].jitter_beats,    F32,  0.0f,   64.0f,    1.0f,   "Conductor · orbital", "jitter (± beats)")
