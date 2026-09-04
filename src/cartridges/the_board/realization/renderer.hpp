@@ -465,6 +465,12 @@ namespace t7 {
                 const uint32_t g = static_cast<uint32_t>(PipeGroup::FIRST_LIGHT);
                 return pipeResolved_[g] >= pipeIssued_[g];
             }
+            // ORRERY_4 — the orb seeding kernel, by handle rather than by
+            // group: the init is a ONE-SHOT whose arm must not be spent
+            // before the pipeline it needs exists (AUBADE U3 resolves them
+            // asynchronously; orb_init landed at 4877 ms in the boot that
+            // found this, long after the loop began at 1692 ms).
+            bool orb_init_ready() const { return orbInitPipeline_ != nullptr; }
             bool shadow_pipelines_ready() const {
                 const uint32_t g = static_cast<uint32_t>(PipeGroup::SHADOW);
                 return pipeResolved_[g] >= pipeIssued_[g];

@@ -771,15 +771,16 @@ inline void configure_orbs(OrbsState& os, OrbsDeps* c, const OrbMoodConfig& cfg,
     // inactive the dispatch early-returns and nothing reads the uniform
     // at all. Every mood change has always taken this same path.
     // ORRERY_1/B — the init kernel runs at most ONCE per session. A
-    // disabled mood cannot burn the one shot: configure_orbs returns at
+    // disabled mood cannot burn the shot: configure_orbs returns at
     // `if (!os.active || os.count == 0) return;` long before this line,
     // so an indoor passage never reaches it. teardown_orbs drops only
     // flags and frees no GPU buffer, so the field survives the passage
     // and is still there when an open mood returns.
-    if (reseed && !os.sky_seeded) {
-        os.init_pending = true;
-        os.sky_seeded = true;
-    }
+    // ORRERY_4 moved the LATCH to dispatch_orb_init,
+    // which is the only site that knows a seeding actually happened. Arming
+    // here is free to repeat — every mood door re-arms until one dispatch
+    // lands, and none re-rolls the stars after that.
+    if (reseed && !os.sky_seeded) os.init_pending = true;
 
     log_configure_(os, cfg, eff_drag, eff_orbital_speed, os.current_palette_id);
 }
@@ -893,7 +894,23 @@ inline void cycle_orb_gesture(OrbsState& os, OrbsDeps* c, wgpu::Queue& queue) {
 // os.init_pending is armed.
 inline void dispatch_orb_init(OrbsState& os, OrbsDeps* c, wgpu::CommandEncoder& encoder) {
     if (!os.init_pending) return;
+    // ORRERY_4 — THE ARM SURVIVES AN UNREADY PIPELINE. AUBADE U3 resolves
+    // pipelines asynchronously, and the renderer's own dispatch_orb_init
+    // ends at `if (!orbInitPipeline_) return;`. This function used to clear
+    // init_pending and print a dispatch BEFORE that check, so a boot whose
+    // first conducted frame beat orb_init's compile spent the arm on a
+    // dispatch that never happened. Harmless until ORRERY_1/B, which made
+    // the arm a one-shot: after it, the sky stayed zero-initialised for the
+    // life of the session — every orb at the camera eye with size 0 and
+    // brightness 0 — while `[Orbs] Configured: count=256` kept printing.
+    // Measured on the boot that found it: loop at 1692 ms, orb_init at
+    // 4877 ms. So the readiness question is asked FIRST, and a not-yet
+    // leaves the arm set for the next frame to try again.
+    if (!c->renderer_.orb_init_ready()) return;
     os.init_pending = false;
+    // ORRERY_1/B's law, latched where it is TRUE: the init kernel runs at
+    // most once per session, and this is the only place one actually runs.
+    os.sky_seeded = true;
 
     wgpu::ComputePassDescriptor cpd{};
     cpd.label = "Orb Init";

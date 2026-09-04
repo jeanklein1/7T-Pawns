@@ -5,19 +5,19 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `0ddfa7f735a6abde3dfbedadd74f6354c44a3f96`
-(ORRERY_2/A — the conductor's numbers become a console: one design row, one live bank, a row-watch that lands a panel edit mid-reign, and jitter waiting at zero)
+Last commit touching any scanned file: `9074146a66291c6e1a6867d6a36747cb7e744ab9`
+(ORRERY_3 — the frost forks: the flock is earned by a second roll, the wheel by a third, and the sky is brownian or frozen most of the time)
 
 | file scanned | sha256 |
 |---|---|
 | `src/cartridges/the_board/realization/render_passes.hpp` | `sha256:e4d6b62cb1d1936d57322d2c4ef4372bbc27dd1404a29117d9431938e9c84149` |
-| `src/cartridges/the_board/realization/renderer.hpp` | `sha256:fc3137898e0dc6f0f2edd938cd40681cfc4fe8c272fb9fc4920f71b34643f48e` |
+| `src/cartridges/the_board/realization/renderer.hpp` | `sha256:bbcaedbb3b05fdc8fdc455f502591ff4ad7142c55fd3cea313a4806d9bf209a7` |
 | `src/cartridges/the_board/cartridge.hpp` | `sha256:69b207925ebbb772a89cf06e2b9b329ce710e250737dae3e64631b3bd2a191df` |
 | `src/cartridges/the_board/surface/patch_system.hpp` | `sha256:1be3569e8b942fccc6a5ad003a6f227b2c413897b33a947bdcfa986947653b3c` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:335d9c5a1d7c34aff37f3010abe8b88aa04290c8db487b70828c9c83e8588719` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
 | `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:91902a4fab8247a9bf99585147981d852768e81849417b782d7438408687c796` |
-| `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:5ca4ca1cc54417cf42b66924e8a36115610de9d5532243332557bd1ab0d2575c` |
+| `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:9ba24f4a607537f80227698b5f561f8b3c71554cd32bd36d40a413f112a0bf2d` |
 | `src/the_board.cpp` | `sha256:12a89ca138da2724f66ae4fd646e2a773caaa169cba3998a9323f14c37baad2b` |
 | `src/console/console.hpp` | `sha256:8aec4ad7cdfdf4b8bb3115cb4ff1dca7b7457fdd124a450b9d737c9398915cd6` |
 | `tools/command_census.py` | `sha256:09a61baed23a5caeedb44ee293461875f2e759832353f887187be35a7ae8d7cb` |
@@ -48,10 +48,10 @@ in `console.hpp`.
 | 12 | Pawn Aura | compute | `dispatch_pawn_aura` | `src/cartridges/the_board/bodies/pawn.hpp:168` | — | — | — |
 | 13 | Photographer VP Compute | compute | `render_snapshot_pass` | `src/cartridges/the_board/bodies/gallery.hpp:2351` | — | — | — |
 | 14 | Photographer Snapshot | render | `render_snapshot_pass` | `src/cartridges/the_board/bodies/gallery.hpp:2416` | Clear/Store or Discard → `c->gpuState_.offscreen_color_view() or c->gpuState_.offscreen_msaa_color_view()` resolve → `c->gpuState_.offscreen_color_view()` | Clear/Discard, readOnly (absent) → `c->gpuState_.offscreen_depth_view()` | (no stencil aspect) |
-| 15 | Orb Init | compute | `dispatch_orb_init` | `src/cartridges/the_board/bodies/orbs.hpp:901` | — | — | — |
-| 16 | Orb Recolor | compute | `dispatch_orb_recolor` | `src/cartridges/the_board/bodies/orbs.hpp:922` | — | — | — |
-| 17 | Orb Copy Prev | compute | `dispatch_orb_copy_prev` | `src/cartridges/the_board/bodies/orbs.hpp:937` | — | — | — |
-| 18 | Orb Dynamics | compute | `dispatch_orb_dynamics` | `src/cartridges/the_board/bodies/orbs.hpp:960` | — | — | — |
+| 15 | Orb Init | compute | `dispatch_orb_init` | `src/cartridges/the_board/bodies/orbs.hpp:918` | — | — | — |
+| 16 | Orb Recolor | compute | `dispatch_orb_recolor` | `src/cartridges/the_board/bodies/orbs.hpp:939` | — | — | — |
+| 17 | Orb Copy Prev | compute | `dispatch_orb_copy_prev` | `src/cartridges/the_board/bodies/orbs.hpp:954` | — | — | — |
+| 18 | Orb Dynamics | compute | `dispatch_orb_dynamics` | `src/cartridges/the_board/bodies/orbs.hpp:977` | — | — | — |
 
 18 passes: 4 render, 14 compute.
 
@@ -77,7 +77,7 @@ console.hpp's depth buffer, neither of which this census reads.
 
 | # | label | colour | depth | samples | recorded in | site |
 |---|---|---|---|---|---|---|
-| 1 | `"Main Bundle"` | 1 x `&colorFormat_` | `depthFormat_` | `effective_msaa()` | `make_main_bundle_encoder` | `src/cartridges/the_board/realization/renderer.hpp:689` |
+| 1 | `"Main Bundle"` | 1 x `&colorFormat_` | `depthFormat_` | `effective_msaa()` | `make_main_bundle_encoder` | `src/cartridges/the_board/realization/renderer.hpp:695` |
 
 ### Encoder-creation sites (the label law, DOMESDAY_1 A9)
 

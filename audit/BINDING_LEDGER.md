@@ -19,7 +19,7 @@ merge rows the API charges separately.
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:ab48016e61c44b54c80010f28615ee7ae72e3d5a5974c1cb89f930916f592e39` |
 | `src/cartridges/the_board/realization/binding_surface.gen.inc` | `sha256:463f1d4f323e50439bc83ce20b35830a32356c33350adfbe425b773712de4661` |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
-| `src/cartridges/the_board/realization/renderer.hpp` | `sha256:fc3137898e0dc6f0f2edd938cd40681cfc4fe8c272fb9fc4920f71b34643f48e` |
+| `src/cartridges/the_board/realization/renderer.hpp` | `sha256:bbcaedbb3b05fdc8fdc455f502591ff4ad7142c55fd3cea313a4806d9bf209a7` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:f53930f2280189dbb33980eee969319663e34f1159fb602b93d422ec9e8d93c0` |
 | `tools/binding_ledger.py` | `sha256:6d9fc58da755a8416bbcfe8efe5360f97ec11fb4a81a9d60ee41f80a2316f790` |
 
@@ -32,7 +32,7 @@ only — `draw_orbs` is called from `bodies/orbs.hpp`, not from
 |---|---|
 | `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:91902a4fab8247a9bf99585147981d852768e81849417b782d7438408687c796` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:335d9c5a1d7c34aff37f3010abe8b88aa04290c8db487b70828c9c83e8588719` |
-| `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:5ca4ca1cc54417cf42b66924e8a36115610de9d5532243332557bd1ab0d2575c` |
+| `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:9ba24f4a607537f80227698b5f561f8b3c71554cd32bd36d40a413f112a0bf2d` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
 | `src/cartridges/the_board/cartridge.hpp` | `sha256:69b207925ebbb772a89cf06e2b9b329ce710e250737dae3e64631b3bd2a191df` |
 | `src/cartridges/the_board/contracts/spine_state.hpp` | `sha256:ccf29e07e848ba2c9715509b74a073f2b3d08ab539b0d9510b3c7713a7c67e57` |
@@ -1077,9 +1077,9 @@ one column that can.
 |---|---|---|---|---|---|
 | `(file banner)` | file | `src/cartridges/the_board/realization/binding_registry.hpp` | 1 | `law-ref`, `witness` | banner |
 | `patch_instances` | registry constant | `src/cartridges/the_board/realization/binding_registry.hpp` | 80 | `law-ref` | A:proximity |
-| `shadowPatchTerrainPipeline_` | pipeline | `src/cartridges/the_board/realization/renderer.hpp` | 3223 | `measured` | A:proximity |
-| `shadowPawnPipeline_` | pipeline | `src/cartridges/the_board/realization/renderer.hpp` | 3226 | `measured` | A:proximity |
-| `shadowArchPipeline_` | pipeline | `src/cartridges/the_board/realization/renderer.hpp` | 3265 | `time-cost` | A:proximity, B:named |
+| `shadowPatchTerrainPipeline_` | pipeline | `src/cartridges/the_board/realization/renderer.hpp` | 3229 | `measured` | A:proximity |
+| `shadowPawnPipeline_` | pipeline | `src/cartridges/the_board/realization/renderer.hpp` | 3232 | `measured` | A:proximity |
+| `shadowArchPipeline_` | pipeline | `src/cartridges/the_board/realization/renderer.hpp` | 3271 | `time-cost` | A:proximity, B:named |
 | `(file banner)` | file | `src/cartridges/the_board/realization/state.hpp` | 1 | `law-ref` | banner |
 | `Frame R Layout` | layout | `src/cartridges/the_board/realization/state.hpp` | 5534 | `law-ref` | A:proximity, B:named |
 | `Agents State Layout entries[7]` | layout entry | `src/cartridges/the_board/realization/state.hpp` | 5624 | `law-ref` | A:proximity |
