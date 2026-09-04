@@ -5,8 +5,8 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `6c3106830246d6643eefe08f1272b295c6561cd2`
-(SKIRT_WELD_1/P — the perimeter skirt hangs from the base band, a stale claim dies with it, and the tint's variation becomes a gain)
+Last commit touching any scanned file: `8c354476181e30f610d596128484c14d46e0dae6`
+(ORRERY_0/A — the sky gains a conductor: six states over four rules on the beat grid, frozen rare and always answered in full orbital voice)
 
 | file scanned | sha256 |
 |---|---|

@@ -61,7 +61,13 @@ struct OrbConductorStateDef {
 // Indices are load-bearing: transitions name them.
 inline constexpr uint32_t ORB_CS_BRN_MED    = 0u;
 inline constexpr uint32_t ORB_CS_BRN_INT    = 1u;
-inline constexpr uint32_t ORB_CS_FLOCK      = 2u;  // boot state — today's sky
+inline constexpr uint32_t ORB_CS_FLOCK      = 2u;  // boot state — NOT
+                                                   // today's sky everywhere:
+                                                   // sunset and night boot
+                                                   // motion_rule 3u, but
+                                                   // finite_outdoor boots 0u
+                                                   // (BROWNIAN), so arming
+                                                   // changes its rule at once.
 inline constexpr uint32_t ORB_CS_ORB_MED    = 3u;
 inline constexpr uint32_t ORB_CS_ORB_INT    = 4u;  // frozen's forced successor
 inline constexpr uint32_t ORB_CS_FROZEN     = 5u;

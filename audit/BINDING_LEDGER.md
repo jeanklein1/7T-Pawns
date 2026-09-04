@@ -14,8 +14,8 @@ merge rows the API charges separately.
 | field | value |
 |---|---|
 | demo column censused | `full` |
-| source commit | `6c3106830246d6643eefe08f1272b295c6561cd2` |
-| | SKIRT_WELD_1/P — the perimeter skirt hangs from the base band, a stale claim dies with it, and the tint's variation becomes a gain |
+| source commit | `8c354476181e30f610d596128484c14d46e0dae6` |
+| | ORRERY_0/A — the sky gains a conductor: six states over four rules on the beat grid, frozen rare and always answered in full orbital voice |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:9e00ebaf4e56ac7c5c3fedd7aba1ed20c04f671545cd020715cdcccd2624b054` |
 | `src/cartridges/the_board/realization/binding_surface.gen.inc` | `sha256:463f1d4f323e50439bc83ce20b35830a32356c33350adfbe425b773712de4661` |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |

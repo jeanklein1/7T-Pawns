@@ -3413,6 +3413,14 @@ that authored this section. · ORRERY_0 R2 ·
   whether the apply should move after `dispatch_orb_init`, or whether the
   two brownian states should differ by something already live.
   Priced, not taken.
+- **The conductor desyncs two panel dials, by design, and no gate can see it.**
+  `speed_mult` and `noise_floor` are enrolled ORBS console rows, and the
+  conductor overwrites both on every fire while it reigns — Jean's "pin them",
+  stated in the order and kept. The consequence is that the panel reads the
+  console's rest values (3.33 / 0.3) while the GPU holds the ceilings (4.0 /
+  3.0), and `organ_readers` cannot notice because CONFIG-class rows are out of
+  its scope. Recorded, not changed: the claim is the design. Unblocked by Jean
+  wanting the panel to show the reign rather than the rest.
 - **Phase B's comment fix retired TWO stale claims, not one.** The order named
   the `bri 0.95` against the row's `0.605f`. The same sentence also called the
   night "brighter" than the sunset's field when the sunset row holds `0.85f` —

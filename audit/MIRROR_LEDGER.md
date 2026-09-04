@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `6c3106830246d6643eefe08f1272b295c6561cd2` |
-| | SKIRT_WELD_1/P — the perimeter skirt hangs from the base band, a stale claim dies with it, and the tint's variation becomes a gain |
+| source commit | `8c354476181e30f610d596128484c14d46e0dae6` |
+| | ORRERY_0/A — the sky gains a conductor: six states over four rules on the beat grid, frozen rare and always answered in full orbital voice |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:f53930f2280189dbb33980eee969319663e34f1159fb602b93d422ec9e8d93c0` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:9e00ebaf4e56ac7c5c3fedd7aba1ed20c04f671545cd020715cdcccd2624b054` |
@@ -24,7 +24,7 @@ carry those facts, or leave them in place and patch around them.
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:fc3137898e0dc6f0f2edd938cd40681cfc4fe8c272fb9fc4920f71b34643f48e` |
 | `tools/binding_ledger.py` | `sha256:6d9fc58da755a8416bbcfe8efe5360f97ec11fb4a81a9d60ee41f80a2316f790` |
 | `tools/mirror_census.py` | `sha256:6991163f42dc06a0b633fe41606514b33ed616a70ec244eff6640992518cef2a` |
-| `audit/BINDING_LEDGER.md` | `sha256:78023082bdef6574563c8c0be5252395d057c65353456295b9ec8530d547d600` |
+| `audit/BINDING_LEDGER.md` | `sha256:6b96fc3acae115caf5556f0e645a5198ce9bbd688dde821b05919f2dbbe5bf16` |
 | `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:91902a4fab8247a9bf99585147981d852768e81849417b782d7438408687c796` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:335d9c5a1d7c34aff37f3010abe8b88aa04290c8db487b70828c9c83e8588719` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:78353a239661436c32baf2b228c6a5a813729af9dc7713fb7ce0a4b7fd48b1aa` |
