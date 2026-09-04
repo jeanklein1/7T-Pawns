@@ -36,8 +36,8 @@ namespace the_board {
 //
 // WHICH RULE READS WHAT, so a dead cell is never mistaken for a defect:
 //   brownian  gesture, drag_min, drag_max, noise, speed_mult
-//   flocking  gesture, noise, speed_mult
-//   orbital   gesture, orbital_speed, noise, speed_mult
+//   flocking  gesture, speed_mult
+//   orbital   gesture, orbital_speed, speed_mult
 //   frozen    nothing — the kernel's frozen branch reads only the baked
 //             per-orb drag; frozen's reign is its whole contribution.
 // Every row reads duration_beats and jitter_beats.
@@ -85,7 +85,7 @@ inline constexpr OrbConductorConsole ORB_CONDUCTOR = {
         { 0u,  0.2f,  0.8f,  0.0010f,  3.0f,  4.0f,   16.0f, 0.0f },  // brownian
         { 0u,  0.0f,  0.0f,  0.0010f,  3.0f,  4.0f,   16.0f, 0.0f },  // frozen — reads none of these
         { 0u,  0.0f,  0.0f,  0.0010f,  3.0f,  4.0f,   32.0f, 0.0f },  // flocking — 4.0 is the dial's ceiling
-        { 0u,  0.0f,  0.0f,  0.0010f,  3.0f,  1.0f,   16.0f, 0.0f },  // orbital
+        { 1u,  0.0f,  0.0f,  0.15f,    3.0f,  1.0f,   16.0f, 0.0f },  // orbital — parallel wheel; 0.15 rad/s ≈ a quarter turn per 16-beat reign
     },
 };
 
