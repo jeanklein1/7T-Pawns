@@ -3366,7 +3366,7 @@ means two more floats on GPUDesignConfig and two rows in
 organ_params.inc — worth doing when Jean wants to taste the framing live,
 not before. · STATURE_0 · a visual complaint about where shots land.
 
-## ORRERY_0 — THE SKY GAINS A CONDUCTOR (A landed; B landed; ORRERY_1/A landed; visual gate held by Jean)
+## ORRERY_0 — THE SKY GAINS A CONDUCTOR (A+B landed; ORRERY_1/A+B and ORRERY_2 landed; visual gate held by Jean)
 
 Six authored states over four rules change the orb sky on the beat grid —
 16 beats each, flocking 32 — drawn by xorshift on the world seed. FROZEN
@@ -3408,14 +3408,31 @@ that authored this section. · ORRERY_0 R2 ·
   bypasses `configure_orbs`' sanitizer, and is the undamped intense. The two
   brownian states now differ on screen. `upload_orb_drag` is deleted (YAGNI),
   and the other three multiplier slots stay at 1.0 — written, unread, neutral.
-- **The conductor desyncs two panel dials, by design, and no gate can see it.**
-  `speed_mult` and `noise_floor` are enrolled ORBS console rows, and the
-  conductor overwrites both on every fire while it reigns — Jean's "pin them",
-  stated in the order and kept. The consequence is that the panel reads the
-  console's rest values (3.33 / 0.3) while the GPU holds the ceilings (4.0 /
-  3.0), and `organ_readers` cannot notice because CONFIG-class rows are out of
-  its scope. Recorded, not changed: the claim is the design. Unblocked by Jean
-  wanting the panel to show the reign rather than the rest.
+- **RESOLVED at ORRERY_2 — the desync dissolves into rows Jean turns himself.**
+  The two ORBS console dials (`speed_mult`, `noise_floor`) no longer argue with
+  a pinned constant: the conductor carries its OWN `noise` and `speed_mult` per
+  state, so the console rows author the REST and the conductor authors the
+  REIGN, and each is a dial. Nothing is silently overwritten by a constant any
+  more — what the GPU holds while conducting is a row Jean can see and turn.
+- **ORRERY_2 — every conductor number is a dial, in block CONDUCTOR.** 44 rows:
+  `enabled` and `frost_one_in` on the console, then seven per state (gesture,
+  brownian drag x, orbital speed, noise, speed mult, duration, jitter) across
+  the six. Seeds are Jean's spec with drag zeroed on his later word ("keeping
+  the drag zero"), noise and speed_mult at the old ceilings per state, orbital
+  0.7 / 1.0, gesture 0, jitter 0. NOT dials, deliberately: each state's RULE,
+  and the ceremony that orders them — identity, not knobs. THE ROW-WATCH means
+  an edit to the reigning state's row lands on the sky within one frame,
+  mid-reign, with no transition to wait for. Jean tunes from `?organ=1`, and
+  export/import carries his numbers by the stable `CONDUCTOR.states[i].field`
+  ids.
+- **ORRERY_2 needed one thing its order did not name: a READERS row.**
+  `tools/organ_readers.py` reds on an UNMAPPED FAMILY, and a new block is one
+  until its family is listed there. CONDUCTOR is now listed with both handle
+  depths (`OrbConductorConsole`, `OrbConductorState`), the same shape MOOD
+  already uses. Related and load-bearing: that tool's ALIAS regex matches
+  `auto&` bindings only, so the conductor binds its reigning row with
+  `const auto&` — a `const OrbConductorState&` would have left all seven
+  per-state leaves unprovable and the gate red.
 - **Phase B's comment fix retired TWO stale claims, not one.** The order named
   the `bri 0.95` against the row's `0.605f`. The same sentence also called the
   night "brighter" than the sunset's field when the sunset row holds `0.85f` —

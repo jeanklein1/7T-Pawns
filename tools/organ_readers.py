@@ -89,6 +89,17 @@ READERS = {
         ("src/cartridges/the_board/bodies/pawn.hpp", "tick_pawn_couplings"),
         ("src/cartridges/the_board/bodies/pawn.hpp", "dispatch_pawn_aura"),
     ]),
+    # ORRERY_2 — the conductor's console. Two handle depths, like MOOD:
+    # `ORB_CONDUCTOR_LIVE.enabled` sits on the console, while every state
+    # row's leaf is reached through a `const auto&` bound to one row, so
+    # both struct names are named here and the alias chain finds the rest.
+    "CONDUCTOR": ("ORB_CONDUCTOR_LIVE",
+                  ("OrbConductorConsole", "OrbConductorState"), [
+        ("src/cartridges/the_board/bodies/orbs.hpp", "conductor_apply_"),
+        ("src/cartridges/the_board/bodies/orbs.hpp", "conductor_reign_"),
+        ("src/cartridges/the_board/bodies/orbs.hpp", "conductor_next_"),
+        ("src/cartridges/the_board/bodies/orbs.hpp", "tick_orb_conductor"),
+    ]),
     "ORBS": ("ORB_CONSOLE_LIVE", "OrbConsole", [
         ("src/cartridges/the_board/bodies/orbs.hpp", "configure_orbs"),
         ("src/cartridges/the_board/bodies/orbs.hpp", "log_configure_"),

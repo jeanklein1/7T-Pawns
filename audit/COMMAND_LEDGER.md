@@ -5,8 +5,8 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `a5f11905fbf11f1ad7202f279160aa39696a131f`
-(ORRERY_1/B — the planet keeps its stars: the sky seeds once, mood doors change the ground and the hour but never the field, and every open sky carries 256)
+Last commit touching any scanned file: `0ddfa7f735a6abde3dfbedadd74f6354c44a3f96`
+(ORRERY_2/A — the conductor's numbers become a console: one design row, one live bank, a row-watch that lands a panel edit mid-reign, and jitter waiting at zero)
 
 | file scanned | sha256 |
 |---|---|

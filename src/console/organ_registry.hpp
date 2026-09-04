@@ -18,6 +18,7 @@
 #include "cartridges/the_board/contracts/agent_tiers.hpp"    // TIER_LIVE, the world's definition bank
 #include "cartridges/the_board/contracts/pawn_surface.hpp"    // PAWN_AURA_LIVE (block 4)
 #include "cartridges/the_board/contracts/orb_surface.hpp"     // ORB_CONSOLE_LIVE (block 5)
+#include "cartridges/the_board/contracts/orb_conductor.hpp"   // ORB_CONDUCTOR_LIVE (block 12)
 #include "cartridges/the_board/contracts/control_panel.hpp"   // PANEL_LIVE (block 6)
 #include "cartridges/the_board/contracts/ribbon_surface.hpp"  // RIBBON_LIVE (block 7)
 #include "cartridges/the_board/contracts/indoor_module.hpp"   // INDOOR_LIVE (block 8, destructive)
@@ -91,7 +92,11 @@ enum : uint8_t {
     ORGAN_BLOCK_RIBBON_SPAWN = 11,  // RibbonSpawnSurface — RIBBON_SPAWN_LIVE
                                     // (ATRIUM_2 — the arc and the sand, read as
                                     //  the entrance is drawn and not re-read)
-    ORGAN_BLOCK_COUNT        = 12,
+    ORGAN_BLOCK_CONDUCTOR    = 12,  // OrbConductorConsole — ORB_CONDUCTOR_LIVE
+                                    // (ORRERY_2 — the orb conductor's own
+                                    //  console; the tick's row-watch lands a
+                                    //  panel edit mid-reign)
+    ORGAN_BLOCK_COUNT        = 13,
 };
 
 // A definition-only entry has no instance anywhere: block_base answers
@@ -320,6 +325,7 @@ inline void* block_base(uint8_t block) {
     case ORGAN_BLOCK_CANVAS:     return &canvas::CANVAS_LIVE;
     case ORGAN_BLOCK_WORLD:      return &the_board::WORLD_DRAW_LIVE;
     case ORGAN_BLOCK_RIBBON_SPAWN: return &the_board::RIBBON_SPAWN_LIVE;
+    case ORGAN_BLOCK_CONDUCTOR:  return &the_board::ORB_CONDUCTOR_LIVE;
     default:                     return nullptr;
     }
 }

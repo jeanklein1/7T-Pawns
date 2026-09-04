@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `a5f11905fbf11f1ad7202f279160aa39696a131f` |
-| | ORRERY_1/B — the planet keeps its stars: the sky seeds once, mood doors change the ground and the hour but never the field, and every open sky carries 256 |
+| source commit | `0ddfa7f735a6abde3dfbedadd74f6354c44a3f96` |
+| | ORRERY_2/A — the conductor's numbers become a console: one design row, one live bank, a row-watch that lands a panel edit mid-reign, and jitter waiting at zero |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:f53930f2280189dbb33980eee969319663e34f1159fb602b93d422ec9e8d93c0` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:ab48016e61c44b54c80010f28615ee7ae72e3d5a5974c1cb89f930916f592e39` |
