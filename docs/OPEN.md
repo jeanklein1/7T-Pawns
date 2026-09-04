@@ -3366,7 +3366,7 @@ means two more floats on GPUDesignConfig and two rows in
 organ_params.inc — worth doing when Jean wants to taste the framing live,
 not before. · STATURE_0 · a visual complaint about where shots land.
 
-## ORRERY_0 — THE SKY GAINS A CONDUCTOR (A landed; B pending; visual gate held by Jean)
+## ORRERY_0 — THE SKY GAINS A CONDUCTOR (A landed; B landed; visual gate held by Jean)
 
 Six authored states over four rules change the orb sky on the beat grid —
 16 beats each, flocking 32 — drawn by xorshift on the world seed. FROZEN
@@ -3413,3 +3413,8 @@ that authored this section. · ORRERY_0 R2 ·
   whether the apply should move after `dispatch_orb_init`, or whether the
   two brownian states should differ by something already live.
   Priced, not taken.
+- **Phase B's comment fix retired TWO stale claims, not one.** The order named
+  the `bri 0.95` against the row's `0.605f`. The same sentence also called the
+  night "brighter" than the sunset's field when the sunset row holds `0.85f` —
+  the night is DIMMER, not brighter. The replacement drops both words, so the
+  sentence now claims only what the row gives: fuller and slower.
