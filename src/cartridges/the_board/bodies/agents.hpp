@@ -152,7 +152,7 @@ struct AgentPopulationDef {
 //
 inline constexpr AgentPopulationDef AGENT_POPULATIONS[MOOD_COUNT] = {
     /* MOOD_OPEN_SUNSET — Scout-heavy travelers (BiasedWalk) */
-    { /*mood_id=*/ MOOD_OPEN_SUNSET, /*count=*/ 10,
+    { /*mood_id=*/ MOOD_OPEN_SUNSET, /*count=*/ 17,
       //                       player rwalk  bwalk wandr hseek slowp pursu  flee flock  levy passr
       /*behavior_weights=*/ {    0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
       //                     worker scout sentl leadr
@@ -189,8 +189,11 @@ inline constexpr AgentPopulationDef AGENT_POPULATIONS[MOOD_COUNT] = {
       /*spawn_radius=*/       0.0f,
       /*spawn_center_forward=*/ 0.0f,
       /*home_seeding_radius=*/ 0.0f },
-    /* MOOD_OPEN_NIGHT — the sunset's travelers, thinned to six (ATMOS_1) */
-    { /*mood_id=*/ MOOD_OPEN_NIGHT, /*count=*/ 6,
+    /* MOOD_OPEN_NIGHT — the open field's travelers, seventeen (OPEN_POP_0).
+       The hour no longer thins them. Night, noon and sunset now carry one
+       population, and night is the reason: a quiet night read as an empty
+       one. The ring is unchanged, so this is density, not proximity. */
+    { /*mood_id=*/ MOOD_OPEN_NIGHT, /*count=*/ 17,
       //                       player rwalk  bwalk wandr hseek slowp pursu  flee flock  levy passr
       /*behavior_weights=*/ {    0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
       //                     worker scout sentl leadr
@@ -199,8 +202,8 @@ inline constexpr AgentPopulationDef AGENT_POPULATIONS[MOOD_COUNT] = {
       /*spawn_radius=*/       340.0f,
       /*spawn_center_forward=*/ 0.0f,
       /*home_seeding_radius=*/ 8.0f },
-    /* MOOD_OPEN_NOON — the sunset's travelers, twelve strong (ATMOS_1) */
-    { /*mood_id=*/ MOOD_OPEN_NOON, /*count=*/ 12,
+    /* MOOD_OPEN_NOON — the open field's travelers, seventeen (OPEN_POP_0). */
+    { /*mood_id=*/ MOOD_OPEN_NOON, /*count=*/ 17,
       //                       player rwalk  bwalk wandr hseek slowp pursu  flee flock  levy passr
       /*behavior_weights=*/ {    0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
       //                     worker scout sentl leadr
