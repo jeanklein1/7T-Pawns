@@ -13,21 +13,19 @@
 // against a cached copy every frame and re-speaks on any change, so a
 // panel edit lands on the sky within one frame, mid-reign.
 //
-// THE CEREMONY (ORRERY_1) is structural, not dialed: the pool breathes
-// brownian; only the pool or the wheel may freeze (1-in-`frost_one_in`);
-// the frost FORKS — 1-in-`flock_one_in` it opens the flock, otherwise it
-// releases back to the pool (ORRERY_3); the flock alone opens the wheel;
-// the wheel returns to the pool. Rules are identity, not knobs.
+// THE CEREMONY (ORRERY_5) is structural, not dialed: one coin, one
+// chain. BROWNIAN and ORBITAL both end at the coin — 75% another
+// brownian, with a fresh drag drawn from [drag_min, drag_max];
+// `frost_percent` of the time FROZEN, which opens the fixed chain
+// flocking → orbital. There are no other edges, so the wheel can follow
+// itself — orbital → frozen is legal, one wheel in four at the seed.
+// Rules are identity, not knobs.
 //
-// RARITY COMPOUNDS along that chain: the flock sits behind two gates and
-// the wheel behind three, which is why the wheel can be slow and still
-// read as an event.
-//
-// SEEDS: Jean's spec, plus his later word — drag 0.0 in every row
-// ("keeping the drag zero"); noise and speed_mult at the old ceilings
-// PER STATE ("we keep noise and speed mult at max"), his to split;
-// orbital 0.7 / 1.0; gesture 0; jitter 0, waiting ("non regular
-// periods of time" was the first sentence of this feature).
+// THE DRAG IS A RANGE, NOT A LEVEL. The two authored brownian levels
+// ORRERY_0 shipped are now this row's two ends. `conductor_enter_` draws
+// a normalized u once per entry and `conductor_apply_` lerps through it,
+// so a panel edit to either end moves the sky continuously mid-reign
+// instead of waiting for the next entry.
 // ────────────────────────────────────────────────────────────────────
 
 namespace t7 {
@@ -35,9 +33,18 @@ namespace the_board {
 
 // One state's dial row. All 4-byte fields, no padding — the tick's
 // row-watch memcmp depends on that (asserted below).
+//
+// WHICH RULE READS WHAT, so a dead cell is never mistaken for a defect:
+//   brownian  gesture, drag_min, drag_max, noise, speed_mult
+//   flocking  gesture, noise, speed_mult
+//   orbital   gesture, orbital_speed, noise, speed_mult
+//   frozen    nothing — the kernel's frozen branch reads only the baked
+//             per-orb drag; frozen's reign is its whole contribution.
+// Every row reads duration_beats and jitter_beats.
 struct OrbConductorState {
     uint32_t gesture;         // registry index; clamped per rule (brn 6, orb 4, flk 8)
-    float    drag;            // BROWNIAN drag ×(baked per-orb ~0.4); raw seam, 0.0 = undamped
+    float    drag_min;        // BROWNIAN, low end  ×(baked per-orb ~0.4)
+    float    drag_max;        // BROWNIAN, high end; drawn uniform on entry
     float    orbital_speed;   // rad/s before speed_mult; read when rule==ORBITAL
     float    noise;           // brownian energy source (noise_amp)
     float    speed_mult;      // master motion strength while this state reigns
@@ -47,26 +54,24 @@ struct OrbConductorState {
 
 struct OrbConductorConsole {
     uint32_t enabled;         // the conductor's own switch
-    uint32_t frost_one_in;    // frozen enters 1-in-N from pool/wheel
-    uint32_t flock_one_in;    // frozen opens the flock 1-in-N; else back to the pool
-    OrbConductorState states[6];
+    uint32_t frost_percent;   // THE COIN — brownian and orbital each end
+                              // in FROZEN (the wheel) this % of the time
+    OrbConductorState states[4];
 };
 
-// Indices are load-bearing: the ceremony names them.
-inline constexpr uint32_t ORB_CS_BRN_MED = 0u;
-inline constexpr uint32_t ORB_CS_BRN_INT = 1u;
-inline constexpr uint32_t ORB_CS_FLOCK   = 2u;
-inline constexpr uint32_t ORB_CS_ORB_MED = 3u;
-inline constexpr uint32_t ORB_CS_ORB_INT = 4u;
-inline constexpr uint32_t ORB_CS_FROZEN  = 5u;
-inline constexpr uint32_t ORB_CS_COUNT   = 6u;
+// Indices are load-bearing twice over: the ceremony names them, and they
+// are the panel's reading order — which is the wheel's own order.
+inline constexpr uint32_t ORB_CS_BROWNIAN = 0u;
+inline constexpr uint32_t ORB_CS_FROZEN   = 1u;
+inline constexpr uint32_t ORB_CS_FLOCK    = 2u;
+inline constexpr uint32_t ORB_CS_ORBITAL  = 3u;
+inline constexpr uint32_t ORB_CS_COUNT    = 4u;
 
 // Rule identity — structural, parallel to the rows, not a dial.
 inline constexpr uint32_t ORB_CONDUCTOR_RULES[ORB_CS_COUNT] =
-    { 0u, 0u, 3u, 1u, 1u, 2u };  // BRN BRN FLK ORB ORB FRZ
+    { 0u, 2u, 3u, 1u };  // BRN FRZ FLK ORB
 inline constexpr const char* ORB_CONDUCTOR_NAMES[ORB_CS_COUNT] = {
-    "brownian-medium", "brownian-intense", "flocking",
-    "orbital-medium", "orbital-intense", "frozen",
+    "brownian", "frozen", "flocking", "orbital",
 };
 
 // Neutral for the three rule_drag slots the conductor leaves alone.
@@ -75,26 +80,23 @@ inline constexpr float ORB_CONDUCTOR_RULE_DRAG_NEUTRAL = 1.0f;
 // THE DESIGN — Jean's seeds.
 inline constexpr OrbConductorConsole ORB_CONDUCTOR = {
     1u,   // enabled
-    8u,   // frost_one_in
-    3u,   // flock_one_in — the flock is earned by a second roll (ORRERY_3)
-    { //  gest  drag   orbSpd  noise  spdMul  dur    jitter
-        { 0u,  0.8f,  0.0010f,   3.0f,  4.0f,   16.0f, 0.0f },  // brownian-medium
-        { 0u,  0.2f,  0.0010f,   3.0f,  4.0f,   16.0f, 0.0f },  // brownian-intense
-        { 0u,  0.0f,  0.0010f,   3.0f,  4.0f,   32.0f, 0.0f },  // flocking
-        { 0u,  0.0f,  0.0010f,   3.0f,  1.0f,   16.0f, 0.0f },  // orbital-medium
-        { 0u,  0.0f,  0.0010f,   3.0f,  0.6f,   16.0f, 0.0f },  // orbital-intense
-        { 0u,  0.0f,  0.0010f,   3.0f,  4.0f,   16.0f, 0.0f },  // frozen — reads none of these
+    25u,  // frost_percent — "75 to 25", his words
+    { //  gest  dragLo dragHi  orbSpd   noise  spdMul  dur    jitter
+        { 0u,  0.2f,  0.8f,  0.0010f,  3.0f,  4.0f,   16.0f, 0.0f },  // brownian
+        { 0u,  0.0f,  0.0f,  0.0010f,  3.0f,  4.0f,   16.0f, 0.0f },  // frozen — reads none of these
+        { 0u,  0.0f,  0.0f,  0.0010f,  3.0f,  4.0f,   32.0f, 0.0f },  // flocking — 4.0 is the dial's ceiling
+        { 0u,  0.0f,  0.0f,  0.0010f,  3.0f,  1.0f,   16.0f, 0.0f },  // orbital
     },
 };
 
 // THE LIVE SURFACE — the panel's block and the tick's read.
 inline OrbConductorConsole ORB_CONDUCTOR_LIVE = ORB_CONDUCTOR;
 
-static_assert(sizeof(OrbConductorState) == 7u * 4u,
-    "the row-watch memcmp assumes a packed 28-byte row: a field added "
+static_assert(sizeof(OrbConductorState) == 8u * 4u,
+    "the row-watch memcmp assumes a packed 32-byte row: a field added "
     "here is added to the cache compare by construction, padding is not");
 static_assert(sizeof(OrbConductorConsole) ==
-    3u * 4u + ORB_CS_COUNT * sizeof(OrbConductorState),
+    2u * 4u + ORB_CS_COUNT * sizeof(OrbConductorState),
     "ORB_CONDUCTOR_LIVE is a whole-struct copy of the design: a field "
     "added to one is added to the other by construction");
 
