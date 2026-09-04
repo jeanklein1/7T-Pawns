@@ -57,13 +57,11 @@ generator, so the book and the manifest cannot disagree. `driven` is an
 | Conductor · frozen | duration (beats) | `CONDUCTOR.states[1].duration_beats` | CONDUCTOR | F32 | 1 … 128 | 1 | live | none |  |
 | Conductor · frozen | jitter (± beats) | `CONDUCTOR.states[1].jitter_beats` | CONDUCTOR | F32 | 0 … 64 | 1 | live | none |  |
 | Conductor · flocking | gesture | `CONDUCTOR.states[2].gesture` | CONDUCTOR | U32 | 0 … 7 | 1 | live | none |  |
-| Conductor · flocking | noise | `CONDUCTOR.states[2].noise` | CONDUCTOR | F32 | 0 … 3 | 0.01 | live | none |  |
 | Conductor · flocking | speed mult | `CONDUCTOR.states[2].speed_mult` | CONDUCTOR | F32 | 0 … 4 | 0.01 | live | none |  |
 | Conductor · flocking | duration (beats) | `CONDUCTOR.states[2].duration_beats` | CONDUCTOR | F32 | 1 … 128 | 1 | live | none |  |
 | Conductor · flocking | jitter (± beats) | `CONDUCTOR.states[2].jitter_beats` | CONDUCTOR | F32 | 0 … 64 | 1 | live | none |  |
 | Conductor · orbital | gesture | `CONDUCTOR.states[3].gesture` | CONDUCTOR | U32 | 0 … 3 | 1 | live | none |  |
 | Conductor · orbital | orbital speed | `CONDUCTOR.states[3].orbital_speed` | CONDUCTOR | F32 | 0 … 2 | 0.01 | live | none |  |
-| Conductor · orbital | noise | `CONDUCTOR.states[3].noise` | CONDUCTOR | F32 | 0 … 3 | 0.01 | live | none |  |
 | Conductor · orbital | speed mult | `CONDUCTOR.states[3].speed_mult` | CONDUCTOR | F32 | 0 … 4 | 0.01 | live | none |  |
 | Conductor · orbital | duration (beats) | `CONDUCTOR.states[3].duration_beats` | CONDUCTOR | F32 | 1 … 128 | 1 | live | none |  |
 | Conductor · orbital | jitter (± beats) | `CONDUCTOR.states[3].jitter_beats` | CONDUCTOR | F32 | 0 … 64 | 1 | live | none |  |
@@ -433,14 +431,14 @@ generator, so the book and the manifest cannot disagree. `driven` is an
 
 | | |
 | --- | --- |
-| entries | **405** |
-| by section | Agents 118 · Atmosphere 73 · Ribbon 55 · Sky & Light 42 · Terrain 42 · Interaction 24 · Conductor 22 · Pawn 19 · Debug 4 · Camera 3 · Measure 3 |
-| by cadence | boundary 188 · driven 21 · gen 42 · live 154 |
-| by macro form | PARAM 158 · PARAM_DEF 110 · PARAM_DEFONLY 74 · PARAM_GEN 42 · PARAM_RO 21 |
-| definition kinds | BEHAVIOR 78 · MOOD 55 · NONE 221 · ORB_MOOD 19 · TIER 32 |
+| entries | **403** |
+| by section | Agents 118 · Atmosphere 73 · Ribbon 55 · Sky & Light 42 · Terrain 42 · Interaction 24 · Conductor 20 · Pawn 19 · Debug 4 · Camera 3 · Measure 3 |
+| by cadence | boundary 188 · driven 21 · gen 42 · live 152 |
+| by macro form | PARAM 156 · PARAM_DEF 110 · PARAM_DEFONLY 74 · PARAM_GEN 42 · PARAM_RO 21 |
+| definition kinds | BEHAVIOR 78 · MOOD 55 · NONE 219 · ORB_MOOD 19 · TIER 32 |
 | witnesses (`ro`) | 21 |
 | blocks and sentinels used | AGENT_ROOM, CANVAS, CONDUCTOR, CONFIG, DRIVERS, INDOOR, LIGHTING, NONE (255), NONE_ORB (254), ORBS, PANEL, PAWN, RIBBON, RIBBON_SPAWN, WORLD |
-| namespaces | canvas 15 · the_board 390 |
+| namespaces | canvas 15 · the_board 388 |
 
 ### Doors
 
@@ -507,7 +505,7 @@ verbatim:
 
 THE ANSWER, ROW BY ROW
 ------------------------------------------------------------------------
-  proved    303   a declared reader names the field
+  proved    301   a declared reader names the field
   SUSPECT     0   no declared reader names it
   witness    21   an _RO meter: the question is inverted (blind spot 5)
   scope      81   GPU-side or whole-struct (blind spots 2, 3)

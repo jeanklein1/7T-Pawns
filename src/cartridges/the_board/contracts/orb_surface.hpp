@@ -87,11 +87,11 @@ static_assert(sizeof(OrbConsole) == 4 * sizeof(float),
 inline constexpr float ORB_DEFAULT_DRAG = 0.5f;
 inline constexpr float ORB_DEFAULT_ORBITAL_SPEED = 0.15f;
 inline constexpr float ORB_DEFAULT_FLOCK_SEP_R = 50.0f;
-inline constexpr float ORB_DEFAULT_FLOCK_ALIGN_R = 120.0f;
-inline constexpr float ORB_DEFAULT_FLOCK_COH_R = 200.0f;
+inline constexpr float ORB_DEFAULT_FLOCK_ALIGN_R = 240.0f;
+inline constexpr float ORB_DEFAULT_FLOCK_COH_R = 720.0f;
 inline constexpr float ORB_DEFAULT_FLOCK_SEP_W = 30.0f;
 inline constexpr float ORB_DEFAULT_FLOCK_ALIGN_W = 8.0f;
-inline constexpr float ORB_DEFAULT_FLOCK_COH_W = 15.0f;
+inline constexpr float ORB_DEFAULT_FLOCK_COH_W = 40.0f;
 inline constexpr float ORB_DEFAULT_FLOCK_MAX_SPEED = 60.0f;
 
 inline constexpr uint32_t ORB_PAL_JWST_DEEP = 0;
@@ -155,10 +155,10 @@ struct OrbMoodConfig {
 // 256 so a mood door never pops stars in or out of a persistent sky.
 // 256 is also Dim::MAX_ORBS, so the buffer is filled exactly.
 inline constexpr OrbMoodConfig ORB_MOOD_TABLE[MOOD_COUNT] = {
-    /* 0 open_sunset         */ {  true,  256, 0.08f, 0.06f, 0.85f, 0.4f,  3u,  0.012f, {0.3977f, 0.9175f, 0.0f},  0.0f, 0u,  0.08f, 0u,           50.0f, 120.0f, 200.0f, 30.0f, 8.0f,  15.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
-    /* 1 indoor_flat         */ {  false, 0,   0.08f, 0.05f, 0.80f, 0.5f,  0u,  0.000f, {0.00f, 1.00f, 0.00f},  0.0f, 0u,  0.12f, 0xFFFFFFFFu,  50.0f, 120.0f, 200.0f, 30.0f, 8.0f,  15.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
-    /* 2 indoor_vault        */ {  false, 0,   0.08f, 0.05f, 0.80f, 0.5f,  0u,  0.000f, {0.00f, 1.00f, 0.00f},  0.0f, 0u,  0.12f, 0xFFFFFFFFu,  50.0f, 120.0f, 200.0f, 30.0f, 8.0f,  15.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
-    /* 3 finite_outdoor      */ {  true,  256, 0.08f, 0.06f, 0.85f, 0.4f,  0u,  0.012f, {0.3977f, 0.9175f, 0.0f},  0.0f, 0u,  0.12f, 0u,           50.0f, 120.0f, 200.0f, 30.0f, 8.0f,  15.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
+    /* 0 open_sunset         */ {  true,  256, 0.08f, 0.06f, 0.85f, 0.4f,  3u,  0.012f, {0.3977f, 0.9175f, 0.0f},  0.0f, 0u,  0.08f, 0u,           50.0f, 240.0f, 720.0f, 30.0f, 8.0f,  40.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
+    /* 1 indoor_flat         */ {  false, 0,   0.08f, 0.05f, 0.80f, 0.5f,  0u,  0.000f, {0.00f, 1.00f, 0.00f},  0.0f, 0u,  0.12f, 0xFFFFFFFFu,  50.0f, 240.0f, 720.0f, 30.0f, 8.0f,  40.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
+    /* 2 indoor_vault        */ {  false, 0,   0.08f, 0.05f, 0.80f, 0.5f,  0u,  0.000f, {0.00f, 1.00f, 0.00f},  0.0f, 0u,  0.12f, 0xFFFFFFFFu,  50.0f, 240.0f, 720.0f, 30.0f, 8.0f,  40.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
+    /* 3 finite_outdoor      */ {  true,  256, 0.08f, 0.06f, 0.85f, 0.4f,  0u,  0.012f, {0.3977f, 0.9175f, 0.0f},  0.0f, 0u,  0.12f, 0u,           50.0f, 240.0f, 720.0f, 30.0f, 8.0f,  40.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
     // ATMOS_1 — the night is the sunset's field, dimmer and slower
     // (a slow turn at the tropics' tilt — ORRERY_0/B set the axis).
     // It is no longer FULLER: ORRERY_1/B unified all three open skies
@@ -174,10 +174,10 @@ inline constexpr OrbMoodConfig ORB_MOOD_TABLE[MOOD_COUNT] = {
     // cannot dial a sentinel back — organ_params.inc floors these five one
     // step off it on purpose — so a sentinel surviving in this row is a
     // value the TABLE holds and the panel can only leave alone.
-    /* 4 open_night          */ {  true,  256, 0.08f, 0.06f, 0.605f, 0.4f, 3u,  0.007010115f, {0.3977f, 0.9175f, 0.0f},  0.0f, 0u,  0.08f, 0u,     50.0f, 120.0f, 200.0f, 30.0f, 8.0f,  15.0f, 60.0f, 0u,  1.22f, 1.64f, 0.0f, 0.0f },
-    /* 5 open_noon           */ {  false, 0,   0.08f, 0.05f, 0.80f, 0.5f,  0u,  0.000f, {0.00f, 1.00f, 0.00f},  0.0f, 0u,  0.12f, 0xFFFFFFFFu,  50.0f, 120.0f, 200.0f, 30.0f, 8.0f,  15.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
+    /* 4 open_night          */ {  true,  256, 0.08f, 0.06f, 0.605f, 0.4f, 3u,  0.007010115f, {0.3977f, 0.9175f, 0.0f},  0.0f, 0u,  0.08f, 0u,     50.0f, 240.0f, 720.0f, 30.0f, 8.0f,  40.0f, 60.0f, 0u,  1.22f, 1.64f, 0.0f, 0.0f },
+    /* 5 open_noon           */ {  false, 0,   0.08f, 0.05f, 0.80f, 0.5f,  0u,  0.000f, {0.00f, 1.00f, 0.00f},  0.0f, 0u,  0.12f, 0xFFFFFFFFu,  50.0f, 240.0f, 720.0f, 30.0f, 8.0f,  40.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
     /* MOOD_ATRIUM — the flat room's sky (ATRIUM_1) */
-    /* 6 atrium              */ {  false, 0,   0.08f, 0.05f, 0.80f, 0.5f,  0u,  0.000f, {0.00f, 1.00f, 0.00f},  0.0f, 0u,  0.12f, 0xFFFFFFFFu,  50.0f, 120.0f, 200.0f, 30.0f, 8.0f,  15.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
+    /* 6 atrium              */ {  false, 0,   0.08f, 0.05f, 0.80f, 0.5f,  0u,  0.000f, {0.00f, 1.00f, 0.00f},  0.0f, 0u,  0.12f, 0xFFFFFFFFu,  50.0f, 240.0f, 720.0f, 30.0f, 8.0f,  40.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
 };
 
 // The live surface — the panel's definition bank. Seeded row by row, so
