@@ -3365,3 +3365,51 @@ lives in config_, lightingStage_ or agentRoomStage_, so promoting them
 means two more floats on GPUDesignConfig and two rows in
 organ_params.inc — worth doing when Jean wants to taste the framing live,
 not before. · STATURE_0 · a visual complaint about where shots land.
+
+## ORRERY_0 — THE SKY GAINS A CONDUCTOR (A landed; B pending; visual gate held by Jean)
+
+Six authored states over four rules change the orb sky on the beat grid —
+16 beats each, flocking 32 — drawn by xorshift on the world seed. FROZEN
+enters 1-in-8, only off brownian/orbital, and is always answered by
+orbital-intense. Noise and speed_mult pin to their dial ceilings while the
+conductor reigns (the claimant orb_surface.hpp's speed_mult comment
+foretold). Kill switch: ORB_CONDUCTOR_ON. Closes on Jean's eye across the
+three orb moods.
+
+TWO CORRECTIONS OF RECORD, both found in recon and both against the order
+that authored this section. · ORRERY_0 R2 ·
+
+- **The pass-through value is 1.0, not 0.0.** The order had the conductor
+  write 0.0 to all four `rule_drag_*` calling that "the sentinel". The zero
+  sentinel is a CPU convention only: `configure_orbs`' `passthrough()` maps
+  an authored 0 to 1.0 BEFORE upload, and world.wgsl's own field comment
+  says "1.0 = pass-through, sanitized on CPU". The kernel applies the
+  multiplier raw — `exp(-orb.drag * rule_drag_X * dt)`, no sentinel branch —
+  so a 0.0 written through the conductor's targeted seam, which bypasses
+  `configure_orbs`, means NO DRAG AT ALL in every rule. The conductor writes
+  `ORB_CONDUCTOR_RULE_DRAG_NEUTRAL` (1.0) instead, which is what the order's
+  own stated intent — "a state looks the same in every sky" — requires.
+- **The boot state is NOT a no-op, and the absolute drag column is inert.**
+  The order claimed "boot state is flocking, today's sky, so nothing changes
+  until the first fire". Two ways that is false. (a) The arm frame applies
+  the boot state immediately, and pinning writes noise 0.3 -> 3.0 (ten times
+  the rest floor) and speed_mult 3.33 -> 4.0 the moment the conductor arms.
+  (b) `finite_outdoor` is `motion_rule 0u` (BROWNIAN) today, not flocking, so
+  arming switches its rule at once. Only sunset and night boot flocking.
+- **The absolute-drag seam is not merely inert, it is destructive, so the
+  conductor does not speak it.** `orb.drag` is baked per orb by `orb_init`
+  and read from the state buffer by `orb_dynamics`; `GPUOrbConfig::drag` is
+  read by `orb_init` ALONE. So `upload_orb_drag` cannot reach a live orb —
+  and on a reseed frame it does something worse than nothing: `configure_orbs`
+  arms `init_pending`, `tick_orb_conductor` runs before `dispatch_orb_init`
+  inside `phase_orb_sky`, and `orb_init` would bake the conductor's drag —
+  0.0 in five of the six states — into every orb for the life of that world,
+  leaving the sky permanently undamped. Every mood change into an orb-bearing
+  mood takes that path. The seam is minted in state.hpp as the order
+  specifies, but `conductor_apply_` does NOT call it; the mood's authored
+  drag stands, and the two brownian states differ only in the table.
+  Unblocked by Jean ruling whether the conductor's drag should ride
+  `rule_drag_*` (the live seam, a multiplier on the mood's baked drag),
+  whether the apply should move after `dispatch_orb_init`, or whether the
+  two brownian states should differ by something already live.
+  Priced, not taken.

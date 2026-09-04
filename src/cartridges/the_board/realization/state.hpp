@@ -4003,6 +4003,28 @@ namespace t7 {
                     offsetof(GPUOrbConfig, speed_mult),
                     &mult, sizeof(float));
             }
+            // Conductor seams (ORRERY_0) — absolute drag, orbital
+            // angular speed, and the four per-rule drag multipliers
+            // (contiguous; the pass-through value is 1.0, NOT 0.0 —
+            // these seams bypass configure_orbs' passthrough() lambda
+            // and speak to the kernel raw, where rule_drag is applied
+            // as a bare multiplier with no sentinel branch).
+            void upload_orb_drag(wgpu::Queue& queue, float drag) {
+                queue.WriteBuffer(orbConfigBuffer_,
+                    offsetof(GPUOrbConfig, drag), &drag, sizeof(float));
+            }
+            void upload_orb_orbital_speed(wgpu::Queue& queue, float radps) {
+                queue.WriteBuffer(orbConfigBuffer_,
+                    offsetof(GPUOrbConfig, orbital_base_speed),
+                    &radps, sizeof(float));
+            }
+            void upload_orb_rule_drags(wgpu::Queue& queue,
+                float b, float o, float f, float k) {
+                struct { float b, o, f, k; } packed = { b, o, f, k };
+                queue.WriteBuffer(orbConfigBuffer_,
+                    offsetof(GPUOrbConfig, rule_drag_brownian),
+                    &packed, sizeof(packed));
+            }
             // Per-frame color dynamics: pulse / converge / surge intensities.
             // hue_converge_target lives at offset 156 and changes only on mood
             // entry, so it's written via the full upload_orb_config path.

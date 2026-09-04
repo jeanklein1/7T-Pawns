@@ -2,6 +2,7 @@
 #include <cstdint>
 #include "cartridges/the_board/contracts/mood_constants.hpp"   // MOOD_COUNT (sizes ORB_MOOD_TABLE)
 #include "cartridges/the_board/contracts/orb_surface.hpp"      // ORGAN_3 w2 — ORB_CONSOLE_LIVE: dome / base size / noise floor
+#include "cartridges/the_board/contracts/orb_conductor.hpp"    // ORRERY_0 — the conductor's authored states
 #include "cartridges/the_board/contracts/wgpu_fwd.hpp"   // wgpu handle fwds (lockstep insurance)
 
 // ─── orbs.hpp (HEADER: console + registries + state + decls) ─────
@@ -275,6 +276,17 @@ struct OrbsState {
     uint32_t gesture_idx[4]         = { 0u, 0u, 0u, 0u };
     bool     gesture_initialized[4] = { false, false, false, false };
 
+    // ── Conductor (ORRERY_0) ─────────────────────────────────────
+    // The conductor's runtime: which authored state reigns, when the
+    // next transition fires (beats; 0 = unarmed, arms on the first
+    // conducted frame), the draw's xorshift, and the re-speak flag
+    // configure_orbs raises so a full config upload never silently
+    // dethrones the reigning state.
+    uint32_t conductor_state     = ORB_CS_FLOCK;
+    float    conductor_next_beats = 0.0f;
+    uint32_t conductor_rng       = 0u;
+    bool     conductor_respeak   = false;
+
     // ── Speed ────────────────────────────────────────────────────
     // ORGAN_5 P3a — `speed_mult_current` RETIRED. It was the gen-1
     // coupling's CPU smoother, and that coupling's writer went with it:
@@ -305,6 +317,8 @@ void teardown_orbs(OrbsState& os, OrbsDeps* c);
 void cycle_orb_palette(OrbsState& os, OrbsDeps* c, wgpu::Queue& queue);
 void cycle_orb_motion_rule(OrbsState& os, OrbsDeps* c, wgpu::Queue& queue);
 void cycle_orb_gesture(OrbsState& os, OrbsDeps* c, wgpu::Queue& queue);
+// Conductor (ORRERY_0) — per-frame; quiet until a transition fires.
+void tick_orb_conductor(OrbsState& os, OrbsDeps* c, wgpu::Queue& queue);
 // GPU dispatches
 void dispatch_orb_init(OrbsState& os, OrbsDeps* c, wgpu::CommandEncoder& encoder);
 void dispatch_orb_recolor(OrbsState& os, OrbsDeps* c, wgpu::CommandEncoder& encoder);
@@ -522,6 +536,114 @@ inline void log_configure_(const OrbsState& os, const OrbMoodConfig& cfg,
 
 // ═══ LIFECYCLE ═══════════════════════════════════════════════════
 
+// ═══ THE CONDUCTOR (ORRERY_0) ════════════════════════════════════
+// One authored home (contracts/orb_conductor.hpp); this is the reader.
+
+inline uint32_t conductor_xorshift_(uint32_t& s) {
+    s ^= s << 13; s ^= s >> 17; s ^= s << 5;
+    return s;
+}
+
+// Speak the reigning state to the GPU through the targeted seams —
+// the player-cycle's path, no reseed. Idempotent by design: the
+// respeak after any full config upload re-asserts the same facts.
+inline void conductor_apply_(OrbsState& os, OrbsDeps* c, wgpu::Queue& queue) {
+    const auto& st = ORB_CONDUCTOR_STATES[os.conductor_state];
+    os.current_motion_rule = st.rule;
+    os.gesture_idx[st.rule] = st.gesture;   // desk logs stay truthful
+    c->gpuState_.upload_orb_motion_rule(queue, st.rule);
+    if (st.rule == ORB_RULE_BROWNIAN) {
+        const auto& g = ORB_BROWNIAN_GESTURES[st.gesture];
+        c->gpuState_.upload_orb_brownian_gesture(queue,
+            g.radial_sign, g.vert_bias, g.coherence);
+    } else if (st.rule == ORB_RULE_ORBITAL) {
+        const auto& g = ORB_ORBITAL_GESTURES[st.gesture];
+        c->gpuState_.upload_orb_orbital_gesture(queue,
+            g.alignment_mode, g.speed_var_mult);
+        c->gpuState_.upload_orb_orbital_speed(queue, st.orbital_speed);
+    } else if (st.rule == ORB_RULE_FLOCKING) {
+        const auto& g = ORB_FLOCK_GESTURES[st.gesture];
+        c->gpuState_.upload_orb_flock_signs(queue,
+            g.sep_sign, g.align_sign, g.coh_sign);
+    }
+    // The claim: neutral per-rule multipliers and pinned energy.
+    // FROZEN reads none of these, which is that rule's defining
+    // property and not an omission.
+    //
+    // ORRERY_0 RECON R2 — the neutral multiplier is 1.0, not 0.0. The
+    // zero sentinel is configure_orbs' CPU convention (passthrough()
+    // maps 0 to 1.0 before upload); this seam writes the buffer raw,
+    // and the kernel multiplies without a sentinel branch, so a 0.0
+    // here would read as "no drag at all" in every rule rather than
+    // "no per-rule opinion". See ORB_CONDUCTOR_RULE_DRAG_NEUTRAL.
+    //
+    // THE STATE'S ABSOLUTE DRAG IS NOT SPOKEN, and that is deliberate.
+    // upload_orb_drag exists (state.hpp, minted here) but writes
+    // GPUOrbConfig::drag, which ONLY orb_init reads — orb_dynamics
+    // reads the per-orb orb.drag that orb_init baked. So the write is
+    // inert for a live sky, and WORSE THAN INERT on a reseed frame:
+    // configure_orbs arms init_pending, this tick runs before
+    // dispatch_orb_init in phase_orb_sky, and orb_init would then bake
+    // the conductor's drag — 0.0 in five of the six states — into
+    // every orb for the life of that world, leaving the sky
+    // permanently undamped. Speaking it needs a reseed-aware design
+    // (or a route through rule_drag_*), which is Jean's ruling, not
+    // this pass's. Until then the mood's authored drag stands and the
+    // two brownian states differ only in the table. See docs/OPEN.md.
+    c->gpuState_.upload_orb_rule_drags(queue,
+        ORB_CONDUCTOR_RULE_DRAG_NEUTRAL, ORB_CONDUCTOR_RULE_DRAG_NEUTRAL,
+        ORB_CONDUCTOR_RULE_DRAG_NEUTRAL, ORB_CONDUCTOR_RULE_DRAG_NEUTRAL);
+    c->gpuState_.upload_orb_noise(queue, ORB_CONDUCTOR_NOISE);
+    c->gpuState_.upload_orb_speed_mult(queue, ORB_CONDUCTOR_SPEED_MULT);
+}
+
+// The draw. Frozen's exit is forced; frozen's entry is rare (1-in-8)
+// and gated to brownian/orbital predecessors; everything else is
+// uniform among the non-self, non-frozen four.
+inline uint32_t conductor_next_(OrbsState& os) {
+    const auto& cur = ORB_CONDUCTOR_STATES[os.conductor_state];
+    if (cur.rule == ORB_RULE_FROZEN) return ORB_CS_ORB_INT;
+    const bool frozen_ok =
+        (cur.rule == ORB_RULE_BROWNIAN || cur.rule == ORB_RULE_ORBITAL);
+    if (frozen_ok &&
+        (conductor_xorshift_(os.conductor_rng) & ORB_CONDUCTOR_FROZEN_MASK) == 0u) {
+        return ORB_CS_FROZEN;
+    }
+    uint32_t pick = conductor_xorshift_(os.conductor_rng) & 3u;  // 0..3
+    for (uint32_t i = 0u; i < ORB_CS_COUNT; i++) {
+        if (i == os.conductor_state || i == ORB_CS_FROZEN) continue;
+        if (pick == 0u) return i;
+        pick--;
+    }
+    return ORB_CS_FLOCK;  // unreachable; the loop always yields
+}
+
+inline void tick_orb_conductor(OrbsState& os, OrbsDeps* c, wgpu::Queue& queue) {
+    if (!ORB_CONDUCTOR_ON || !os.active || os.count == 0u) return;
+    const float beats = c->time_state_.beats;
+    if (os.conductor_next_beats == 0.0f) {   // arm — first conducted frame
+        os.conductor_rng = c->world_state_.active_seed ^ 0x0BB17A11u;
+        if (os.conductor_rng == 0u) os.conductor_rng = 0x9E3779B9u;
+        os.conductor_next_beats =
+            beats + ORB_CONDUCTOR_STATES[os.conductor_state].duration_beats;
+        conductor_apply_(os, c, queue);
+        return;
+    }
+    if (os.conductor_respeak) {
+        os.conductor_respeak = false;
+        conductor_apply_(os, c, queue);
+    }
+    if (beats >= os.conductor_next_beats) {
+        os.conductor_state = conductor_next_(os);
+        os.conductor_next_beats =
+            beats + ORB_CONDUCTOR_STATES[os.conductor_state].duration_beats;
+        conductor_apply_(os, c, queue);
+        std::cout << "[Orbs] Conductor: "
+                  << ORB_CONDUCTOR_STATES[os.conductor_state].name
+                  << " until beat " << os.conductor_next_beats << "\n";
+    }
+}
+
 inline void configure_orbs(OrbsState& os, OrbsDeps* c, const OrbMoodConfig& cfg,
     wgpu::Queue& queue, bool reseed) {
     os.active = cfg.enabled != 0u;   // ORGAN_3b P3 — enabled is a u32 now (D2)
@@ -609,6 +731,7 @@ inline void configure_orbs(OrbsState& os, OrbsDeps* c, const OrbMoodConfig& cfg,
         cfg.rule_drag_frozen, cfg.rule_drag_flocking);
 
     c->gpuState_.upload_orb_config(queue, gpuCfg);
+    os.conductor_respeak = true;   // ORRERY_0 — the reigning state re-speaks next frame
     // ORGAN_5 P1b — NEVER CLEAR A PENDING INIT HERE. A light pass leaves
     // the flag exactly as it found it, so a re-seed already armed by a
     // mood change (or by an earlier heavy edit in the same frame) still

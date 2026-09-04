@@ -5,19 +5,19 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `e55af22fe75d8f90d00104e2b21f698816b5ae1d`
-(STATURE_0 — the photographer frames the subject at its own height)
+Last commit touching any scanned file: `6c3106830246d6643eefe08f1272b295c6561cd2`
+(SKIRT_WELD_1/P — the perimeter skirt hangs from the base band, a stale claim dies with it, and the tint's variation becomes a gain)
 
 | file scanned | sha256 |
 |---|---|
 | `src/cartridges/the_board/realization/render_passes.hpp` | `sha256:e4d6b62cb1d1936d57322d2c4ef4372bbc27dd1404a29117d9431938e9c84149` |
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:fc3137898e0dc6f0f2edd938cd40681cfc4fe8c272fb9fc4920f71b34643f48e` |
-| `src/cartridges/the_board/cartridge.hpp` | `sha256:56ce86ebbbe9db2c591b12064288fe51aba11d24c181641d9fbabb26ea0c4a64` |
+| `src/cartridges/the_board/cartridge.hpp` | `sha256:69b207925ebbb772a89cf06e2b9b329ce710e250737dae3e64631b3bd2a191df` |
 | `src/cartridges/the_board/surface/patch_system.hpp` | `sha256:1be3569e8b942fccc6a5ad003a6f227b2c413897b33a947bdcfa986947653b3c` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:335d9c5a1d7c34aff37f3010abe8b88aa04290c8db487b70828c9c83e8588719` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
 | `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:91902a4fab8247a9bf99585147981d852768e81849417b782d7438408687c796` |
-| `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:cfee1651530c4e431f7b08ca751e7e9d4f8b326677a0e79cf28567b14fde96bb` |
+| `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:78353a239661436c32baf2b228c6a5a813729af9dc7713fb7ce0a4b7fd48b1aa` |
 | `src/the_board.cpp` | `sha256:12a89ca138da2724f66ae4fd646e2a773caaa169cba3998a9323f14c37baad2b` |
 | `src/console/console.hpp` | `sha256:8aec4ad7cdfdf4b8bb3115cb4ff1dca7b7457fdd124a450b9d737c9398915cd6` |
 | `tools/command_census.py` | `sha256:09a61baed23a5caeedb44ee293461875f2e759832353f887187be35a7ae8d7cb` |
@@ -48,10 +48,10 @@ in `console.hpp`.
 | 12 | Pawn Aura | compute | `dispatch_pawn_aura` | `src/cartridges/the_board/bodies/pawn.hpp:168` | — | — | — |
 | 13 | Photographer VP Compute | compute | `render_snapshot_pass` | `src/cartridges/the_board/bodies/gallery.hpp:2351` | — | — | — |
 | 14 | Photographer Snapshot | render | `render_snapshot_pass` | `src/cartridges/the_board/bodies/gallery.hpp:2416` | Clear/Store or Discard → `c->gpuState_.offscreen_color_view() or c->gpuState_.offscreen_msaa_color_view()` resolve → `c->gpuState_.offscreen_color_view()` | Clear/Discard, readOnly (absent) → `c->gpuState_.offscreen_depth_view()` | (no stencil aspect) |
-| 15 | Orb Init | compute | `dispatch_orb_init` | `src/cartridges/the_board/bodies/orbs.hpp:744` | — | — | — |
-| 16 | Orb Recolor | compute | `dispatch_orb_recolor` | `src/cartridges/the_board/bodies/orbs.hpp:765` | — | — | — |
-| 17 | Orb Copy Prev | compute | `dispatch_orb_copy_prev` | `src/cartridges/the_board/bodies/orbs.hpp:780` | — | — | — |
-| 18 | Orb Dynamics | compute | `dispatch_orb_dynamics` | `src/cartridges/the_board/bodies/orbs.hpp:803` | — | — | — |
+| 15 | Orb Init | compute | `dispatch_orb_init` | `src/cartridges/the_board/bodies/orbs.hpp:867` | — | — | — |
+| 16 | Orb Recolor | compute | `dispatch_orb_recolor` | `src/cartridges/the_board/bodies/orbs.hpp:888` | — | — | — |
+| 17 | Orb Copy Prev | compute | `dispatch_orb_copy_prev` | `src/cartridges/the_board/bodies/orbs.hpp:903` | — | — | — |
+| 18 | Orb Dynamics | compute | `dispatch_orb_dynamics` | `src/cartridges/the_board/bodies/orbs.hpp:926` | — | — | — |
 
 18 passes: 4 render, 14 compute.
 

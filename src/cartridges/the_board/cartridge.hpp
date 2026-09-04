@@ -2480,6 +2480,7 @@ namespace t7 {
             void phase_orb_sky(RenderCtx& c) {
                 auto& encoder = c.encoder;
                 auto& queue = c.queue;
+                tick_orb_conductor(orbs_state_, &orbs_deps_, queue);  // ORRERY_0
                 dispatch_orb_init(orbs_state_, &orbs_deps_, encoder);
                 dispatch_orb_recolor(orbs_state_, &orbs_deps_, encoder);
                 dispatch_orb_copy_prev(orbs_state_, &orbs_deps_, encoder);
