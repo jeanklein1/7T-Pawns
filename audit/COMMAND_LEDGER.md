@@ -5,8 +5,8 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `9ff7b13b720f95cc2f49272ce54eb4ed22cfb56e`
-(ORRERY_1/A — the ceremony: the pool breathes brownian, the frost releases into flock, the flock alone opens the wheel, and the pair finally differs on screen)
+Last commit touching any scanned file: `a5f11905fbf11f1ad7202f279160aa39696a131f`
+(ORRERY_1/B — the planet keeps its stars: the sky seeds once, mood doors change the ground and the hour but never the field, and every open sky carries 256)
 
 | file scanned | sha256 |
 |---|---|

@@ -50,7 +50,7 @@ struct OrbConsole {
 // TUNING CONSOLE, where they lived before ORGAN_3 w2.
 inline constexpr OrbConsole ORB_CONSOLE = {
     500.0f,   // dome_radius — 700 fell into the fog; 500 is the visible dial (Jean's dial)
-    2.35f,    // base_size — tuned on the desk
+    3.9f,     // base_size — grown from 2.35 (Jean's word, ORRERY era)
     0.3f,     // noise_floor — rests at the floor (driverless since the gen-1 retirement)
     3.33f,    // speed_mult — no longer identity: the desk turned ORGAN_5
               // P3a's master up, so every rule's energy source is scaled
