@@ -39,10 +39,14 @@ struct OrbConsole {
     // FROZEN has none to scale, which is that rule's defining property and
     // not an omission.
     //
-    // A gen-2 coupling CLAIMS this field through a rest+gain seam when it
-    // arrives; until then the dial IS the rest. The field existed in
-    // GPUOrbConfig with an uploader and no author since the gen-1 coupling
-    // retired — an authored landing pad with nothing landing on it.
+    // THE CLAIMANT ARRIVED (ORRERY_2). This dial is the REST, and the
+    // conductor authors the REIGN: while it conducts, each of its six
+    // states carries its own speed_mult and its own noise, and speaks
+    // them through the targeted seams on every state change and on any
+    // panel edit to the reigning row. So the value the GPU holds is the
+    // conductor's, not this one's, whenever the sky is being conducted —
+    // and this dial is what the sky returns to when it is not. Both are
+    // Jean's; they are simply two different questions.
     float speed_mult;
 };
 
@@ -51,7 +55,7 @@ struct OrbConsole {
 inline constexpr OrbConsole ORB_CONSOLE = {
     500.0f,   // dome_radius — 700 fell into the fog; 500 is the visible dial (Jean's dial)
     3.9f,     // base_size — grown from 2.35 (Jean's word, ORRERY era)
-    0.3f,     // noise_floor — rests at the floor (driverless since the gen-1 retirement)
+    0.3f,     // noise_floor — the REST; the conductor authors the reign (ORRERY_2)
     3.33f,    // speed_mult — no longer identity: the desk turned ORGAN_5
               // P3a's master up, so every rule's energy source is scaled
 };

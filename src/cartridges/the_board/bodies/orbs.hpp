@@ -2,7 +2,7 @@
 #include <cstdint>
 #include "cartridges/the_board/contracts/mood_constants.hpp"   // MOOD_COUNT (sizes ORB_MOOD_TABLE)
 #include "cartridges/the_board/contracts/orb_surface.hpp"      // ORGAN_3 w2 — ORB_CONSOLE_LIVE: dome / base size / noise floor
-#include "cartridges/the_board/contracts/orb_conductor.hpp"    // ORRERY_0 — the conductor's authored states
+#include "cartridges/the_board/contracts/orb_conductor.hpp"    // ORRERY_2 — ORB_CONDUCTOR_LIVE: the conductor's console
 #include "cartridges/the_board/contracts/wgpu_fwd.hpp"   // wgpu handle fwds (lockstep insurance)
 
 // ─── orbs.hpp (HEADER: console + registries + state + decls) ─────
@@ -16,6 +16,7 @@
 #include <cmath>      // std::sqrt (rotation-axis normalization)   // (impl, merged)
 #include <iostream>   // operator feedback prints   // (impl, merged)
 #include <algorithm>  // std::min   // (impl, merged)
+#include <cstring>    // std::memcmp (ORRERY_2 row-watch)   // (impl, merged)
 
 namespace t7 {
 namespace the_board {
@@ -286,6 +287,9 @@ struct OrbsState {
     // configure_orbs raises so a full config upload never silently
     // dethrones the reigning state.
     uint32_t conductor_state     = ORB_CS_FLOCK;
+    // ORRERY_2 — the row-watch cache: the reigning state's row as last
+    // spoken; the tick re-speaks on any byte of difference.
+    OrbConductorState conductor_row_cache = {};
     float    conductor_next_beats = 0.0f;
     uint32_t conductor_rng       = 0u;
     bool     conductor_respeak   = false;
@@ -542,63 +546,85 @@ inline void log_configure_(const OrbsState& os, const OrbMoodConfig& cfg,
 // ═══ LIFECYCLE ═══════════════════════════════════════════════════
 
 // ═══ THE CONDUCTOR (ORRERY_0) ════════════════════════════════════
-// One authored home (contracts/orb_conductor.hpp); this is the reader.
+// One authored home (contracts/orb_conductor.hpp) — the DESIGN seeds
+// and ORB_CONDUCTOR_LIVE, the bank the ORGAN writes; this is the reader.
 
 inline uint32_t conductor_xorshift_(uint32_t& s) {
     s ^= s << 13; s ^= s >> 17; s ^= s << 5;
     return s;
 }
 
-// Speak the reigning state to the GPU through the targeted seams —
-// the player-cycle's path, no reseed. Idempotent by design: the
-// respeak after any full config upload re-asserts the same facts.
+// Speak the reigning state's LIVE row to the GPU through the targeted
+// seams — the player-cycle's path, no reseed. Idempotent; also caches
+// the row for the row-watch, so calling this IS acknowledging the row.
+// The gesture index is CLAMPED per rule: one dial serves three
+// registries of different length, so an over-dial reads the last real
+// gesture rather than running off the end.
 inline void conductor_apply_(OrbsState& os, OrbsDeps* c, wgpu::Queue& queue) {
-    const auto& st = ORB_CONDUCTOR_STATES[os.conductor_state];
-    os.current_motion_rule = st.rule;
-    os.gesture_idx[st.rule] = st.gesture;   // desk logs stay truthful
-    c->gpuState_.upload_orb_motion_rule(queue, st.rule);
-    if (st.rule == ORB_RULE_BROWNIAN) {
-        const auto& g = ORB_BROWNIAN_GESTURES[st.gesture];
+    const auto& st = ORB_CONDUCTOR_LIVE.states[os.conductor_state];
+    const uint32_t rule = ORB_CONDUCTOR_RULES[os.conductor_state];
+    os.conductor_row_cache = st;
+    os.current_motion_rule = rule;
+    c->gpuState_.upload_orb_motion_rule(queue, rule);
+    if (rule == ORB_RULE_BROWNIAN) {
+        const uint32_t gi = std::min(st.gesture, ORB_BROWNIAN_GESTURE_COUNT - 1u);
+        os.gesture_idx[rule] = gi;   // desk logs stay truthful
+        const auto& g = ORB_BROWNIAN_GESTURES[gi];
         c->gpuState_.upload_orb_brownian_gesture(queue,
             g.radial_sign, g.vert_bias, g.coherence);
-    } else if (st.rule == ORB_RULE_ORBITAL) {
-        const auto& g = ORB_ORBITAL_GESTURES[st.gesture];
+    } else if (rule == ORB_RULE_ORBITAL) {
+        const uint32_t gi = std::min(st.gesture, ORB_ORBITAL_GESTURE_COUNT - 1u);
+        os.gesture_idx[rule] = gi;
+        const auto& g = ORB_ORBITAL_GESTURES[gi];
         c->gpuState_.upload_orb_orbital_gesture(queue,
             g.alignment_mode, g.speed_var_mult);
         c->gpuState_.upload_orb_orbital_speed(queue, st.orbital_speed);
-    } else if (st.rule == ORB_RULE_FLOCKING) {
-        const auto& g = ORB_FLOCK_GESTURES[st.gesture];
+    } else if (rule == ORB_RULE_FLOCKING) {
+        const uint32_t gi = std::min(st.gesture, ORB_FLOCK_GESTURE_COUNT - 1u);
+        os.gesture_idx[rule] = gi;
+        const auto& g = ORB_FLOCK_GESTURES[gi];
         c->gpuState_.upload_orb_flock_signs(queue,
             g.sep_sign, g.align_sign, g.coh_sign);
     }
-    // THE DRAG ROUTE (ORRERY_1/A). Base drag is init-baked per orb and
-    // unreachable live — so the conductor speaks drag through the LIVE
-    // brownian rule multiplier instead: st.drag × the baked 0.4 gives
-    // 0.6 (medium, 1.5) or 0.0 (intense, undamped). This seam bypasses
-    // configure_orbs' sanitizer, so 0.0 lands raw — wanted here. The
-    // other three slots stay neutral; their rules' character is the
-    // mood's.
+    // THE DRAG ROUTE (ORRERY_1/A, dialed in ORRERY_2): st.drag rides the
+    // LIVE brownian rule multiplier — raw seam, 0.0 lands as undamped,
+    // which is Jean's seed. The other three slots stay neutral.
     c->gpuState_.upload_orb_rule_drags(queue,
         st.drag, ORB_CONDUCTOR_RULE_DRAG_NEUTRAL,
         ORB_CONDUCTOR_RULE_DRAG_NEUTRAL, ORB_CONDUCTOR_RULE_DRAG_NEUTRAL);
-    c->gpuState_.upload_orb_noise(queue, ORB_CONDUCTOR_NOISE);
-    c->gpuState_.upload_orb_speed_mult(queue, ORB_CONDUCTOR_SPEED_MULT);
+    c->gpuState_.upload_orb_noise(queue, st.noise);
+    c->gpuState_.upload_orb_speed_mult(queue, st.speed_mult);
+}
+
+// A reign's length: the row's duration, jittered ± up to jitter_beats
+// (the original spec's "non regular periods"; jitter 0 = the metronome).
+inline float conductor_reign_(OrbsState& os) {
+    const auto& st = ORB_CONDUCTOR_LIVE.states[os.conductor_state];
+    float d = st.duration_beats;
+    if (st.jitter_beats > 0.0f) {
+        const uint32_t u = conductor_xorshift_(os.conductor_rng);
+        d += ((float)(u & 0xFFFFu) / 32767.5f - 1.0f) * st.jitter_beats;
+    }
+    return (d < 1.0f) ? 1.0f : d;
 }
 
 // The draw (ORRERY_1/A — THE CEREMONY). The pool is brownian: medium
 // and intense alternate, and only the pool or the wheel may freeze —
-// rarely, 1-in-8. The frost always releases into the flock; the flock
+// rarely, 1-in-`frost_one_in`. The frost always releases into the flock;
+// the flock
 // alone opens the wheel (orbital, one coin between medium and intense);
 // the wheel returns to the pool. Flocking and orbital are earned
 // through the frozen gate, not drawn — roughly once per couple of
 // minutes at the rest tempo.
 inline uint32_t conductor_next_(OrbsState& os) {
-    const uint32_t cur_rule = ORB_CONDUCTOR_STATES[os.conductor_state].rule;
+    const uint32_t cur_rule = ORB_CONDUCTOR_RULES[os.conductor_state];
     if (cur_rule == ORB_RULE_FROZEN)   return ORB_CS_FLOCK;
     if (cur_rule == ORB_RULE_FLOCKING)
         return (conductor_xorshift_(os.conductor_rng) & 1u)
             ? ORB_CS_ORB_INT : ORB_CS_ORB_MED;
-    if ((conductor_xorshift_(os.conductor_rng) & ORB_CONDUCTOR_FROZEN_MASK) == 0u)
+    if ((conductor_xorshift_(os.conductor_rng) %
+         (ORB_CONDUCTOR_LIVE.frost_one_in < 1u ? 1u
+            : ORB_CONDUCTOR_LIVE.frost_one_in)) == 0u)
         return ORB_CS_FROZEN;
     if (cur_rule == ORB_RULE_ORBITAL)
         return (conductor_xorshift_(os.conductor_rng) & 1u)
@@ -608,27 +634,29 @@ inline uint32_t conductor_next_(OrbsState& os) {
 }
 
 inline void tick_orb_conductor(OrbsState& os, OrbsDeps* c, wgpu::Queue& queue) {
-    if (!ORB_CONDUCTOR_ON || !os.active || os.count == 0u) return;
+    if (ORB_CONDUCTOR_LIVE.enabled == 0u || !os.active || os.count == 0u) return;
     const float beats = c->time_state_.beats;
     if (os.conductor_next_beats == 0.0f) {   // arm — first conducted frame
         os.conductor_rng = c->world_state_.active_seed ^ 0x0BB17A11u;
         if (os.conductor_rng == 0u) os.conductor_rng = 0x9E3779B9u;
-        os.conductor_next_beats =
-            beats + ORB_CONDUCTOR_STATES[os.conductor_state].duration_beats;
+        os.conductor_next_beats = beats + conductor_reign_(os);
         conductor_apply_(os, c, queue);
         return;
     }
-    if (os.conductor_respeak) {
+    // THE ROW-WATCH (ORRERY_2): a panel edit to the reigning row lands
+    // within one frame, mid-reign. respeak folds into the same speak.
+    if (os.conductor_respeak ||
+        std::memcmp(&ORB_CONDUCTOR_LIVE.states[os.conductor_state],
+                    &os.conductor_row_cache, sizeof(OrbConductorState)) != 0) {
         os.conductor_respeak = false;
         conductor_apply_(os, c, queue);
     }
     if (beats >= os.conductor_next_beats) {
         os.conductor_state = conductor_next_(os);
-        os.conductor_next_beats =
-            beats + ORB_CONDUCTOR_STATES[os.conductor_state].duration_beats;
+        os.conductor_next_beats = beats + conductor_reign_(os);
         conductor_apply_(os, c, queue);
         std::cout << "[Orbs] Conductor: "
-                  << ORB_CONDUCTOR_STATES[os.conductor_state].name
+                  << ORB_CONDUCTOR_NAMES[os.conductor_state]
                   << " until beat " << os.conductor_next_beats << "\n";
     }
 }

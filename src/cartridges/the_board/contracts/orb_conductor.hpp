@@ -3,99 +3,93 @@
 
 // ─── contracts/orb_conductor.hpp ───────────────────────────────────
 //
-// THE CONDUCTOR (ORRERY_0). An automated author of the orb sky's motion:
-// every 16 beats (flocking: 32) the rule and its parameters change,
-// drawn by xorshift on the world seed. The audience is given something
-// to wonder about — the changes ride the musical grid and never announce
-// themselves.
+// THE CONDUCTOR'S CONSOLE (ORRERY_2). Every number the conductor
+// speaks is a dial now: ORB_CONDUCTOR is the DESIGN — the authored
+// seeds, two jobs only: seeding ORB_CONDUCTOR_LIVE and standing under
+// its assert. ORB_CONDUCTOR_LIVE is what the tick reads, and the ORGAN
+// writes (block CONDUCTOR). Jean adjusts the numbers himself.
 //
-// THE CLAIM. While ORB_CONDUCTOR_ON, the conductor CLAIMS noise_amp and
-// speed_mult (pinned to their dial ceilings — Jean: "pin them") and drag
-// (absolute per state; the four per-rule multipliers are written to the
-// pass-through value so a state looks the same in every sky). The
-// ORGAN dials keep authoring the REST values; the conductor authors the
-// reign. orb_surface.hpp's speed_mult comment foretold exactly this
-// claimant.
+// THE ROW-WATCH LAW: the tick compares the reigning state's LIVE row
+// against a cached copy every frame and re-speaks on any change, so a
+// panel edit lands on the sky within one frame, mid-reign.
 //
-// THE TABLE IS THE DESIGN — one authored home. Rule, gesture, drag,
-// orbital speed and duration live here and nowhere else; the tick in
-// bodies/orbs.hpp reads this table and writes the GPU through the same
-// targeted seams the player's rule-cycle uses (no reseed).
+// THE CEREMONY (ORRERY_1) is structural, not dialed: the pool breathes
+// brownian; only the pool or the wheel may freeze (1-in-`frost_one_in`);
+// the frost always releases into the flock; the flock alone opens the
+// wheel; the wheel returns to the pool. Rules are identity, not knobs.
+//
+// SEEDS: Jean's spec, plus his later word — drag 0.0 in every row
+// ("keeping the drag zero"); noise and speed_mult at the old ceilings
+// PER STATE ("we keep noise and speed mult at max"), his to split;
+// orbital 0.7 / 1.0; gesture 0; jitter 0, waiting ("non regular
+// periods of time" was the first sentence of this feature).
 // ────────────────────────────────────────────────────────────────────
 
 namespace t7 {
 namespace the_board {
 
-// Kill switch — mutable so a panel row can claim it later (one macro
-// line in organ_params.inc); until then it is a rebuild dial.
-inline bool ORB_CONDUCTOR_ON = true;
+// One state's dial row. All 4-byte fields, no padding — the tick's
+// row-watch memcmp depends on that (asserted below).
+struct OrbConductorState {
+    uint32_t gesture;         // registry index; clamped per rule (brn 6, orb 4, flk 8)
+    float    drag;            // BROWNIAN drag ×(baked per-orb ~0.4); raw seam, 0.0 = undamped
+    float    orbital_speed;   // rad/s before speed_mult; read when rule==ORBITAL
+    float    noise;           // brownian energy source (noise_amp)
+    float    speed_mult;      // master motion strength while this state reigns
+    float    duration_beats;  // reign length
+    float    jitter_beats;    // ± drawn on each entry; 0 = the metronome
+};
 
-// Pinned energy while conducting — the dial CEILINGS of
-// organ_params.inc's ORBS rows (speed_mult 0..4.0, noise_floor 0..3.0).
-// R6 confirmed both ceilings unchanged at this commit.
-inline constexpr float ORB_CONDUCTOR_NOISE      = 3.0f;
-inline constexpr float ORB_CONDUCTOR_SPEED_MULT = 4.0f;
+struct OrbConductorConsole {
+    uint32_t enabled;         // the conductor's own switch
+    uint32_t frost_one_in;    // frozen enters 1-in-N from pool/wheel
+    OrbConductorState states[6];
+};
 
-// ORRERY_0 RECON R2 — THE PASS-THROUGH VALUE IS 1.0, NOT 0.0.
-// The zero sentinel is a CPU-SIDE convention only: configure_orbs'
-// passthrough() lambda maps an authored 0 to 1.0 before upload
-// ("(authored > 0.0f) ? authored : 1.0f"), and world.wgsl's own field
-// comment says "Per-rule drag multipliers (1.0 = pass-through,
-// sanitized on CPU)". The kernel applies them raw —
-// `orb.vel * exp(-orb.drag * rule_drag_X * dt)` with NO sentinel
-// branch — so a 0.0 written straight to the buffer through the
-// targeted seam means "multiply the damping by zero", i.e. NO DRAG AT
-// ALL, in every rule. The conductor bypasses configure_orbs by design,
-// so it must speak the GPU's language and neutralize with 1.0.
+// Indices are load-bearing: the ceremony names them.
+inline constexpr uint32_t ORB_CS_BRN_MED = 0u;
+inline constexpr uint32_t ORB_CS_BRN_INT = 1u;
+inline constexpr uint32_t ORB_CS_FLOCK   = 2u;
+inline constexpr uint32_t ORB_CS_ORB_MED = 3u;
+inline constexpr uint32_t ORB_CS_ORB_INT = 4u;
+inline constexpr uint32_t ORB_CS_FROZEN  = 5u;
+inline constexpr uint32_t ORB_CS_COUNT   = 6u;
+
+// Rule identity — structural, parallel to the rows, not a dial.
+inline constexpr uint32_t ORB_CONDUCTOR_RULES[ORB_CS_COUNT] =
+    { 0u, 0u, 3u, 1u, 1u, 2u };  // BRN BRN FLK ORB ORB FRZ
+inline constexpr const char* ORB_CONDUCTOR_NAMES[ORB_CS_COUNT] = {
+    "brownian-medium", "brownian-intense", "flocking",
+    "orbital-medium", "orbital-intense", "frozen",
+};
+
+// Neutral for the three rule_drag slots the conductor leaves alone.
 inline constexpr float ORB_CONDUCTOR_RULE_DRAG_NEUTRAL = 1.0f;
 
-struct OrbConductorStateDef {
-    uint32_t    rule;            // ORB_RULE_* (bodies/orbs.hpp)
-    uint32_t    gesture;         // index into that rule's registry
-    float       drag;            // BROWNIAN multiplier on baked per-orb drag; raw seam, 0.0 = undamped
-    float       orbital_speed;   // rad/s; read only when rule==ORBITAL
-    float       duration_beats;
-    const char* name;
+// THE DESIGN — Jean's seeds.
+inline constexpr OrbConductorConsole ORB_CONDUCTOR = {
+    1u,   // enabled
+    8u,   // frost_one_in
+    { //  gest  drag   orbSpd  noise  spdMul  dur    jitter
+        { 0u,  0.0f,  0.0f,   3.0f,  4.0f,   16.0f, 0.0f },  // brownian-medium
+        { 0u,  0.0f,  0.0f,   3.0f,  4.0f,   16.0f, 0.0f },  // brownian-intense
+        { 0u,  0.0f,  0.0f,   3.0f,  4.0f,   32.0f, 0.0f },  // flocking
+        { 0u,  0.0f,  0.7f,   3.0f,  4.0f,   16.0f, 0.0f },  // orbital-medium
+        { 0u,  0.0f,  1.0f,   3.0f,  4.0f,   16.0f, 0.0f },  // orbital-intense
+        { 0u,  0.0f,  0.0f,   3.0f,  4.0f,   16.0f, 0.0f },  // frozen — reads none of these
+    },
 };
 
-// Indices are load-bearing: transitions name them.
-inline constexpr uint32_t ORB_CS_BRN_MED    = 0u;
-inline constexpr uint32_t ORB_CS_BRN_INT    = 1u;
-inline constexpr uint32_t ORB_CS_FLOCK      = 2u;  // boot state — NOT
-                                                   // today's sky everywhere:
-                                                   // sunset and night boot
-                                                   // motion_rule 3u, but
-                                                   // finite_outdoor boots 0u
-                                                   // (BROWNIAN), so arming
-                                                   // changes its rule at once;
-                                                   // reachable only through the
-                                                   // frost (ORRERY_1).
-inline constexpr uint32_t ORB_CS_ORB_MED    = 3u;
-inline constexpr uint32_t ORB_CS_ORB_INT    = 4u;  // the wheel's strong voice
-inline constexpr uint32_t ORB_CS_FROZEN     = 5u;
-inline constexpr uint32_t ORB_CS_COUNT      = 6u;
+// THE LIVE SURFACE — the panel's block and the tick's read.
+inline OrbConductorConsole ORB_CONDUCTOR_LIVE = ORB_CONDUCTOR;
 
-// Jean's six. The drag column is the BROWNIAN MULTIPLIER on the baked
-// per-orb drag (0.4 at all three open moods): 1.5 → 0.6 effective, the
-// legible medium; 0.0 → undamped, the intense. Rows whose rule is not
-// brownian carry 1.0 — written, unread, neutral. Orbital moves only
-// the velocity (0.7 / 1.0); "can't go too excited" is speed's job,
-// scatter is the authored gesture. Flocking holds twice as long.
-inline constexpr OrbConductorStateDef ORB_CONDUCTOR_STATES[ORB_CS_COUNT] = {
-    //  rule            gest  drag   orbSpd  beats  name
-    {   0u /*BROWNIAN*/, 0u,  1.5f,  0.0f,   16.0f, "brownian-medium"  },
-    {   0u /*BROWNIAN*/, 0u,  0.0f,  0.0f,   16.0f, "brownian-intense" },
-    {   3u /*FLOCKING*/, 0u,  1.0f,  0.0f,   32.0f, "flocking"         },
-    {   1u /*ORBITAL */, 0u,  1.0f,  0.7f,   16.0f, "orbital-medium"   },
-    {   1u /*ORBITAL */, 0u,  1.0f,  1.0f,   16.0f, "orbital-intense"  },
-    {   2u /*FROZEN  */, 0u,  1.0f,  0.0f,   16.0f, "frozen"           },
-};
-
-// FROZEN enters 1-in-8 among eligible draws, and only off brownian or
-// orbital. Its exit is not drawn at all: the frost
-// always releases into ORB_CS_FLOCK, and the flock alone opens the
-// wheel (ORRERY_1).
-inline constexpr uint32_t ORB_CONDUCTOR_FROZEN_MASK = 7u;  // (roll & 7)==0
+static_assert(sizeof(OrbConductorState) == 7u * 4u,
+    "the row-watch memcmp assumes a packed 28-byte row: a field added "
+    "here is added to the cache compare by construction, padding is not");
+static_assert(sizeof(OrbConductorConsole) ==
+    2u * 4u + ORB_CS_COUNT * sizeof(OrbConductorState),
+    "ORB_CONDUCTOR_LIVE is a whole-struct copy of the design: a field "
+    "added to one is added to the other by construction");
 
 } // namespace the_board
 } // namespace t7
