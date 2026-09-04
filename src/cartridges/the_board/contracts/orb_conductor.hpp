@@ -71,12 +71,12 @@ inline constexpr OrbConductorConsole ORB_CONDUCTOR = {
     1u,   // enabled
     8u,   // frost_one_in
     { //  gest  drag   orbSpd  noise  spdMul  dur    jitter
-        { 0u,  0.0f,  0.0f,   3.0f,  4.0f,   16.0f, 0.0f },  // brownian-medium
-        { 0u,  0.0f,  0.0f,   3.0f,  4.0f,   16.0f, 0.0f },  // brownian-intense
-        { 0u,  0.0f,  0.0f,   3.0f,  4.0f,   32.0f, 0.0f },  // flocking
-        { 0u,  0.0f,  0.7f,   3.0f,  4.0f,   16.0f, 0.0f },  // orbital-medium
-        { 0u,  0.0f,  1.0f,   3.0f,  4.0f,   16.0f, 0.0f },  // orbital-intense
-        { 0u,  0.0f,  0.0f,   3.0f,  4.0f,   16.0f, 0.0f },  // frozen — reads none of these
+        { 0u,  0.8f,  0.0010f,   3.0f,  4.0f,   16.0f, 0.0f },  // brownian-medium
+        { 0u,  0.2f,  0.0010f,   3.0f,  4.0f,   16.0f, 0.0f },  // brownian-intense
+        { 0u,  0.0f,  0.0010f,   3.0f,  4.0f,   32.0f, 0.0f },  // flocking
+        { 0u,  0.0f,  0.0010f,   3.0f,  1.0f,   16.0f, 0.0f },  // orbital-medium
+        { 0u,  0.0f,  0.0010f,   3.0f,  0.6f,   16.0f, 0.0f },  // orbital-intense
+        { 0u,  0.0f,  0.0010f,   3.0f,  4.0f,   16.0f, 0.0f },  // frozen — reads none of these
     },
 };
 
