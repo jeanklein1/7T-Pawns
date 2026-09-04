@@ -46,50 +46,27 @@ generator, so the book and the manifest cannot disagree. `driven` is an
 | Sky & Light · Motion — all rules | drag × frozen rule | `OrbMoodConfig.rule_drag_frozen` | NONE_ORB (254) | F32 | 0.02 … 4 | 0.02 | boundary | orb_mood |  |
 | Sky & Light · Motion — all rules | drag × flocking rule | `OrbMoodConfig.rule_drag_flocking` | NONE_ORB (254) | F32 | 0.02 … 4 | 0.02 | boundary | orb_mood |  |
 | Conductor ·  | enabled | `CONDUCTOR.enabled` | CONDUCTOR | BOOL | 0 … 1 | 1 | live | none |  |
-| Conductor ·  | frost 1-in-N | `CONDUCTOR.frost_one_in` | CONDUCTOR | U32 | 1 … 64 | 1 | live | none |  |
-| Conductor ·  | flock 1-in-N | `CONDUCTOR.flock_one_in` | CONDUCTOR | U32 | 1 … 64 | 1 | live | none |  |
-| Conductor · brownian-medium | gesture | `CONDUCTOR.states[0].gesture` | CONDUCTOR | U32 | 0 … 7 | 1 | live | none |  |
-| Conductor · brownian-medium | brn drag x | `CONDUCTOR.states[0].drag` | CONDUCTOR | F32 | 0 … 4 | 0.05 | live | none |  |
-| Conductor · brownian-medium | orbital speed | `CONDUCTOR.states[0].orbital_speed` | CONDUCTOR | F32 | 0 … 2 | 0.01 | live | none |  |
-| Conductor · brownian-medium | noise | `CONDUCTOR.states[0].noise` | CONDUCTOR | F32 | 0 … 3 | 0.01 | live | none |  |
-| Conductor · brownian-medium | speed mult | `CONDUCTOR.states[0].speed_mult` | CONDUCTOR | F32 | 0 … 4 | 0.01 | live | none |  |
-| Conductor · brownian-medium | duration (beats) | `CONDUCTOR.states[0].duration_beats` | CONDUCTOR | F32 | 1 … 128 | 1 | live | none |  |
-| Conductor · brownian-medium | jitter (± beats) | `CONDUCTOR.states[0].jitter_beats` | CONDUCTOR | F32 | 0 … 64 | 1 | live | none |  |
-| Conductor · brownian-intense | gesture | `CONDUCTOR.states[1].gesture` | CONDUCTOR | U32 | 0 … 7 | 1 | live | none |  |
-| Conductor · brownian-intense | brn drag x | `CONDUCTOR.states[1].drag` | CONDUCTOR | F32 | 0 … 4 | 0.05 | live | none |  |
-| Conductor · brownian-intense | orbital speed | `CONDUCTOR.states[1].orbital_speed` | CONDUCTOR | F32 | 0 … 2 | 0.01 | live | none |  |
-| Conductor · brownian-intense | noise | `CONDUCTOR.states[1].noise` | CONDUCTOR | F32 | 0 … 3 | 0.01 | live | none |  |
-| Conductor · brownian-intense | speed mult | `CONDUCTOR.states[1].speed_mult` | CONDUCTOR | F32 | 0 … 4 | 0.01 | live | none |  |
-| Conductor · brownian-intense | duration (beats) | `CONDUCTOR.states[1].duration_beats` | CONDUCTOR | F32 | 1 … 128 | 1 | live | none |  |
-| Conductor · brownian-intense | jitter (± beats) | `CONDUCTOR.states[1].jitter_beats` | CONDUCTOR | F32 | 0 … 64 | 1 | live | none |  |
+| Conductor ·  | frozen % | `CONDUCTOR.frost_percent` | CONDUCTOR | U32 | 0 … 100 | 1 | live | none |  |
+| Conductor · brownian | gesture | `CONDUCTOR.states[0].gesture` | CONDUCTOR | U32 | 0 … 5 | 1 | live | none |  |
+| Conductor · brownian | drag x  low | `CONDUCTOR.states[0].drag_min` | CONDUCTOR | F32 | 0 … 4 | 0.05 | live | none |  |
+| Conductor · brownian | drag x  high | `CONDUCTOR.states[0].drag_max` | CONDUCTOR | F32 | 0 … 4 | 0.05 | live | none |  |
+| Conductor · brownian | noise | `CONDUCTOR.states[0].noise` | CONDUCTOR | F32 | 0 … 3 | 0.01 | live | none |  |
+| Conductor · brownian | speed mult | `CONDUCTOR.states[0].speed_mult` | CONDUCTOR | F32 | 0 … 4 | 0.01 | live | none |  |
+| Conductor · brownian | duration (beats) | `CONDUCTOR.states[0].duration_beats` | CONDUCTOR | F32 | 1 … 128 | 1 | live | none |  |
+| Conductor · brownian | jitter (± beats) | `CONDUCTOR.states[0].jitter_beats` | CONDUCTOR | F32 | 0 … 64 | 1 | live | none |  |
+| Conductor · frozen | duration (beats) | `CONDUCTOR.states[1].duration_beats` | CONDUCTOR | F32 | 1 … 128 | 1 | live | none |  |
+| Conductor · frozen | jitter (± beats) | `CONDUCTOR.states[1].jitter_beats` | CONDUCTOR | F32 | 0 … 64 | 1 | live | none |  |
 | Conductor · flocking | gesture | `CONDUCTOR.states[2].gesture` | CONDUCTOR | U32 | 0 … 7 | 1 | live | none |  |
-| Conductor · flocking | brn drag x | `CONDUCTOR.states[2].drag` | CONDUCTOR | F32 | 0 … 4 | 0.05 | live | none |  |
-| Conductor · flocking | orbital speed | `CONDUCTOR.states[2].orbital_speed` | CONDUCTOR | F32 | 0 … 2 | 0.01 | live | none |  |
 | Conductor · flocking | noise | `CONDUCTOR.states[2].noise` | CONDUCTOR | F32 | 0 … 3 | 0.01 | live | none |  |
 | Conductor · flocking | speed mult | `CONDUCTOR.states[2].speed_mult` | CONDUCTOR | F32 | 0 … 4 | 0.01 | live | none |  |
 | Conductor · flocking | duration (beats) | `CONDUCTOR.states[2].duration_beats` | CONDUCTOR | F32 | 1 … 128 | 1 | live | none |  |
 | Conductor · flocking | jitter (± beats) | `CONDUCTOR.states[2].jitter_beats` | CONDUCTOR | F32 | 0 … 64 | 1 | live | none |  |
-| Conductor · orbital-medium | gesture | `CONDUCTOR.states[3].gesture` | CONDUCTOR | U32 | 0 … 7 | 1 | live | none |  |
-| Conductor · orbital-medium | brn drag x | `CONDUCTOR.states[3].drag` | CONDUCTOR | F32 | 0 … 4 | 0.05 | live | none |  |
-| Conductor · orbital-medium | orbital speed | `CONDUCTOR.states[3].orbital_speed` | CONDUCTOR | F32 | 0 … 2 | 0.01 | live | none |  |
-| Conductor · orbital-medium | noise | `CONDUCTOR.states[3].noise` | CONDUCTOR | F32 | 0 … 3 | 0.01 | live | none |  |
-| Conductor · orbital-medium | speed mult | `CONDUCTOR.states[3].speed_mult` | CONDUCTOR | F32 | 0 … 4 | 0.01 | live | none |  |
-| Conductor · orbital-medium | duration (beats) | `CONDUCTOR.states[3].duration_beats` | CONDUCTOR | F32 | 1 … 128 | 1 | live | none |  |
-| Conductor · orbital-medium | jitter (± beats) | `CONDUCTOR.states[3].jitter_beats` | CONDUCTOR | F32 | 0 … 64 | 1 | live | none |  |
-| Conductor · orbital-intense | gesture | `CONDUCTOR.states[4].gesture` | CONDUCTOR | U32 | 0 … 7 | 1 | live | none |  |
-| Conductor · orbital-intense | brn drag x | `CONDUCTOR.states[4].drag` | CONDUCTOR | F32 | 0 … 4 | 0.05 | live | none |  |
-| Conductor · orbital-intense | orbital speed | `CONDUCTOR.states[4].orbital_speed` | CONDUCTOR | F32 | 0 … 2 | 0.01 | live | none |  |
-| Conductor · orbital-intense | noise | `CONDUCTOR.states[4].noise` | CONDUCTOR | F32 | 0 … 3 | 0.01 | live | none |  |
-| Conductor · orbital-intense | speed mult | `CONDUCTOR.states[4].speed_mult` | CONDUCTOR | F32 | 0 … 4 | 0.01 | live | none |  |
-| Conductor · orbital-intense | duration (beats) | `CONDUCTOR.states[4].duration_beats` | CONDUCTOR | F32 | 1 … 128 | 1 | live | none |  |
-| Conductor · orbital-intense | jitter (± beats) | `CONDUCTOR.states[4].jitter_beats` | CONDUCTOR | F32 | 0 … 64 | 1 | live | none |  |
-| Conductor · frozen | gesture | `CONDUCTOR.states[5].gesture` | CONDUCTOR | U32 | 0 … 7 | 1 | live | none |  |
-| Conductor · frozen | brn drag x | `CONDUCTOR.states[5].drag` | CONDUCTOR | F32 | 0 … 4 | 0.05 | live | none |  |
-| Conductor · frozen | orbital speed | `CONDUCTOR.states[5].orbital_speed` | CONDUCTOR | F32 | 0 … 2 | 0.01 | live | none |  |
-| Conductor · frozen | noise | `CONDUCTOR.states[5].noise` | CONDUCTOR | F32 | 0 … 3 | 0.01 | live | none |  |
-| Conductor · frozen | speed mult | `CONDUCTOR.states[5].speed_mult` | CONDUCTOR | F32 | 0 … 4 | 0.01 | live | none |  |
-| Conductor · frozen | duration (beats) | `CONDUCTOR.states[5].duration_beats` | CONDUCTOR | F32 | 1 … 128 | 1 | live | none |  |
-| Conductor · frozen | jitter (± beats) | `CONDUCTOR.states[5].jitter_beats` | CONDUCTOR | F32 | 0 … 64 | 1 | live | none |  |
+| Conductor · orbital | gesture | `CONDUCTOR.states[3].gesture` | CONDUCTOR | U32 | 0 … 3 | 1 | live | none |  |
+| Conductor · orbital | orbital speed | `CONDUCTOR.states[3].orbital_speed` | CONDUCTOR | F32 | 0 … 2 | 0.01 | live | none |  |
+| Conductor · orbital | noise | `CONDUCTOR.states[3].noise` | CONDUCTOR | F32 | 0 … 3 | 0.01 | live | none |  |
+| Conductor · orbital | speed mult | `CONDUCTOR.states[3].speed_mult` | CONDUCTOR | F32 | 0 … 4 | 0.01 | live | none |  |
+| Conductor · orbital | duration (beats) | `CONDUCTOR.states[3].duration_beats` | CONDUCTOR | F32 | 1 … 128 | 1 | live | none |  |
+| Conductor · orbital | jitter (± beats) | `CONDUCTOR.states[3].jitter_beats` | CONDUCTOR | F32 | 0 … 64 | 1 | live | none |  |
 | Sky & Light · Orbital rule | orbital speed (rad/s) | `OrbMoodConfig.orbital_base_speed` | NONE_ORB (254) | F32 | 0.005 … 1 | 0.005 | boundary | orb_mood |  |
 | Sky & Light · Flocking rule | separation radius | `OrbMoodConfig.flock_sep_radius` | NONE_ORB (254) | F32 | 1 … 200 | 1 | boundary | orb_mood |  |
 | Sky & Light · Flocking rule | alignment radius | `OrbMoodConfig.flock_align_radius` | NONE_ORB (254) | F32 | 2 … 480 | 2 | boundary | orb_mood |  |
@@ -456,14 +433,14 @@ generator, so the book and the manifest cannot disagree. `driven` is an
 
 | | |
 | --- | --- |
-| entries | **428** |
-| by section | Agents 118 · Atmosphere 73 · Ribbon 55 · Conductor 45 · Sky & Light 42 · Terrain 42 · Interaction 24 · Pawn 19 · Debug 4 · Camera 3 · Measure 3 |
-| by cadence | boundary 188 · driven 21 · gen 42 · live 177 |
-| by macro form | PARAM 181 · PARAM_DEF 110 · PARAM_DEFONLY 74 · PARAM_GEN 42 · PARAM_RO 21 |
-| definition kinds | BEHAVIOR 78 · MOOD 55 · NONE 244 · ORB_MOOD 19 · TIER 32 |
+| entries | **405** |
+| by section | Agents 118 · Atmosphere 73 · Ribbon 55 · Sky & Light 42 · Terrain 42 · Interaction 24 · Conductor 22 · Pawn 19 · Debug 4 · Camera 3 · Measure 3 |
+| by cadence | boundary 188 · driven 21 · gen 42 · live 154 |
+| by macro form | PARAM 158 · PARAM_DEF 110 · PARAM_DEFONLY 74 · PARAM_GEN 42 · PARAM_RO 21 |
+| definition kinds | BEHAVIOR 78 · MOOD 55 · NONE 221 · ORB_MOOD 19 · TIER 32 |
 | witnesses (`ro`) | 21 |
 | blocks and sentinels used | AGENT_ROOM, CANVAS, CONDUCTOR, CONFIG, DRIVERS, INDOOR, LIGHTING, NONE (255), NONE_ORB (254), ORBS, PANEL, PAWN, RIBBON, RIBBON_SPAWN, WORLD |
-| namespaces | canvas 15 · the_board 413 |
+| namespaces | canvas 15 · the_board 390 |
 
 ### Doors
 
@@ -530,7 +507,7 @@ verbatim:
 
 THE ANSWER, ROW BY ROW
 ------------------------------------------------------------------------
-  proved    326   a declared reader names the field
+  proved    303   a declared reader names the field
   SUSPECT     0   no declared reader names it
   witness    21   an _RO meter: the question is inverted (blind spot 5)
   scope      81   GPU-side or whole-struct (blind spots 2, 3)
