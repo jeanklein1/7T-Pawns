@@ -280,17 +280,23 @@ struct OrbsState {
     uint32_t gesture_idx[4]         = { 0u, 0u, 0u, 0u };
     bool     gesture_initialized[4] = { false, false, false, false };
 
-    // ── Conductor (ORRERY_0) ─────────────────────────────────────
-    // The conductor's runtime: which authored state reigns, when the
-    // next transition fires (beats; 0 = unarmed, arms on the first
-    // conducted frame), the draw's xorshift, and the re-speak flag
-    // configure_orbs raises so a full config upload never silently
-    // dethrones the reigning state.
-    uint32_t conductor_state     = ORB_CS_FLOCK;
+    // ── Conductor (ORRERY_0, regraphed ORRERY_5) ─────────────────
+    // The conductor's runtime, six fields: which authored state reigns
+    // (BROWNIAN at boot — under the wheel the flock is the reward and
+    // must be earned), the row-watch cache, when the next transition
+    // fires (beats; 0 = unarmed, arms on the first conducted frame),
+    // the brownian drag's normalized draw, the draw's xorshift, and the
+    // re-speak flag configure_orbs raises so a full config upload never
+    // silently dethrones the reigning state.
+    uint32_t conductor_state     = ORB_CS_BROWNIAN;
     // ORRERY_2 — the row-watch cache: the reigning state's row as last
     // spoken; the tick re-speaks on any byte of difference.
     OrbConductorState conductor_row_cache = {};
     float    conductor_next_beats = 0.0f;
+    // ORRERY_5 — the brownian drag's draw, normalized. Drawn once per
+    // ENTRY (conductor_enter_), lerped through on every speak, so the
+    // row-watch can move both ends of the range mid-reign.
+    float    conductor_drag_u    = 0.0f;
     uint32_t conductor_rng       = 0u;
     bool     conductor_respeak   = false;
 
@@ -572,6 +578,18 @@ inline void conductor_apply_(OrbsState& os, OrbsDeps* c, wgpu::Queue& queue) {
         const auto& g = ORB_BROWNIAN_GESTURES[gi];
         c->gpuState_.upload_orb_brownian_gesture(queue,
             g.radial_sign, g.vert_bias, g.coherence);
+        // THE DRAG ROUTE (ORRERY_1/A; a RANGE since ORRERY_5). The drawn
+        // u is the reign's identity; both ends are live dials, so this
+        // lerp re-runs on every speak and the row-watch carries a panel
+        // edit to either end onto the sky within one frame. Raw seam —
+        // 0.0 lands as undamped, which is one end of Jean's range. Only
+        // this arm writes it: a frozen row writing the BROWNIAN slot was
+        // the trap ORRERY_5 J5 closed.
+        const float drag = st.drag_min
+            + os.conductor_drag_u * (st.drag_max - st.drag_min);
+        c->gpuState_.upload_orb_rule_drags(queue,
+            drag, ORB_CONDUCTOR_RULE_DRAG_NEUTRAL,
+            ORB_CONDUCTOR_RULE_DRAG_NEUTRAL, ORB_CONDUCTOR_RULE_DRAG_NEUTRAL);
     } else if (rule == ORB_RULE_ORBITAL) {
         const uint32_t gi = std::min(st.gesture, ORB_ORBITAL_GESTURE_COUNT - 1u);
         os.gesture_idx[rule] = gi;
@@ -586,20 +604,22 @@ inline void conductor_apply_(OrbsState& os, OrbsDeps* c, wgpu::Queue& queue) {
         c->gpuState_.upload_orb_flock_signs(queue,
             g.sep_sign, g.align_sign, g.coh_sign);
     }
-    // THE DRAG ROUTE (ORRERY_1/A, dialed in ORRERY_2): st.drag rides the
-    // LIVE brownian rule multiplier — raw seam, 0.0 lands as undamped,
-    // which is Jean's seed. The other three slots stay neutral.
-    c->gpuState_.upload_orb_rule_drags(queue,
-        st.drag, ORB_CONDUCTOR_RULE_DRAG_NEUTRAL,
-        ORB_CONDUCTOR_RULE_DRAG_NEUTRAL, ORB_CONDUCTOR_RULE_DRAG_NEUTRAL);
     c->gpuState_.upload_orb_noise(queue, st.noise);
     c->gpuState_.upload_orb_speed_mult(queue, st.speed_mult);
 }
 
-// A reign's length: the row's duration, jittered ± up to jitter_beats
-// (the original spec's "non regular periods"; jitter 0 = the metronome).
-inline float conductor_reign_(OrbsState& os) {
+// THE ENTRY VERB. Two call sites, both entries — the arm frame and the
+// transition — and no third; that is why the drag draw lives here rather
+// than in the tick's two branches.
+// Returns the reign's length: the row's duration, jittered ± up to
+// jitter_beats (the original spec's "non regular periods"; jitter 0 = the
+// metronome). Draws the brownian drag's normalized u on the way past.
+inline float conductor_enter_(OrbsState& os) {
     const auto& st = ORB_CONDUCTOR_LIVE.states[os.conductor_state];
+    if (ORB_CONDUCTOR_RULES[os.conductor_state] == ORB_RULE_BROWNIAN) {
+        os.conductor_drag_u =
+            (float)(conductor_xorshift_(os.conductor_rng) & 0xFFFFu) / 65535.0f;
+    }
     float d = st.duration_beats;
     if (st.jitter_beats > 0.0f) {
         const uint32_t u = conductor_xorshift_(os.conductor_rng);
@@ -608,37 +628,21 @@ inline float conductor_reign_(OrbsState& os) {
     return (d < 1.0f) ? 1.0f : d;
 }
 
-// The draw (THE CEREMONY, forked at ORRERY_3). The pool is brownian:
-// medium and intense alternate, and only the pool or the wheel may
-// freeze — rarely, 1-in-`frost_one_in`. THE FROST FORKS: 1-in-
-// `flock_one_in` it opens the flock, otherwise it releases back to the
-// pool. The flock alone opens the wheel (orbital, one coin between
-// medium and intense); the wheel returns to the pool, or freezes again
-// at the same rare rate. So the sky is brownian or frozen most of the
-// time (Jean's law), and a flock-then-wheel excursion is earned twice
-// over — a mean 464 beats, 4.6 min at the 100 BPM rest tempo (8 / 3).
+// THE CEREMONY (ORRERY_5). One coin and one chain. BROWNIAN and ORBITAL
+// both end at the coin: 75% brownian (a fresh drag), `frost_percent`
+// FROZEN — which opens the fixed chain flocking → orbital. So the wheel
+// can follow itself, one time in four at the seed, and that is Jean's
+// own clause: "either BROWNIAN or FROZEN (which begins the wheel)".
 inline uint32_t conductor_next_(OrbsState& os) {
-    const uint32_t cur_rule = ORB_CONDUCTOR_RULES[os.conductor_state];
-    if (cur_rule == ORB_RULE_FROZEN) {
-        const uint32_t n = (ORB_CONDUCTOR_LIVE.flock_one_in < 1u)
-            ? 1u : ORB_CONDUCTOR_LIVE.flock_one_in;
-        if ((conductor_xorshift_(os.conductor_rng) % n) == 0u)
-            return ORB_CS_FLOCK;
-        return (conductor_xorshift_(os.conductor_rng) & 1u)
-            ? ORB_CS_BRN_INT : ORB_CS_BRN_MED;
+    switch (os.conductor_state) {
+        case ORB_CS_FROZEN: return ORB_CS_FLOCK;
+        case ORB_CS_FLOCK:  return ORB_CS_ORBITAL;
+        default: break;   // ORB_CS_BROWNIAN and ORB_CS_ORBITAL — the coin
     }
-    if (cur_rule == ORB_RULE_FLOCKING)
-        return (conductor_xorshift_(os.conductor_rng) & 1u)
-            ? ORB_CS_ORB_INT : ORB_CS_ORB_MED;
-    if ((conductor_xorshift_(os.conductor_rng) %
-         (ORB_CONDUCTOR_LIVE.frost_one_in < 1u ? 1u
-            : ORB_CONDUCTOR_LIVE.frost_one_in)) == 0u)
-        return ORB_CS_FROZEN;
-    if (cur_rule == ORB_RULE_ORBITAL)
-        return (conductor_xorshift_(os.conductor_rng) & 1u)
-            ? ORB_CS_BRN_INT : ORB_CS_BRN_MED;
-    return (os.conductor_state == ORB_CS_BRN_MED)
-        ? ORB_CS_BRN_INT : ORB_CS_BRN_MED;
+    const uint32_t p = (ORB_CONDUCTOR_LIVE.frost_percent > 100u)
+        ? 100u : ORB_CONDUCTOR_LIVE.frost_percent;
+    return ((conductor_xorshift_(os.conductor_rng) % 100u) < p)
+        ? ORB_CS_FROZEN : ORB_CS_BROWNIAN;
 }
 
 inline void tick_orb_conductor(OrbsState& os, OrbsDeps* c, wgpu::Queue& queue) {
@@ -647,7 +651,7 @@ inline void tick_orb_conductor(OrbsState& os, OrbsDeps* c, wgpu::Queue& queue) {
     if (os.conductor_next_beats == 0.0f) {   // arm — first conducted frame
         os.conductor_rng = c->world_state_.active_seed ^ 0x0BB17A11u;
         if (os.conductor_rng == 0u) os.conductor_rng = 0x9E3779B9u;
-        os.conductor_next_beats = beats + conductor_reign_(os);
+        os.conductor_next_beats = beats + conductor_enter_(os);
         conductor_apply_(os, c, queue);
         return;
     }
@@ -661,11 +665,16 @@ inline void tick_orb_conductor(OrbsState& os, OrbsDeps* c, wgpu::Queue& queue) {
     }
     if (beats >= os.conductor_next_beats) {
         os.conductor_state = conductor_next_(os);
-        os.conductor_next_beats = beats + conductor_reign_(os);
+        os.conductor_next_beats = beats + conductor_enter_(os);
         conductor_apply_(os, c, queue);
         std::cout << "[Orbs] Conductor: "
-                  << ORB_CONDUCTOR_NAMES[os.conductor_state]
-                  << " until beat " << os.conductor_next_beats << "\n";
+                  << ORB_CONDUCTOR_NAMES[os.conductor_state];
+        if (ORB_CONDUCTOR_RULES[os.conductor_state] == ORB_RULE_BROWNIAN) {
+            const auto& b = ORB_CONDUCTOR_LIVE.states[os.conductor_state];
+            std::cout << " drag=" << (b.drag_min
+                + os.conductor_drag_u * (b.drag_max - b.drag_min));
+        }
+        std::cout << " until beat " << os.conductor_next_beats << "\n";
     }
 }
 
