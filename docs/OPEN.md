@@ -3366,7 +3366,7 @@ means two more floats on GPUDesignConfig and two rows in
 organ_params.inc — worth doing when Jean wants to taste the framing live,
 not before. · STATURE_0 · a visual complaint about where shots land.
 
-## ORRERY_0 — THE SKY GAINS A CONDUCTOR (A+B landed; ORRERY_1/A+B and ORRERY_2 landed; visual gate held by Jean)
+## ORRERY_0 — THE SKY GAINS A CONDUCTOR (A+B landed; ORRERY_1/A+B, ORRERY_2 and ORRERY_3 landed; visual gate held by Jean)
 
 Six authored states over four rules change the orb sky on the beat grid —
 16 beats each, flocking 32 — drawn by xorshift on the world seed. FROZEN
@@ -3425,6 +3425,22 @@ that authored this section. · ORRERY_0 R2 ·
   mid-reign, with no transition to wait for. Jean tunes from `?organ=1`, and
   export/import carries his numbers by the stable `CONDUCTOR.states[i].field`
   ids.
+- **ORRERY_3 — THE FROST FORKS, and that is the fix for a too-frequent flock.**
+  The ceremony had one divergence from Jean's spec: frozen ALWAYS opened the
+  flock, so the flock was earned by the frost alone. His law is that frozen
+  forks — "after frozen we may have either brownians or flocking" — so the
+  frozen branch now draws 1-in-`flock_one_in` (a new console dial, seeded 3)
+  for the flock and otherwise releases back to the pool on a coin. Rarity
+  COMPOUNDS along the chain: the flock sits behind two gates and the wheel
+  behind three, because the wheel can only follow the flock.
+  MEASURED on the landed graph with Jean's `ca07c0f` durations, frost 8 /
+  flock 3, over 1.2M transitions: brownian-or-frozen holds **89.6%** of the
+  time (his "most of the time"), and the mean gap between flock entries is
+  **278 s — 4.6 minutes** at the 100 BPM rest tempo, not the ~4 the order
+  estimated. Occupancy by time: brownian 79.3%, frozen 10.3%, flocking 6.9%,
+  orbital 3.5%. An eye that finds the wheel too rare turns `flock 1-in-N`
+  down; one that finds the pool too still turns `frost 1-in-N` down. Both are
+  dials now.
 - **ORRERY_2 needed one thing its order did not name: a READERS row.**
   `tools/organ_readers.py` reds on an UNMAPPED FAMILY, and a new block is one
   until its family is listed there. CONDUCTOR is now listed with both handle

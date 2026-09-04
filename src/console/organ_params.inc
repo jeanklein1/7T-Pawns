@@ -113,6 +113,7 @@ ORGAN_PARAM_DEFONLY(F32,  0.02f,  4.0f,     0.02f,   "Sky & Light · Motion — 
 // clause waiting for Jean's hand.
 ORGAN_PARAM(CONDUCTOR, OrbConductorConsole, enabled,      BOOL, 0.0f, 1.0f,  1.0f, "Conductor", "enabled")
 ORGAN_PARAM(CONDUCTOR, OrbConductorConsole, frost_one_in, U32,  1.0f, 64.0f, 1.0f, "Conductor", "frost 1-in-N")
+ORGAN_PARAM(CONDUCTOR, OrbConductorConsole, flock_one_in, U32,  1.0f, 64.0f, 1.0f, "Conductor", "flock 1-in-N")
 
 ORGAN_PARAM(CONDUCTOR, OrbConductorConsole, states[0].gesture,         U32,  0.0f,   7.0f,     1.0f,   "Conductor · brownian-medium", "gesture")
 ORGAN_PARAM(CONDUCTOR, OrbConductorConsole, states[0].drag,            F32,  0.0f,   4.0f,     0.05f,  "Conductor · brownian-medium", "brn drag x")

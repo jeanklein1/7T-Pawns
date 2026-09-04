@@ -15,8 +15,13 @@
 //
 // THE CEREMONY (ORRERY_1) is structural, not dialed: the pool breathes
 // brownian; only the pool or the wheel may freeze (1-in-`frost_one_in`);
-// the frost always releases into the flock; the flock alone opens the
-// wheel; the wheel returns to the pool. Rules are identity, not knobs.
+// the frost FORKS — 1-in-`flock_one_in` it opens the flock, otherwise it
+// releases back to the pool (ORRERY_3); the flock alone opens the wheel;
+// the wheel returns to the pool. Rules are identity, not knobs.
+//
+// RARITY COMPOUNDS along that chain: the flock sits behind two gates and
+// the wheel behind three, which is why the wheel can be slow and still
+// read as an event.
 //
 // SEEDS: Jean's spec, plus his later word — drag 0.0 in every row
 // ("keeping the drag zero"); noise and speed_mult at the old ceilings
@@ -43,6 +48,7 @@ struct OrbConductorState {
 struct OrbConductorConsole {
     uint32_t enabled;         // the conductor's own switch
     uint32_t frost_one_in;    // frozen enters 1-in-N from pool/wheel
+    uint32_t flock_one_in;    // frozen opens the flock 1-in-N; else back to the pool
     OrbConductorState states[6];
 };
 
@@ -70,6 +76,7 @@ inline constexpr float ORB_CONDUCTOR_RULE_DRAG_NEUTRAL = 1.0f;
 inline constexpr OrbConductorConsole ORB_CONDUCTOR = {
     1u,   // enabled
     8u,   // frost_one_in
+    3u,   // flock_one_in — the flock is earned by a second roll (ORRERY_3)
     { //  gest  drag   orbSpd  noise  spdMul  dur    jitter
         { 0u,  0.8f,  0.0010f,   3.0f,  4.0f,   16.0f, 0.0f },  // brownian-medium
         { 0u,  0.2f,  0.0010f,   3.0f,  4.0f,   16.0f, 0.0f },  // brownian-intense
@@ -87,7 +94,7 @@ static_assert(sizeof(OrbConductorState) == 7u * 4u,
     "the row-watch memcmp assumes a packed 28-byte row: a field added "
     "here is added to the cache compare by construction, padding is not");
 static_assert(sizeof(OrbConductorConsole) ==
-    2u * 4u + ORB_CS_COUNT * sizeof(OrbConductorState),
+    3u * 4u + ORB_CS_COUNT * sizeof(OrbConductorState),
     "ORB_CONDUCTOR_LIVE is a whole-struct copy of the design: a field "
     "added to one is added to the other by construction");
 

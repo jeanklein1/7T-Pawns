@@ -608,17 +608,25 @@ inline float conductor_reign_(OrbsState& os) {
     return (d < 1.0f) ? 1.0f : d;
 }
 
-// The draw (ORRERY_1/A — THE CEREMONY). The pool is brownian: medium
-// and intense alternate, and only the pool or the wheel may freeze —
-// rarely, 1-in-`frost_one_in`. The frost always releases into the flock;
-// the flock
-// alone opens the wheel (orbital, one coin between medium and intense);
-// the wheel returns to the pool. Flocking and orbital are earned
-// through the frozen gate, not drawn — roughly once per couple of
-// minutes at the rest tempo.
+// The draw (THE CEREMONY, forked at ORRERY_3). The pool is brownian:
+// medium and intense alternate, and only the pool or the wheel may
+// freeze — rarely, 1-in-`frost_one_in`. THE FROST FORKS: 1-in-
+// `flock_one_in` it opens the flock, otherwise it releases back to the
+// pool. The flock alone opens the wheel (orbital, one coin between
+// medium and intense); the wheel returns to the pool, or freezes again
+// at the same rare rate. So the sky is brownian or frozen most of the
+// time (Jean's law), and a flock-then-wheel excursion is earned twice
+// over — a mean 464 beats, 4.6 min at the 100 BPM rest tempo (8 / 3).
 inline uint32_t conductor_next_(OrbsState& os) {
     const uint32_t cur_rule = ORB_CONDUCTOR_RULES[os.conductor_state];
-    if (cur_rule == ORB_RULE_FROZEN)   return ORB_CS_FLOCK;
+    if (cur_rule == ORB_RULE_FROZEN) {
+        const uint32_t n = (ORB_CONDUCTOR_LIVE.flock_one_in < 1u)
+            ? 1u : ORB_CONDUCTOR_LIVE.flock_one_in;
+        if ((conductor_xorshift_(os.conductor_rng) % n) == 0u)
+            return ORB_CS_FLOCK;
+        return (conductor_xorshift_(os.conductor_rng) & 1u)
+            ? ORB_CS_BRN_INT : ORB_CS_BRN_MED;
+    }
     if (cur_rule == ORB_RULE_FLOCKING)
         return (conductor_xorshift_(os.conductor_rng) & 1u)
             ? ORB_CS_ORB_INT : ORB_CS_ORB_MED;

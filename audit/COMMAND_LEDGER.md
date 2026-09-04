@@ -17,7 +17,7 @@ Last commit touching any scanned file: `0ddfa7f735a6abde3dfbedadd74f6354c44a3f96
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:335d9c5a1d7c34aff37f3010abe8b88aa04290c8db487b70828c9c83e8588719` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
 | `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:91902a4fab8247a9bf99585147981d852768e81849417b782d7438408687c796` |
-| `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:20de9d34496aea09dc12646d2578f2149b08f194e73e6c528ff72318ade7c678` |
+| `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:5ca4ca1cc54417cf42b66924e8a36115610de9d5532243332557bd1ab0d2575c` |
 | `src/the_board.cpp` | `sha256:12a89ca138da2724f66ae4fd646e2a773caaa169cba3998a9323f14c37baad2b` |
 | `src/console/console.hpp` | `sha256:8aec4ad7cdfdf4b8bb3115cb4ff1dca7b7457fdd124a450b9d737c9398915cd6` |
 | `tools/command_census.py` | `sha256:09a61baed23a5caeedb44ee293461875f2e759832353f887187be35a7ae8d7cb` |
@@ -48,10 +48,10 @@ in `console.hpp`.
 | 12 | Pawn Aura | compute | `dispatch_pawn_aura` | `src/cartridges/the_board/bodies/pawn.hpp:168` | — | — | — |
 | 13 | Photographer VP Compute | compute | `render_snapshot_pass` | `src/cartridges/the_board/bodies/gallery.hpp:2351` | — | — | — |
 | 14 | Photographer Snapshot | render | `render_snapshot_pass` | `src/cartridges/the_board/bodies/gallery.hpp:2416` | Clear/Store or Discard → `c->gpuState_.offscreen_color_view() or c->gpuState_.offscreen_msaa_color_view()` resolve → `c->gpuState_.offscreen_color_view()` | Clear/Discard, readOnly (absent) → `c->gpuState_.offscreen_depth_view()` | (no stencil aspect) |
-| 15 | Orb Init | compute | `dispatch_orb_init` | `src/cartridges/the_board/bodies/orbs.hpp:893` | — | — | — |
-| 16 | Orb Recolor | compute | `dispatch_orb_recolor` | `src/cartridges/the_board/bodies/orbs.hpp:914` | — | — | — |
-| 17 | Orb Copy Prev | compute | `dispatch_orb_copy_prev` | `src/cartridges/the_board/bodies/orbs.hpp:929` | — | — | — |
-| 18 | Orb Dynamics | compute | `dispatch_orb_dynamics` | `src/cartridges/the_board/bodies/orbs.hpp:952` | — | — | — |
+| 15 | Orb Init | compute | `dispatch_orb_init` | `src/cartridges/the_board/bodies/orbs.hpp:901` | — | — | — |
+| 16 | Orb Recolor | compute | `dispatch_orb_recolor` | `src/cartridges/the_board/bodies/orbs.hpp:922` | — | — | — |
+| 17 | Orb Copy Prev | compute | `dispatch_orb_copy_prev` | `src/cartridges/the_board/bodies/orbs.hpp:937` | — | — | — |
+| 18 | Orb Dynamics | compute | `dispatch_orb_dynamics` | `src/cartridges/the_board/bodies/orbs.hpp:960` | — | — | — |
 
 18 passes: 4 render, 14 compute.
 
