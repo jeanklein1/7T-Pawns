@@ -566,56 +566,40 @@ inline void conductor_apply_(OrbsState& os, OrbsDeps* c, wgpu::Queue& queue) {
         c->gpuState_.upload_orb_flock_signs(queue,
             g.sep_sign, g.align_sign, g.coh_sign);
     }
-    // The claim: neutral per-rule multipliers and pinned energy.
-    // FROZEN reads none of these, which is that rule's defining
-    // property and not an omission.
-    //
-    // ORRERY_0 RECON R2 — the neutral multiplier is 1.0, not 0.0. The
-    // zero sentinel is configure_orbs' CPU convention (passthrough()
-    // maps 0 to 1.0 before upload); this seam writes the buffer raw,
-    // and the kernel multiplies without a sentinel branch, so a 0.0
-    // here would read as "no drag at all" in every rule rather than
-    // "no per-rule opinion". See ORB_CONDUCTOR_RULE_DRAG_NEUTRAL.
-    //
-    // THE STATE'S ABSOLUTE DRAG IS NOT SPOKEN, and that is deliberate.
-    // upload_orb_drag exists (state.hpp, minted here) but writes
-    // GPUOrbConfig::drag, which ONLY orb_init reads — orb_dynamics
-    // reads the per-orb orb.drag that orb_init baked. So the write is
-    // inert for a live sky, and WORSE THAN INERT on a reseed frame:
-    // configure_orbs arms init_pending, this tick runs before
-    // dispatch_orb_init in phase_orb_sky, and orb_init would then bake
-    // the conductor's drag — 0.0 in five of the six states — into
-    // every orb for the life of that world, leaving the sky
-    // permanently undamped. Speaking it needs a reseed-aware design
-    // (or a route through rule_drag_*), which is Jean's ruling, not
-    // this pass's. Until then the mood's authored drag stands and the
-    // two brownian states differ only in the table. See docs/OPEN.md.
+    // THE DRAG ROUTE (ORRERY_1/A). Base drag is init-baked per orb and
+    // unreachable live — so the conductor speaks drag through the LIVE
+    // brownian rule multiplier instead: st.drag × the baked 0.4 gives
+    // 0.6 (medium, 1.5) or 0.0 (intense, undamped). This seam bypasses
+    // configure_orbs' sanitizer, so 0.0 lands raw — wanted here. The
+    // other three slots stay neutral; their rules' character is the
+    // mood's.
     c->gpuState_.upload_orb_rule_drags(queue,
-        ORB_CONDUCTOR_RULE_DRAG_NEUTRAL, ORB_CONDUCTOR_RULE_DRAG_NEUTRAL,
+        st.drag, ORB_CONDUCTOR_RULE_DRAG_NEUTRAL,
         ORB_CONDUCTOR_RULE_DRAG_NEUTRAL, ORB_CONDUCTOR_RULE_DRAG_NEUTRAL);
     c->gpuState_.upload_orb_noise(queue, ORB_CONDUCTOR_NOISE);
     c->gpuState_.upload_orb_speed_mult(queue, ORB_CONDUCTOR_SPEED_MULT);
 }
 
-// The draw. Frozen's exit is forced; frozen's entry is rare (1-in-8)
-// and gated to brownian/orbital predecessors; everything else is
-// uniform among the non-self, non-frozen four.
+// The draw (ORRERY_1/A — THE CEREMONY). The pool is brownian: medium
+// and intense alternate, and only the pool or the wheel may freeze —
+// rarely, 1-in-8. The frost always releases into the flock; the flock
+// alone opens the wheel (orbital, one coin between medium and intense);
+// the wheel returns to the pool. Flocking and orbital are earned
+// through the frozen gate, not drawn — roughly once per couple of
+// minutes at the rest tempo.
 inline uint32_t conductor_next_(OrbsState& os) {
-    const auto& cur = ORB_CONDUCTOR_STATES[os.conductor_state];
-    if (cur.rule == ORB_RULE_FROZEN) return ORB_CS_ORB_INT;
-    const bool frozen_ok =
-        (cur.rule == ORB_RULE_BROWNIAN || cur.rule == ORB_RULE_ORBITAL);
-    if (frozen_ok &&
-        (conductor_xorshift_(os.conductor_rng) & ORB_CONDUCTOR_FROZEN_MASK) == 0u) {
+    const uint32_t cur_rule = ORB_CONDUCTOR_STATES[os.conductor_state].rule;
+    if (cur_rule == ORB_RULE_FROZEN)   return ORB_CS_FLOCK;
+    if (cur_rule == ORB_RULE_FLOCKING)
+        return (conductor_xorshift_(os.conductor_rng) & 1u)
+            ? ORB_CS_ORB_INT : ORB_CS_ORB_MED;
+    if ((conductor_xorshift_(os.conductor_rng) & ORB_CONDUCTOR_FROZEN_MASK) == 0u)
         return ORB_CS_FROZEN;
-    }
-    uint32_t pick = conductor_xorshift_(os.conductor_rng) & 3u;  // 0..3
-    for (uint32_t i = 0u; i < ORB_CS_COUNT; i++) {
-        if (i == os.conductor_state || i == ORB_CS_FROZEN) continue;
-        if (pick == 0u) return i;
-        pick--;
-    }
-    return ORB_CS_FLOCK;  // unreachable; the loop always yields
+    if (cur_rule == ORB_RULE_ORBITAL)
+        return (conductor_xorshift_(os.conductor_rng) & 1u)
+            ? ORB_CS_BRN_INT : ORB_CS_BRN_MED;
+    return (os.conductor_state == ORB_CS_BRN_MED)
+        ? ORB_CS_BRN_INT : ORB_CS_BRN_MED;
 }
 
 inline void tick_orb_conductor(OrbsState& os, OrbsDeps* c, wgpu::Queue& queue) {

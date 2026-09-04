@@ -3366,7 +3366,7 @@ means two more floats on GPUDesignConfig and two rows in
 organ_params.inc — worth doing when Jean wants to taste the framing live,
 not before. · STATURE_0 · a visual complaint about where shots land.
 
-## ORRERY_0 — THE SKY GAINS A CONDUCTOR (A landed; B landed; visual gate held by Jean)
+## ORRERY_0 — THE SKY GAINS A CONDUCTOR (A landed; B landed; ORRERY_1/A landed; visual gate held by Jean)
 
 Six authored states over four rules change the orb sky on the beat grid —
 16 beats each, flocking 32 — drawn by xorshift on the world seed. FROZEN
@@ -3396,23 +3396,18 @@ that authored this section. · ORRERY_0 R2 ·
   the rest floor) and speed_mult 3.33 -> 4.0 the moment the conductor arms.
   (b) `finite_outdoor` is `motion_rule 0u` (BROWNIAN) today, not flocking, so
   arming switches its rule at once. Only sunset and night boot flocking.
-- **The absolute-drag seam is not merely inert, it is destructive, so the
-  conductor does not speak it.** `orb.drag` is baked per orb by `orb_init`
-  and read from the state buffer by `orb_dynamics`; `GPUOrbConfig::drag` is
-  read by `orb_init` ALONE. So `upload_orb_drag` cannot reach a live orb —
-  and on a reseed frame it does something worse than nothing: `configure_orbs`
-  arms `init_pending`, `tick_orb_conductor` runs before `dispatch_orb_init`
-  inside `phase_orb_sky`, and `orb_init` would bake the conductor's drag —
-  0.0 in five of the six states — into every orb for the life of that world,
-  leaving the sky permanently undamped. Every mood change into an orb-bearing
-  mood takes that path. The seam is minted in state.hpp as the order
-  specifies, but `conductor_apply_` does NOT call it; the mood's authored
-  drag stands, and the two brownian states differ only in the table.
-  Unblocked by Jean ruling whether the conductor's drag should ride
-  `rule_drag_*` (the live seam, a multiplier on the mood's baked drag),
-  whether the apply should move after `dispatch_orb_init`, or whether the
-  two brownian states should differ by something already live.
-  Priced, not taken.
+- **RESOLVED at ORRERY_1/A — the drag rides `rule_drag_*`, and the dead seam
+  is deleted.** The finding stood: `orb.drag` is baked per orb by `orb_init`
+  and read from the state buffer by `orb_dynamics`, `GPUOrbConfig::drag` is
+  read by `orb_init` ALONE, and speaking it on a reseed frame would have
+  baked the conductor's drag into every orb for the life of that world.
+  Jean took the first of the three priced routes: the table's `drag` column
+  is now the BROWNIAN MULTIPLIER on the baked per-orb drag (0.4 at all three
+  open moods), written to the live `rule_drag_brownian` slot — 1.5 gives 0.6
+  effective, the legible medium; 0.0 lands raw through the seam, which
+  bypasses `configure_orbs`' sanitizer, and is the undamped intense. The two
+  brownian states now differ on screen. `upload_orb_drag` is deleted (YAGNI),
+  and the other three multiplier slots stay at 1.0 — written, unread, neutral.
 - **The conductor desyncs two panel dials, by design, and no gate can see it.**
   `speed_mult` and `noise_floor` are enrolled ORBS console rows, and the
   conductor overwrites both on every fire while it reigns — Jean's "pin them",

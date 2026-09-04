@@ -4003,16 +4003,15 @@ namespace t7 {
                     offsetof(GPUOrbConfig, speed_mult),
                     &mult, sizeof(float));
             }
-            // Conductor seams (ORRERY_0) — absolute drag, orbital
-            // angular speed, and the four per-rule drag multipliers
-            // (contiguous; the pass-through value is 1.0, NOT 0.0 —
-            // these seams bypass configure_orbs' passthrough() lambda
-            // and speak to the kernel raw, where rule_drag is applied
-            // as a bare multiplier with no sentinel branch).
-            void upload_orb_drag(wgpu::Queue& queue, float drag) {
-                queue.WriteBuffer(orbConfigBuffer_,
-                    offsetof(GPUOrbConfig, drag), &drag, sizeof(float));
-            }
+            // Conductor seams (ORRERY_0) — orbital angular speed, and
+            // the four per-rule drag multipliers (contiguous). These
+            // seams bypass configure_orbs' passthrough() lambda and
+            // speak to the kernel raw, where rule_drag is applied as a
+            // bare multiplier with no sentinel branch: 1.0 is neutral
+            // and 0.0 is UNDAMPED, not pass-through. ORRERY_1 uses both
+            // — 1.0 in the three slots the reigning rule does not read,
+            // and the conductor's own multiplier in the brownian slot,
+            // where 0.0 is the intense voice and is meant.
             void upload_orb_orbital_speed(wgpu::Queue& queue, float radps) {
                 queue.WriteBuffer(orbConfigBuffer_,
                     offsetof(GPUOrbConfig, orbital_base_speed),
