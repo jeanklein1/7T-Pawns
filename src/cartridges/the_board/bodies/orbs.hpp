@@ -266,6 +266,9 @@ struct OrbsState {
     uint32_t count = 0;
     bool     init_pending = false;
     bool     recolor_pending = false;
+    // ORRERY_1/B — THE SKY SEEDS ONCE. The planet keeps its stars:
+    // mood doors change the ground and the hour, never the field.
+    bool     sky_seeded = false;
     uint32_t current_palette_id = ORB_PAL_JWST_DEEP;
 
     // ── Motion rule + flocking gesture ───────────────────────────
@@ -303,8 +306,10 @@ struct OrbsState {
 
 // Lifecycle
 // ORGAN_5 P1b — CONFIGURE LEARNS RESTRAINT. `reseed` says whether this
-// re-speak must also re-run the init kernel. A mood change does (a new
-// world's sky is a new sky); a panel edit that touched only per-frame
+// re-speak MAY re-run the init kernel — and since ORRERY_1/B it does so
+// at most once per session: the sky seeds once, the planet keeps its
+// stars, and a mood door changes the ground and the hour but never the
+// field (Jean's law). A panel edit that touched only per-frame
 // GPU reads does not, and re-seeding for one would suppress the very
 // motion texture the drag is meant to show.
 // NO DEFAULT, deliberately: there are exactly two callers and each has a
@@ -729,7 +734,16 @@ inline void configure_orbs(OrbsState& os, OrbsDeps* c, const OrbMoodConfig& cfg,
     // re-authors both before any kernel reads them. With the dome
     // inactive the dispatch early-returns and nothing reads the uniform
     // at all. Every mood change has always taken this same path.
-    if (reseed) os.init_pending = true;
+    // ORRERY_1/B — the init kernel runs at most ONCE per session. A
+    // disabled mood cannot burn the one shot: configure_orbs returns at
+    // `if (!os.active || os.count == 0) return;` long before this line,
+    // so an indoor passage never reaches it. teardown_orbs drops only
+    // flags and frees no GPU buffer, so the field survives the passage
+    // and is still there when an open mood returns.
+    if (reseed && !os.sky_seeded) {
+        os.init_pending = true;
+        os.sky_seeded = true;
+    }
 
     log_configure_(os, cfg, eff_drag, eff_orbital_speed, os.current_palette_id);
 }

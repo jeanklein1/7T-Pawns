@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `e6393a12fe5330aee23a805ddfba9b0794fb21d6` |
-| | ORRERY_0 — the boot-state comment stops claiming a sky two of three moods do not have |
+| source commit | `9ff7b13b720f95cc2f49272ce54eb4ed22cfb56e` |
+| | ORRERY_1/A — the ceremony: the pool breathes brownian, the frost releases into flock, the flock alone opens the wheel, and the pair finally differs on screen |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:f53930f2280189dbb33980eee969319663e34f1159fb602b93d422ec9e8d93c0` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:ab48016e61c44b54c80010f28615ee7ae72e3d5a5974c1cb89f930916f592e39` |
@@ -24,10 +24,10 @@ carry those facts, or leave them in place and patch around them.
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:fc3137898e0dc6f0f2edd938cd40681cfc4fe8c272fb9fc4920f71b34643f48e` |
 | `tools/binding_ledger.py` | `sha256:6d9fc58da755a8416bbcfe8efe5360f97ec11fb4a81a9d60ee41f80a2316f790` |
 | `tools/mirror_census.py` | `sha256:6991163f42dc06a0b633fe41606514b33ed616a70ec244eff6640992518cef2a` |
-| `audit/BINDING_LEDGER.md` | `sha256:036bbb7b10a62b8975e5aa36710be68970cb0a4f8820aa839817b9f9eb023b1a` |
+| `audit/BINDING_LEDGER.md` | `sha256:9480ee68eaebfc8d1814d9cd998ee4c2403d9e10b08ca2cc5dcc1e03d7c13755` |
 | `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:91902a4fab8247a9bf99585147981d852768e81849417b782d7438408687c796` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:335d9c5a1d7c34aff37f3010abe8b88aa04290c8db487b70828c9c83e8588719` |
-| `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:338860df1cea1988ca6c9df447b89f249abd273a7684dddc5c536496c9be9f23` |
+| `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:e60f4a6d7d5ddd96513719900c78cd89c75fd05c24429a23429474c0f4d91089` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
 | `src/cartridges/the_board/cartridge.hpp` | `sha256:69b207925ebbb772a89cf06e2b9b329ce710e250737dae3e64631b3bd2a191df` |
 | `src/cartridges/the_board/realization/render_passes.hpp` | `sha256:e4d6b62cb1d1936d57322d2c4ef4372bbc27dd1404a29117d9431938e9c84149` |
@@ -1073,14 +1073,14 @@ wrapper, 18 wrapper calls) and are not recounted here.
 | `gol_zones.hpp:995` | `dispatch_zone_sync` | 1 | `frameCGroup_` | — |
 | `gol_zones.hpp:1007` | `dispatch_zone_evolve` | 0 | `worldGroup_` | — |
 | `gol_zones.hpp:1008` | `dispatch_zone_evolve` | 1 | `frameCGroup_` | — |
-| `orbs.hpp:853` | `dispatch_orb_init` | 0 | `worldGroup_` | — |
-| `orbs.hpp:854` | `dispatch_orb_init` | 1 | `frameCGroup_` | — |
-| `orbs.hpp:874` | `dispatch_orb_recolor` | 0 | `worldGroup_` | — |
-| `orbs.hpp:875` | `dispatch_orb_recolor` | 1 | `frameCGroup_` | — |
-| `orbs.hpp:889` | `dispatch_orb_copy_prev` | 0 | `worldGroup_` | — |
-| `orbs.hpp:890` | `dispatch_orb_copy_prev` | 1 | `frameCGroup_` | — |
-| `orbs.hpp:912` | `dispatch_orb_dynamics` | 0 | `worldGroup_` | — |
-| `orbs.hpp:913` | `dispatch_orb_dynamics` | 1 | `frameCGroup_` | — |
+| `orbs.hpp:867` | `dispatch_orb_init` | 0 | `worldGroup_` | — |
+| `orbs.hpp:868` | `dispatch_orb_init` | 1 | `frameCGroup_` | — |
+| `orbs.hpp:888` | `dispatch_orb_recolor` | 0 | `worldGroup_` | — |
+| `orbs.hpp:889` | `dispatch_orb_recolor` | 1 | `frameCGroup_` | — |
+| `orbs.hpp:903` | `dispatch_orb_copy_prev` | 0 | `worldGroup_` | — |
+| `orbs.hpp:904` | `dispatch_orb_copy_prev` | 1 | `frameCGroup_` | — |
+| `orbs.hpp:926` | `dispatch_orb_dynamics` | 0 | `worldGroup_` | — |
+| `orbs.hpp:927` | `dispatch_orb_dynamics` | 1 | `frameCGroup_` | — |
 | `pawn.hpp:170` | `dispatch_pawn_aura` | 0 | `worldGroup_` | — |
 | `pawn.hpp:171` | `dispatch_pawn_aura` | 1 | `frameCGroup_` | — |
 | `render_passes.hpp:153` | `dispatch_placement_correction` | 0 | `worldGroup_` | — |

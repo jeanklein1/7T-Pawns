@@ -147,14 +147,19 @@ struct OrbMoodConfig {
 //   carry no id field, so they move with the ids or not at all.
 //
 //                                              en     n    hueB   hueV   bri    drg   rul  rotS    rotAxis                  orbS  pal  hct    anc    trs           sepR   alnR    cohR    sepW   alnW   cohW   maxS   gst  drgB  drgO  drgF  drgK
+// ORRERY_1/B — one field, three hours: the open-sky counts unify at
+// 256 so a mood door never pops stars in or out of a persistent sky.
+// 256 is also Dim::MAX_ORBS, so the buffer is filled exactly.
 inline constexpr OrbMoodConfig ORB_MOOD_TABLE[MOOD_COUNT] = {
-    /* 0 open_sunset         */ {  true,  128, 0.08f, 0.06f, 0.85f, 0.4f,  3u,  0.012f, {0.3977f, 0.9175f, 0.0f},  0.0f, 0u,  0.08f, 0u,           50.0f, 120.0f, 200.0f, 30.0f, 8.0f,  15.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
+    /* 0 open_sunset         */ {  true,  256, 0.08f, 0.06f, 0.85f, 0.4f,  3u,  0.012f, {0.3977f, 0.9175f, 0.0f},  0.0f, 0u,  0.08f, 0u,           50.0f, 120.0f, 200.0f, 30.0f, 8.0f,  15.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
     /* 1 indoor_flat         */ {  false, 0,   0.08f, 0.05f, 0.80f, 0.5f,  0u,  0.000f, {0.00f, 1.00f, 0.00f},  0.0f, 0u,  0.12f, 0xFFFFFFFFu,  50.0f, 120.0f, 200.0f, 30.0f, 8.0f,  15.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
     /* 2 indoor_vault        */ {  false, 0,   0.08f, 0.05f, 0.80f, 0.5f,  0u,  0.000f, {0.00f, 1.00f, 0.00f},  0.0f, 0u,  0.12f, 0xFFFFFFFFu,  50.0f, 120.0f, 200.0f, 30.0f, 8.0f,  15.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
-    /* 3 finite_outdoor      */ {  true,  128, 0.08f, 0.06f, 0.85f, 0.4f,  0u,  0.012f, {0.3977f, 0.9175f, 0.0f},  0.0f, 0u,  0.12f, 0u,           50.0f, 120.0f, 200.0f, 30.0f, 8.0f,  15.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
-    // ATMOS_1 — the night is the sunset's field, fuller and slower
-    // (256 stars, a slow turn at the tropics' tilt — ORRERY_0/B set
-    // the axis); the noon is the
+    /* 3 finite_outdoor      */ {  true,  256, 0.08f, 0.06f, 0.85f, 0.4f,  0u,  0.012f, {0.3977f, 0.9175f, 0.0f},  0.0f, 0u,  0.12f, 0u,           50.0f, 120.0f, 200.0f, 30.0f, 8.0f,  15.0f, 60.0f, 0u,  0.0f, 0.0f, 0.0f, 0.0f },
+    // ATMOS_1 — the night is the sunset's field, dimmer and slower
+    // (a slow turn at the tropics' tilt — ORRERY_0/B set the axis).
+    // It is no longer FULLER: ORRERY_1/B unified all three open skies
+    // at 256, so the night's old distinction of number is gone and
+    // only its light and its pace remain. The noon is the
     // indoor disabled row verbatim — no stars by day.
     // THE NIGHT'S MOTION ROW, TUNED. Two of the four per-rule drags carry
     // real multipliers now — BROWNIAN 1.22 and ORBITAL 1.64, both ABOVE 1,
