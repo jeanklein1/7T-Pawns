@@ -96,7 +96,7 @@ READERS = {
     "CONDUCTOR": ("ORB_CONDUCTOR_LIVE",
                   ("OrbConductorConsole", "OrbConductorState"), [
         ("src/cartridges/the_board/bodies/orbs.hpp", "conductor_apply_"),
-        ("src/cartridges/the_board/bodies/orbs.hpp", "conductor_reign_"),
+        ("src/cartridges/the_board/bodies/orbs.hpp", "conductor_enter_"),
         ("src/cartridges/the_board/bodies/orbs.hpp", "conductor_next_"),
         ("src/cartridges/the_board/bodies/orbs.hpp", "tick_orb_conductor"),
     ]),
