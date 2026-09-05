@@ -2185,7 +2185,12 @@ const CAMERA_FOV: f32 = 1.0;
 const CAMERA_MIN_DISTANCE: f32 = 5.0;
 const CAMERA_MAX_DISTANCE: f32 = 100.0;
 const CAMERA_MIN_ELEVATION: f32 = -0.5;
-const CAMERA_MAX_ELEVATION: f32 = 1.5;
+const CAMERA_MAX_ELEVATION: f32 = 1.5533;        // Look up 89° — one degree
+                                                 // short of the zenith on
+                                                 // purpose: at π/2 the forward
+                                                 // vector loses its horizontal
+                                                 // component entirely and
+                                                 // azimuth has nothing to steer.
 
 // --- FPV (First-Person View) constants
 
@@ -2194,7 +2199,11 @@ const CAMERA_MAX_ELEVATION: f32 = 1.5;
 // The constant this replaced was PAWN_HEIGHT + 0.2, which is what the
 // ratio still yields, to the bit, on the conventional figure.
 const FPV_MIN_ELEVATION: f32 = -1.4;             // Look down ~80°
-const FPV_MAX_ELEVATION: f32 = 1.5;              // Look up ~86°
+const FPV_MAX_ELEVATION: f32 = 1.5533;           // Look up 89° — the sky is
+                                                 // overhead and the eye should
+                                                 // reach it; see
+                                                 // CAMERA_MAX_ELEVATION for why
+                                                 // this stops short of π/2.
 
 // --- Floating entity constants
 // Per-entity parameters (radius, orbit_radius, orbit_height, orbit_speed,

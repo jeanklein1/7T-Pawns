@@ -398,8 +398,8 @@ inline constexpr float TIDE_SITE_REACH = 60.0f;
 // the eye looking steeply down, forward's horizontal component is nearly zero
 // and its normalized direction no longer says which way the viewer is facing
 // — a gallery dead centre on screen can read as "behind" purely from azimuth.
-// Past this the distance half decides alone. (Camera elevation clamps at 1.5
-// rad, so this band is reachable.)
+// Past this the distance half decides alone. (Camera elevation clamps at
+// 1.5533 rad — 89° — so this band is reachable with room to spare.)
 inline constexpr float TIDE_MAX_PITCH_FOR_CONE = 0.8f;
 // One candidate sweep per this many frames (R4). The sweep is 48 records and
 // costs nothing; the cadence exists so the fetch lane is never asked for a
