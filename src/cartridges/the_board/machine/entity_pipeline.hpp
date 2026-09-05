@@ -117,6 +117,14 @@ inline bool generic_select(MachineCtx* c,
 
     uint32_t tier = select_tier(gate.seed, traits.tier_prop,
         weights, traits.tier_count);
+    // LODESTAR_0 — the designated patch's arch IS the door: tier pinned
+    // DOORWAY; the commit's portal upgrade (portal_density 1.0) does the
+    // rest. Open field only — pinned indoors it would skew a room's arch
+    // mix for a door that opens nowhere.
+    if (traits.family_id == PopFamily::ARCH
+        && !c->world_state_.finite_mode
+        && arch_lodestar_designated(c->world_state_.active_seed, gx, gz))
+        tier = static_cast<uint32_t>(ArchTier::DOORWAY);
     const auto& profile = adapter.get_tier_profile(tier);
 
     // ── Sample all parameters from tier profile ──
