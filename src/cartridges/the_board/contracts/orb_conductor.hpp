@@ -82,11 +82,12 @@ inline constexpr OrbConductorConsole ORB_CONDUCTOR = {
     1u,   // enabled
     25u,  // frost_percent — "75 to 25", his words
     { //  gest  dragLo dragHi  orbSpd   noise  spdMul  dur    jitter
-        { 0u,  0.2f,  0.8f,  0.0010f,  3.0f,  4.0f,   16.0f, 0.0f },  // brownian
+        { 0u,  0.2f,  0.7f,  0.0010f,  3.0f,  4.0f,   16.0f, 0.0f },  // brownian
         { 0u,  0.0f,  0.0f,  0.0010f,  3.0f,  4.0f,   16.0f, 0.0f },  // frozen — reads none of these
-        { 0u,  0.0f,  0.0f,  0.0010f,  3.0f,  4.0f,   32.0f, 0.0f },  // flocking — 4.0 is the dial's ceiling
-        { 1u,  0.0f,  0.0f,  0.15f,    3.0f,  1.0f,   16.0f, 0.0f },  // orbital — parallel wheel; 0.15 rad/s ≈ a quarter turn per 16-beat reign
+        { 3u,  0.0f,  0.0f,  0.0010f,  3.0f,  4.0f,   32.0f, 0.0f },  // flocking — 4.0 is the dial's ceiling
+        { 0u,  0.0f,  0.0f,  0.0010f,    3.0f,  1.2f,   16.0f, 0.0f },  // orbital — parallel wheel; 0.15 rad/s ≈ a quarter turn per 16-beat reign
     },
+};
 };
 
 // THE LIVE SURFACE — the panel's block and the tick's read.
