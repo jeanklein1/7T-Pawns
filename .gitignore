@@ -413,3 +413,11 @@ web/the_board.data
 dist/
 .wrangler/
 out/
+
+# website assets — masters live outside version control. The json beside
+# them (site.json, set.json) stays tracked; the paintings do not.
+assets/about/*.jpg
+assets/about/*.jpeg
+assets/collection/**/*.jpg
+assets/collection/**/*.jpeg
+assets/collection/**/*.png
