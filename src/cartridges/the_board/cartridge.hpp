@@ -606,7 +606,14 @@ namespace t7 {
                                   + " sunpass=" + (bp.sunpass ? "1" : "0")
                                   + " bundles=" + (bp.bundles ? "1" : "0"));
                 }
-                mood_state_.active = DEMO.boot_mood;
+                // USHER_0 — THE BOOT MOOD IS DRAWN, NOT AUTHORED. Same
+                // doctrine as the radius below: the seed decides, under the
+                // destination law the panel already dials (mood_weights) —
+                // one law for every arrival, portal or boot. MOOD_COUNT
+                // bars nothing: a boot has no standing world to exclude.
+                // ?seed= therefore pins the mood with the world it pins.
+                mood_state_.active = pick_portal_mood(world_state_.active_seed, 9001u, MOOD_COUNT);
+                const char* mood_origin = "draw";
                 // B9 — a mood present at boot (?mood= / --mood=) forces the
                 // boot mood at this one authoring site; an out-of-range
                 // index is refused OUT LOUD (P6 — a switch that half-fired
@@ -614,12 +621,20 @@ namespace t7 {
                 if (boot_params().has_mood) {
                     if (boot_params().mood < MOOD_COUNT) {
                         mood_state_.active = boot_params().mood;
+                        mood_origin = "param";
                     } else {
                         std::cout << "[Params] mood=" << boot_params().mood
                                   << " out of range (MOOD_COUNT="
                                   << MOOD_COUNT << ") — ignored\n";
                     }
                 }
+                // THE WITNESS (P6) — the drawn mood is reportable like the
+                // drawn seed above it, on the same two roads: stdout and
+                // the boot card.
+                std::cout << "[World] Boot mood=" << mood_name(mood_state_.active)
+                          << " (" << mood_origin << ")\n";
+                t7::card_fact(std::string("world  mood=") + mood_name(mood_state_.active)
+                              + " (" + mood_origin + ")");
 
 
                 // BOOT IS A TRANSITION FROM NOTHING — IN FACT (ATRIUM_0).

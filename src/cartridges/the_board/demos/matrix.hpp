@@ -1,7 +1,6 @@
 #pragma once
 #include <cstdint>
 #include "cartridges/the_board/contracts/demo_config.hpp"       // DemoConfig, Roster
-#include "cartridges/the_board/contracts/mood_constants.hpp"    // MOOD_OPEN_SUNSET
 
 // ─── matrix.hpp (THE DEMO MATRIX: pieces × demos, cells booleans) ──
 // Jean's ratified grid.
@@ -34,8 +33,8 @@
 // The compile-time boolean FOLD is preserved end to end: column_to_roster
 // yields a constexpr Roster, so ROSTER (demos/demo.hpp) folds every
 // gate site exactly as the hand-written brace-list did.
-// DemoConfig is untouched — seed + boot_mood are authored onto the
-// root organs in the Cartridge ctor.
+// DemoConfig is untouched — the seed is authored onto the root organ
+// in the Cartridge ctor (the boot mood is DRAWN from it — USHER_0).
 //
 // FREE TICKING: the grid encodes NO dependency edges. The roster's one
 // legality edge (transitions ⇒ portal) stays the FIRST EDGE static_assert
@@ -63,8 +62,8 @@ enum : uint32_t {
 }
 
 // ═══ THE COLUMNS (demo names — the valid INCUBATE_DEMO set) ════════
-// Adding a demo = one enum value here + one grid column + one seed +
-// one boot_mood. A bad INCUBATE_DEMO=<name> resolves to DemoCol::<name>
+// Adding a demo = one enum value here + one grid column + one seed.
+// A bad INCUBATE_DEMO=<name> resolves to DemoCol::<name>
 // and fails as an unknown enumerator — a clean compile error.
 enum class DemoCol : uint32_t {
     full,      // the golden twin — every tickable ON
@@ -101,10 +100,6 @@ inline constexpr uint32_t DEMO_SEED[static_cast<uint32_t>(DemoCol::COUNT)] = {
     /* full    */ 42,
     /* minimal */ 42,
 };
-inline constexpr uint32_t DEMO_BOOT_MOOD[static_cast<uint32_t>(DemoCol::COUNT)] = {
-    /* full    */ MOOD_OPEN_SUNSET,
-    /* minimal */ MOOD_OPEN_SUNSET,
-};
 
 // ═══ THE COLUMN READ (a demo column → a constexpr Roster) ══════════
 // Aggregate-inits Roster in field order from the selected column. The
@@ -127,7 +122,6 @@ constexpr DemoConfig demo_config(DemoCol d) {
     return DemoConfig{
         column_to_roster(d),
         DEMO_SEED[static_cast<uint32_t>(d)],
-        DEMO_BOOT_MOOD[static_cast<uint32_t>(d)],
     };
 }
 
@@ -143,22 +137,17 @@ static_assert(Piece::COUNT == 19,
 //     so the retirement is provably lossless — now and forever (the
 //     old full.hpp / minimal.hpp are gone; these asserts are what keep
 //     their sentences honest).
-//     ONE field is deliberately no longer byte-equal: boot_mood. The
-//     old headers booted into open_default, and the mood cut retired
-//     that mood; the two columns then booted into open_sunset, the
-//     surviving open outdoor world. Both columns boot into the atrium
-//     now (ATRIUM_1) — the entrance is the visitor's first room — and
-//     the golden pins the new value.
+//     ONE field left the pin entirely: boot_mood left DemoConfig when
+//     the boot mood became a DRAW under the destination law (USHER_0)
+//     — the seed golden below is now the whole of the pin.
 static_assert(demo_config(DemoCol::full).roster.all_enabled(),
     "GOLDEN: demo=full must equal old full.hpp — all 19 tickable bits ON");
-static_assert(demo_config(DemoCol::full).seed == 42 &&
-              demo_config(DemoCol::full).boot_mood == MOOD_OPEN_SUNSET,
-    "GOLDEN: demo=full seed must equal old full.hpp; boot_mood is the open field (ATTIC_ATRIUM)");
+static_assert(demo_config(DemoCol::full).seed == 42,
+    "GOLDEN: demo=full seed must equal old full.hpp");
 static_assert(demo_config(DemoCol::minimal).roster.none_enabled(),
     "GOLDEN: demo=minimal must equal old minimal.hpp — all 19 tickable bits OFF");
-static_assert(demo_config(DemoCol::minimal).seed == 42 &&
-              demo_config(DemoCol::minimal).boot_mood == MOOD_OPEN_SUNSET,
-    "GOLDEN: demo=minimal seed must equal old minimal.hpp; boot_mood is the open field (ATTIC_ATRIUM)");
+static_assert(demo_config(DemoCol::minimal).seed == 42,
+    "GOLDEN: demo=minimal seed must equal old minimal.hpp");
 
 } // namespace the_board
 } // namespace t7

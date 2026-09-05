@@ -191,7 +191,7 @@ struct WorldState;   // contracts/surface_services.hpp — the request door read
 // authored at the composition root — no include-order cable.
 struct MoodState {
     // ── Currently active mood ──
-    uint32_t active = 0;  // authored at the composition root (Cartridge ctor) from DEMO.boot_mood
+    uint32_t active = 0;  // drawn at the composition root (Cartridge ctor) under the destination law (USHER_0)
 
     // ── Mood-applied values (authored by apply_mood, boot included) ──
     // 0 is deliberate: if apply_mood ever failed to run, the sun goes out and
