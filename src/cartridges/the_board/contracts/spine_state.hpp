@@ -180,6 +180,14 @@ struct InputState {
     // cannot reach one frame; a musician wanting both would call
     // emit_radial_pulse directly, which is what the bus is for.
     bool  pulse_pending = false;
+    // LEAP_0 — THE SAME TAP'S SECOND INTENT. The door that rings the ground
+    // (request_radial_pulse) raises this beside pulse_pending; the signal
+    // fill ships it as FrameSignal.jump_edge and frame_submitted() lowers
+    // it — the dtPending_ idiom, because an edge written on an update the
+    // GPU never consumed would otherwise be overwritten and lost. Which verb
+    // the body performs (leap from the ground, somersault from the air) is
+    // the GPU's word: the CPU does not know where the body is.
+    bool  jump_pending = false;
 };
 
 

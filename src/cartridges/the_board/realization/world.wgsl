@@ -889,7 +889,7 @@ struct FrameSignal {
     mount_phase: f32,          // 48  0→1; 1 = arrived
     mount_kind: u32,           // 52  0 none, 1 boarding, 2 landing
     mount_from_heading: f32,   // 56
-    _mp0: u32,                 // 60
+    jump_edge: u32,            // 60  LEAP_0 — the leap door's edge; read by behavior_player_controlled. Was _mp0.
     mount_from: vec3<f32>,     // 64  the pose the body left
     _mp1: f32,                 // 76
 }

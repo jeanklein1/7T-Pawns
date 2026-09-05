@@ -1096,6 +1096,10 @@ namespace t7 {
                 gpuSignal.mount_from[1]      = mount_.from[1];
                 gpuSignal.mount_from[2]      = mount_.from[2];
                 gpuSignal.mount_from_heading = mount_.from_heading;
+                // LEAP_0 — the leap door's edge rides the pad the mount block
+                // left. It stays raised until frame_submitted() so a dropped
+                // acquire cannot delete it (the dtPending_ idiom above).
+                gpuSignal.jump_edge          = inputState_.jump_pending ? 1u : 0u;
                 if (mount_.kind != 0u) {
                     const float secs = (mount_.kind == 1u) ? RIBBON_LIVE.board_seconds
                                                            : RIBBON_LIVE.land_seconds;
@@ -3361,7 +3365,7 @@ namespace t7 {
             // never deletes it. The host calls this once the frame's command
             // buffer is submitted, which is the only moment the GPU is known
             // to have been given the time this accumulator was holding.
-            void frame_submitted() { dtPending_ = 0.0f; }
+            void frame_submitted() { dtPending_ = 0.0f; inputState_.jump_pending = false; }
 
             void on_input(const InputEvent& event) override {
                 switch (event.type) {

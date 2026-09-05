@@ -585,7 +585,7 @@ namespace t7 {
             float    mount_phase;         // 48  0→1 over the trajectory; 1 = arrived
             uint32_t mount_kind;          // 52  0 none, 1 boarding (→ saddle), 2 landing (→ the walked pose)
             float    mount_from_heading;  // 56
-            uint32_t _mp0;                // 60
+            uint32_t jump_edge;           // 60  LEAP_0 — 1 on a frame the leap door fired (request_radial_pulse); the GPU decides leap or somersault by the body's state. Was _mp0.
             float    mount_from[3];       // 64  the pose the body left, CPU-captured at the host edge
             float    _mp1;                // 76
         };

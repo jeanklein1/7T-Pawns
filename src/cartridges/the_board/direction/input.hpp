@@ -410,6 +410,7 @@ inline void on_touch_tap_right(InputDeps* c, AgentState& agent_state, AgentsDeps
 // after — the drain idiom the analog deltas already use.
 inline void request_radial_pulse(InputDeps* c) {
     c->inputState_.pulse_pending = true;
+    c->inputState_.jump_pending = true;    // LEAP_0 — one word, two verbs: the ring, and the body's leap or somersault
     // REACH_2 — THE PULSE IS ALSO THE RIDE'S WORD, and the routing lives
     // HERE — the player's door, both mouths (SPACE, the lone tap) — so a
     // musical pulse riding the bus (emit_radial_pulse) can never board.
