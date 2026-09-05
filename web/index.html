@@ -408,8 +408,10 @@
       }
     }
     /* ── WEBSITE_1 — THE DOORS OUT ────────────────────────────────
-       Two words, fixed bottom-left, present in every state: the veil,
-       both cards, and the world itself. z-index 30 — above the layers
+       Two words, on every ENTRANCE surface — the veil and both cards —
+       and gone while the world runs: present() hides them, showCard()
+       returns them, and with no script at all the static default keeps
+       them visible. Fixed bottom-left. z-index 30 — above the layers
        (10), below the photo flash (40) and the panel (9999). The nav
        box swallows no input: pointer-events revives on the anchors
        alone, so the world keeps its gestures everywhere else. Bottom-
@@ -876,6 +878,7 @@
     var logEl2  = document.getElementById('log2');
     var music   = document.getElementById('music');
     var cardPoster = document.getElementById('cardPoster');
+    var doors   = document.getElementById('doors');
 
     // TWO flags, not one. `terminal` means a designed END was reached —
     // FALLBACK or LOST — and nothing may override it. `shown` merely
@@ -1026,6 +1029,10 @@
       window.T7_AUBADE.report();
       card.hidden = true;                   // clears a watchdog card, if any
       shown = true;
+      // WEBSITE_3 — the doors leave with the veil: over the running
+      // world nothing of the page remains. Any card brings them back,
+      // and the belt (handoff -> present) rides this same line.
+      if (doors) doors.hidden = true;
       veil.classList.add('lifting');
       setTimeout(function () { if (!terminal) veil.hidden = true; }, 950);
     }
@@ -1063,6 +1070,9 @@
     function showCard(say, sub, offerReload) {
       shown = true;
       veil.hidden = true;
+      // WEBSITE_3 — a card on screen means no world on screen: the
+      // doors return, for fallback, floor, lost and watchdog alike.
+      if (doors) doors.hidden = false;
       // The door is gone with the veil that carried it. Clearing the
       // class as well as the element keeps a hidden node from holding an
       // interactive state it can no longer honour.
