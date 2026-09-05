@@ -2997,6 +2997,11 @@ fn point_camera_hosted() -> bool {
 fn point_ribbon_hosted() -> bool {
     return config.point_host == 2u;
 }
+// REACH_0: the third reader — the reach sensor computes only when the
+// BODY walks (the earning is the climb; free-fly and the ride report 0).
+fn point_pawn_hosted() -> bool {
+    return config.point_host == 0u;
+}
 
 
 // §3 COUPLINGS
@@ -8114,6 +8119,21 @@ fn agent_settle(agent_in: AgentState) -> AgentState {
 // — by convention that is the same slot as config.possessed_slot.
 fn behavior_player_controlled(agent_in: AgentState) -> AgentState {
     var agent = agent_in;
+    // REACH_0 — THE BUBBLE'S SECOND SENSOR: the seat within arm's reach.
+    // One write site, every frame, so the word can never go stale: PAWN
+    // host measures pawn→saddle against config.ribbon_reach; every other
+    // host writes 0 (a frame-old pos is well inside the radius' tolerance).
+    // The harvest carries the word home beside portal_trigger; the CPU
+    // alone composes it with "a ribbon is actually rendered", so a stale
+    // saddle cannot arm the door from here.
+    agent.sensor_bits = 0u;
+    if (point_pawn_hosted()) {
+        let sd_pos = ribbon_body_read.saddle.pos;
+        let dxr = sd_pos - vec3(agent.pos_x, agent.pos_y, agent.pos_z);
+        if (dot(dxr, dxr) < config.ribbon_reach * config.ribbon_reach) {
+            agent.sensor_bits = 1u;
+        }
+    }
 
     // RIBBON host: the pawn rides the saddle the body kernel wrote this pass
     // (ribbon_body_read.saddle — the ring-0 frame the tube is drawn with, so
