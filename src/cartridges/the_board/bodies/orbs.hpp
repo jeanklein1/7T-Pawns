@@ -281,7 +281,7 @@ struct OrbsState {
     bool     gesture_initialized[4] = { false, false, false, false };
 
     // ── Conductor (ORRERY_0, regraphed ORRERY_5) ─────────────────
-    // The conductor's runtime, eight fields: which authored state reigns
+    // The conductor's runtime, six fields: which authored state reigns
     // (BROWNIAN at boot — under the wheel the flock is the reward and
     // must be earned), the row-watch cache, when the next transition
     // fires (beats; 0 = unarmed, arms on the first conducted frame),
@@ -297,11 +297,6 @@ struct OrbsState {
     // ENTRY (conductor_enter_), lerped through on every speak, so the
     // row-watch can move both ends of the range mid-reign.
     float    conductor_drag_u    = 0.0f;
-    // ORRERY_7 — THE HOLD's two edge caches. Both track their dial on
-    // every conducted frame, so neither can fire on a value that went
-    // stale while the other mode reigned.
-    uint32_t conductor_held_seen = 0u;      // ORRERY_7 — held_state edge cache
-    uint32_t conductor_ceremony_seen = 1u;  // ORRERY_7 — enabled edge cache
     uint32_t conductor_rng       = 0u;
     bool     conductor_respeak   = false;
 
@@ -651,45 +646,15 @@ inline uint32_t conductor_next_(OrbsState& os) {
 }
 
 inline void tick_orb_conductor(OrbsState& os, OrbsDeps* c, wgpu::Queue& queue) {
-    if (!os.active || os.count == 0u) return;
+    if (ORB_CONDUCTOR_LIVE.enabled == 0u || !os.active || os.count == 0u) return;
     const float beats = c->time_state_.beats;
-    // THE HOLD (ORRERY_7): `enabled` gates the CEREMONY, never the
-    // SPEAK. The arm, the respeak and the row-watch below run in both
-    // modes, so every conductor dial lands mid-hold — the panel never
-    // goes deaf behind this switch (the KNOB AUTOPSY law).
-    const bool ceremony = ORB_CONDUCTOR_LIVE.enabled != 0u;
     if (os.conductor_next_beats == 0.0f) {   // arm — first conducted frame
         os.conductor_rng = c->world_state_.active_seed ^ 0x0BB17A11u;
         if (os.conductor_rng == 0u) os.conductor_rng = 0x9E3779B9u;
         os.conductor_next_beats = beats + conductor_enter_(os);
-        os.conductor_held_seen = ORB_CONDUCTOR_LIVE.held_state;
-        os.conductor_ceremony_seen = ORB_CONDUCTOR_LIVE.enabled;
         conductor_apply_(os, c, queue);
         return;
     }
-    // THE HOLD's two edges (ORRERY_7). Held-state: EDGE-detected — acts
-    // when the dial CHANGES, never because it differs, so switching the
-    // ceremony off yanks nothing. Ceremony rising edge: a fresh entry of
-    // the standing state, so a stale schedule never fires an instant
-    // transition on resume.
-    if (!ceremony &&
-        ORB_CONDUCTOR_LIVE.held_state != os.conductor_held_seen) {
-        os.conductor_held_seen = ORB_CONDUCTOR_LIVE.held_state;
-        os.conductor_state =
-            std::min(ORB_CONDUCTOR_LIVE.held_state, ORB_CS_COUNT - 1u);
-        os.conductor_next_beats = beats + conductor_enter_(os);
-        conductor_apply_(os, c, queue);
-        std::cout << "[Orbs] Conductor: held -> "
-                  << ORB_CONDUCTOR_NAMES[os.conductor_state] << "\n";
-    }
-    if (ceremony) {
-        if (os.conductor_ceremony_seen == 0u) {   // rising edge — resume
-            os.conductor_next_beats = beats + conductor_enter_(os);
-            conductor_apply_(os, c, queue);
-        }
-        os.conductor_held_seen = ORB_CONDUCTOR_LIVE.held_state;
-    }
-    os.conductor_ceremony_seen = ORB_CONDUCTOR_LIVE.enabled;
     // THE ROW-WATCH (ORRERY_2): a panel edit to the reigning row lands
     // within one frame, mid-reign. respeak folds into the same speak.
     if (os.conductor_respeak ||
@@ -698,7 +663,7 @@ inline void tick_orb_conductor(OrbsState& os, OrbsDeps* c, wgpu::Queue& queue) {
         os.conductor_respeak = false;
         conductor_apply_(os, c, queue);
     }
-    if (ceremony && beats >= os.conductor_next_beats) {
+    if (beats >= os.conductor_next_beats) {
         os.conductor_state = conductor_next_(os);
         os.conductor_next_beats = beats + conductor_enter_(os);
         conductor_apply_(os, c, queue);
