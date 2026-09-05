@@ -236,7 +236,7 @@ void upload_portal_array(MoodDeps* c, wgpu::Queue& queue);
 // Derivers (door + the portal-detection pipeline's shared helpers)
 const char* mood_name(uint32_t mood);
 uint32_t derive_finite_radius(uint32_t seed, const MoodProfile& mood);
-uint32_t pick_portal_mood(uint32_t seed, uint32_t prop);
+uint32_t pick_portal_mood(uint32_t seed, uint32_t prop, uint32_t exclude_mood);
 uint32_t pick_open_mood(uint32_t seed, uint32_t prop);
 
 
@@ -1333,8 +1333,8 @@ inline void force_spawn_back_portal(MoodDeps* c, wgpu::Queue& queue, MachineCtx&
 inline void force_spawn_forward_portals(MoodDeps* c, wgpu::Queue& queue, MachineCtx& machine_ctx) {
     c->mood_state_.forward_portals_pending = false;
     if (!c->world_state_.finite_mode) return;
-    // ATRIUM_2 — the roster is the SHAPE's, not this function's. One
-    // property, two rosters; every other finite world keeps the triad.
+    // One roster: the triad. ATRIUM_2's arc went to the attic with the
+    // entrance (ATTIC_ATRIUM); every finite world keeps the triad.
     force_spawn_finite_portals(c, queue, machine_ctx);
 }
 
@@ -1361,14 +1361,18 @@ inline void force_spawn_finite_portals(MoodDeps* c, wgpu::Queue& queue, MachineC
     }
 
     // PORTAL_2 — THE TRIAD. A finite world offers exactly three
-    // doors: deeper in (one of the two rooms, seed's coin), out — an
-    // open sky, drawn by the destination law's weights among the open
-    // moods (ATMOS_1) — and back (already standing). Two forwards here;
-    // the radius no longer buys doors.
+    // doors: deeper in (a room — standing IN a room, always the OTHER
+    // room; elsewhere the seed's coin — USHER_0, no door to here), out
+    // — an open sky, drawn by the destination law's weights among the
+    // open moods (ATMOS_1) — and back (already standing). Two forwards
+    // here; the radius no longer buys doors.
     constexpr uint32_t count = 2;
+    uint32_t deeper = (cpu_hash_f(c->world_state_.active_seed, 7950u) < 0.5f)
+        ? MOOD_INDOOR_FLAT : MOOD_INDOOR_VAULT;
+    if (deeper == c->mood_state_.active)
+        deeper = (deeper == MOOD_INDOOR_FLAT) ? MOOD_INDOOR_VAULT : MOOD_INDOOR_FLAT;
     const uint32_t fwd_moods[2] = {
-        (cpu_hash_f(c->world_state_.active_seed, 7950u) < 0.5f)
-            ? MOOD_INDOOR_FLAT : MOOD_INDOOR_VAULT,
+        deeper,
         pick_open_mood(c->world_state_.active_seed, 7951u),   // the way out: an open sky (ATMOS_1)
     };
 
@@ -1536,7 +1540,7 @@ inline void force_spawn_door_fallback(MoodDeps* c, wgpu::Queue& queue, MachineCt
     float rotation = arch_rotation_from_facing(-std::cos(bearing), -std::sin(bearing));
 
     uint32_t dest_seed = cpu_hash(c->world_state_.active_seed, 8800u);
-    uint32_t mood = pick_portal_mood(c->world_state_.active_seed, 8900u);
+    uint32_t mood = pick_portal_mood(c->world_state_.active_seed, 8900u, c->mood_state_.active);
     const auto& mp = mood_def(mood);
     PortalDestination dest{};
     dest.seed = dest_seed;
@@ -1669,9 +1673,15 @@ inline uint32_t derive_finite_radius(uint32_t seed, const MoodProfile& mood) {
 // mood, and the float-epsilon miss lands on the last PRESENT row.
 // open_only restricts the walk to shape_is_open moods: the triad's way
 // OUT of a room is an open sky, whichever one the weights favour.
-inline uint32_t pick_mood_weighted_(uint32_t seed, uint32_t prop, bool open_only) {
+// exclude_mood bars ONE row for this walk — the world you stand in is
+// not a destination (USHER_0). MOOD_COUNT bars nothing: no row wears
+// that id, so the comparison never fires — the boot draw's spelling.
+// The every-door-shut fallback stands as written; a degenerate panel
+// config earns the home sky, not a missing door.
+inline uint32_t pick_mood_weighted_(uint32_t seed, uint32_t prop, bool open_only, uint32_t exclude_mood) {
     float sum = 0.0f;
     for (uint32_t m = 0; m < MOOD_COUNT; ++m) {
+        if (m == exclude_mood) continue;
         if (open_only && !shape_is_open(mood_def(m).shape)) continue;
         sum += std::max(0.0f, WORLD_DRAW_LIVE.mood_weights[m]);
     }
@@ -1680,6 +1690,7 @@ inline uint32_t pick_mood_weighted_(uint32_t seed, uint32_t prop, bool open_only
     float cumul = 0.0f;
     uint32_t pick = MOOD_OPEN_SUNSET;
     for (uint32_t m = 0; m < MOOD_COUNT; ++m) {
+        if (m == exclude_mood) continue;
         if (open_only && !shape_is_open(mood_def(m).shape)) continue;
         const float w = std::max(0.0f, WORLD_DRAW_LIVE.mood_weights[m]);
         if (w <= 0.0f) continue;
@@ -1689,8 +1700,8 @@ inline uint32_t pick_mood_weighted_(uint32_t seed, uint32_t prop, bool open_only
     }
     return pick;
 }
-inline uint32_t pick_portal_mood(uint32_t seed, uint32_t prop) { return pick_mood_weighted_(seed, prop, false); }
-inline uint32_t pick_open_mood  (uint32_t seed, uint32_t prop) { return pick_mood_weighted_(seed, prop, true);  }
+inline uint32_t pick_portal_mood(uint32_t seed, uint32_t prop, uint32_t exclude_mood) { return pick_mood_weighted_(seed, prop, false, exclude_mood); }
+inline uint32_t pick_open_mood  (uint32_t seed, uint32_t prop) { return pick_mood_weighted_(seed, prop, true,  MOOD_COUNT); }
 
 } // namespace the_board
 } // namespace t7

@@ -1034,7 +1034,7 @@ inline void arch_write_active(MachineCtx* c, const EntityInstance& inst) {
         if (portal_roll < WORLD_DRAW_LIVE.portal_density) {
             aa.is_portal = true;
             uint32_t dest_seed = cpu_hash(aa.position_hash, 1u);
-            uint32_t mood = pick_portal_mood(aa.position_hash, 2u);
+            uint32_t mood = pick_portal_mood(aa.position_hash, 2u, c->mood_state_.active);
             const auto& mp = mood_def(mood);
             aa.destination.seed = dest_seed;
             aa.destination.mood = mood;
