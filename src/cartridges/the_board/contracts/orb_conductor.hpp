@@ -85,7 +85,7 @@ inline constexpr OrbConductorConsole ORB_CONDUCTOR = {
         { 0u,  0.2f,  0.7f,  0.0010f,  3.0f,  4.0f,   16.0f, 0.0f },  // brownian
         { 0u,  0.0f,  0.0f,  0.0010f,  3.0f,  4.0f,   16.0f, 0.0f },  // frozen — reads none of these
         { 3u,  0.0f,  0.0f,  0.0010f,  3.0f,  4.0f,   32.0f, 0.0f },  // flocking — 4.0 is the dial's ceiling
-        { 0u,  0.0f,  0.0f,  0.0010f,  3.0f,  1.5f,   16.0f, 0.0f },  // orbital — gesture 0 (scatter), 0.0010 rad/s = one revolution in 105 min
+        { 0u,  0.0f,  0.0f,  0.0010f,  3.0f,  2.0f,   16.0f, 0.0f },  // orbital — gesture 0 (scatter), 0.0010 rad/s = one revolution in 105 min
     },
 };
 
