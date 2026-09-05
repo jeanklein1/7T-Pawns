@@ -114,6 +114,7 @@ struct ArchProp {
     static constexpr uint32_t MOSAIC_ROLL = 650u;   // MOSAIC_2: the tier's ceramic roll
     static constexpr uint32_t MOSAIC_SEED = 651u;   // MOSAIC_1: 16-bit paint identity
     static constexpr uint32_t COLOR_SPREAD = 652u;  // MOSAIC_2: how far THIS body sits from its median
+    static constexpr uint32_t LODESTAR_POS_X = 630u; // LODESTAR_0: retry-k position pair = (630+2(k-1), 631+2(k-1)), k=1..4; try 0 keeps POSITION_X/Z
 };
 
 // ── Active Arch Tracking ─────────────────────────────────────────

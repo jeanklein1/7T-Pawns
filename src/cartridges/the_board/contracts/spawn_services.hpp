@@ -61,6 +61,20 @@ struct SpawnPreamble {
 // funnels read it before the machine tail.)
 inline constexpr float GLOBAL_ENTITY_DENSITY = 1.0f;
 
+// ─── LODESTAR — the guaranteed-door lattice (LODESTAR_0) ─────────
+// One patch per CELL×CELL cell of the open field carries a LOADED
+// arch roll: spawn forced, tier pinned DOORWAY — a portal, since
+// portal_density is 1.0. The random rolls keep the texture; this
+// lattice removes their veto over ABSENCE. CELL is THE dial:
+// 8 patches = 400 wu cells → nearest-guaranteed-door ceiling ≈ one
+// cell diagonal (~400 wu). Smaller cells buy a lower ceiling with
+// more doors and press the 16-slot arch pool — priced in OPEN.md
+// (LODESTAR_0/P) before turning.
+inline constexpr uint32_t LODESTAR_CELL      = 8u;    // patches per cell side
+inline constexpr uint32_t LODESTAR_SEED_BAND = 190u;  // lattice band (themes 170, GoL zones 250)
+inline constexpr uint32_t LODESTAR_TRIES     = 5u;    // designated placement candidates; ordinary rolls keep 1
+bool arch_lodestar_designated(uint32_t world_seed, int32_t gx, int32_t gz);
+
 // ── Minimum Separation Matrix ─────────────────────────────────────
 //
 // WHAT: the extra edge-to-edge gap a candidate placement must keep from
@@ -260,6 +274,8 @@ void jittered_position(uint32_t seed, int32_t gx, int32_t gz,
 float proximity_affinity_boost(MachineCtx* c, float cx, float cz, uint32_t family);
 bool check_position(MachineCtx* c, float px, float pz, float placing_radius,
     uint32_t placing_family);
+// LODESTAR_0 — the designation predicate (constants above; defined in
+// spawn_engine.hpp beside the gate it loads).
 uint32_t register_footprint(MachineCtx* c, float x, float z, float radius,
     int32_t gx, int32_t gz, uint32_t family, uint32_t slot,
     uint32_t tier = 0);

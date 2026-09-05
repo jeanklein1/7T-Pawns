@@ -908,6 +908,24 @@ inline SpawnChanceResult compose_spawn_chance(MachineCtx* c, int32_t gx, int32_t
     return { chance, false };
 }
 
+// LODESTAR_0 — THE DESIGNATED DOORWAY. One patch per LODESTAR_CELL²
+// cell carries the loaded roll (see the constants' banner,
+// spawn_services.hpp). Pure on (world seed, patch): streaming-order
+// free, re-entry identical, ?seed=-pinned. The designated patch is
+// hashed into the cell's CENTRAL 3×3 so the ~one-diagonal ceiling
+// binds tight without the doors reading as a grid. Floor division by
+// hand: C++ '/' truncates toward zero and the field is signed.
+inline bool arch_lodestar_designated(uint32_t world_seed, int32_t gx, int32_t gz) {
+    constexpr int32_t L = (int32_t)LODESTAR_CELL;
+    int32_t qx = gx / L; if (gx % L < 0) qx -= 1;
+    int32_t qz = gz / L; if (gz % L < 0) qz -= 1;
+    uint32_t cell_seed = cpu_lattice_node_seed(world_seed, qx, qz, LODESTAR_SEED_BAND);
+    constexpr int32_t core = (L - 3) / 2;   // central 3×3 origin (locals core..core+2)
+    int32_t dx = core + (int32_t)(cpu_hash(cell_seed, 1u) % 3u);
+    int32_t dz = core + (int32_t)(cpu_hash(cell_seed, 2u) % 3u);
+    return (gx - qx * L) == dx && (gz - qz * L) == dz;
+}
+
 // Evaluate the spawn gate: seed + flat probability check.
 inline SpawnPreamble evaluate_spawn_gate(MachineCtx* c, int32_t gx, int32_t gz,
     uint32_t spawn_roll_prop,
