@@ -893,9 +893,27 @@ def main():
         print("  way index.html does not change.")
         return 5
 
-    if os.path.isdir(DIST):
-        shutil.rmtree(DIST)
-    os.makedirs(DIST)
+    # ── WEBSITE_1 — THE ENGINE OWNS NAMES, NOT THE FOLDER ───────────
+    # dist/ is shared ground: about/, collection/, fonts/ and shared.css
+    # are the site's, written by their own pipelines (MAIN/MERGE.md).
+    # This script deletes exactly what it writes — the names below, every
+    # one already a constant in this file — and treats anything else as a
+    # tenant it does not know. That is the whole agnosticism: the site's
+    # names never enter this script, so the site can grow, rename or
+    # vanish without it hearing.
+    owned = ARTIFACTS + list(POSTERS) + [
+        EXHIBITION_JSON, "_headers", "_redirects",
+        os.path.basename(DIST_PRESETS),
+        os.path.basename(DIST_PAINTINGS),
+        os.path.basename(DIST_MUSIC),
+    ]
+    for name in owned:
+        p = os.path.join(DIST, name)
+        if os.path.isdir(p):
+            shutil.rmtree(p)
+        elif os.path.isfile(p):
+            os.remove(p)
+    os.makedirs(DIST, exist_ok=True)
     for f in ARTIFACTS:
         shutil.copy2(os.path.join(WEB, f), os.path.join(DIST, f))
 
