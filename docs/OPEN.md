@@ -3460,9 +3460,6 @@ that authored this section. · ORRERY_0 R2 ·
 - finite_outdoor is DARK, not cut: `mood_weights[3] = 0` (mood_constants.hpp);
   every other surface of the mood stands, `?mood=3` and the panel dial reach it
   · origin: USHER_0 U1 · unblocks: a finite-outdoor design worth a door (reopen
-  = one table cell), or a ruling to cut the mood whole — its own campaign
-  (MOOD_COUNT shrinks, ids renumber, every per-mood table loses a row).
-- the boot draw includes the atrium at its portal weight (0.02): roughly one
-  visitor in fifty wakes in the small dark room · origin: USHER_0 U3 ·
-  unblocks: Jean's visual gate — if unwanted, the lever is the same weight
-  dial (which also shuts its portal) or a one-line exclusion at the boot draw.
+  = one table cell — portals only; the boot roster is open-sky by shape, U3),
+  or a ruling to cut the mood whole — its own campaign (MOOD_COUNT shrinks,
+  ids renumber, every per-mood table loses a row).
