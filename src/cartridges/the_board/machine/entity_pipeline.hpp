@@ -186,13 +186,27 @@ inline bool generic_place(MachineCtx* c,
     const EntityFamilyTraits& traits,
     EntityInstance& inst)
 {
-    auto pos = negotiate_position(c, inst.seed,
-        inst.trigger_gx, inst.trigger_gz,
-        traits.pos_x_prop, traits.pos_z_prop,
-        traits.position_jitter,
-        traits.rotation_prop,
-        traits.grounded,   // ruling 21: the ground-claim policy, from the family's own record
-        inst.solid_half, /*containment_r*/ inst.solid_half, traits.family_id, inst.slot, inst.tier_idx);
+    // LODESTAR_0 — the designated door alone bargains for ground (see
+    // the unit note in the campaign log). Try 0 is the standing single
+    // draw, bit-identical; retries re-jitter position only.
+    const bool lodestar = traits.family_id == PopFamily::ARCH
+        && !c->world_state_.finite_mode
+        && arch_lodestar_designated(c->world_state_.active_seed, inst.trigger_gx, inst.trigger_gz);
+    const uint32_t tries = lodestar ? LODESTAR_TRIES : 1u;
+    PositionResult pos{};
+    for (uint32_t k = 0; k < tries; ++k) {
+        const uint32_t px  = (k == 0u) ? traits.pos_x_prop : ArchProp::LODESTAR_POS_X + 2u * (k - 1u);
+        const uint32_t pz  = (k == 0u) ? traits.pos_z_prop : ArchProp::LODESTAR_POS_X + 2u * (k - 1u) + 1u;
+        const float    jit = (k == 0u) ? traits.position_jitter : 1.0f;
+        pos = negotiate_position(c, inst.seed,
+            inst.trigger_gx, inst.trigger_gz,
+            px, pz,
+            jit,
+            traits.rotation_prop,
+            traits.grounded,   // ruling 21: the ground-claim policy, from the family's own record
+            inst.solid_half, /*containment_r*/ inst.solid_half, traits.family_id, inst.slot, inst.tier_idx);
+        if (pos.ok) break;
+    }
     if (!pos.ok) return false;
 
     inst.host_gx  = pos.host_gx;
