@@ -84,10 +84,12 @@ ARTIFACTS = ["index.html", "organ_panel.js", "the_board.js", "the_board.wasm", "
 # file and a 200 on another is the whole failure, and it lands on a
 # stranger's phone weeks later with no way to reproduce it.
 #
-# The id is the wasm's own hash, TRUNCATED ONLY FOR THE URL — so it
-# changes exactly when the program changes, and cannot drift from it.
-# A date stamp would have been a second fact about the same thing, and
-# would have busted every cache on a rebuild that changed nothing.
+# The id is sha256(wasm + world.wgsl), TRUNCATED ONLY FOR THE URL —
+# both halves of the program, because the shader is packed data and
+# moves without the wasm (BUILDID_1, the 5 Sep 2026 pin). It changes
+# exactly when either half changes, and cannot drift from them. A date
+# stamp would have been a second fact about the same thing, and would
+# have busted every cache on a rebuild that changed nothing.
 BUILD_ID_PLACEHOLDER = "__BUILD_ID__"
 BUILD_ID_LEN = 12
 
@@ -954,10 +956,8 @@ def main():
             shutil.copy2(os.path.join(SRC_PRESETS, f), os.path.join(DIST_PRESETS, f))
 
     # dist/index.html is GENERATED from here on, not copied. The hash is
-    # taken from the file that actually shipped, so the id names the
-    # bytes a visitor will run.
-    with open(os.path.join(DIST, "the_board.wasm"), "rb") as fh:
-        build_id = hashlib.sha256(fh.read()).hexdigest()[:BUILD_ID_LEN]
+    # taken from files that actually shipped, so the id names the bytes
+    # a visitor will run.
     # PROBATE_SEAL2 — read as BYTES, hashed whole. No decode, no newline
     # translation, no substitution: the digest is of the file as it sits
     # on disk, which is the only thing --preload-file packs. Text mode
@@ -965,6 +965,20 @@ def main():
     # witness that reports MISMATCH on a good serve gets switched off.
     with open(SHADER_SRC, "rb") as fh:
         shader_bytes = fh.read()
+    # ── BUILDID_1 — THE ID HASHES BOTH HALVES ────────────────────────
+    # BUILDID_0 keyed on sha256(wasm) alone, and "a new build is a new
+    # key" was false for half the program: world.wgsl is PACKED DATA,
+    # not compiled wasm, so a shader-only change shipped a new .data
+    # under an unchanged URL and `immutable` pinned the old shader in
+    # every browser that ever fetched it, until the C++ next moved.
+    # Incident of record, 5 Sep 2026: expected ca1de349, received
+    # 1b2295bc, v=e59631131758 on both ends — SEAL2 floored a coherent
+    # server because the visitor's cache held a URL that no longer named
+    # the bytes. Digesting wasm and shader together, either half moving
+    # moves every key, and `immutable` is again a promise the URLs keep.
+    with open(os.path.join(DIST, "the_board.wasm"), "rb") as fh:
+        wasm_bytes = fh.read()
+    build_id = hashlib.sha256(wasm_bytes + shader_bytes).hexdigest()[:BUILD_ID_LEN]
     shader_sha_full = hashlib.sha256(shader_bytes).hexdigest()
     shader_sha = shader_sha_full[:SHADER_SHA_LEN]
     shell_out = shell_src.replace(BUILD_ID_PLACEHOLDER, build_id)
@@ -1190,9 +1204,9 @@ def main():
     # included. Every one of these four is fetched as `<path>?v=<build
     # id>` (index.html's script tags for the two .js, Module.locateFile
     # for the .wasm and the .data), and the build id is
-    # sha256(the_board.wasm)[:12]. A new build is a new key, so
-    # `immutable` can never pin a stale artifact: it pins a URL that will
-    # never be asked for again.
+    # sha256(wasm + world.wgsl)[:12] — both halves, since BUILDID_1. A
+    # change to either is a new key, so `immutable` can never pin a
+    # stale artifact: it pins a URL that will never be asked for again.
     #
     # WHAT IT BUYS. A returning visitor pays no network for the glue, the
     # wasm or the package — and, more than that, keeps what the browser
@@ -1292,7 +1306,7 @@ def main():
                  len(presets)))
     else:
         print("  presets: none — web/presets/ is absent, and the panel hides its select")
-    print("  %-18s %s   <- sha256(the_board.wasm)[:%d]; the .js/.wasm/.data query"
+    print("  %-18s %s   <- sha256(wasm+world.wgsl)[:%d]; the .js/.wasm/.data query"
           % ("build id", build_id, BUILD_ID_LEN))
     print("  %-18s %s" % ("", "Deploy twice without rebuilding and this must not change."))
     # ORGAN_5 P5a — THE PANEL IS IN THE SAME BOAT, and this line says so

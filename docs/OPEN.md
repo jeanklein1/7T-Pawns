@@ -3510,3 +3510,14 @@ pickup check at deploy time.
   ceiling) · origin: GOL_GRID_0 · unblocks: Jean's walk gate — levers are
   the promoted rows' cells column, or a zone-aware lodestar designation
   (its own campaign).
+
+## BUILDID_1 — the ?v= key hashes both halves (closes the 5 Sep pin)
+
+world.wgsl is packed data; a shader-only edit changed .data under an
+unchanged v=sha256(wasm), `immutable` pinned the old shader in the
+visiting browser, and SEAL2 correctly floored a coherent server
+(expected ca1de349 / received 1b2295bc / v=e59631131758 on both ends —
+the served data hashes to ca1de349, verified from the wire).
+build_id is now sha256(wasm + world.wgsl)[:BUILD_ID_LEN]; the first
+deploy after this re-keys every URL and heals any browser pinned today.
+Interim cure on an already-pinned machine: hard refresh (Ctrl+Shift+R).
