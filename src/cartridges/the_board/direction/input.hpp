@@ -414,7 +414,7 @@ inline void request_radial_pulse(InputDeps* c) {
     // HERE — the player's door, both mouths (SPACE, the lone tap) — so a
     // musical pulse riding the bus (emit_radial_pulse) can never board.
     // The wave fires regardless, above: on the ground it is the gesture
-    // as ever; on a colossal summit the same wave announces the boarding
+    // as ever; on a tall summit the same wave announces the boarding
     // it begins — the ribbon may be anywhere, the ease is the abduction;
     // in the sky it marks the departure. The summit check is a COURTESY
     // (no refusal spam on every ground pulse) — the LAW stays in
@@ -556,7 +556,7 @@ inline void possess(InputDeps* c, PointHost next) {
         return;
     }
     // REACH_2 — BOARDING IS EARNED AT THE TOP. The bubble's second sensor
-    // must be live: a colossal summit underfoot. The ribbon may be
+    // must be live: a tall summit underfoot. The ribbon may be
     // anywhere in the world — the mount ease carries you to it. The
     // descend direction is NEVER gated: we come back down from anywhere.
     if (next == PointHost::RIBBON && !c->point_.bubble.summit) {

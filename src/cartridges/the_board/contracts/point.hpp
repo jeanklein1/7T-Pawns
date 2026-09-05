@@ -80,15 +80,15 @@ inline constexpr float POINT_BUBBLE_RADIUS = 80.0f;   // world units; boot-pinne
 
 // ═══ THE SUMMIT LAW (REACH_2) ══════════════════════════════════════
 // Jean's stamp, after play: the crossing was chance and chance read as
-// nothing. The door is the GROUND now — stand atop a colossal pyramid
+// nothing. The door is the GROUND now — stand atop a tall pyramid
 // and the pulse boards, ribbon anywhere; the mount ease IS the
 // abduction. "Tall" is the pyramid's own measure, not its tier label.
-inline constexpr float POINT_SUMMIT_MIN_HEIGHT = 60.0f;  // wu — a pyramid this tall is a door (colossi ~78±14; temples ~45±8)
+inline constexpr float POINT_SUMMIT_MIN_HEIGHT = 35.0f;  // wu — a pyramid this tall is a door: colossi (~78±14) and temples (~45±8) qualify; obelisks (~28±6) stay dark unless truly towering
 inline constexpr float POINT_SUMMIT_RADIUS     = 15.0f;  // wu — xz disc around the apex that counts as "the top" (~upper quarter of a mean colossus footprint)
 struct PointBubble {
     float radius = POINT_BUBBLE_RADIUS;   // the awareness bound (the portal's vertical gate today)
     // REACH_2 — the second sensor, re-aimed at the GROUND: TRUE means a
-    // colossal summit underfoot (xz inside the apex disc of a pyramid
+    // tall summit underfoot (xz inside the apex disc of a pyramid
     // ≥ POINT_SUMMIT_MIN_HEIGHT — the single-valued heightfield makes
     // horizontal arrival vertical arrival), PAWN host, a ribbon rendered
     // somewhere. Composed at the ONE site (the witness harvest); the

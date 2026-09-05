@@ -1728,7 +1728,7 @@ namespace t7 {
                                         self->point_.portal_trigger = p.portal_trigger;
                                         // REACH_2 — the bubble's second
                                         // sensor is the SUMMIT now: a
-                                        // colossal pyramid underfoot. The
+                                        // tall pyramid underfoot. The
                                         // heightfield is single-valued and
                                         // the walker snaps to it, so xz
                                         // inside the apex disc IS standing
