@@ -1,0 +1,74 @@
+{
+  "email": "hello@everexpandingboard.com",
+  "hero": {
+    "wide": [
+      {
+        "file": "PAINTING_90.jpeg",
+        "n": 90
+      },
+      {
+        "file": "PAINTING_92.jpeg",
+        "n": 92
+      },
+      {
+        "file": "PAINTING_112.jpeg",
+        "n": 112
+      }
+    ],
+    "tall": [
+      {
+        "file": "PAINTING_50.jpeg",
+        "n": 50
+      },
+      {
+        "file": "PAINTING_109.jpeg",
+        "n": 109
+      }
+    ]
+  },
+  "strip": [
+    {
+      "n": 2,
+      "dir": "1-14",
+      "source": "assets/collection/a_1-14/PAINTING_2.jpeg"
+    },
+    {
+      "n": 5,
+      "dir": "1-14",
+      "source": "assets/collection/a_1-14/PAINTING_5.jpeg"
+    },
+    {
+      "n": 7,
+      "dir": "1-14",
+      "source": "assets/collection/a_1-14/PAINTING_7.jpeg"
+    },
+    {
+      "n": 11,
+      "dir": "1-14",
+      "source": "assets/collection/a_1-14/PAINTING_11.jpeg"
+    }
+  ],
+  "authors": [
+    {
+      "name": "PLACEHOLDER \u2014 your name",
+      "lines": [
+        "PLACEHOLDER \u2014 two or three sentences in the first person.",
+        "The formal third-person bio stays with galleries and press."
+      ]
+    }
+  ],
+  "links": [
+    {
+      "label": "Instagram",
+      "url": "https://instagram.com/REPLACE"
+    },
+    {
+      "label": "YouTube",
+      "url": "https://youtube.com/@REPLACE"
+    },
+    {
+      "label": "Bandcamp",
+      "url": "https://REPLACE.bandcamp.com"
+    }
+  ]
+}

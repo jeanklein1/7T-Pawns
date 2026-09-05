@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>about — the ever expanding board</title>
+<meta name="description" content="The pawn is a vessel for projected intent. Paintings, sketches, and a procedurally generated world you can walk into.">
+<meta property="og:title" content="the ever expanding board">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23e8e6e0' d='M16 4a5 5 0 0 0-2.6 9.3c-.5 2.9-1.6 5.2-3.4 7.2h12c-1.8-2-2.9-4.3-3.4-7.2A5 5 0 0 0 16 4zM8 23h16v2.6c0 .8-.6 1.4-1.4 1.4H9.4C8.6 27 8 26.4 8 25.6z'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../shared.css">
+<style>
+  /* Everything here is about-page-only. Tokens, type, masthead, footer
+     and the spacing scale live in shared.css — never redefined here. */
+
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  /* ── the hero ─────────────────────────────────────────────────────
+     Capped so the door has one shape. Without the cap the front page
+     was 506px tall or 985px tall depending on which work the daily
+     rotation happened to pick. */
+  .hero { display: block; }
+  .hero img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: min(58vh, 560px);
+    object-fit: cover;
+    object-position: center;
+  }
+  .hero-plate {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--s2) var(--edge) 0;
+    font-size: 13.5px;
+    color: var(--faint);
+    font-variant-numeric: oldstyle-nums;
+  }
+  .hero-plate a { color: var(--faint); text-decoration: none; }
+  .hero-plate a:hover { color: var(--dim); }
+
+  /* ── doctrine ─────────────────────────────────────────────────── */
+  .doctrine { padding: var(--s5) var(--edge) var(--s5); }
+  .doctrine h1 {
+    margin: 0;
+    max-width: 15em;
+    font-size: clamp(27px, 3.4vw, 44px);
+    font-weight: 400;
+    line-height: 1.14;
+    text-wrap: balance;
+  }
+  .doctrine p {
+    margin: var(--s3) 0 0;
+    max-width: 34em;
+    font-style: italic;
+    font-size: clamp(16.5px, 1.5vw, 19px);
+    line-height: 1.55;
+    color: var(--dim);
+    text-wrap: pretty;
+  }
+
+  /* ── the two doors ────────────────────────────────────────────── */
+  .doors {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+    gap: var(--s5);
+    padding: 0 var(--edge) var(--s6);
+  }
+  .door { text-decoration: none; display: block; }
+  .door h2 {
+    margin: 0 0 0.35em;
+    font-size: clamp(23px, 2.4vw, 31px);
+    font-weight: 400;
+  }
+  .door .go {
+    display: inline-block;
+    border-bottom: 1px solid var(--faint);
+    transition: border-color 200ms ease;
+  }
+  .door:hover .go, .door:focus-visible .go { border-color: var(--ink); }
+  .door p { margin: 0 0 var(--s2); color: var(--dim); max-width: 30em; }
+  .door small { display: block; margin-top: var(--s2); font-size: 13.5px; color: var(--faint); }
+
+  /* wider than its column on a phone: scrolls inside itself rather
+     than handing the whole page a scrollbar */
+  .strip {
+    display: flex;
+    gap: 10px;
+    margin-top: var(--s2);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .strip::-webkit-scrollbar { display: none; }
+  .strip img { display: block; height: clamp(70px, 8vw, 112px); width: auto; }
+
+  /* ── bands ────────────────────────────────────────────────────── */
+  section.band { padding: 0 var(--edge) var(--s6); }
+
+  .authors {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+    gap: var(--s5);
+    max-width: 62em;
+  }
+  .author h3 { margin: 0 0 0.4em; font-size: clamp(20px, 2vw, 25px); font-weight: 400; }
+  .author p { margin: 0 0 0.6em; color: var(--dim); max-width: 32em; }
+
+  .write { max-width: 34em; }
+  .write p.leadin { margin: 0 0 var(--s4); color: var(--dim); font-style: italic; }
+  .field { margin-bottom: var(--s3); }
+  .field label {
+    display: block;
+    font-size: 13.5px;
+    letter-spacing: 0.06em;
+    color: var(--faint);
+    margin-bottom: 6px;
+  }
+  .field input, .field textarea {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--faint);
+    color: var(--ink);
+    font: inherit;
+    padding: 6px 0 8px;
+    border-radius: 0;
+  }
+  .field textarea { min-height: 7.5em; resize: vertical; }
+  .field input:focus, .field textarea:focus { outline: none; border-bottom-color: var(--ink); }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .write button {
+    border: 1px solid var(--dim);
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    padding: 9px 26px;
+    cursor: pointer;
+    transition: border-color 200ms ease;
+  }
+  .write button:hover, .write button:focus-visible { border-color: var(--ink); }
+  .write button[disabled] { color: var(--faint); border-color: var(--faint); cursor: default; }
+  .write .said { margin-top: var(--s2); color: var(--dim); font-style: italic; min-height: 1.5em; }
+  .write .said a { color: var(--dim); }
+
+  .links ul { list-style: none; margin: 0; padding: 0; }
+  .links li { margin: 0 0 0.55em; }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <p class="site">the ever expanding board</p>
+  <nav>
+    <a href="../">world</a>
+    <a href="../collection/">collection</a>
+    <a href="#authors">authors</a>
+    <a href="#write">write</a>
+  </nav>
+</div>
+
+<a class="hero" id="hero" href="../collection/">
+  <!-- __HERO__ -->
+</a>
+<div class="hero-plate">
+  <span id="hero-title">&nbsp;</span>
+  <a href="../collection/">the collection →</a>
+</div>
+
+<!-- PLACEHOLDER COPY — Jean's words replace all of this.
+     Convention: the front door speaks in the FIRST PERSON. What is here
+     now is third-person curatorial language, which reads like wall text
+     rather than the artist talking. It holds the shape and the length;
+     it is not the voice. -->
+<header class="doctrine">
+  <h1>The pawn is a vessel for projected intent.</h1>
+  <p>It stands alone, or it stands beside someone. Whether it is friend or
+     antagonist, whether you are reading it or it is reading you — that is
+     not settled here, and it will not be.</p>
+</header>
+
+<div class="doors">
+  <!-- PLACEHOLDER: door blurbs, ~20 words each -->
+  <a class="door" href="../">
+    <h2><span class="go">the world</span></h2>
+    <p>A procedurally generated place built from the paintings' logic —
+       terrain, ribbon, music, and the pawn, running live.</p>
+    <small>Runs on WebGPU: a recent Chrome or Edge. Everyone else,
+       the collection is the door.</small>
+  </a>
+  <a class="door" href="../collection/">
+    <h2><span class="go">the collection</span></h2>
+    <p>Oils, watercolours and pen, in sets. Every work, one page.</p>
+    <div class="strip">
+      <!-- __STRIP__ -->
+    </div>
+  </a>
+</div>
+
+<section class="band" id="authors">
+  <h2 class="band-label">authors</h2>
+  <div class="authors">
+    <!-- __AUTHORS__ -->
+  </div>
+</section>
+
+<section class="band" id="write">
+  <h2 class="band-label">write</h2>
+  <div class="write">
+    <!-- PLACEHOLDER: one line, why someone would write -->
+    <p class="leadin">A message box for the audience. It reaches us, not a list.</p>
+    <form id="mform" method="post" action="../api/message">
+      <div class="field">
+        <label for="m-name">name</label>
+        <input id="m-name" name="name" autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="m-email">email, if you want an answer</label>
+        <input id="m-email" name="email" type="email" autocomplete="email">
+      </div>
+      <div class="field">
+        <label for="m-text">message</label>
+        <textarea id="m-text" name="message" required></textarea>
+      </div>
+      <div class="hp" aria-hidden="true">
+        <label>leave this empty<input name="website" tabindex="-1" autocomplete="off"></label>
+      </div>
+      <button type="submit">send</button>
+      <p class="said" id="m-said" role="status"></p>
+    </form>
+  </div>
+</section>
+
+<section class="band" id="links">
+  <h2 class="band-label">elsewhere</h2>
+  <div class="links">
+    <ul>
+      <!-- __LINKS__ -->
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <span>the ever expanding board</span>
+  <span>set in Newsreader · no trackers</span>
+</footer>
+
+<script>
+/* ── the hero rotates daily; without JavaScript, today is the first ── */
+const HERO = /* __HERO_DATA__ */ null;
+if (HERO && HERO.wide.length) {
+  const day = Math.floor(Date.now() / 864e5);
+  const wide = HERO.wide[day % HERO.wide.length];
+  const tall = HERO.tall.length ? HERO.tall[day % HERO.tall.length] : wide;
+  const pick = matchMedia("(max-aspect-ratio: 4/5)").matches ? tall : wide;
+  const img = document.querySelector("#hero img");
+  const cur = new URL(img.currentSrc || img.src, location.href).pathname;
+  if (!cur.endsWith(pick.src)) {
+    img.src = pick.src;
+    img.width = pick.w; img.height = pick.h;
+  }
+  document.getElementById("hero").href = "../collection/#w" + pick.n;
+  document.getElementById("hero-title").textContent = "no. " + pick.n;
+}
+
+/* ── the message box ────────────────────────────────────────────────
+   Progressive: no JavaScript posts the form to api/message directly;
+   with it, we stay on the page. If the endpoint is missing or unhappy,
+   the direct address appears instead — the box never dead-ends. */
+const form = document.getElementById("mform");
+const said = document.getElementById("m-said");
+const EMAIL = "__EMAIL__";
+
+form.addEventListener("submit", async e => {
+  e.preventDefault();
+  const btn = form.querySelector("button");
+  btn.disabled = true;
+  said.textContent = "sending…";
+  try {
+    const body = Object.fromEntries(new FormData(form).entries());
+    const r = await fetch(form.action, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) throw new Error(String(r.status));
+    form.reset();
+    said.textContent = "received. thank you.";
+  } catch (err) {
+    said.innerHTML = 'the box is not listening right now — write to ' +
+      '<a href="mailto:' + EMAIL + '">' + EMAIL + "</a>";
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>collection — the ever expanding board</title>
+<meta name="description" content="Paintings and sketches from the ever expanding board. The pawn is a vessel for projected intent.">
+<meta property="og:title" content="collection — the ever expanding board">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23e8e6e0' d='M16 4a5 5 0 0 0-2.6 9.3c-.5 2.9-1.6 5.2-3.4 7.2h12c-1.8-2-2.9-4.3-3.4-7.2A5 5 0 0 0 16 4zM8 23h16v2.6c0 .8-.6 1.4-1.4 1.4H9.4C8.6 27 8 26.4 8 25.6z'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../shared.css">
+<style>
+  /* collection-page-only. Tokens, type, masthead, footer, grain and
+     the spacing scale live in shared.css — never redefined here. */
+
+  .lede {
+    padding: var(--s5) var(--edge) var(--s4);
+  }
+  .lede h1 {
+    margin: 0;
+    max-width: 15em;              /* em = the headline's own size */
+    font-size: clamp(27px, 3.4vw, 46px);
+    font-weight: 400;
+    line-height: 1.14;
+    letter-spacing: 0.002em;
+    text-wrap: balance;
+  }
+  .lede p {
+    margin: 1.15em 0 0;
+    max-width: 34em;              /* em = this paragraph's own size */
+    font-style: italic;
+    font-size: clamp(16.5px, 1.5vw, 19px);
+    line-height: 1.55;
+    color: var(--dim);
+    text-wrap: pretty;
+  }
+
+  /* the shelf of sets — plain links, wraps as it must */
+  .index {
+    padding: 0 var(--edge) var(--s5);
+    font-size: 15px;
+    color: var(--dim);
+    max-width: 46em;
+  }
+  .index a {
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .index a:hover, .index a:focus-visible {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .index span { color: var(--faint); padding: 0 0.45em; }
+
+  /* ═══ sets ═══════════════════════════════════════════════════════ */
+
+  section { padding: 0 var(--edge) var(--s6); }
+
+  .set-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding-bottom: var(--s3);
+  }
+  .set-head h2 {
+    margin: 0;
+    font-size: clamp(20px, 1.9vw, 26px);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+  }
+  .set-head .count {
+    font-size: 14px;
+    font-style: italic;
+    color: var(--faint);
+  }
+  .set-head .note {
+    font-size: 14px;
+    color: var(--dim);
+  }
+
+  /* Without JS: flex-wrap with proportional grow approximates justified
+     rows; object-fit cover absorbs the stretch with slight cropping.
+     With JS: exact rows are built, nothing is cropped, .js flips the mode. */
+  .rows { display: flex; flex-wrap: wrap; gap: var(--gap); }
+  .js .rows { flex-direction: column; flex-wrap: nowrap; }
+  .row { display: flex; gap: var(--gap); min-width: 0; }
+  .row.solo { justify-content: center; }
+
+  .work {
+    --pad: 0px;
+    position: relative;
+    display: block;
+    min-width: 0;
+    padding: var(--pad);
+    cursor: zoom-in;
+    overflow: hidden;
+    text-decoration: none;
+    height: var(--h, 300px);
+    flex: calc(var(--r) * 1000) 1 calc(var(--r) * var(--h, 300px));
+  }
+  .js .work { height: 100%; flex: initial; }
+
+  /* The fill is a plain div: absolute + inset stretches it correctly.
+     An <img> is a replaced element and resolves width:auto to its
+     intrinsic size instead, so the image stays in normal flow. */
+  .work .fill {
+    position: absolute;
+    inset: var(--pad);
+    background: var(--tone, var(--faint));
+    background: color-mix(in srgb, var(--tone, var(--faint)) 52%, var(--bg));
+  }
+  .work img {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  /* The fade is opt-in behind .js. Starting at opacity 0 unconditionally
+     meant a visitor without JavaScript got a page of coloured rectangles
+     and no paintings, since only the script ever added the class back. */
+  .js .work img {
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 420ms ease;
+  }
+  .js .work img.in { opacity: 1; }
+  .work:focus-visible { outline: 1px solid var(--ink); outline-offset: 3px; }
+
+  .paper .work { --pad: 12px; background: var(--mat); }
+
+  /* ═══ the opened work ════════════════════════════════════════════ */
+
+  .view {
+    position: fixed;
+    inset: 0;
+    display: none;
+    background: var(--bg);
+    z-index: 20;
+  }
+  .view::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.055;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .view[open] { display: grid; grid-template-rows: minmax(0, 1fr) auto; }
+  .view:focus { outline: none; }
+  /* the wall takes a breath of the painting's own colour */
+  .view { background: color-mix(in srgb, var(--tone, var(--bg)) 9%, var(--bg)); }
+  .view[open] { transition: background 800ms ease; }
+  .stage, .plate, .zone, .shut { position: relative; z-index: 1; }
+  .zone, .shut { position: absolute; }
+  .stage img { transition: opacity 260ms ease; }
+  .stage img.out { opacity: 0; transition-duration: 140ms; }
+  .fly {
+    position: fixed;
+    z-index: 25;
+    pointer-events: none;
+    transform-origin: 0 0;
+    object-fit: cover;
+  }
+
+  .stage {
+    --sp: clamp(18px, 3.2vw, 52px);
+    position: relative;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .stage img {
+    position: absolute;
+    top: var(--sp);
+    left: var(--sp);
+    width: calc(100% - var(--sp) * 2);
+    height: calc(100% - var(--sp) * 2);
+    object-fit: contain;
+  }
+
+  .plate {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 24px;
+    padding: 0 var(--edge) calc(var(--edge) * 0.6);
+    font-size: 14px;
+    color: var(--dim);
+    font-variant-numeric: oldstyle-nums;
+  }
+  .plate b { font-weight: 430; color: var(--ink); }
+  .plate .pos { color: var(--faint); }
+
+  /* Not buttons. A transparent <button> earns a focus ring the moment
+     the arrow keys convince the browser you are a keyboard user, and
+     paints a rectangle across a control meant to be invisible. Keyboard
+     users get arrows and Escape from the document handler instead. */
+  .zone { position: absolute; top: 0; width: 34%; height: 100%; }
+  .zone.prev { left: 0; cursor: w-resize; }
+  .zone.next { right: 0; cursor: e-resize; }
+
+  .shut {
+    position: absolute;
+    top: calc(var(--edge) * 0.6);
+    right: var(--edge);
+    border: 0;
+    padding: 4px 2px;
+    background: transparent;
+    color: var(--dim);
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    z-index: 2;
+  }
+  .shut:hover { color: var(--ink); }
+  .shut:focus-visible { outline: 1px solid var(--ink); outline-offset: 4px; }
+
+  footer {
+    padding: 0 var(--edge) var(--s5);
+    font-size: 14px;
+    color: var(--faint);
+  }
+  footer a { color: var(--dim); text-decoration: none; }
+  footer a:hover { color: var(--ink); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .js .work img { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <p class="site">the ever expanding board</p>
+  <nav><a href="../">the world</a> <a href="../about/">about</a></nav>
+</div>
+
+<!-- PLACEHOLDER COPY — see the note in web/about/index.html.
+     This currently restates the about page's doctrine; the two pages
+     probably want different jobs, but that is Jean's call to make. -->
+<header class="lede">
+  <h1>The pawn is a vessel for projected intent.</h1>
+  <p>Oils, watercolours and pen. The same figure moves through all of
+     them, and through the world you can walk into.</p>
+</header>
+
+<nav class="index" aria-label="Sets">
+<!-- __INDEX__ -->
+</nav>
+
+<main>
+<!-- __WORKS__ -->
+</main>
+
+<footer>
+  <a href="../">the ever expanding board</a>
+</footer>
+
+<div class="view" id="view" tabindex="-1" role="dialog" aria-modal="true" aria-label="Work">
+  <div class="stage"><img id="big" alt=""></div>
+  <div class="plate">
+    <span><b id="plate-title"></b> <span id="plate-meta"></span></span>
+    <span class="pos" id="plate-pos"></span>
+  </div>
+  <div class="zone prev" aria-hidden="true"></div>
+  <div class="zone next" aria-hidden="true"></div>
+  <button class="shut" id="shut">close</button>
+</div>
+
+<script>
+document.documentElement.classList.add('js');
+
+/* ── the works, read off the document ─────────────────────────────── */
+
+const tiles = Array.from(document.querySelectorAll('a.work'));
+const bySet = new Map();
+tiles.forEach(t => {
+  const s = t.dataset.set;
+  if (!bySet.has(s)) bySet.set(s, []);
+  bySet.get(s).push(t);
+});
+
+/* ── justified rows: every work keeps its true proportions ────────── */
+
+const GAP = 12;
+
+/* Row height, chosen by looking: at this scale a set reads as a set —
+   a whole page of work taken in at once — without the paintings
+   shrinking to thumbnails. */
+function targetHeight(width) {
+  if (width < 620)  return width * 0.62;
+  if (width < 1000) return 200;
+  if (width < 1500) return 240;
+  return 280;
+}
+
+function ratio(t) { return +t.dataset.w / +t.dataset.h; }
+
+function layout() {
+  for (const [, works] of bySet) {
+    const host = works[0].closest('.rows');
+    const width = host.clientWidth;
+    if (!width) continue;
+    const target = targetHeight(width);
+
+    /* featured works flush the row and stand alone at full width;
+       a tall one is capped to the viewport and centred instead */
+    /* A row is "packed" only when it filled naturally. One cut short by a
+       featured work, or by the end of the set, must not be stretched to the
+       full width — two paintings blown up to fill a row is not a row. */
+    const rows = [];
+    let row = [], sum = 0;
+    const flush = packed => {
+      if (row.length) rows.push({ cells: row, packed });
+      row = []; sum = 0;
+    };
+    for (const t of works) {
+      if (t.classList.contains('full')) { flush(false); rows.push({ cells: [t], full: true }); continue; }
+      row.push(t);
+      sum += ratio(t);
+      if (sum * target + GAP * (row.length - 1) >= width) flush(true);
+    }
+    flush(false);
+
+    const frag = document.createDocumentFragment();
+    rows.forEach(({ cells, packed, full }) => {
+      const el = document.createElement('div');
+      el.className = 'row';
+
+      if (full) {
+        const t = cells[0], r = ratio(t);
+        const h = Math.min(width * 0.66 / r, innerHeight * 0.62, target * 1.7);
+        el.style.height = h + 'px';
+        el.classList.add('solo');
+        t.style.flex = '0 0 ' + r * h + 'px';
+        el.appendChild(t);
+        frag.appendChild(el);
+        return;
+      }
+
+      const s = cells.reduce((a, t) => a + ratio(t), 0);
+      const avail = width - GAP * (cells.length - 1);
+      const stretch = packed || avail / s <= target * 1.15;
+      const h = stretch ? avail / s : target;
+
+      el.style.height = h + 'px';
+      cells.forEach(t => {
+        /* proportional grow from a zero basis: the browser divides the
+           space exactly, so rounding cannot spill past the container */
+        t.style.flex = stretch
+          ? ratio(t) + ' 1 0px'
+          : '0 0 ' + ratio(t) * h + 'px';
+        el.appendChild(t);
+      });
+      frag.appendChild(el);
+    });
+    host.textContent = '';
+    host.appendChild(frag);
+  }
+}
+
+let resizeTimer;
+addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(layout, 90);
+});
+layout();
+
+/* fade each work in as it decodes */
+tiles.forEach(t => {
+  const img = t.querySelector('img');
+  if (img.complete && img.naturalWidth) img.classList.add('in');
+  else img.addEventListener('load', () => img.classList.add('in'), { once: true });
+});
+
+/* ── the opened work ──────────────────────────────────────────────── */
+
+const view = document.getElementById('view');
+const big = document.getElementById('big');
+const pTitle = document.getElementById('plate-title');
+const pMeta = document.getElementById('plate-meta');
+const pPos = document.getElementById('plate-pos');
+
+let current = -1;   /* index into tiles */
+let opener = null;
+
+function bigSrc(t) {
+  const w = innerWidth * devicePixelRatio;
+  return (w > 1500 && t.dataset.full) ? t.dataset.full : (t.dataset.mid || t.dataset.full);
+}
+
+const stage = view.querySelector('.stage');
+const quiet = matchMedia('(prefers-reduced-motion: reduce)');
+
+/* where the opened image will sit: contained in the stage, centred */
+function restRect(t) {
+  const st = stage.getBoundingClientRect();
+  const sp = parseFloat(getComputedStyle(stage).getPropertyValue('--sp')) || 0;
+  const bw = st.width - sp * 2, bh = st.height - sp * 2, r = ratio(t);
+  let w = bw, h = bw / r;
+  if (h > bh) { h = bh; w = bh * r; }
+  return { x: st.left + sp + (bw - w) / 2, y: st.top + sp + (bh - h) / 2, w, h };
+}
+
+/* the work grows from its place in the grid to its place on the wall */
+function fly(t) {
+  const img = t.querySelector('img');
+  if (quiet.matches || !img.naturalWidth) return Promise.resolve();
+  const from = img.getBoundingClientRect();
+  const to = restRect(t);
+  const ghost = document.createElement('img');
+  ghost.className = 'fly';
+  ghost.src = img.currentSrc || img.src;
+  ghost.style.cssText = `left:${to.x}px;top:${to.y}px;width:${to.w}px;height:${to.h}px`;
+  ghost.style.transform = `translate(${from.left - to.x}px,${from.top - to.y}px) ` +
+                          `scale(${from.width / to.w},${from.height / to.h})`;
+  document.body.appendChild(ghost);
+  big.style.opacity = '0';
+  const a = ghost.animate(
+    [{ transform: ghost.style.transform }, { transform: 'none' }],
+    { duration: 520, easing: 'cubic-bezier(.22,.72,.18,1)', fill: 'forwards' });
+  return a.finished.then(() => { big.style.opacity = ''; ghost.remove(); });
+}
+
+function show(i, push) {
+  const t = tiles[i];
+  if (!t) return;
+  const opening = current < 0;
+  if (opening) {
+    opener = document.activeElement;
+    document.body.style.overflow = 'hidden';
+    view.style.setProperty('--tone', t.style.getPropertyValue('--tone'));
+    view.setAttribute('open', '');
+    view.focus({ preventScroll: true });
+  }
+  const stepping = !opening && current !== i;
+  current = i;
+
+  view.style.setProperty('--tone', t.style.getPropertyValue('--tone'));
+  const src = bigSrc(t);
+  if (stepping && !quiet.matches) {
+    /* fade out, swap, fade in — a hard cut between works is a slide show */
+    big.classList.add('out');
+    setTimeout(() => {
+      big.src = src;
+      const on = () => big.classList.remove('out');
+      if (big.complete) on(); else big.addEventListener('load', on, { once: true });
+    }, 140);
+  } else {
+    big.src = src;
+  }
+  if (opening) fly(t);
+  big.alt = t.getAttribute('aria-label') || '';
+  pTitle.textContent = t.dataset.title;
+  pMeta.textContent = t.dataset.metaText ? '· ' + t.dataset.metaText : '';
+  const sibs = bySet.get(t.dataset.set);
+  pPos.textContent = (sibs.indexOf(t) + 1) + ' / ' + sibs.length;
+
+  if (push) history.pushState({ w: t.dataset.n }, '', '#w' + t.dataset.n);
+  else history.replaceState({ w: t.dataset.n }, '', '#w' + t.dataset.n);
+
+  /* the neighbours are next; have them ready */
+  [step_i(1), step_i(-1)].forEach(j => {
+    const n = tiles[j]; if (n) (new Image()).src = bigSrc(n);
+  });
+}
+
+function step_i(d) {
+  const t = tiles[current];
+  const sibs = bySet.get(t.dataset.set);
+  const j = (sibs.indexOf(t) + d + sibs.length) % sibs.length;
+  return tiles.indexOf(sibs[j]);
+}
+
+function shut(back) {
+  if (current < 0) return;
+  view.removeAttribute('open');
+  document.body.style.overflow = '';
+  big.removeAttribute('src');
+  current = -1;
+  if (back) history.back();
+  else history.replaceState(null, '', location.pathname);
+  if (opener) opener.focus();
+}
+
+tiles.forEach((t, i) => t.addEventListener('click', e => {
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+  e.preventDefault();
+  show(i, true);
+}));
+
+view.querySelector('.zone.prev').addEventListener('click', () => show(step_i(-1), false));
+view.querySelector('.zone.next').addEventListener('click', () => show(step_i(1), false));
+document.getElementById('shut').addEventListener('click', () => shut(true));
+
+addEventListener('keydown', e => {
+  if (current < 0) return;
+  if (e.key === 'Escape')     { e.preventDefault(); shut(true); }
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); show(step_i(-1), false); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); show(step_i(1), false); }
+});
+
+/* back and forward drive the overlay, so the back button closes it */
+addEventListener('popstate', e => {
+  if (e.state && e.state.w) {
+    const i = tiles.findIndex(t => t.dataset.n === String(e.state.w));
+    if (i >= 0) show(i, false);
+  } else if (current >= 0) shut(false);
+});
+
+const hash = location.hash.match(/^#w(\d+)$/);
+if (hash) {
+  const i = tiles.findIndex(t => t.dataset.n === hash[1]);
+  if (i >= 0) show(i, false);
+}
+</script>
+</body>
+</html>

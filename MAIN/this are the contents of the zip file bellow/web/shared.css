@@ -1,0 +1,127 @@
+/* ═══ web/shared.css ═══════════════════════════════════════════════
+   One source for everything both pages agree on. Before this existed
+   the two documents carried duplicate copies of the tokens, the type
+   and the masthead, so every spacing decision had to be made twice by
+   hand and they drifted apart between edits.
+
+   THE SPACING SCALE IS THE POINT. Six steps, and nothing in either
+   page may invent its own clamp() for vertical rhythm. If a gap looks
+   wrong the fix is a different step, or the scale itself — never a
+   number typed in one place.
+   ═════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* palette — the visualizer shell's own */
+  --ink:   #e8e6e0;
+  --dim:   #8a8792;
+  --faint: #55525c;
+  --bg:    #0a0a0c;
+  --mat:   #16120d;      /* warm ground under works on paper */
+
+  /* the scale. s1 is a hair, s6 is a section break. */
+  --s1: clamp(6px,  0.7vw,  10px);
+  --s2: clamp(12px, 1.4vw,  18px);
+  --s3: clamp(20px, 2.2vw,  28px);
+  --s4: clamp(28px, 3.2vw,  42px);
+  --s5: clamp(40px, 4.6vw,  62px);
+  --s6: clamp(56px, 6.4vw,  88px);
+
+  --edge: clamp(22px, 5vw, 88px);   /* horizontal margin, one value */
+  --gap: 12px;                      /* between works in a row */
+
+  --serif: "Newsreader", ui-serif, "Iowan Old Style", "Palatino Linotype",
+           Palatino, Georgia, serif;
+}
+
+@font-face {
+  font-family: "Newsreader";
+  src: url("fonts/Newsreader.woff2") format("woff2");
+  font-weight: 200 800; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Newsreader";
+  src: url("fonts/Newsreader-Italic.woff2") format("woff2");
+  font-weight: 200 800; font-style: italic; font-display: swap;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-optical-sizing: auto;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; }
+::selection { background: var(--faint); color: var(--ink); }
+
+/* A faint film over the ground. Sits beneath everything, so it is on
+   the wall and never on a painting. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.055;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── masthead, identical on both pages ───────────────────────────── */
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s3);
+  padding: var(--s3) var(--edge);
+}
+.top .site {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 430;
+  letter-spacing: 0.01em;
+}
+.top nav { font-size: 14.5px; color: var(--dim); }
+.top nav a { text-decoration: none; margin-left: 1.1em; }
+.top nav a:first-child { margin-left: 0; }
+.top nav a:hover, .top nav a:focus-visible { color: var(--ink); }
+
+/* ── a section's opening line ────────────────────────────────────── */
+
+.band-label {
+  margin: 0 0 var(--s3);
+  font-size: 15px;
+  font-weight: 430;
+  letter-spacing: 0.14em;
+  color: var(--dim);
+}
+
+/* ── footer ──────────────────────────────────────────────────────── */
+
+footer {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s3);
+  flex-wrap: wrap;
+  padding: 0 var(--edge) var(--s5);
+  font-size: 13.5px;
+  color: var(--faint);
+}
+footer a { color: var(--dim); text-decoration: none; }
+footer a:hover { color: var(--ink); }
+
+/* ── underlined links that brighten ──────────────────────────────── */
+
+.rule {
+  text-decoration: none;
+  border-bottom: 1px solid var(--faint);
+  transition: border-color 200ms ease;
+}
+.rule:hover, .rule:focus-visible { border-color: var(--ink); }
