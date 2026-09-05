@@ -227,6 +227,20 @@ inline constexpr float POSSESSION_RADIUS = 20.0f;
 // he may look through.
 inline constexpr float PULSE_TAP_AMPLITUDE = 1.5f;
 
+// ═══ THE LEAP (LEAP_0) ═══════════════════════════════════════════════
+// THE SAME TAP, THE BODY'S HALF — input grammar again (how high a gesture
+// carries), so it lives here beside the pulse's impulse. The GPU is the
+// one reader (behavior_player_controlled, through the config); the CPU
+// reads none of these. Boot-pinned by GPUState::initializeState; the
+// organ's CONFIG rows edit the live copy. What the eye measures is what
+// is authored — heights and a time; launch speed and gravity are derived
+// at the read. The walk's PAWN_SPEED (15 wu/s) carries the leap about
+// eight world units at these rests.
+inline constexpr float LEAP_APEX       = 3.0f;   // wu — two pawn heights (PAWN_HEIGHT 1.5)
+inline constexpr float LEAP_RISE       = 0.30f;  // s — ground to apex
+inline constexpr float LEAP_FALL_RATIO = 1.8f;   // falling gravity / rising gravity — the apex hang
+inline constexpr float LEAP_FLIP_APEX  = 1.2f;   // wu — the somersault's own apex over where it fired
+
 inline constexpr PanelSurface PANEL_TABLE = {
     { FIELD_BEACON_R0, FIELD_BEACON_R, FIELD_BEACON_S, FIELD_BEACON_LIFT },
     { 0.005f, 1.25f, 8.0f, 2.0f },   // carried verbatim from

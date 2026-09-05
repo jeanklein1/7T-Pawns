@@ -938,7 +938,19 @@ namespace t7 {
             // sizeof 720 UNMOVED (the fpv_eye_height / pawn_body_radius
             // precedent). Was _pad720_1.
             float possessed_height;        // 712
-            float _pad720_2;               // 716
+            // LEAP_0 — THE LEAP'S FOUR DIALS. Mirror of world.wgsl's config
+            // (GROWTH LAW: same commit, same order, same types). What the eye
+            // measures is what the dial says — heights and a time; launch
+            // speed and gravity are derived at the one read
+            // (behavior_player_controlled), so no room holds a second copy of
+            // the arithmetic. Rests: contracts/control_panel.hpp LEAP_*,
+            // boot-pinned by initializeState. One pad consumed IN PLACE, three
+            // appended, one fresh pad to the boundary: 720 -> 736. Was _pad720_2.
+            float leap_apex;               // 716  wu — the leap's height over the ground it left
+            float leap_rise;               // 720  s — ground to apex; the dial floors it above 0
+            float leap_fall_ratio;         // 724  falling gravity / rising gravity — the apex hang
+            float leap_flip_apex;          // 728  wu — the somersault's own apex over where it fired
+            float _pad736_0;               // 732
         };
 
         struct alignas(16) GPUTileGridEntry {
@@ -970,7 +982,9 @@ namespace t7 {
             float pos_x;           //  0
             float pos_y;           //  4
             float pos_z;           //  8
-            float t;               // 12 — personal clock
+            float t;               // 12 — the possessed slot's AIR CLOCK (LEAP_0): 0 on the
+                                   //      ground; +seconds since the leap; −seconds since the
+                                   //      somersault (spent). Zero on every other slot.
             float vel_x;           // 16
             float vel_y;           // 20
             float vel_z;           // 24
@@ -2020,8 +2034,8 @@ namespace t7 {
         // 624 -> 672. Both rooms, same commit.
         // RIBBON_2: the wander brain's four join them — one pad consumed,
         // three appended, one fresh pad; 672 -> 688. Both rooms, same commit.
-        static_assert(sizeof(GPUDesignConfig) == 720,
-            "GPUDesignConfig must be 720 bytes. PRUNING_1 P3 removed nine "
+        static_assert(sizeof(GPUDesignConfig) == 736,
+            "GPUDesignConfig must be 736 bytes. PRUNING_1 P3 removed nine "
             "zero-read fields (44 B) and added 12 B of DECLARED PAD: WGSL "
             "aligns vec3 to 16 while C++ packs float[3] at 4, and dropping "
             "44 B moved all four vec3 members off their boundaries. "
@@ -2040,7 +2054,8 @@ namespace t7 {
             "and the trailing pad is spent. The witness's two presence dials "
             "met that: no pad to reuse, two appended, two fresh pads to the "
             "boundary; 688 -> 704. PANORAMA_1: the two subtraction masks — one pad consumed IN PLACE, one appended, three fresh pads to the "
-            "boundary; 704 -> 720. PANORAMA_1: the PCF tap count consumes one of those three pads IN PLACE — 720 unmoved.)");
+            "boundary; 704 -> 720. PANORAMA_1: the PCF tap count consumes one of those three pads IN PLACE — 720 unmoved. "
+            "LEAP_0: the leap's four dials — one pad consumed IN PLACE, three appended, one fresh pad to the boundary; 720 -> 736.)");
         // THE ALIGNMENT LAW (L4, docs/LAWS.md). These four are the only
         // offsets where the two rooms can disagree, and no witness here fires
         // when they do — grow at the TAIL (after checker_resultant's group) or
@@ -5523,6 +5538,12 @@ namespace t7 {
                 config_.camera_chase_ff        = CAMERA_CHASE_FF;
                 config_.camera_push_gain       = CAMERA_PUSH_GAIN;
                 config_.camera_push_radius     = CAMERA_PUSH_RADIUS;
+                // LEAP_0 — the leap's dials, boot-pinned from THE PANEL
+                // (contracts/control_panel.hpp) by the field dials' idiom.
+                config_.leap_apex              = LEAP_APEX;
+                config_.leap_rise              = LEAP_RISE;
+                config_.leap_fall_ratio        = LEAP_FALL_RATIO;
+                config_.leap_flip_apex         = LEAP_FLIP_APEX;
                 config_.freeze_sphere = 0;
                 config_.fpv_mode = 0;
                 config_.world_seed = 42;

@@ -908,7 +908,9 @@ struct AgentState {
     pos_x: f32,
     pos_y: f32,
     pos_z: f32,
-    t: f32,         // reserved (per-agent local clock; padding to vec4)
+    t: f32,         // the possessed slot's AIR CLOCK (LEAP_0): 0 on the ground;
+                    // +seconds since the leap; −seconds since the somersault (spent).
+                    // Zero on every other slot. Mirrors GPUAgentState.t.
     vel_x: f32,
     vel_y: f32,
     vel_z: f32,
@@ -1898,7 +1900,16 @@ struct DesignConfig {
     // this room cannot derive: scene_constants.figure_profiles (g2:200) is a
     // render-VS uniform and no compute layout binds it. Was _pad720_1.
     possessed_height: f32,          // 712
-    _pad720_2: f32,                 // 716
+    // LEAP_0 — the leap's four dials. Mirror of GPUDesignConfig (state.hpp)
+    // — GROWTH LAW, same commit, same order, same types. Read by
+    // behavior_player_controlled, which derives launch speed and gravity
+    // from them at the read. One pad consumed in place, three appended, one
+    // fresh pad: 720 -> 736 (state.hpp carries the witness). Was _pad720_2.
+    leap_apex: f32,                 // 716
+    leap_rise: f32,                 // 720
+    leap_fall_ratio: f32,           // 724
+    leap_flip_apex: f32,            // 728
+    _pad736_0: f32,                 // 732
 }
 
 // §2.2 — THE TERRAIN_LOOKS PANEL (WGSL room)
@@ -2173,6 +2184,12 @@ const PAWN_MAX_SLOPE: f32 = 1.75;           // ≈60° — the climbable limit
 // query's own finite-diff jitter dominates dh and the ratio is noise.
 const PAWN_SLOPE_NOISE_FLOOR: f32 = 0.05;
 const PAWN_TURN_SPEED: f32 = 8.0;
+// THE LIP LAW (LEAP_0). Aloft, a candidate move is blocked iff the ground
+// there stands above the body by more than this: the walk's wall is a
+// grade (PAWN_MAX_SLOPE), the flight's wall is a lip, and a rise the body
+// is already clearing is not a wall. Shape, not a dial — the standing the
+// ring's own consts keep.
+const PAWN_AIR_LIP: f32 = 0.35;
 
 // Chess pawn mesh resolution (GPU-generated from vertex_index)
 const PAWN_SEGMENTS: u32 = 48u;
@@ -7962,6 +7979,49 @@ fn pawn_ground_resolve(
     return vec4(prev_xz.x, prev_y, prev_xz.y, 0.0);
 }
 
+// --- Pawn air resolve (LEAP_0)
+//
+// pawn_ground_resolve's twin for a body aloft. Same shape — the full
+// move, the two axis slides, the revert — under THE LIP LAW instead of
+// THE SLOPE LAW: the ground is a wall when it stands above the body (by
+// more than PAWN_AIR_LIP) and a floor when it is below. Only the walker
+// height is read (the standing height the body will land on); the tilt
+// height has no business here — there is no grade to compare aloft.
+// Returns (x, ground_y at the returned xz, z, ok). The caller owns Y: it
+// integrates the flight and decides the touchdown against ground_y.
+fn lip_passable(ground_y: f32, body_y: f32) -> bool {
+    return ground_y <= body_y + PAWN_AIR_LIP;
+}
+
+fn pawn_air_resolve(
+    new_xz: vec2<f32>, prev_xz: vec2<f32>, body_y: f32, qi: QueryInputs
+) -> vec4<f32> {
+    let y_new = query_ground_walker(new_xz, qi);
+    if (lip_passable(y_new, body_y)) {
+        return vec4(new_xz.x, y_new, new_xz.y, 1.0);           // happy path
+    }
+
+    let slide_x = vec2(new_xz.x, prev_xz.y);
+    let y_x     = query_ground_walker(slide_x, qi);
+    let x_ok    = lip_passable(y_x, body_y);
+
+    let slide_z = vec2(prev_xz.x, new_xz.y);
+    let y_z     = query_ground_walker(slide_z, qi);
+    let z_ok    = lip_passable(y_z, body_y);
+
+    if (x_ok && z_ok) {
+        if (abs(new_xz.x - prev_xz.x) >= abs(new_xz.y - prev_xz.y)) {
+            return vec4(slide_x.x, y_x, slide_x.y, 1.0);
+        }
+        return vec4(slide_z.x, y_z, slide_z.y, 1.0);
+    }
+    if (x_ok) { return vec4(slide_x.x, y_x, slide_x.y, 1.0); }
+    if (z_ok) { return vec4(slide_z.x, y_z, slide_z.y, 1.0); }
+
+    // Fully blocked — hold xz; the ground under the held xz is the floor.
+    return vec4(prev_xz.x, query_ground_walker(prev_xz, qi), prev_xz.y, 0.0);
+}
+
 // ═══ AGENT POST-STEP HELPER ══════════════════════════════════════
 //
 // Behaviors only modify a.vel_x / a.vel_z. The post-step applies the
@@ -8121,6 +8181,7 @@ fn behavior_player_controlled(agent_in: AgentState) -> AgentState {
         agent.vel_x = 0.0;
         agent.vel_y = 0.0;
         agent.vel_z = 0.0;
+        agent.t = 0.0;          // LEAP_0 — the saddle grounds the air clock; a dismount lands on the ground's law
         // Composed in the ring motor's verified order — roll, then pitch,
         // then yaw (quat_multiply applies its SECOND argument first). Negated:
         // quat_rotate maps +X to (cos θ, −sin θ); the heading speaks dir(θ).
@@ -8142,7 +8203,8 @@ fn behavior_player_controlled(agent_in: AgentState) -> AgentState {
     // The intent channel routes to the point's HOST —
     // when the camera hosts (free-fly) the body idles (the else arm
     // zeroes velocity; the pawn stands, snapped where it is).
-    if (coupling_active(COUPLING_INPUT_MOVES_PLAYER) && !point_camera_hosted()) {
+    let hands_live = coupling_active(COUPLING_INPUT_MOVES_PLAYER) && !point_camera_hosted();
+    if (hands_live) {
         let input_dir = vec2(signal.move_x, signal.move_z);
         var world_vel = coupling_input_to_pawn_velocity(input_dir, camera_state.azimuth);
 
@@ -8238,19 +8300,64 @@ fn behavior_player_controlled(agent_in: AgentState) -> AgentState {
     let qi = QueryInputs(vec3(prev_xz.x, prev_y, prev_xz.y), signal.t_seconds);
 
     if (coupling_active(COUPLING_TERRAIN_TO_PAWN_Y)) {
-        let resolved = pawn_ground_resolve(vec2(agent.pos_x, agent.pos_z), prev_xz, prev_y, qi);
-        agent.pos_x = resolved.x;
-        agent.pos_y = resolved.y;
-        agent.pos_z = resolved.z;
-        if (resolved.w < 0.5) {
-            agent.vel_x = 0.0;
-            agent.vel_z = 0.0;
+        // ── LEAP_0: TWO LAWS, ONE CLOCK ─────────────────────────────
+        // agent.t is the AIR CLOCK (see AgentState): 0 on the ground,
+        // +seconds since the leap, −seconds since the somersault. On the
+        // ground Y is a lookup and the wall is a grade (pawn_ground_resolve).
+        // Aloft Y integrates under gravity and the wall is a lip
+        // (pawn_air_resolve); the touchdown hands Y back. The door
+        // (signal.jump_edge) obeys the hands' gate, so the camera host earns
+        // nothing. The clock advances first, so a door that fires on an
+        // existing flight starts a fresh count.
+        if (agent.t > 0.0) { agent.t += dt; }
+        let door   = hands_live && signal.jump_edge != 0u;
+        let rise   = max(config.leap_rise, 1e-3);          // the dial floors it; this is the guard
+        let g_rise = 2.0 * config.leap_apex / (rise * rise);
+        if (door && agent.t == 0.0) {                       // THE LEAP — from the ground
+            agent.vel_y = 2.0 * config.leap_apex / rise;
+            agent.t = dt;
+        }
+        if (agent.t != 0.0) {
+            // THE BODY'S LAW. Rising and falling gravity differ — the apex
+            // hangs — and the step is semi-implicit: the velocity first,
+            // then the position it carries.
+            let g = select(g_rise * config.leap_fall_ratio, g_rise, agent.vel_y > 0.0);
+            agent.vel_y -= g * dt;
+            let y_air = prev_y + agent.vel_y * dt;
+            let r = pawn_air_resolve(vec2(agent.pos_x, agent.pos_z), prev_xz, y_air, qi);
+            agent.pos_x = r.x;
+            agent.pos_z = r.z;
+            if (r.w < 0.5) {
+                agent.vel_x = 0.0;
+                agent.vel_z = 0.0;
+            }
+            if (agent.vel_y <= 0.0 && y_air <= r.y) {       // TOUCHDOWN — the ground's law resumes
+                agent.pos_y = r.y;
+                agent.vel_y = 0.0;
+                agent.t = 0.0;
+            } else {
+                agent.pos_y = y_air;
+            }
+        } else {
+            // THE GROUND'S LAW, as ever.
+            let resolved = pawn_ground_resolve(vec2(agent.pos_x, agent.pos_z), prev_xz, prev_y, qi);
+            agent.pos_x = resolved.x;
+            agent.pos_y = resolved.y;
+            agent.pos_z = resolved.z;
+            if (resolved.w < 0.5) {
+                agent.vel_x = 0.0;
+                agent.vel_z = 0.0;
+            }
         }
     }
 
     // --- Orientation: heading + walker-policy terrain tilt
     if (coupling_active(COUPLING_TERRAIN_TO_PAWN_TILT)) {
-        let normal = terrain_normal_at(vec2(agent.pos_x, agent.pos_z), qi);
+        // LEAP_0 — aloft the ground has no word: the body stands upright, and
+        // the tilt lag below (where a figure has one) eases it back onto the
+        // slope it lands on.
+        var normal = vec3(0.0, 1.0, 0.0);
+        if (agent.t == 0.0) { normal = terrain_normal_at(vec2(agent.pos_x, agent.pos_z), qi); }
 
         let world_up = vec3(0.0, 1.0, 0.0);
         let d = dot(world_up, normal);

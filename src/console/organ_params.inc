@@ -621,6 +621,12 @@ ORGAN_PARAM(CONFIG, GPUDesignConfig, field_gain_agent,    F32, 0.0f, 16.0f,   0.
 // point.hpp's bubble, Idle::PAWN_SPEED, MOVE_SPEED, CUBE_PLASTICITY.
 ORGAN_PARAM(CONFIG, GPUDesignConfig, point_bubble_radius, F32, 0.0f, 80.0f,  0.5f,   "Interaction · Point",  "bubble radius")
 ORGAN_PARAM(CONFIG, GPUDesignConfig, pawn_speed,          F32, 0.0f, 60.0f,  0.5f,   "Interaction · Pawn",   "walk speed")
+// LEAP_0 — the leap's dials (contracts/control_panel.hpp LEAP_*), GPU-read
+// by behavior_player_controlled. The rise's floor is a step, not zero:
+// launch speed and gravity divide by it.
+ORGAN_PARAM(CONFIG, GPUDesignConfig, leap_apex,           F32, 0.0f,  12.0f, 0.1f,   "Interaction · Pawn",   "leap apex")
+ORGAN_PARAM(CONFIG, GPUDesignConfig, leap_rise,           F32, 0.05f, 1.0f,  0.01f,  "Interaction · Pawn",   "leap rise (s)")
+ORGAN_PARAM(CONFIG, GPUDesignConfig, leap_fall_ratio,     F32, 1.0f,  3.0f,  0.05f,  "Interaction · Pawn",   "leap fall ratio")
 ORGAN_PARAM(CONFIG, GPUDesignConfig, point_fly_speed,     F32, 0.0f, 120.0f, 0.5f,   "Interaction · Camera", "fly speed")
 ORGAN_PARAM(CONFIG, GPUDesignConfig, cube_plasticity,     F32, 0.0f, 1.0f,   0.005f, "Interaction · Cubes",  "plasticity λ")
 
