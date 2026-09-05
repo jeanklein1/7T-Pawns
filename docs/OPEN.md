@@ -3521,3 +3521,21 @@ the served data hashes to ca1de349, verified from the wire).
 build_id is now sha256(wasm + world.wgsl)[:BUILD_ID_LEN]; the first
 deploy after this re-keys every URL and heals any browser pinned today.
 Interim cure on an already-pinned machine: hard refresh (Ctrl+Shift+R).
+
+## PAIR_0 — the glue and the package are witnessed as a pair (closed)
+
+The 5 Sep floor outlived BUILDID_1 because it was never the cache. From
+the wire: glue `remote_package_size:745343`, package 745414 bytes, wasm
+`e59631131758` stamped `native-sunset-722-g0b18b2dd 2026-09-05T05:06Z`
+— the morning's build beside that afternoon's package. The glue slices
+to the length it was linked against, so every device received the
+current shader minus its last 71 bytes (`// END OF SCROLL`), digesting
+to 1b2295bc against an expected ca1de349. `web/` had accumulated
+outputs from two links; a link writes the .data before it emits the
+.js/.wasm, so a failure between the two leaves exactly this mixture.
+web_dist now compares the glue's declared package length against the
+package it ships and refuses on mismatch; absence of the field prints
+UNWITNESSED rather than refusing. Deploy hygiene of record: delete the
+three build files before building, so a failed link is an ABSENT
+artifact (web_dist's existing BUILD FIRST refusal) rather than a stale
+one.

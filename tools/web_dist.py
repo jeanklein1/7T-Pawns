@@ -419,6 +419,42 @@ def assert_package_is_shader_only(data_path, shader_bytes):
     return None
 
 
+# ═══ PAIR_0 — THE GLUE AND THE PACKAGE SHIP AS ONE ARTIFACT ══════════
+#
+# The glue carries the package's length from the link that produced it
+# (`remote_package_size`), and slices the fetched .data to exactly that
+# many bytes. So a glue linked against a shorter shader TRUNCATES a
+# longer one, silently, and hands the runtime bytes no build ever made.
+#
+# 5 Sep 2026, on the wire: glue said 745343, package was 745414, and the
+# device received the current shader minus its last 71 bytes —
+# 1b2295bc against an expected ca1de349, on every device, with no cache
+# involved. The package assert above passed the whole time and was
+# right to: the package was fresh. The pair was not.
+#
+# THE TWO FILES ARE ASKED, NOT THE BUILD SYSTEM — the AUBADE precedent.
+# A stamp CMake writes is a stamp a failed link can leave behind; these
+# two numbers come from the bytes that will ship.
+#
+# ABSENCE IS NOT MISMATCH. If the pattern is gone, Emscripten has
+# changed how it packages and this check no longer knows what it is
+# looking at; that says nothing about today's pair, so it prints
+# UNWITNESSED rather than refusing a lawful toolchain upgrade at a
+# moment nobody understands.
+GLUE_PACKAGE_SIZE = re.compile(rb"remote_package_size\s*[:=]\s*(\d+)")
+
+
+def glue_package_size(js_path):
+    """The package length the glue was linked against, or None if unstated."""
+    try:
+        with open(js_path, "rb") as fh:
+            blob = fh.read()
+    except OSError:
+        return None
+    found = GLUE_PACKAGE_SIZE.findall(blob)
+    return int(found[0]) if found else None
+
+
 # ═══ AUBADE U7/U8 — NOTHING THE PAGE CAN FETCH IS THE EXHIBITION ═════
 #
 # THE LAW IS ABOUT FETCHING, NOT NAMING, and the distinction is the whole
@@ -1071,6 +1107,29 @@ def main():
         print("  visitor on every cold load. It carries the shader because the")
         print("  shader is first light; anything else in it is a byte the dawn")
         print("  pays for. Check CMakeLists' --preload-file list (T7_WEB_SHADER).")
+        print("  dist/ is part-written and NOT deployable.")
+        return 7
+
+    # PAIR_0 — THE GLUE AGAINST THE PACKAGE, both as they will ship.
+    glue_says = glue_package_size(os.path.join(DIST, "the_board.js"))
+    packed_is = os.path.getsize(os.path.join(DIST, "the_board.data"))
+    if glue_says is None:
+        print("  PAIR UNWITNESSED — the glue states no remote_package_size;")
+        print("  Emscripten's packaging shape has changed. Re-price PAIR_0.")
+    elif glue_says != packed_is:
+        print("")
+        print("REFUSING TO SHIP A MISMATCHED PAIR.")
+        print("  the_board.js was linked against a %d-byte package;" % glue_says)
+        print("  the_board.data is %d bytes." % packed_is)
+        print("  The glue slices the package to the length it remembers, so the")
+        print("  runtime would receive a shader cut %d bytes short — bytes no"
+              % abs(packed_is - glue_says))
+        print("  build ever made, failing SEAL2 on every device, with no cache")
+        print("  involved (PAIR_0, 5 Sep 2026).")
+        print("  web/ holds outputs from two different links. Delete the three")
+        print("  build files and build again, and READ THE BUILD'S OUTPUT:")
+        print("    del web\\the_board.js web\\the_board.wasm web\\the_board.data")
+        print("    cmake --build --preset the-board-web")
         print("  dist/ is part-written and NOT deployable.")
         return 7
 
