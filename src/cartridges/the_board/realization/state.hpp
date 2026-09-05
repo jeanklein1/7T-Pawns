@@ -998,17 +998,7 @@ namespace t7 {
             float color_g;         // 84
             float color_b;         // 88
             uint32_t skin_id;      // 92 — PawnFigureDef row (0 = regular pawn). Was _pad0.
-            // REACH_0 — THE BUBBLE'S SENSOR WORD. Bit-addressed so the game
-            // layer's future sensors take bits, not fields. Bit 0 = the
-            // ribbon's seat within config.ribbon_reach (the pawn kernel
-            // writes it, PAWN host only; every other behaviour leaves it 0).
-            // The witness harvest carries the word home beside
-            // portal_trigger. Rest is 0 by zero-init.
-            uint32_t sensor_bits;  // 96
-            uint32_t _pad100;      // 100
-            uint32_t _pad104;      // 104
-            uint32_t _pad108;      // 108
-        };                         // 112 total
+        };                         // 96 total
 
         // ─── Agent registry GPU structs ──────────────────────────────
         //
@@ -2117,7 +2107,7 @@ namespace t7 {
             + sizeof(GPUAgentBehaviorDef) * GPU_AGENT_BEHAVIOR_COUNT
             == offsetof(GPUAgentRoomConstants, tier_gains),
             "behaviors and tier_gains must stay adjacent — the registry upload writes them as one range");
-        static_assert(sizeof(GPUAgentState) == 112, "GPUAgentState must be 112 bytes");
+        static_assert(sizeof(GPUAgentState) == 96, "GPUAgentState must be 96 bytes");
         static_assert(sizeof(GPUAgentState) % 16 == 0, "GPUAgentState must be 16-byte aligned");
         static_assert(sizeof(GPUAgentBehaviorDef) == 32, "GPUAgentBehaviorDef must be 32 bytes");
         static_assert(sizeof(GPUAgentBehaviorDef) % 16 == 0, "GPUAgentBehaviorDef must be 16-byte aligned");
