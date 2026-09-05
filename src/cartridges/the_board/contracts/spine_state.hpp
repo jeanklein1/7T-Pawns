@@ -383,10 +383,10 @@ struct MoodProfile {
 // ═══ THE SHAPES ══════════════════════════════════════════════════
 // One authored home per shape. Three moods wear SHAPE_OPEN, and that
 // they are one stage is stated by this constant, not by three copies.
-//                                              fin    r_min r_max indoor ceil                wall_h amp_c  zones aura  cull   roster               scheme         palette
+//                                              fin    r_min r_max indoor ceil                wall_h amp_c  zones aura  cull   scheme         palette
 inline constexpr WorldShape SHAPE_OPEN       = { false, 2,    2,    false, CeilingType::NONE,  0.0f,  0.0f,  true, true, true,  SCHEME_ROLL,   PALETTE_ROLL };
-inline constexpr WorldShape SHAPE_ROOM_FLAT  = { true,  1,    4,    true,  CeilingType::FLAT,  20.0f, 0.5f,  true, true, false, SCHEME_ROLL,   PALETTE_ROLL };
-inline constexpr WorldShape SHAPE_ROOM_VAULT = { true,  1,    4,    true,  CeilingType::VAULT, 25.0f, 0.5f,  true, true, false, SCHEME_ROLL,   PALETTE_ROLL };
+inline constexpr WorldShape SHAPE_ROOM_FLAT  = { true,  1,    3,    true,  CeilingType::FLAT,  20.0f, 0.5f,  true, true, false, SCHEME_ROLL,   PALETTE_ROLL };
+inline constexpr WorldShape SHAPE_ROOM_VAULT = { true,  1,    3,    true,  CeilingType::VAULT, 25.0f, 0.5f,  true, true, false, SCHEME_ROLL,   PALETTE_ROLL };
 inline constexpr WorldShape SHAPE_FINITE     = { true,  1,    4,    false, CeilingType::NONE,  0.0f,  0.0f,  true, true, true,  SCHEME_ROLL,   PALETTE_ROLL };
 // THE ATRIUM'S SHAPE (ATRIUM_1). Radius pinned (min == max, no roll): every
 // visitor's first room is the same room. No GoL — the floor is for the images
