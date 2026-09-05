@@ -3477,3 +3477,21 @@ that authored this section. · ORRERY_0 R2 ·
   field (~few % of monumental/antenna cells); the neighbor cell then holds
   the ceiling at ~800 wu · origin: LODESTAR_0 U4 · unblocks: Jean's walk
   gate — levers are LODESTAR_TRIES or the retry jitter, both one-line.
+
+## WEBSITE_1 — the site moves into dist/; the engine owns names, not the folder
+
+Engine-side half of the website merge; the site-side half is Jean's
+(MAIN/MERGE.md). web_dist.py deletes only the names it writes and treats
+everything else in dist/ as a tenant; the root _headers keeps one writer,
+emits /fonts/* and /about/ rules only when those folders exist, and folds
+dist/collection/_headers.fragment verbatim; web/_redirects ships /main →
+/about/ and /world → / as 302 aliases; the shell gains two static doors
+(collection · about), a noscript paragraph, meta/OG tags, and a fallback
+card that says what the board is instead of promising a recording it never
+had. Full-refresh order: site pipelines first, `python tools/web_dist.py`
+LAST — it is the root assembler, and the fold reads what the site wrote.
+Open: · the card's browser list dropped "Firefox on desktop" — the shell
+claimed it, the Aug 2026 record holds Firefox LOST/HELD; Jean rules which
+fact is stale · card / noscript / meta wording is drafted, Jean gates ·
+the collection fragment's exact content is unverified until WEBSITE_0
+lands; if it carries more than /collection/*, dedupe at the fold.
