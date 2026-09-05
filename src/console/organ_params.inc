@@ -395,7 +395,6 @@ ORGAN_PARAM(CONFIG, GPUDesignConfig, ribbon_alt_smooth_dist, F32, 0.0f, 720.0f, 
 ORGAN_PARAM(CONFIG, GPUDesignConfig, ribbon_alt_stiff,       F32, 0.0f, 1.44f,  0.005f,"Ribbon · Head", "altitude stiffness")
 ORGAN_PARAM(CONFIG, GPUDesignConfig, ribbon_mount_setback,   F32, 0.0f, 6.0f,   0.02f, "Ribbon · Head", "mount setback")
 ORGAN_PARAM(CONFIG, GPUDesignConfig, ribbon_hands_tau,       F32, 0.0f, 2.4f,   0.01f, "Ribbon · Head", "hands tau (s)")
-ORGAN_PARAM(CONFIG, GPUDesignConfig, ribbon_reach,           F32, 0.0f, 240.0f, 0.5f,  "Ribbon · Head", "reach")
 // ─── Ribbon · Sky Rule (RIBBON_1) ── self-preservation, two readers ──
 // The head steers and climbs at `lookahead` ahead of its nose with
 // `clear_head` of berth; the body flows past the same shells at

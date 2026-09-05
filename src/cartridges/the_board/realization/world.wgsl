@@ -1898,10 +1898,7 @@ struct DesignConfig {
     // this room cannot derive: scene_constants.figure_profiles (g2:200) is a
     // render-VS uniform and no compute layout binds it. Was _pad720_1.
     possessed_height: f32,          // 712
-    // REACH_0 — the door's radius. Mirror of GPUDesignConfig — GROWTH LAW,
-    // same commit, same position, same type. Read by
-    // behavior_player_controlled's reach sensor. Was _pad720_2.
-    ribbon_reach: f32,              // 716
+    _pad720_2: f32,                 // 716
 }
 
 // §2.2 — THE TERRAIN_LOOKS PANEL (WGSL room)

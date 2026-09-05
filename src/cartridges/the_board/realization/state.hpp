@@ -935,14 +935,7 @@ namespace t7 {
             // sizeof 720 UNMOVED (the fpv_eye_height / pawn_body_radius
             // precedent). Was _pad720_1.
             float possessed_height;        // 712
-            // REACH_0 — THE DOOR'S RADIUS. Mirror of the WGSL twin — GROWTH
-            // LAW, same commit, same position, same type. THE PANEL
-            // (contracts/ribbon_surface.hpp RIBBON_LIVE.reach) authors the
-            // rest; the boot pins it; the organ edits it here. Read by
-            // behavior_player_controlled's reach sensor. The last tail pad
-            // is consumed IN PLACE, so sizeof 720 is unmoved and no witness
-            // below moves either. Was _pad720_2.
-            float ribbon_reach;            // 716
+            float _pad720_2;               // 716
         };
 
         struct alignas(16) GPUTileGridEntry {
@@ -5517,7 +5510,6 @@ namespace t7 {
                 config_.ribbon_clear_head      = RIBBON_LIVE.clear_head;
                 config_.ribbon_clear_body      = RIBBON_LIVE.clear_body;
                 config_.ribbon_hands_tau       = RIBBON_LIVE.sky_yaw_tau;
-                config_.ribbon_reach           = RIBBON_LIVE.reach;   // REACH_0 — the door's radius, same road
                 // RIBBON_2 — the wander brain's dials, same road, same site.
                 config_.ribbon_wander_soft     = RIBBON_LIVE.wander_soft;
                 config_.ribbon_wander_yaw_max  = RIBBON_LIVE.wander_yaw_max;
