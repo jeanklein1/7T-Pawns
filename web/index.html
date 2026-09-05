@@ -547,6 +547,54 @@
       });
     })();
 
+    // ══ REACH_1 V3 — THE RIDE FACE ══════════════════════════════════
+    //
+    // The indicator, not a button: pointer-events none, so every tap
+    // falls through to the canvas — the PULSE is the verb, this only
+    // teaches it. C++ calls window.T7_RIDE.set(mode) on EDGES
+    // (core/ride_face.hpp): 0 hides, 1 = the seat is in reach (pulse
+    // boards), 2 = riding (pulse lands). The glyph echoes the pulse
+    // ring — the wave you are about to make. THE ARTWORK SLOT:
+    // T7_RIDE.setImage(url) swaps the ring for Jean's image; the words
+    // stay. Builds itself on first use, the t7live idiom.
+    window.T7_RIDE = (function () {
+      var el = null, img = null, txt = null;
+      function build() {
+        el = document.createElement('div');
+        el.id = 't7ride';
+        el.style.cssText =
+          'position:fixed;left:50%;bottom:9%;transform:translateX(-50%);' +
+          'display:flex;flex-direction:column;align-items:center;gap:6px;' +
+          'pointer-events:none;z-index:40;opacity:0;' +
+          'transition:opacity 0.45s ease;font-family:inherit;' +
+          'color:#e8e4da;text-shadow:0 1px 6px rgba(0,0,0,0.6);';
+        img = document.createElement('div');
+        img.style.cssText = 'width:34px;height:34px;';
+        img.innerHTML =
+          '<svg viewBox="0 0 34 34" width="34" height="34">' +
+          '<circle cx="17" cy="17" r="6"  fill="none" stroke="#e8e4da" stroke-width="1.6"/>' +
+          '<circle cx="17" cy="17" r="12" fill="none" stroke="#e8e4da" stroke-width="1.1" opacity="0.55"/>' +
+          '<circle cx="17" cy="17" r="16" fill="none" stroke="#e8e4da" stroke-width="0.8" opacity="0.3"/>' +
+          '</svg>';
+        txt = document.createElement('div');
+        txt.style.cssText = 'font-size:13px;letter-spacing:0.14em;opacity:0.9;';
+        el.appendChild(img); el.appendChild(txt);
+        document.body.appendChild(el);
+      }
+      return {
+        set: function (mode) {
+          if (!el) { if (!document.body) return; build(); }
+          if (mode === 1)      { txt.textContent = 'pulse to ride'; el.style.opacity = '1'; }
+          else if (mode === 2) { txt.textContent = 'pulse to land'; el.style.opacity = '1'; }
+          else                 { el.style.opacity = '0'; }
+        },
+        setImage: function (url) {
+          if (!el) { if (!document.body) return; build(); }
+          img.innerHTML = '<img src="' + url + '" style="width:34px;height:34px;" alt="">';
+        }
+      };
+    })();
+
     // ══ AUBADE U2 — THE DEVICE IS ASKED FOR AT PARSE TIME ═════════════
     //
     // WHAT WAS SERIAL AND DID NOT HAVE TO BE. Until now the page fetched
