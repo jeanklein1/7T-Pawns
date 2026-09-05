@@ -396,6 +396,28 @@
         max-height: min(calc(100vh - 64px), 640px);
       }
     }
+    /* ── WEBSITE_1 — THE DOORS OUT ────────────────────────────────
+       Two words, fixed bottom-left, present in every state: the veil,
+       both cards, and the world itself. z-index 30 — above the layers
+       (10), below the photo flash (40) and the panel (9999). The nav
+       box swallows no input: pointer-events revives on the anchors
+       alone, so the world keeps its gestures everywhere else. Bottom-
+       LEFT because the organ pill owns bottom-right under ?organ=1. */
+    #doors {
+      position: fixed;
+      left:   calc(12px + env(safe-area-inset-left));
+      bottom: calc(10px + env(safe-area-inset-bottom));
+      z-index: 30;
+      pointer-events: none;
+      font-size: 12px; letter-spacing: 0.04em;
+    }
+    #doors a {
+      pointer-events: auto;
+      color: var(--faint);
+      text-decoration: none;
+      padding: 10px 8px;              /* the target outgrows the word */
+    }
+    #doors a:hover, #doors a:focus-visible { color: var(--ink); }
   </style>
 </head>
 <body>
@@ -795,6 +817,26 @@
     </div>
     <pre id="log2" class="log" aria-live="off"></pre>
   </div>
+
+  <!-- ── WEBSITE_1 — THE DOORS OUT ─────────────────────────────────
+       Static markup, deliberately: these must render on the visit
+       where the adapter request fails and no script of ours finishes.
+       Lowercase because the wordmark is. The noscript paragraph is the
+       page for a visitor whose scripts never ran at all; its styles
+       are inline on t7card's precedent — the failure that stopped the
+       scripts may not have spared anything else. -->
+  <nav id="doors" aria-label="site">
+    <a href="collection/">collection</a><a href="about/">about</a>
+  </nav>
+  <noscript>
+    <p style="position:fixed;left:12px;top:12px;z-index:20;max-width:34em;
+      color:#8a8792;font:14px/1.5 system-ui,sans-serif;margin:0">
+      the_board is a living world drawn by your GPU, and it needs
+      JavaScript to begin. The paintings it hangs are in
+      <a style="color:#e8e6e0" href="collection/">the collection</a>;
+      <a style="color:#e8e6e0" href="about/">about</a> says what this is.
+    </p>
+  </noscript>
 
   <script>
   (function () {
