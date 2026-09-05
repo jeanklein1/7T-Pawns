@@ -2315,8 +2315,8 @@ const GOL_TIER_COUNT: u32 = 10u;
 //  twin in bodies/gol_zones.hpp for the full note.)
 const GOL_TIERS = array<GoLTierParams, GOL_TIER_COUNT>(
     /* 0: PILLARS  */ GoLTierParams(0x1808u,  0.30, 0.05,  16.0, 4.0,   0.05, 0.01,  30.0, 9.0,  0.30,  0.11, 0u, 16u),
-    /* 1: SPARSE   */ GoLTierParams(0x1808u,  0.15, 0.05,   4.0, 1.0,   0.12, 0.03,  18.0, 6.0,  0.20,  0.17, 0u, 32u),
-    /* 2: MODERATE */ GoLTierParams(0x1808u,  0.30, 0.08,   2.0, 0.6,   0.15, 0.03,   9.0, 3.0,  0.15,  0.09, 0u, 32u),
+    /* 1: SPARSE   */ GoLTierParams(0x1808u,  0.15, 0.05,   4.0, 1.0,   0.12, 0.03,  18.0, 6.0,  0.20,  0.17, 0u, 64u),
+    /* 2: MODERATE */ GoLTierParams(0x1808u,  0.30, 0.08,   2.0, 0.6,   0.15, 0.03,   9.0, 3.0,  0.15,  0.09, 0u, 64u),
     /* 3: DENSE    */ GoLTierParams(0x1808u,  0.45, 0.10,   1.0,  0.3,   0.25, 0.05,   6.0, 1.5,  0.10,  0.03, 0u, 16u),
     /* 4: FLASH    */ GoLTierParams(0x1808u,  0.35, 0.10,   1.0,  0.2,   0.30, 0.05,   0.0, 0.0,  0.40,  0.03, 1u, 24u),
     /* 5: MONOLITH */ GoLTierParams(0x1808u,  0.20, 0.03,  24.0, 6.0,  0.03, 0.01,  42.0, 12.0, 0.05,  0.12, 0u, 16u),
@@ -2325,9 +2325,9 @@ const GOL_TIERS = array<GoLTierParams, GOL_TIER_COUNT>(
     // re-authored two of them (Cauldron was named "Walled cities";
     // Plateau was Day & night and took a new mask). Rationale lives with
     // the CPU twin in bodies/gol_zones.hpp; these are the same rows.
-    /* 7: PLATEAU  */ GoLTierParams(0x3E1E0u, 0.50, 0.06,   8.0, 2.0,   0.10, 0.02,  30.0, 8.0,  0.08,  0.09, 0u, 32u),
+    /* 7: PLATEAU  */ GoLTierParams(0x3E1E0u, 0.50, 0.06,   8.0, 2.0,   0.10, 0.02,  30.0, 8.0,  0.08,  0.09, 0u, 64u),
     /* 8: CAULDRON */ GoLTierParams(0x79F0u,  0.50, 0.05,   4.0, 1.0,   0.40, 0.08,   5.0, 1.5,  0.15,  0.08, 0u, 24u),
-    /* 9: HIGHLIFE */ GoLTierParams(0x1848u,  0.30, 0.05,   1.0,  0.3,   0.20, 0.04,  10.0, 3.0,  0.22,  0.07, 0u, 32u),
+    /* 9: HIGHLIFE */ GoLTierParams(0x1848u,  0.30, 0.05,   1.0,  0.3,   0.20, 0.04,  10.0, 3.0,  0.22,  0.07, 0u, 64u),
 );
 
 // --- Pulse Algorithm Tier Definitions ────────────────────────────────────
@@ -2403,12 +2403,12 @@ const GOL_PULSE_TIER_COUNT: u32 = 4u;
 // both tables is now a rung. Flash 0.5 -> 1.0, HighLife 1.2 -> 1.0,
 // Cauldron 5.0 -> 4.0 (both rooms), Pulse Sparkle 1.0 -> 1.5.
 const GOL_PULSE_TIERS = array<GolPulseTierParams, GOL_PULSE_TIER_COUNT>(
-    /* 0: Breathe  */ GolPulseTierParams( PULSE_FIELD_BREATH,  4.0, 1.0,   0.20, 0.05,   0.15, 0.05,    0.0,  0.0,   2.0, 0.8,  10.0, 3.0,   0.20,  0.38, 0u, 0u, 32u ),
+    /* 0: Breathe  */ GolPulseTierParams( PULSE_FIELD_BREATH,  4.0, 1.0,   0.20, 0.05,   0.15, 0.05,    0.0,  0.0,   2.0, 0.8,  10.0, 3.0,   0.20,  0.38, 0u, 0u, 64u ),
     /* 1: Sparkle  */ GolPulseTierParams( PULSE_FIELD_BREATH,  1.5,  0.4,   0.25, 0.05,   0.90, 0.10,    0.0,  0.0,   0.0, 0.0,   5.0, 2.0,   0.50,  0.24, 1u, 0u, 16u ),
     /* 2: Drift    */ GolPulseTierParams( PULSE_FIELD_BREATH,  8.0, 2.0,   0.10, 0.03,   0.50, 0.15,    0.0,  0.0,   4.0, 1.5,  25.0, 8.0,   0.35,  0.20, 0u, 1u, 8u ),
     // GOL_RULES_1 — the continuous field row. Rationale lives with the CPU
     // twin in bodies/gol_zones.hpp; this is the same row.
-    /* 3: Spiral   */ GolPulseTierParams( PULSE_FIELD_SPIRAL,  6.0, 1.6,   0.30, 0.06,   0.03, 0.01,    0.0, 0.0,   0.0, 0.0,   0.0, 0.0,   0.10,  0.18, 1u, 1u, 32u ),
+    /* 3: Spiral   */ GolPulseTierParams( PULSE_FIELD_SPIRAL,  6.0, 1.6,   0.30, 0.06,   0.03, 0.01,    0.0, 0.0,   0.0, 0.0,   0.0, 0.0,   0.10,  0.18, 1u, 1u, 64u ),
 );
 
 

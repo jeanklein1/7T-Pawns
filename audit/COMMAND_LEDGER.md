@@ -5,8 +5,8 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `a6b42580b607efcdff152532756740023c1c94e0`
-(USHER_0 U3 — the boot mood is drawn from the open skies; DemoConfig sheds boot_mood)
+Last commit touching any scanned file: `f94e61a9c767c4802e23a7eeb361809d74f46dbf`
+(GOL_GRID_0 U1 — the capacity doubles: 64-cell planes, both sides of the mirror)
 
 | file scanned | sha256 |
 |---|---|
@@ -14,7 +14,7 @@ Last commit touching any scanned file: `a6b42580b607efcdff152532756740023c1c94e0
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:bbcaedbb3b05fdc8fdc455f502591ff4ad7142c55fd3cea313a4806d9bf209a7` |
 | `src/cartridges/the_board/cartridge.hpp` | `sha256:9ba517d13cc49fb7281e251d95c96db789c136c915889d9b035e9b41fd29e088` |
 | `src/cartridges/the_board/surface/patch_system.hpp` | `sha256:1be3569e8b942fccc6a5ad003a6f227b2c413897b33a947bdcfa986947653b3c` |
-| `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:d6e76479d05c2e6e331b2359f9cc1f89bb3cc0468f4c823c157a457d8c546cc5` |
+| `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:67d0c75fd5f2c9037b90f087a7881b33b55479b82863419ff798937b62144c76` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
 | `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:6867c90303e0e93d13525ec42a4c247a32694309ac8b74e0834eda1f4c6e86d3` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:9891302e1bf20ec4a71b8866d420725dc4405b8f99473ca04308465444a7a61d` |

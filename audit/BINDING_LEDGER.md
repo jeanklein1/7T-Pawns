@@ -14,13 +14,13 @@ merge rows the API charges separately.
 | field | value |
 |---|---|
 | demo column censused | `full` |
-| source commit | `77eb77d686f535858d30872380838df23c2e64d5` |
-| | REACH_2 W3 — the dial retires with its sensor; the pad returns |
+| source commit | `f94e61a9c767c4802e23a7eeb361809d74f46dbf` |
+| | GOL_GRID_0 U1 — the capacity doubles: 64-cell planes, both sides of the mirror |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:205a0e10dd746c87e3ef25236c7302f0fcfe2d3fe9ee31202740dcc7bcb65d09` |
 | `src/cartridges/the_board/realization/binding_surface.gen.inc` | `sha256:463f1d4f323e50439bc83ce20b35830a32356c33350adfbe425b773712de4661` |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:bbcaedbb3b05fdc8fdc455f502591ff4ad7142c55fd3cea313a4806d9bf209a7` |
-| `src/cartridges/the_board/realization/world.wgsl` | `sha256:0d6858b7e516d59f4ed82d9e972128b528867acc9f990e830b5a9823b81e52f8` |
+| `src/cartridges/the_board/realization/world.wgsl` | `sha256:ca1de349151e2a983e9c758e86eaef08a5b910d8a0e0b469b09001f6fe762dfa` |
 | `tools/binding_ledger.py` | `sha256:6d9fc58da755a8416bbcfe8efe5360f97ec11fb4a81a9d60ee41f80a2316f790` |
 
 
@@ -31,7 +31,7 @@ only — `draw_orbs` is called from `bodies/orbs.hpp`, not from
 | caller file scanned | sha256 |
 |---|---|
 | `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:6867c90303e0e93d13525ec42a4c247a32694309ac8b74e0834eda1f4c6e86d3` |
-| `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:d6e76479d05c2e6e331b2359f9cc1f89bb3cc0468f4c823c157a457d8c546cc5` |
+| `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:67d0c75fd5f2c9037b90f087a7881b33b55479b82863419ff798937b62144c76` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:9891302e1bf20ec4a71b8866d420725dc4405b8f99473ca04308465444a7a61d` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
 | `src/cartridges/the_board/cartridge.hpp` | `sha256:9ba517d13cc49fb7281e251d95c96db789c136c915889d9b035e9b41fd29e088` |

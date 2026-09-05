@@ -246,8 +246,8 @@ struct GoLTierProfile {
 //                                     rule       dens_μ   σ    tick_μ  σ    trans_μ  σ     ht_μ    σ    sv    wt    no_h   cells
 inline constexpr GoLTierProfile GOL_TIERS[GOL_TIER_COUNT] = {
     /* 0: Pillars  */ { 0x1808u,  0.30f, 0.05f,  16.0f, 4.0f,   0.05f, 0.01f,  30.0f, 9.0f,  0.30f,  0.11f, false, 16u },
-    /* 1: Sparse   */ { 0x1808u,  0.15f, 0.05f,   4.0f, 1.0f,   0.12f, 0.03f,  18.0f, 6.0f,  0.20f,  0.17f, false, 32u },
-    /* 2: Moderate */ { 0x1808u,  0.30f, 0.08f,   2.0f, 0.6f,   0.15f, 0.03f,   9.0f, 3.0f,  0.15f,  0.09f, false, 32u },
+    /* 1: Sparse   */ { 0x1808u,  0.15f, 0.05f,   4.0f, 1.0f,   0.12f, 0.03f,  18.0f, 6.0f,  0.20f,  0.17f, false, 64u },
+    /* 2: Moderate */ { 0x1808u,  0.30f, 0.08f,   2.0f, 0.6f,   0.15f, 0.03f,   9.0f, 3.0f,  0.15f,  0.09f, false, 64u },
     /* 3: Dense    */ { 0x1808u,  0.45f, 0.10f,   1.0f,  0.3f,   0.25f, 0.05f,   6.0f, 1.5f,  0.10f,  0.03f, false, 16u },
     /* 4: Flash    */ { 0x1808u,  0.35f, 0.10f,   1.0f,  0.2f,   0.30f, 0.05f,   0.0f, 0.0f,  0.40f,  0.03f, true,  24u },
     /* 5: Monolith */ { 0x1808u,  0.20f, 0.03f,  24.0f, 6.0f,  0.03f, 0.01f,  42.0f, 12.f,  0.05f,  0.12f, false, 16u },
@@ -321,9 +321,9 @@ inline constexpr GoLTierProfile GOL_TIERS[GOL_TIER_COUNT] = {
     //    the rung it was always reaching for.
     //    Untouched by GOL_ROWS_1 — the witness ran Hickerson's replicator
     //    on this row's own grid and watched one 12-cell seed become two.
-    /* 7: Plateau  */ { 0x3E1E0u, 0.50f, 0.06f,   8.0f, 2.0f,   0.10f, 0.02f,  30.0f, 8.0f,  0.08f,  0.09f, false, 32u },
+    /* 7: Plateau  */ { 0x3E1E0u, 0.50f, 0.06f,   8.0f, 2.0f,   0.10f, 0.02f,  30.0f, 8.0f,  0.08f,  0.09f, false, 64u },
     /* 8: Cauldron */ { 0x79F0u,  0.50f, 0.05f,   4.0f, 1.0f,   0.40f, 0.08f,   5.0f, 1.5f,  0.15f,  0.08f, false, 24u },
-    /* 9: HighLife */ { 0x1848u,  0.30f, 0.05f,   1.0f,  0.3f,   0.20f, 0.04f,  10.0f, 3.0f,  0.22f,  0.07f, false, 32u },
+    /* 9: HighLife */ { 0x1848u,  0.30f, 0.05f,   1.0f,  0.3f,   0.20f, 0.04f,  10.0f, 3.0f,  0.22f,  0.07f, false, 64u },
 };
 
 inline constexpr const char* GOL_TIER_NAMES[] = {
@@ -409,7 +409,7 @@ struct GolPulseTierProfile {
 // Cauldron 5.0 -> 4.0 (both rooms), Pulse Sparkle 1.0 -> 1.5.
 //                                     field                  tick_μ   σ    trans_μ  σ    phase_μ  σ    tempo_μ σ    ht_μ   σ    wand_μ  σ    sv    wt    no_h  bnd                    cells
 inline constexpr GolPulseTierProfile GOL_PULSE_TIERS[GOL_PULSE_TIER_COUNT] = {
-    /* 0: Breathe  */ { PulseField::BREATH,  4.0f, 1.0f,   0.20f, 0.05f,   0.15f, 0.05f,    0.0f,  0.0f,   2.0f, 0.8f,  10.0f, 3.0f,   0.20f,  0.38f, false, BoundaryMode::REFLECT, 32u },
+    /* 0: Breathe  */ { PulseField::BREATH,  4.0f, 1.0f,   0.20f, 0.05f,   0.15f, 0.05f,    0.0f,  0.0f,   2.0f, 0.8f,  10.0f, 3.0f,   0.20f,  0.38f, false, BoundaryMode::REFLECT, 64u },
     /* 1: Sparkle  */ { PulseField::BREATH,  1.5f,  0.4f,   0.25f, 0.05f,   0.90f, 0.10f,    0.0f,  0.0f,   0.0f, 0.0f,   5.0f, 2.0f,   0.50f,  0.24f, true,  BoundaryMode::REFLECT, 16u },
     /* 2: Drift    */ { PulseField::BREATH,  8.0f, 2.0f,   0.10f, 0.03f,   0.50f, 0.15f,    0.0f,  0.0f,   4.0f, 1.5f,  25.0f, 8.0f,   0.35f,  0.20f, false, BoundaryMode::WRAP, 8u },
     // GOL_RULES_1. The first Pulse row that is not BREATH, and the first
@@ -442,7 +442,7 @@ inline constexpr GolPulseTierProfile GOL_PULSE_TIERS[GOL_PULSE_TIER_COUNT] = {
     //    target: select_gol_zone forces height_enabled = false for such
     //    rows, so height never reads a fractional visual. Tint does, and
     //    that is the intent.
-    /* 3: Spiral   */ { PulseField::SPIRAL,  6.0f, 1.6f,   0.30f, 0.06f,   0.03f, 0.01f,    0.0f, 0.0f,   0.0f, 0.0f,   0.0f, 0.0f,   0.10f,  0.18f, true,  BoundaryMode::WRAP, 32u },
+    /* 3: Spiral   */ { PulseField::SPIRAL,  6.0f, 1.6f,   0.30f, 0.06f,   0.03f, 0.01f,    0.0f, 0.0f,   0.0f, 0.0f,   0.0f, 0.0f,   0.10f,  0.18f, true,  BoundaryMode::WRAP, 64u },
 };
 
 inline constexpr const char* GOL_PULSE_TIER_NAMES[] = {
