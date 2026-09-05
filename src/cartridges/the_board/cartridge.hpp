@@ -1488,7 +1488,7 @@ namespace t7 {
                             teardown_orbs(orbs_state_, &orbs_deps_);
 
                         point_.portal_trigger = -1;
-                        point_.bubble.ribbon_reach = false;   // REACH_0 — the sensor rests dark across a world change
+                        point_.bubble.summit = false;   // REACH_2 — the sensor rests dark across a world change
                         // THE AUTHORED PRESENT (POINT_1): at a teleport the
                         // CPU is the author of the new present — the same
                         // position reset_player_agent / reseed_player_body
@@ -1726,16 +1726,33 @@ namespace t7 {
                                             self->point_.heading = p.heading;
                                         }
                                         self->point_.portal_trigger = p.portal_trigger;
-                                        // REACH_0 — the bubble's second
-                                        // sensor comes home on the same
-                                        // wire, COMPOSED HERE, the one
-                                        // site: the GPU's raw word (bit 0)
-                                        // ∧ a ribbon actually rendered ∧
-                                        // the PAWN hosting. Free-fly earns
-                                        // nothing; a stale saddle cannot
-                                        // arm the door.
-                                        self->point_.bubble.ribbon_reach =
-                                            (p.sensor_bits & 1u) != 0u
+                                        // REACH_2 — the bubble's second
+                                        // sensor is the SUMMIT now: a
+                                        // colossal pyramid underfoot. The
+                                        // heightfield is single-valued and
+                                        // the walker snaps to it, so xz
+                                        // inside the apex disc IS standing
+                                        // at the top — no altitude test.
+                                        // Eight slots, scanned where x/z
+                                        // just landed. Composed HERE, the
+                                        // one site: summit ∧ a ribbon
+                                        // rendered ∧ the PAWN hosting. The
+                                        // ribbon may be ANYWHERE — the
+                                        // mount ease is the abduction.
+                                        bool summit = false;
+                                        for (uint32_t pi = 0; pi < Dim::MAX_PYRAMID_INSTANCES; pi++) {
+                                            if (!self->entities_state_.pyramids[pi].active) continue;
+                                            const auto& gp = self->entities_state_.cpu_pyramids.instances[pi];
+                                            if (gp.height < POINT_SUMMIT_MIN_HEIGHT) continue;
+                                            const float sdx = self->point_.x - gp.origin[0];
+                                            const float sdz = self->point_.z - gp.origin[1];
+                                            if (sdx * sdx + sdz * sdz
+                                                <= POINT_SUMMIT_RADIUS * POINT_SUMMIT_RADIUS) {
+                                                summit = true;
+                                                break;
+                                            }
+                                        }
+                                        self->point_.bubble.summit = summit
                                             && self->ribbon_state_.rendered_slot != UINT32_MAX
                                             && self->point_.host == PointHost::PAWN;
                                         // ATRIUM_5 — THE PASSER WITNESS, here
@@ -1865,7 +1882,7 @@ namespace t7 {
                 uint32_t face = 0u;
                 if (point_.host == PointHost::RIBBON) face = 2u;
                 else if (point_.host == PointHost::PAWN
-                         && point_.bubble.ribbon_reach) face = 1u;
+                         && point_.bubble.summit) face = 1u;
                 if (face != rideFaceShown_) {
                     rideFaceShown_ = face;
                     t7::ride_face(face);

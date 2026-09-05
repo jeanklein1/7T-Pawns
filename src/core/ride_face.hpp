@@ -1,8 +1,8 @@
 #pragma once
 // ═══ THE RIDE FACE — TWO WORDS ON THE GLASS (REACH_1 V2) ═════════════
 //
-// The reach sensor and the ride are invisible law: a door that opens on
-// a summit crossing and a gesture that answers it. REACH_0 proved that
+// The summit sensor and the ride are invisible law: a door that opens
+// underfoot atop a colossal pyramid and a gesture that answers it. REACH_0 proved that
 // invisible law reads as nothing happening. This is the teacher: ONE
 // call per EDGE — never per frame — telling the shell which face to
 // wear. 0 hides, 1 says the pulse boards, 2 says the pulse lands.

@@ -78,14 +78,23 @@ enum class PointHost : uint32_t {
 
 inline constexpr float POINT_BUBBLE_RADIUS = 80.0f;   // world units; boot-pinned into config.point_bubble_radius (the WGSL side reads the config field). 20 until the desk raised it 4×: the vertical gate lets an arch fire from far higher up now.
 
+// ═══ THE SUMMIT LAW (REACH_2) ══════════════════════════════════════
+// Jean's stamp, after play: the crossing was chance and chance read as
+// nothing. The door is the GROUND now — stand atop a colossal pyramid
+// and the pulse boards, ribbon anywhere; the mount ease IS the
+// abduction. "Tall" is the pyramid's own measure, not its tier label.
+inline constexpr float POINT_SUMMIT_MIN_HEIGHT = 60.0f;  // wu — a pyramid this tall is a door (colossi ~78±14; temples ~45±8)
+inline constexpr float POINT_SUMMIT_RADIUS     = 15.0f;  // wu — xz disc around the apex that counts as "the top" (~upper quarter of a mean colossus footprint)
 struct PointBubble {
     float radius = POINT_BUBBLE_RADIUS;   // the awareness bound (the portal's vertical gate today)
-    // REACH_0 — the second sensor. TRUE means: the rendered ribbon's seat
-    // sits within RIBBON_LIVE.reach of the pawn, PAWN host, this frame's
-    // harvest. Composed at the ONE site (the witness harvest); the boarding
-    // door reads it and nothing else writes it. Rests false; teardown
-    // re-darkens it.
-    bool  ribbon_reach = false;
+    // REACH_2 — the second sensor, re-aimed at the GROUND: TRUE means a
+    // colossal summit underfoot (xz inside the apex disc of a pyramid
+    // ≥ POINT_SUMMIT_MIN_HEIGHT — the single-valued heightfield makes
+    // horizontal arrival vertical arrival), PAWN host, a ribbon rendered
+    // somewhere. Composed at the ONE site (the witness harvest); the
+    // boarding door reads it and nothing else writes it. Rests false;
+    // teardown re-darkens it.
+    bool  summit = false;
 };
 
 // ═══ THE WITNESS'S OWN DIALS ═══════════════════════════════════════

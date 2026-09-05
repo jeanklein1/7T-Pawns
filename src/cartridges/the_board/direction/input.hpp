@@ -410,19 +410,20 @@ inline void on_touch_tap_right(InputDeps* c, AgentState& agent_state, AgentsDeps
 // after — the drain idiom the analog deltas already use.
 inline void request_radial_pulse(InputDeps* c) {
     c->inputState_.pulse_pending = true;
-    // REACH_1 — THE PULSE IS ALSO THE RIDE'S WORD, and the routing lives
+    // REACH_2 — THE PULSE IS ALSO THE RIDE'S WORD, and the routing lives
     // HERE — the player's door, both mouths (SPACE, the lone tap) — so a
     // musical pulse riding the bus (emit_radial_pulse) can never board.
     // The wave fires regardless, above: on the ground it is the gesture
-    // as ever; where the seat is in reach the same wave announces the
-    // boarding it begins; in the sky it marks the departure. The reach
-    // check is a COURTESY (no refusal spam on every ground pulse) — the
-    // LAW stays in possess(), underneath, where the panel row answers to
-    // it too. CAMERA host earns nothing, as everywhere.
+    // as ever; on a colossal summit the same wave announces the boarding
+    // it begins — the ribbon may be anywhere, the ease is the abduction;
+    // in the sky it marks the departure. The summit check is a COURTESY
+    // (no refusal spam on every ground pulse) — the LAW stays in
+    // possess(), underneath, where the panel row answers to it too.
+    // CAMERA host earns nothing, as everywhere.
     if (c->point_.host == PointHost::RIBBON) {
         possess(c, PointHost::PAWN);
     } else if (c->point_.host == PointHost::PAWN
-               && c->point_.bubble.ribbon_reach) {
+               && c->point_.bubble.summit) {
         possess(c, PointHost::RIBBON);
     }
 }
@@ -554,13 +555,12 @@ inline void possess(InputDeps* c, PointHost next) {
         std::cout << "[Point] no ribbon to ride\n";
         return;
     }
-    // REACH_0 — BOARDING IS EARNED. The bubble's second sensor must be
-    // live: the rendered ribbon's seat within RIBBON_LIVE.reach of the
-    // pawn — in practice a colossus summit under a crossing, because the
-    // pen's floor makes that the one place the gap closes. The descend
-    // direction is NEVER gated: we come back down from anywhere.
-    if (next == PointHost::RIBBON && !c->point_.bubble.ribbon_reach) {
-        std::cout << "[Point] ribbon out of reach\n";
+    // REACH_2 — BOARDING IS EARNED AT THE TOP. The bubble's second sensor
+    // must be live: a colossal summit underfoot. The ribbon may be
+    // anywhere in the world — the mount ease carries you to it. The
+    // descend direction is NEVER gated: we come back down from anywhere.
+    if (next == PointHost::RIBBON && !c->point_.bubble.summit) {
+        std::cout << "[Point] no summit underfoot\n";
         return;
     }
     c->mount_.from[0] = c->point_.x;
