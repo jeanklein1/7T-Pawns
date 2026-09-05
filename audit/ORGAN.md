@@ -228,6 +228,7 @@ generator, so the book and the manifest cannot disagree. `driven` is an
 | Ribbon · Head | altitude stiffness | `CONFIG.ribbon_alt_stiff` | CONFIG | F32 | 0 … 1.44 | 0.005 | live | none |  |
 | Ribbon · Head | mount setback | `CONFIG.ribbon_mount_setback` | CONFIG | F32 | 0 … 6 | 0.02 | live | none |  |
 | Ribbon · Head | hands tau (s) | `CONFIG.ribbon_hands_tau` | CONFIG | F32 | 0 … 2.4 | 0.01 | live | none |  |
+| Ribbon · Head | reach | `CONFIG.ribbon_reach` | CONFIG | F32 | 0 … 120 | 0.5 | live | none |  |
 | Ribbon · Sky Rule | lookahead | `CONFIG.ribbon_lookahead` | CONFIG | F32 | 0 … 400 | 2 | live | none |  |
 | Ribbon · Sky Rule | head clearance | `CONFIG.ribbon_clear_head` | CONFIG | F32 | 0 … 100 | 0.5 | live | none |  |
 | Ribbon · Sky Rule | body clearance | `CONFIG.ribbon_clear_body` | CONFIG | F32 | 0 … 50 | 0.25 | live | none |  |
@@ -431,14 +432,14 @@ generator, so the book and the manifest cannot disagree. `driven` is an
 
 | | |
 | --- | --- |
-| entries | **403** |
-| by section | Agents 118 · Atmosphere 73 · Ribbon 55 · Sky & Light 42 · Terrain 42 · Interaction 24 · Conductor 20 · Pawn 19 · Debug 4 · Camera 3 · Measure 3 |
-| by cadence | boundary 188 · driven 21 · gen 42 · live 152 |
-| by macro form | PARAM 156 · PARAM_DEF 110 · PARAM_DEFONLY 74 · PARAM_GEN 42 · PARAM_RO 21 |
-| definition kinds | BEHAVIOR 78 · MOOD 55 · NONE 219 · ORB_MOOD 19 · TIER 32 |
+| entries | **404** |
+| by section | Agents 118 · Atmosphere 73 · Ribbon 56 · Sky & Light 42 · Terrain 42 · Interaction 24 · Conductor 20 · Pawn 19 · Debug 4 · Camera 3 · Measure 3 |
+| by cadence | boundary 188 · driven 21 · gen 42 · live 153 |
+| by macro form | PARAM 157 · PARAM_DEF 110 · PARAM_DEFONLY 74 · PARAM_GEN 42 · PARAM_RO 21 |
+| definition kinds | BEHAVIOR 78 · MOOD 55 · NONE 220 · ORB_MOOD 19 · TIER 32 |
 | witnesses (`ro`) | 21 |
 | blocks and sentinels used | AGENT_ROOM, CANVAS, CONDUCTOR, CONFIG, DRIVERS, INDOOR, LIGHTING, NONE (255), NONE_ORB (254), ORBS, PANEL, PAWN, RIBBON, RIBBON_SPAWN, WORLD |
-| namespaces | canvas 15 · the_board 388 |
+| namespaces | canvas 15 · the_board 389 |
 
 ### Doors
 
@@ -508,7 +509,7 @@ THE ANSWER, ROW BY ROW
   proved    301   a declared reader names the field
   SUSPECT     0   no declared reader names it
   witness    21   an _RO meter: the question is inverted (blind spot 5)
-  scope      81   GPU-side or whole-struct (blind spots 2, 3)
+  scope      82   GPU-side or whole-struct (blind spots 2, 3)
 
 NO SUSPECTS. Every enrolled dial's field is named in the body of
 a function this tool can read.
