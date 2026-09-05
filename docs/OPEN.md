@@ -3463,3 +3463,17 @@ that authored this section. · ORRERY_0 R2 ·
   = one table cell — portals only; the boot roster is open-sky by shape, U3),
   or a ruling to cut the mood whole — its own campaign (MOOD_COUNT shrinks,
   ids renumber, every per-mood table loses a row).
+
+## LODESTAR_0/P — parked residue
+
+- LODESTAR_CELL stands at 8 (400 wu cells, ~400 wu nearest-door ceiling).
+  Turning it to 6 (300 wu ceiling, ~+100% doorways) raises standing arch
+  demand toward the 16-slot pool (MAX_ARCH_INSTANCES — a GPU-buffer
+  dimension: AMG vertex/index pools, ground buffer, mesh-params buffer, a
+  renderer dispatch) · origin: LODESTAR_0 U1 · unblocks: a session showing
+  pool headroom at 8 (the U2 witness is the instrument), or a
+  MAX_ARCH_INSTANCES resize campaign that re-prices those buffers.
+- a designated door can lose all LODESTAR_TRIES candidates deep in a shadow
+  field (~few % of monumental/antenna cells); the neighbor cell then holds
+  the ceiling at ~800 wu · origin: LODESTAR_0 U4 · unblocks: Jean's walk
+  gate — levers are LODESTAR_TRIES or the retry jitter, both one-line.
