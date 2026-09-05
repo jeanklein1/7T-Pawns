@@ -606,13 +606,16 @@ namespace t7 {
                                   + " sunpass=" + (bp.sunpass ? "1" : "0")
                                   + " bundles=" + (bp.bundles ? "1" : "0"));
                 }
-                // USHER_0 — THE BOOT MOOD IS DRAWN, NOT AUTHORED. Same
-                // doctrine as the radius below: the seed decides, under the
-                // destination law the panel already dials (mood_weights) —
-                // one law for every arrival, portal or boot. MOOD_COUNT
-                // bars nothing: a boot has no standing world to exclude.
-                // ?seed= therefore pins the mood with the world it pins.
-                mood_state_.active = pick_portal_mood(world_state_.active_seed, 9001u, MOOD_COUNT);
+                // USHER_0 — THE BOOT MOOD IS DRAWN, NOT AUTHORED, AND
+                // DRAWN AMONG THE OPEN SKIES. Same doctrine as the radius
+                // below: the seed decides, under the destination law's
+                // weights the panel already dials (mood_weights) — but
+                // through pick_open_mood: the audience wakes OUTDOORS,
+                // whichever sky the weights favour. shape_is_open names
+                // the roster; the ATMOS_1 golden pins it to sunset, night,
+                // noon. Rooms are earned through doors. ?seed= therefore
+                // pins the mood with the world it pins.
+                mood_state_.active = pick_open_mood(world_state_.active_seed, 9001u);
                 const char* mood_origin = "draw";
                 // B9 — a mood present at boot (?mood= / --mood=) forces the
                 // boot mood at this one authoring site; an out-of-range

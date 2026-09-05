@@ -1675,7 +1675,7 @@ inline uint32_t derive_finite_radius(uint32_t seed, const MoodProfile& mood) {
 // OUT of a room is an open sky, whichever one the weights favour.
 // exclude_mood bars ONE row for this walk — the world you stand in is
 // not a destination (USHER_0). MOOD_COUNT bars nothing: no row wears
-// that id, so the comparison never fires — the boot draw's spelling.
+// that id, so the comparison never fires — pick_open_mood's spelling.
 // The every-door-shut fallback stands as written; a degenerate panel
 // config earns the home sky, not a missing door.
 inline uint32_t pick_mood_weighted_(uint32_t seed, uint32_t prop, bool open_only, uint32_t exclude_mood) {
