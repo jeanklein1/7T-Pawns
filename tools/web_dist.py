@@ -171,6 +171,33 @@ POSTER_QUALITY = 78
 # reserved for the PWA web manifest.
 EXHIBITION_JSON = "exhibition.json"
 
+# ── WEBSITE_4 — THE HONEST 404 ──────────────────────────────────────
+# Its PRESENCE is the mechanism: Cloudflare Pages serves /index.html
+# with 200 for any unknown path until a 404.html exists, then serves
+# this with a real 404 instead. Inline styles on t7card's precedent;
+# absolute links because this page is served at every address there is.
+# Wording is Jean-gated, like the card's.
+NOT_FOUND_PAGE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>the_board — not found</title>
+</head>
+<body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0a0c;color:#8a8792;font:15px/1.6 system-ui,-apple-system,'Segoe UI',sans-serif">
+<div style="max-width:34em;padding:24px;text-align:center">
+<div style="letter-spacing:.35em;color:#e8e6e0;font-size:13px;margin-bottom:14px">THE_BOARD</div>
+<p style="margin:0 0 14px">There is nothing at this address. The board is a living,
+ever-expanding world that hangs Jean Klein's paintings.</p>
+<p style="margin:0"><a style="color:#e8e6e0" href="/">world</a> &middot;
+<a style="color:#e8e6e0" href="/collection/">collection</a> &middot;
+<a style="color:#e8e6e0" href="/about/">about</a></p>
+</div>
+</body>
+</html>
+"""
+
 # ── AUBADE U6 — THE VERSIONED SET, AND ONLY IT ──────────────────────
 #
 # Every path here is fetched with `?v=<build id>` appended, so its URL —
@@ -902,7 +929,7 @@ def main():
     # names never enter this script, so the site can grow, rename or
     # vanish without it hearing.
     owned = ARTIFACTS + list(POSTERS) + [
-        EXHIBITION_JSON, "_headers", "_redirects",
+        EXHIBITION_JSON, "_headers", "_redirects", "404.html",
         os.path.basename(DIST_PRESETS),
         os.path.basename(DIST_PAINTINGS),
         os.path.basename(DIST_MUSIC),
@@ -1221,8 +1248,14 @@ def main():
         shipped_redirects = 1
     else:
         print("  (web/_redirects absent — /main and /world aliases not shipped)")
+    # WEBSITE_4 — written beside _headers and _redirects, after every
+    # refusal, so a run that cannot complete never costs the previous
+    # deploy this page either.
+    with open(os.path.join(DIST, "404.html"), "w",
+              encoding="utf-8", newline="\n") as fh:
+        fh.write(NOT_FOUND_PAGE)
     file_count = (len(ARTIFACTS) + len(painting_paths) + len(music_paths)
-                  + len(poster_paths) + len(presets) + 2 + shipped_redirects)
+                  + len(poster_paths) + len(presets) + 3 + shipped_redirects)
 
     print("  %-18s %14d  %9.2f  %7d" % ("paintings (dist)", paintings_dist_bytes,
                                         mib(paintings_dist_bytes), len(painting_paths)))
@@ -1311,6 +1344,7 @@ def main():
           % len(IMMUTABLE_PATHS))
     if shipped_redirects:
         print("  _redirects         /main -> /about/ and /world -> / ship as 302 aliases")
+    print("  404.html           SPA fallback is OFF — strangers get doors, not a broken boot")
 
     print("")
     print("DEPLOY — exact commands")

@@ -2315,8 +2315,8 @@ const GOL_TIER_COUNT: u32 = 10u;
 //  twin in bodies/gol_zones.hpp for the full note.)
 const GOL_TIERS = array<GoLTierParams, GOL_TIER_COUNT>(
     /* 0: PILLARS  */ GoLTierParams(0x1808u,  0.30, 0.05,  16.0, 4.0,   0.05, 0.01,  30.0, 9.0,  0.30,  0.11, 0u, 16u),
-    /* 1: SPARSE   */ GoLTierParams(0x1808u,  0.15, 0.05,   4.0, 1.0,   0.12, 0.03,  18.0, 6.0,  0.20,  0.17, 0u, 32u),
-    /* 2: MODERATE */ GoLTierParams(0x1808u,  0.30, 0.08,   2.0, 0.6,   0.15, 0.03,   9.0, 3.0,  0.15,  0.09, 0u, 32u),
+    /* 1: SPARSE   */ GoLTierParams(0x1808u,  0.15, 0.05,   4.0, 1.0,   0.12, 0.03,  18.0, 6.0,  0.20,  0.17, 0u, 64u),
+    /* 2: MODERATE */ GoLTierParams(0x1808u,  0.30, 0.08,   2.0, 0.6,   0.15, 0.03,   9.0, 3.0,  0.15,  0.09, 0u, 64u),
     /* 3: DENSE    */ GoLTierParams(0x1808u,  0.45, 0.10,   1.0,  0.3,   0.25, 0.05,   6.0, 1.5,  0.10,  0.03, 0u, 16u),
     /* 4: FLASH    */ GoLTierParams(0x1808u,  0.35, 0.10,   1.0,  0.2,   0.30, 0.05,   0.0, 0.0,  0.40,  0.03, 1u, 24u),
     /* 5: MONOLITH */ GoLTierParams(0x1808u,  0.20, 0.03,  24.0, 6.0,  0.03, 0.01,  42.0, 12.0, 0.05,  0.12, 0u, 16u),
@@ -2325,9 +2325,9 @@ const GOL_TIERS = array<GoLTierParams, GOL_TIER_COUNT>(
     // re-authored two of them (Cauldron was named "Walled cities";
     // Plateau was Day & night and took a new mask). Rationale lives with
     // the CPU twin in bodies/gol_zones.hpp; these are the same rows.
-    /* 7: PLATEAU  */ GoLTierParams(0x3E1E0u, 0.50, 0.06,   8.0, 2.0,   0.10, 0.02,  30.0, 8.0,  0.08,  0.09, 0u, 32u),
+    /* 7: PLATEAU  */ GoLTierParams(0x3E1E0u, 0.50, 0.06,   8.0, 2.0,   0.10, 0.02,  30.0, 8.0,  0.08,  0.09, 0u, 64u),
     /* 8: CAULDRON */ GoLTierParams(0x79F0u,  0.50, 0.05,   4.0, 1.0,   0.40, 0.08,   5.0, 1.5,  0.15,  0.08, 0u, 24u),
-    /* 9: HIGHLIFE */ GoLTierParams(0x1848u,  0.30, 0.05,   1.0,  0.3,   0.20, 0.04,  10.0, 3.0,  0.22,  0.07, 0u, 32u),
+    /* 9: HIGHLIFE */ GoLTierParams(0x1848u,  0.30, 0.05,   1.0,  0.3,   0.20, 0.04,  10.0, 3.0,  0.22,  0.07, 0u, 64u),
 );
 
 // --- Pulse Algorithm Tier Definitions ────────────────────────────────────
@@ -2403,12 +2403,12 @@ const GOL_PULSE_TIER_COUNT: u32 = 4u;
 // both tables is now a rung. Flash 0.5 -> 1.0, HighLife 1.2 -> 1.0,
 // Cauldron 5.0 -> 4.0 (both rooms), Pulse Sparkle 1.0 -> 1.5.
 const GOL_PULSE_TIERS = array<GolPulseTierParams, GOL_PULSE_TIER_COUNT>(
-    /* 0: Breathe  */ GolPulseTierParams( PULSE_FIELD_BREATH,  4.0, 1.0,   0.20, 0.05,   0.15, 0.05,    0.0,  0.0,   2.0, 0.8,  10.0, 3.0,   0.20,  0.38, 0u, 0u, 32u ),
+    /* 0: Breathe  */ GolPulseTierParams( PULSE_FIELD_BREATH,  4.0, 1.0,   0.20, 0.05,   0.15, 0.05,    0.0,  0.0,   2.0, 0.8,  10.0, 3.0,   0.20,  0.38, 0u, 0u, 64u ),
     /* 1: Sparkle  */ GolPulseTierParams( PULSE_FIELD_BREATH,  1.5,  0.4,   0.25, 0.05,   0.90, 0.10,    0.0,  0.0,   0.0, 0.0,   5.0, 2.0,   0.50,  0.24, 1u, 0u, 16u ),
     /* 2: Drift    */ GolPulseTierParams( PULSE_FIELD_BREATH,  8.0, 2.0,   0.10, 0.03,   0.50, 0.15,    0.0,  0.0,   4.0, 1.5,  25.0, 8.0,   0.35,  0.20, 0u, 1u, 8u ),
     // GOL_RULES_1 — the continuous field row. Rationale lives with the CPU
     // twin in bodies/gol_zones.hpp; this is the same row.
-    /* 3: Spiral   */ GolPulseTierParams( PULSE_FIELD_SPIRAL,  6.0, 1.6,   0.30, 0.06,   0.03, 0.01,    0.0, 0.0,   0.0, 0.0,   0.0, 0.0,   0.10,  0.18, 1u, 1u, 32u ),
+    /* 3: Spiral   */ GolPulseTierParams( PULSE_FIELD_SPIRAL,  6.0, 1.6,   0.30, 0.06,   0.03, 0.01,    0.0, 0.0,   0.0, 0.0,   0.0, 0.0,   0.10,  0.18, 1u, 1u, 64u ),
 );
 
 
@@ -10924,16 +10924,17 @@ fn generate_patch_cells(@builtin(global_invocation_id) id: vec3<u32>,
 // §7.2 GOL ZONE COMPUTE — Zone-local Game of Life
 // Two compute passes per frame (when zones are active):
 // The zone life texture's side — twin of Dim::GOL_ZONE_GRID
-// (state.hpp). FIXED at 32 while zp.grid_size is tier-derived over
-// {8..32}: the sim writes texels [0, grid_size)² of a 32² layer, so
+// (state.hpp). FIXED at 64 while zp.grid_size is tier-derived over
+// {8..64}: the sim writes texels [0, grid_size)² of a 64² layer, so
 // every fetch normalizes by THIS, never by the zone's own grid.
-const GOL_ZONE_TEX_N: f32 = 32.0;
-const GOL_ZONE_STRIDE: u32 = 5120u;     // floats per zone (5 slots × 1024 cells)
+// GOL_GRID_0 doubled the capacity; the CPU trio moved in this commit.
+const GOL_ZONE_TEX_N: f32 = 64.0;
+const GOL_ZONE_STRIDE: u32 = 20480u;    // floats per zone (5 slots × 4096 cells)
 const GOL_CELL_VISUAL: u32 = 0u;        // slot 0: height spring visual [0,1]
-const GOL_CELL_VELOCITY: u32 = 1024u;   // slot 1: height spring velocity
-const GOL_CELL_TARGET: u32 = 2048u;     // slot 2: current target (binary, Conway reads)
-const GOL_CELL_NEXT: u32 = 3072u;       // slot 3: next target (binary, Conway writes)
-const GOL_CELL_HEIGHT_FACTOR: u32 = 4096u;  // slot 4: per-cell height multiplier (persistent)
+const GOL_CELL_VELOCITY: u32 = 4096u;   // slot 1: height spring velocity
+const GOL_CELL_TARGET: u32 = 8192u;     // slot 2: current target (binary, Conway reads)
+const GOL_CELL_NEXT: u32 = 12288u;      // slot 3: next target (binary, Conway writes)
+const GOL_CELL_HEIGHT_FACTOR: u32 = 16384u; // slot 4: per-cell height multiplier (persistent)
 // Slots 5-6 were a COLOUR spring. It was provably the height spring: same
 // target, same omega/e, same settle thresholds, same apply_boundary and
 // select guard, and seeded from the same life_data with the same zero

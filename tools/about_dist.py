@@ -250,9 +250,9 @@ def main():
         say("  Search web/about/index.html and assets/about/site.json.")
         say("")
     say("dist/about/index.html written; hero beside it, fonts at dist/fonts/")
-    say("build order: web_dist FIRST (it rmtree()s dist/ whole, our pages")
-    say("included), then collection_dist, then this. Until web_dist learns")
-    say("to clean only its own files, the engine always builds first.")
+    say("build order: collection_dist, then this, then web_dist LAST —")
+    say("since WEBSITE_1 it deletes only the engine's own names, and its")
+    say("root _headers folds our fragment and rules only what exists.")
 
 
 if __name__ == "__main__":
