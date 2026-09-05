@@ -98,13 +98,10 @@ struct KeyState {
     bool backward = false;
     bool left = false;
     bool right = false;
-    // RIBBON_1 — the ride key's held flag. The console raises KeyDown on
-    // GLFW_REPEAT as well as GLFW_PRESS (console.hpp inject_key_event), and a
-    // toggle that flip-flops under an autorepeat is a toggle that cannot be
-    // held. The four above already carry held state; this is the fifth, and
-    // it exists to make R a DOWN EDGE.
-    bool ride_held = false;
-    // PULSE_1 — SPACE's held flag, the sixth, and for the same reason:
+    // PULSE_1 — SPACE's held flag. The console raises KeyDown on
+    // GLFW_REPEAT as well as GLFW_PRESS (console.hpp inject_key_event),
+    // and a toggle that flip-flops under autorepeat cannot be held. The
+    // four above already carry held state; this is the fifth, and:
     // the pulse is a STRIKE, not a switch and not a stream. Under
     // autorepeat an unguarded key-down would issue a pulse every repeat
     // tick and hold the live card's writer awake for as long as a thumb
@@ -312,17 +309,6 @@ inline void on_key_down(InputDeps* c, int key,
         toggle_fpv_mode(c);
         break;
     case GLFW_KEY_CAPS_LOCK:  try_possess_nearest(agent_state, &agents_deps, q);  break;
-    // R RIDES. Down edge only — the held flag above is why. From the ribbon
-    // it dismounts back to the pawn; from anywhere else it asks to board and
-    // the REACH gate answers (possess refuses out of reach). CAMERA stays
-    // reachable through the panel row.
-    case GLFW_KEY_R:
-        if (!c->keys_.ride_held) {
-            c->keys_.ride_held = true;
-            possess(c, c->point_.host == PointHost::RIBBON
-                       ? PointHost::PAWN : PointHost::RIBBON);
-        }
-        break;
     }
     update_movement_intent(c);
 }
@@ -333,7 +319,6 @@ inline void on_key_up(InputDeps* c, int key) {
     case GLFW_KEY_S: c->keys_.backward = false; break;
     case GLFW_KEY_A: c->keys_.left = false;     break;
     case GLFW_KEY_D: c->keys_.right = false;    break;
-    case GLFW_KEY_R: c->keys_.ride_held = false; break;
     case GLFW_KEY_SPACE: c->keys_.pulse_held = false; break;
     }
     update_movement_intent(c);
@@ -425,6 +410,21 @@ inline void on_touch_tap_right(InputDeps* c, AgentState& agent_state, AgentsDeps
 // after — the drain idiom the analog deltas already use.
 inline void request_radial_pulse(InputDeps* c) {
     c->inputState_.pulse_pending = true;
+    // REACH_1 — THE PULSE IS ALSO THE RIDE'S WORD, and the routing lives
+    // HERE — the player's door, both mouths (SPACE, the lone tap) — so a
+    // musical pulse riding the bus (emit_radial_pulse) can never board.
+    // The wave fires regardless, above: on the ground it is the gesture
+    // as ever; where the seat is in reach the same wave announces the
+    // boarding it begins; in the sky it marks the departure. The reach
+    // check is a COURTESY (no refusal spam on every ground pulse) — the
+    // LAW stays in possess(), underneath, where the panel row answers to
+    // it too. CAMERA host earns nothing, as everywhere.
+    if (c->point_.host == PointHost::RIBBON) {
+        possess(c, PointHost::PAWN);
+    } else if (c->point_.host == PointHost::PAWN
+               && c->point_.bubble.ribbon_reach) {
+        possess(c, PointHost::RIBBON);
+    }
 }
 
 // EITHER HALF, one finger, clean tap — the pulse (SPACE's twin mouth).
@@ -501,7 +501,7 @@ inline void nudge_look_sensitivity(InputDeps* c, bool up) {
     // CHANGE DETECTOR (PURSE_0 R3). The value is clamped into [lo,hi] and
     // then printed unconditionally, so holding KP_+ at the top of the
     // range streams an identical line at the console's autorepeat rate —
-    // KeyState::ride_held records that KeyDown fires on GLFW_REPEAT too.
+    // KeyState::pulse_held records that KeyDown fires on GLFW_REPEAT too.
     //
     // P6 DOES NOT PROTECT IT: look_sensitivity is a continuous multiplier
     // feeding on_mouse_move's deltas, not a runtime switch that SELECTS
@@ -574,7 +574,7 @@ inline void possess(InputDeps* c, PointHost next) {
     c->point_.host = next;
     c->gpuState_.set_point_host(static_cast<uint32_t>(next));
     std::cout << "[Point] Host: "
-        << (next == PointHost::RIBBON ? "RIBBON (W throttle, A/D steer, R dismount)"
+        << (next == PointHost::RIBBON ? "RIBBON (W throttle, A/D steer, pulse lands)"
             : next == PointHost::CAMERA ? "CAMERA (free-fly)"
             : "PAWN (the kite)") << "\n";
 }
