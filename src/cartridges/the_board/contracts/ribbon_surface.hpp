@@ -105,8 +105,8 @@ inline constexpr RibbonSurface RIBBON_TABLE = {
     40.0f,    // clear_head — RIBBON_2: wider, because the shell now only advises
     16.0f,    // clear_body — RIBBON_2: the shell is advice now, so it stands wider; the wall is what holds
     400.0f,   // roam_radius — the anchor's disc; a wanderer crosses it target to target and comes back
-    1.2f,     // board_seconds
-    1.5f,     // land_seconds
+    2.0f,     // board_seconds — REACH_3: the ribbon may be anywhere now, and the abduction deserves watching
+    2.4f,     // land_seconds — REACH_3: the descent, savored a beat longer than the rise
     0.5f,     // wander_soft
     0.15f,    // wander_yaw_max — the brain asks at most this much of the hands' cap
     120.0f,   // wander_arrive — inside this the bearing chase degenerates; draw the next
