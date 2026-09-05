@@ -88,6 +88,13 @@ struct RibbonSurface {
     float wander_soft;          // rad of heading error at which the brain asks full yaw
     float wander_yaw_max;       // the brain's share of the hands' cap, [0, 1]
     float wander_arrive;        // wu — a target is reached here; the next is drawn
+    // ── The reach (REACH_0) ── a BOOT REST for config.ribbon_reach, the
+    //    flight rows' road: the pawn kernel reads the config twin. The seat
+    //    within this many wu of the pawn arms the bubble's second sensor;
+    //    boarding is refused outside it. 40 = floor_margin (25, the pen's
+    //    guaranteed gap over baked ground — a colossus summit under a
+    //    crossing) + crest slack. 0 shuts the door entirely.
+    float reach;                // wu — the boarding sensor's radius
 };
 
 inline constexpr RibbonSurface RIBBON_TABLE = {
@@ -110,6 +117,7 @@ inline constexpr RibbonSurface RIBBON_TABLE = {
     0.5f,     // wander_soft
     0.15f,    // wander_yaw_max — the brain asks at most this much of the hands' cap
     120.0f,   // wander_arrive — inside this the bearing chase degenerates; draw the next
+    40.0f,    // reach — REACH_0: the seat within this of the pawn arms the sensor
 };
 
 inline RibbonSurface RIBBON_LIVE = RIBBON_TABLE;
