@@ -5,14 +5,14 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `9966230f254b0f195bea8a2e77125ae755fc4ee7`
-(REACH_2 W1 — the summit is the door: the sensor reads the ground, not the sky)
+Last commit touching any scanned file: `52b3a2ede4c06db94858f4eadb41f464290146fe`
+(REACH_3 Y1 — the temples join: the bar lowers to what "tall" means)
 
 | file scanned | sha256 |
 |---|---|
 | `src/cartridges/the_board/realization/render_passes.hpp` | `sha256:e4d6b62cb1d1936d57322d2c4ef4372bbc27dd1404a29117d9431938e9c84149` |
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:bbcaedbb3b05fdc8fdc455f502591ff4ad7142c55fd3cea313a4806d9bf209a7` |
-| `src/cartridges/the_board/cartridge.hpp` | `sha256:dacc0c49c96c6bd81b0cb39391c8f64a016b596bf6fcac17553fa80fd0f8cca6` |
+| `src/cartridges/the_board/cartridge.hpp` | `sha256:a940e73af1170f05515dc85608a3d0fe49fea371111bc5aeca799ef964004b66` |
 | `src/cartridges/the_board/surface/patch_system.hpp` | `sha256:1be3569e8b942fccc6a5ad003a6f227b2c413897b33a947bdcfa986947653b3c` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:335d9c5a1d7c34aff37f3010abe8b88aa04290c8db487b70828c9c83e8588719` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
