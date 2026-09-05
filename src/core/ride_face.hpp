@@ -5,7 +5,7 @@
 // underfoot atop a tall pyramid and a gesture that answers it. REACH_0 proved that
 // invisible law reads as nothing happening. This is the teacher: ONE
 // call per EDGE — never per frame — telling the shell which face to
-// wear. 0 hides, 1 says the pulse boards, 2 says the pulse lands.
+// wear. 0 hides, 1 says the pulse flies, 2 says the pulse lands.
 //
 // THE SHELL OWNS THE LOOK. window.T7_RIDE (web/index.html) draws the
 // glyph and the words; the artwork slot is Jean's. Absent global =

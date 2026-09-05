@@ -553,7 +553,7 @@
     // falls through to the canvas — the PULSE is the verb, this only
     // teaches it. C++ calls window.T7_RIDE.set(mode) on EDGES
     // (core/ride_face.hpp): 0 hides, 1 = a tall summit underfoot
-    // (pulse boards), 2 = riding (pulse lands). The glyph echoes the pulse
+    // (pulse flies), 2 = riding (pulse lands). The glyph echoes the pulse
     // ring — the wave you are about to make. THE ARTWORK SLOT:
     // T7_RIDE.setImage(url) swaps the ring for Jean's image; the words
     // stay. Builds itself on first use, the t7live idiom.
@@ -584,7 +584,7 @@
       return {
         set: function (mode) {
           if (!el) { if (!document.body) return; build(); }
-          if (mode === 1)      { txt.textContent = 'pulse to ride'; el.style.opacity = '1'; }
+          if (mode === 1)      { txt.textContent = 'pulse to fly'; el.style.opacity = '1'; }
           else if (mode === 2) { txt.textContent = 'pulse to land'; el.style.opacity = '1'; }
           else                 { el.style.opacity = '0'; }
         },
