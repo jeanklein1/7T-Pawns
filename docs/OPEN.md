@@ -2,6 +2,25 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## LEAP_0 — THE PAWN LEAPS (landed; Jean's visual gate open)
+
+The pawn's height was a lookup; it is now a lookup on the ground and an
+integration aloft, one clock (`agent.t`) saying which. The door is the
+pulse's — the ring fires as ever, the body leaps or, once per flight,
+somersaults. Four dials under Interaction · Pawn; two shapes
+(`PAWN_AIR_LIP`, `LEAP_FLIP_SECONDS`) in world.wgsl. The slope law is the
+walk's law only now; the leap is a ladder (any riser under the apex is a
+step). Config 720 -> 736.
+
+**Jean's readings, all against the screen:** the tumble's direction along
+the heading (negate `turn` if it reads backward); the apex against the
+world's risers (3 wu = two pawn heights); a tap on a summit still boards.
+
+**Priced, not built:** hold-to-extend (keyboard-only — the glass tap
+resolves at lift); the ring at touchdown instead of takeoff (needs the
+P5 harvest, like `portal_trigger`); a CPU airborne sensor to silence the
+somersault's ring (R1 kept every tap ringing).
+
 ## SKIRT_WELD_1/P — THE PERIMETER SKIRT HANGS FROM THE BASE BAND (landed; one seam held)
 
 Sibling of SKIRT_WELD_1 on 7T-Music, landed there at `be0eb28f`. The patch
