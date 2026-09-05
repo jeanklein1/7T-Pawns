@@ -1186,6 +1186,28 @@ def main():
                  "/index.html\n  Cache-Control: no-cache\n")
         for versioned in IMMUTABLE_PATHS:
             fh.write("/%s\n  Cache-Control: %s\n" % (versioned, IMMUTABLE_RULE))
+        # ── WEBSITE_1 — THE ROOT FILE HAS ONE WRITER ────────────────
+        # Cloudflare reads exactly one _headers, at the deployment root,
+        # so this writer is it — for the engine's rules above and the
+        # site's below. Site rules are emitted only when their paths
+        # exist in dist/, so an engine-only deploy states no law about a
+        # folder that is not there. Fonts ship under hashed-stable names
+        # and never change in place; the about page changes under a
+        # constant name and must revalidate, exactly as / does.
+        if os.path.isdir(os.path.join(DIST, "fonts")):
+            fh.write("/fonts/*\n  Cache-Control: %s\n" % IMMUTABLE_RULE)
+        if os.path.isdir(os.path.join(DIST, "about")):
+            fh.write("/about/\n  Cache-Control: no-cache\n")
+        # The collection pipeline knows its filenames carry a content
+        # hash; its cache law arrives as the fragment it wrote beside
+        # its own output, folded here verbatim. Absent fragment, absent
+        # rule. Run this script LAST on a full refresh — the fold and
+        # the two conditionals above read what the site pipelines wrote.
+        frag = os.path.join(DIST, "collection", "_headers.fragment")
+        if os.path.isfile(frag):
+            with open(frag, "r", encoding="utf-8") as fr:
+                txt = fr.read()
+            fh.write(txt if txt.endswith("\n") else txt + "\n")
 
     file_count = (len(ARTIFACTS) + len(painting_paths) + len(music_paths)
                   + len(poster_paths) + len(presets) + 2)
