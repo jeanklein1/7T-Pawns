@@ -26,6 +26,10 @@
 // a normalized u once per entry and `conductor_apply_` lerps through it,
 // so a panel edit to either end moves the sky continuously mid-reign
 // instead of waiting for the next entry.
+//
+// THE HOLD (ORRERY_7): `enabled` gates the CEREMONY, never the SPEAK.
+// Off, the wheel stops where it stands, the row-watch stays live, and
+// `held_state` moves the sky by hand — the iteration studio.
 // ────────────────────────────────────────────────────────────────────
 
 namespace t7 {
@@ -56,6 +60,10 @@ struct OrbConductorConsole {
     uint32_t enabled;         // the conductor's own switch
     uint32_t frost_percent;   // THE COIN — brownian and orbital each end
                               // in FROZEN (the wheel) this % of the time
+    uint32_t held_state;      // THE HOLD (ORRERY_7) — with the ceremony
+                              // off, turning this dial enters that state
+                              // by hand; edge-detected, so it never fires
+                              // on its own. 0 brn · 1 frz · 2 flk · 3 orb
     OrbConductorState states[4];
 };
 
@@ -81,6 +89,7 @@ inline constexpr float ORB_CONDUCTOR_RULE_DRAG_NEUTRAL = 1.0f;
 inline constexpr OrbConductorConsole ORB_CONDUCTOR = {
     1u,   // enabled
     25u,  // frost_percent — "75 to 25", his words
+    0u,   // held_state — brownian, the resting hand
     { //  gest  dragLo dragHi  orbSpd   noise  spdMul  dur    jitter
         { 0u,  0.2f,  0.8f,  0.0010f,  3.0f,  4.0f,   16.0f, 0.0f },  // brownian
         { 0u,  0.0f,  0.0f,  0.0010f,  3.0f,  4.0f,   16.0f, 0.0f },  // frozen — reads none of these
@@ -96,7 +105,7 @@ static_assert(sizeof(OrbConductorState) == 8u * 4u,
     "the row-watch memcmp assumes a packed 32-byte row: a field added "
     "here is added to the cache compare by construction, padding is not");
 static_assert(sizeof(OrbConductorConsole) ==
-    2u * 4u + ORB_CS_COUNT * sizeof(OrbConductorState),
+    3u * 4u + ORB_CS_COUNT * sizeof(OrbConductorState),
     "ORB_CONDUCTOR_LIVE is a whole-struct copy of the design: a field "
     "added to one is added to the other by construction");
 
