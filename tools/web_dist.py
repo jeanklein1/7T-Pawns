@@ -1209,8 +1209,20 @@ def main():
                 txt = fr.read()
             fh.write(txt if txt.endswith("\n") else txt + "\n")
 
+    # ── WEBSITE_1 U3 — THE ALIAS TABLE IS CONTENT, NOT DERIVATION ───
+    # It lives as tracked source (web/_redirects) and ships verbatim;
+    # this script is its courier, not its author. Absent source, absent
+    # aliases — a printed remark, not a refusal, because the engine
+    # deploys whole without them.
+    redirects_src = os.path.join(WEB, "_redirects")
+    shipped_redirects = 0
+    if os.path.isfile(redirects_src):
+        shutil.copy2(redirects_src, os.path.join(DIST, "_redirects"))
+        shipped_redirects = 1
+    else:
+        print("  (web/_redirects absent — /main and /world aliases not shipped)")
     file_count = (len(ARTIFACTS) + len(painting_paths) + len(music_paths)
-                  + len(poster_paths) + len(presets) + 2)
+                  + len(poster_paths) + len(presets) + 2 + shipped_redirects)
 
     print("  %-18s %14d  %9.2f  %7d" % ("paintings (dist)", paintings_dist_bytes,
                                         mib(paintings_dist_bytes), len(painting_paths)))
@@ -1297,6 +1309,8 @@ def main():
     print("  _headers           index is no-cache; a plain reload now fetches the current build")
     print("                     %d versioned path(s) immutable for a year — the second dawn is free"
           % len(IMMUTABLE_PATHS))
+    if shipped_redirects:
+        print("  _redirects         /main -> /about/ and /world -> / ship as 302 aliases")
 
     print("")
     print("DEPLOY — exact commands")

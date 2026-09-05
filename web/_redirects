@@ -1,0 +1,8 @@
+# WEBSITE_1 — the speakable aliases. Canonical paths are /, /about/ and
+# /collection/; these exist to be said aloud and printed on a wall.
+# 302, deliberately: a browser never burns an alias in, so an alias can
+# move the day the site does.
+/main    /about/   302
+/main/   /about/   302
+/world   /         302
+/world/  /         302
