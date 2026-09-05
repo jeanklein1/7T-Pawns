@@ -50,6 +50,7 @@
 #include "core/input_event.hpp"
 #include "core/boot_params.hpp"                                    // DOMESDAY_1 B9 — ?seed= / ?mood= boot overrides (ctor, the one authoring site)
 #include "core/boot_card.hpp"                                      // IOS_3 B2 — the world, the switches and the patch counters reach the page
+#include "core/ride_face.hpp"                                      // REACH_1 V2 — the face watcher's one call per edge
 #include "core/aubade.hpp"                                        // AUBADE U1 — the waterfall's marks and the first-present latch
 #include "core/instruments.hpp"                                    // THE INSTRUMENTS DIAL: INSTRUMENTS.frame_meter / .periodic_census gate the recurring self-measurement (compile-time, T7_INSTRUMENTS; default off)
 #include "cartridges/the_board/contracts/roster.hpp"
@@ -1854,6 +1855,21 @@ namespace t7 {
                         },
                         this);
                 }
+
+                // REACH_1 V2 — THE FACE WATCHER. The formula reads what is
+                // already home (the host, the bubble the harvest composed);
+                // the difference gate means a still world costs nothing and
+                // no frame ever pays an EM_ASM twice. Teardown darkens the
+                // bubble, possess flips the host — every writer funnels
+                // through this one gate.
+                uint32_t face = 0u;
+                if (point_.host == PointHost::RIBBON) face = 2u;
+                else if (point_.host == PointHost::PAWN
+                         && point_.bubble.ribbon_reach) face = 1u;
+                if (face != rideFaceShown_) {
+                    rideFaceShown_ = face;
+                    t7::ride_face(face);
+                }
             }
 
             // R2 — PORTAL TRIGGER (algo; GPU event). ENTRY door #2: a GPU-
@@ -1916,6 +1932,10 @@ namespace t7 {
             // the census phase's cadence rather than growing one, and
             // card_live rewrites a single div rather than appending.
             double lastCardTick_ = -1.0;   // PLUMB_0 B1 — differenced against TimeState::seconds
+
+            // REACH_1 V2 — the face the shell currently wears (0 hidden,
+            // 1 board, 2 land). Differenced so only EDGES cross to JS.
+            uint32_t rideFaceShown_ = 0;
 
             void card_patch_tick_() {
                 if (!t7::boot_params().bootinfo) return;
