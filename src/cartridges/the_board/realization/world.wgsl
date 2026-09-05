@@ -2190,6 +2190,11 @@ const PAWN_TURN_SPEED: f32 = 8.0;
 // is already clearing is not a wall. Shape, not a dial — the standing the
 // ring's own consts keep.
 const PAWN_AIR_LIP: f32 = 0.35;
+// THE SOMERSAULT'S DURATION (LEAP_0): one full turn, measured from the
+// flip's own launch. Sized to land upright from a flip fired at the
+// leap's apex over flat ground at the authored rests; the screen is the
+// gate. Shape, not a dial.
+const LEAP_FLIP_SECONDS: f32 = 0.45;
 
 // Chess pawn mesh resolution (GPU-generated from vertex_index)
 const PAWN_SEGMENTS: u32 = 48u;
@@ -8309,13 +8314,16 @@ fn behavior_player_controlled(agent_in: AgentState) -> AgentState {
         // (signal.jump_edge) obeys the hands' gate, so the camera host earns
         // nothing. The clock advances first, so a door that fires on an
         // existing flight starts a fresh count.
-        if (agent.t > 0.0) { agent.t += dt; }
+        if (agent.t > 0.0) { agent.t += dt; } else if (agent.t < 0.0) { agent.t -= dt; }
         let door   = hands_live && signal.jump_edge != 0u;
         let rise   = max(config.leap_rise, 1e-3);          // the dial floors it; this is the guard
         let g_rise = 2.0 * config.leap_apex / (rise * rise);
         if (door && agent.t == 0.0) {                       // THE LEAP — from the ground
             agent.vel_y = 2.0 * config.leap_apex / rise;
             agent.t = dt;
+        } else if (door && agent.t > 0.0) {                 // THE SOMERSAULT — once, from the air
+            agent.vel_y = sqrt(2.0 * g_rise * max(config.leap_flip_apex, 0.0));
+            agent.t = -dt;                                  // spent; the tumble's clock starts
         }
         if (agent.t != 0.0) {
             // THE BODY'S LAW. Rising and falling gravity differ — the apex
@@ -8373,7 +8381,19 @@ fn behavior_player_controlled(agent_in: AgentState) -> AgentState {
         let heading_quat = quat_from_axis_angle(vec3(0.0, 1.0, 0.0), agent.heading);
         // (orient_target, not target: `target` is a WGSL RESERVED WORD — naga
         //  and Tint both reject it as an identifier.)
-        let orient_target = quat_multiply(tilt_quat, heading_quat);
+        var orient_target = quat_multiply(tilt_quat, heading_quat);
+        // LEAP_0 — THE SOMERSAULT: one turn about the body's own lateral
+        // axis (body X; forward is body Z — heading = atan2(vel.x, vel.z))
+        // over LEAP_FLIP_SECONDS, applied in the body frame (quat_multiply
+        // applies its SECOND argument first) so it tumbles along the
+        // heading. The clock's negative half is the tumble's; a touchdown
+        // before the turn completes cuts it. The pawn is symmetric: if the
+        // tumble reads backward on the screen, negate `turn` — a value, not
+        // a shape.
+        if (agent.t < 0.0) {
+            let turn = 6.2831853 * saturate(-agent.t / LEAP_FLIP_SECONDS);
+            orient_target = quat_multiply(orient_target, quat_from_axis_angle(vec3(1.0, 0.0, 0.0), turn));
+        }
 
         // Per-figure tilt lag (CLOSURE_PAWN [6]). The stored orientation is the
         // state this walks from — see the AgentState comment on why orientation

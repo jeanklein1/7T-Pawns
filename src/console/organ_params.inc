@@ -627,6 +627,7 @@ ORGAN_PARAM(CONFIG, GPUDesignConfig, pawn_speed,          F32, 0.0f, 60.0f,  0.5
 ORGAN_PARAM(CONFIG, GPUDesignConfig, leap_apex,           F32, 0.0f,  12.0f, 0.1f,   "Interaction · Pawn",   "leap apex")
 ORGAN_PARAM(CONFIG, GPUDesignConfig, leap_rise,           F32, 0.05f, 1.0f,  0.01f,  "Interaction · Pawn",   "leap rise (s)")
 ORGAN_PARAM(CONFIG, GPUDesignConfig, leap_fall_ratio,     F32, 1.0f,  3.0f,  0.05f,  "Interaction · Pawn",   "leap fall ratio")
+ORGAN_PARAM(CONFIG, GPUDesignConfig, leap_flip_apex,      F32, 0.0f,  6.0f,  0.1f,   "Interaction · Pawn",   "somersault apex")
 ORGAN_PARAM(CONFIG, GPUDesignConfig, point_fly_speed,     F32, 0.0f, 120.0f, 0.5f,   "Interaction · Camera", "fly speed")
 ORGAN_PARAM(CONFIG, GPUDesignConfig, cube_plasticity,     F32, 0.0f, 1.0f,   0.005f, "Interaction · Cubes",  "plasticity λ")
 
