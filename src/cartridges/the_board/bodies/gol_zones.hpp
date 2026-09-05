@@ -223,7 +223,7 @@ struct GoLTierProfile {
     bool  force_no_height;
 
     // ─── Size (UNIFIED_GROUND_1 U5; cells, not world units) ──
-    uint32_t grid_cells;       // zone side in cells ∈ {8..32}
+    uint32_t grid_cells;       // zone side in cells ∈ {8..64} (capacity: Dim::GOL_ZONE_GRID)
 };
 
 // MUST match world.wgsl's GOL_TIERS cells column. Hardware mirror — when
@@ -395,7 +395,7 @@ struct GolPulseTierProfile {
     uint32_t boundary_mode;
 
     // ─── Size (UNIFIED_GROUND_1 U5; cells, not world units) ──
-    uint32_t grid_cells;       // zone side in cells ∈ {8..32}
+    uint32_t grid_cells;       // zone side in cells ∈ {8..64} (capacity: Dim::GOL_ZONE_GRID)
 };
 
 // MUST match world.wgsl's GOL_PULSE_TIERS cells column

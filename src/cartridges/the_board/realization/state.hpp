@@ -443,10 +443,13 @@ namespace t7 {
             constexpr uint32_t TOTAL_FLOATING_SLOTS = MAX_SPHERE_INSTANCES + MAX_CUBE_INSTANCES;  // 264
             // CAPACITY — the MAXIMUM cells per zone side, and the side of the
             // life-buffer plane and the life texture. A zone's ACTUAL side is
-            // its tier's grid_cells ∈ {8,16,24,32} (bodies/gol_zones.hpp), and
+            // its tier's grid_cells ∈ {8..64} (bodies/gol_zones.hpp), and
             // every index and bound is derived from THAT. Never mix the two.
-            constexpr uint32_t GOL_ZONE_GRID = 32;
-            constexpr uint32_t GOL_ZONE_CELLS = GOL_ZONE_GRID * GOL_ZONE_GRID;  // 1024
+            // GOL_GRID_0 doubled 32 → 64 (biggest zone 100 → 200 wu); the
+            // WGSL twins (GOL_ZONE_TEX_N, GOL_ZONE_STRIDE, the GOL_CELL_*
+            // slot offsets) moved in the same commit.
+            constexpr uint32_t GOL_ZONE_GRID = 64;
+            constexpr uint32_t GOL_ZONE_CELLS = GOL_ZONE_GRID * GOL_ZONE_GRID;  // 4096
             constexpr uint32_t GOL_ZONE_LIFE_STRIDE = GOL_ZONE_CELLS * 5;  // 5 slots: visual, velocity, target, next, height_factor
 
             // Orb sky layer — luminous points on a dome above the world
@@ -2588,7 +2591,7 @@ namespace t7 {
             // GoL zone system buffers
             wgpu::Buffer zoneConfigBuffer_;        // GPUGoLZoneArray storage (read_write)
             wgpu::Buffer zoneDeriveRequestBuffer_; // GPUZoneDeriveRequestArray uniform
-            wgpu::Buffer zoneLifeBuffer_;          // life state: MAX_ZONES × GOL_ZONE_LIFE_STRIDE (5120) floats
+            wgpu::Buffer zoneLifeBuffer_;          // life state: MAX_ZONES × GOL_ZONE_LIFE_STRIDE (20480) floats
             wgpu::Texture zoneLifeTexture_;        // 32×32 × MAX_ZONES R32Float texture array
             wgpu::TextureView zoneLifeWriteView_;  // storage texture write (compute)
             wgpu::TextureView zoneLifeReadView_;   // sampled texture read (fragment)
@@ -5188,7 +5191,7 @@ namespace t7 {
 
                 if (!zoneConfigBuffer_ || !zoneLifeBuffer_) return false;
 
-                // Zone life texture: 32×32 × MAX_ZONES, R32Float (R = the cell's spring visual)
+                // Zone life texture: 64×64 × MAX_ZONES, R32Float (R = the cell's spring visual)
                 {
                     wgpu::TextureDescriptor desc{};
                     desc.size = { Dim::GOL_ZONE_GRID, Dim::GOL_ZONE_GRID, Dim::MAX_GOL_ZONES };

@@ -10924,16 +10924,17 @@ fn generate_patch_cells(@builtin(global_invocation_id) id: vec3<u32>,
 // §7.2 GOL ZONE COMPUTE — Zone-local Game of Life
 // Two compute passes per frame (when zones are active):
 // The zone life texture's side — twin of Dim::GOL_ZONE_GRID
-// (state.hpp). FIXED at 32 while zp.grid_size is tier-derived over
-// {8..32}: the sim writes texels [0, grid_size)² of a 32² layer, so
+// (state.hpp). FIXED at 64 while zp.grid_size is tier-derived over
+// {8..64}: the sim writes texels [0, grid_size)² of a 64² layer, so
 // every fetch normalizes by THIS, never by the zone's own grid.
-const GOL_ZONE_TEX_N: f32 = 32.0;
-const GOL_ZONE_STRIDE: u32 = 5120u;     // floats per zone (5 slots × 1024 cells)
+// GOL_GRID_0 doubled the capacity; the CPU trio moved in this commit.
+const GOL_ZONE_TEX_N: f32 = 64.0;
+const GOL_ZONE_STRIDE: u32 = 20480u;    // floats per zone (5 slots × 4096 cells)
 const GOL_CELL_VISUAL: u32 = 0u;        // slot 0: height spring visual [0,1]
-const GOL_CELL_VELOCITY: u32 = 1024u;   // slot 1: height spring velocity
-const GOL_CELL_TARGET: u32 = 2048u;     // slot 2: current target (binary, Conway reads)
-const GOL_CELL_NEXT: u32 = 3072u;       // slot 3: next target (binary, Conway writes)
-const GOL_CELL_HEIGHT_FACTOR: u32 = 4096u;  // slot 4: per-cell height multiplier (persistent)
+const GOL_CELL_VELOCITY: u32 = 4096u;   // slot 1: height spring velocity
+const GOL_CELL_TARGET: u32 = 8192u;     // slot 2: current target (binary, Conway reads)
+const GOL_CELL_NEXT: u32 = 12288u;      // slot 3: next target (binary, Conway writes)
+const GOL_CELL_HEIGHT_FACTOR: u32 = 16384u; // slot 4: per-cell height multiplier (persistent)
 // Slots 5-6 were a COLOUR spring. It was provably the height spring: same
 // target, same omega/e, same settle thresholds, same apply_boundary and
 // select guard, and seeded from the same life_data with the same zero
