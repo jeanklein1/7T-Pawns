@@ -228,7 +228,7 @@ generator, so the book and the manifest cannot disagree. `driven` is an
 | Ribbon · Head | altitude stiffness | `CONFIG.ribbon_alt_stiff` | CONFIG | F32 | 0 … 1.44 | 0.005 | live | none |  |
 | Ribbon · Head | mount setback | `CONFIG.ribbon_mount_setback` | CONFIG | F32 | 0 … 6 | 0.02 | live | none |  |
 | Ribbon · Head | hands tau (s) | `CONFIG.ribbon_hands_tau` | CONFIG | F32 | 0 … 2.4 | 0.01 | live | none |  |
-| Ribbon · Head | reach | `CONFIG.ribbon_reach` | CONFIG | F32 | 0 … 120 | 0.5 | live | none |  |
+| Ribbon · Head | reach | `CONFIG.ribbon_reach` | CONFIG | F32 | 0 … 240 | 0.5 | live | none |  |
 | Ribbon · Sky Rule | lookahead | `CONFIG.ribbon_lookahead` | CONFIG | F32 | 0 … 400 | 2 | live | none |  |
 | Ribbon · Sky Rule | head clearance | `CONFIG.ribbon_clear_head` | CONFIG | F32 | 0 … 100 | 0.5 | live | none |  |
 | Ribbon · Sky Rule | body clearance | `CONFIG.ribbon_clear_body` | CONFIG | F32 | 0 … 50 | 0.25 | live | none |  |
