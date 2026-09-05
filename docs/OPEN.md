@@ -3492,6 +3492,12 @@ had. Full-refresh order: site pipelines first, `python tools/web_dist.py`
 LAST — it is the root assembler, and the fold reads what the site wrote.
 Open: · the card's browser list dropped "Firefox on desktop" — the shell
 claimed it, the Aug 2026 record holds Firefox LOST/HELD; Jean rules which
-fact is stale · card / noscript / meta wording is drafted, Jean gates ·
-the collection fragment's exact content is unverified until WEBSITE_0
-lands; if it carries more than /collection/*, dedupe at the fold.
+fact is stale · card / noscript / meta wording is drafted, Jean gates.
+WEBSITE_2 seated the zip's 22 files at their repo paths, gitignored the
+masters, and corrected MERGE/SETUP to the web_dist-LAST order. The
+fragment item closed on inspection: collection_dist writes exactly
+/collection/* immutable plus /collection/ and /collection/index.html
+no-cache — zero overlap with the root writer's conditionals, so the
+verbatim fold stands as landed. Still Jean's: masters in, placeholder
+copy (5 markers, 3 links), pipelines + deploy, and the functions/
+pickup check at deploy time.
