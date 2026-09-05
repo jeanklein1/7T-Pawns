@@ -9,6 +9,17 @@
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#0a0a0c">
   <title>the_board</title>
+  <!-- WEBSITE_1 — what a crawler and a link preview find at the domain;
+       until now that was a <canvas>. og:image is the veil's poster:
+       unversioned by POSTER_0's own rule, so the absolute URL is stable
+       across deploys. -->
+  <meta name="description" content="the_board — a living, ever-expanding world that hangs Jean Klein's paintings and moves to its own music. WebGPU, in the browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://everexpandingboard.com/">
+  <meta property="og:title" content="the_board">
+  <meta property="og:description" content="A living, ever-expanding world that hangs Jean Klein's paintings and moves to its own music.">
+  <meta property="og:image" content="https://everexpandingboard.com/veil_poster.jpg">
+  <meta name="twitter:card" content="summary_large_image">
   <style>
     /* ── THE PAGE ──────────────────────────────────────────────────
        Dark, one canvas, three states over it. No framework, no CSS
@@ -1074,9 +1085,12 @@
       terminal = true;
       showCard(
         'This piece needs WebGPU, and this browser cannot give it one.',
-        'It runs today in Chrome and Edge on Android and desktop, in Safari on ' +
-        'iOS 26, and in Firefox on desktop. ' +
-        'A recording lives above. If you want to see it on the machine you have, ' + CONTACT + '.',
+        'The board is a living, ever-expanding world that hangs Jean ' +
+        'Klein\'s paintings and moves to its own music. It runs today in ' +
+        'Chrome and Edge on Android and desktop, and in Safari on iOS 26. ' +
+        'The paintings themselves are in <a href="collection/">the ' +
+        'collection</a>, and <a href="about/">about</a> says what this ' +
+        'is. If you want to see it on the machine you have, ' + CONTACT + '.',
         false
       );
       record('[shell] FALLBACK: ' + reason);
