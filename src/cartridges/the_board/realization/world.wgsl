@@ -930,6 +930,13 @@ struct AgentState {
     color_g: f32,
     color_b: f32,
     skin_id: u32,   // PawnFigure row (0 = regular). Mirrors GPUAgentState.skin_id (H2).
+    // REACH_0 — the bubble's sensor word. Mirrors GPUAgentState.sensor_bits;
+    // bit 0 = reach. Written by behavior_player_controlled, read by nothing
+    // in this room — the harvest is the reader.
+    sensor_bits: u32,
+    _pad100: u32,
+    _pad104: u32,
+    _pad108: u32,
 }
 
 // ═══ AGENT REGISTRIES (read-only uniform buffers) ═══════════════════════
