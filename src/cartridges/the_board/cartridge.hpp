@@ -1487,6 +1487,7 @@ namespace t7 {
                             teardown_orbs(orbs_state_, &orbs_deps_);
 
                         point_.portal_trigger = -1;
+                        point_.bubble.ribbon_reach = false;   // REACH_0 — the sensor rests dark across a world change
                         // THE AUTHORED PRESENT (POINT_1): at a teleport the
                         // CPU is the author of the new present — the same
                         // position reset_player_agent / reseed_player_body
@@ -1724,6 +1725,18 @@ namespace t7 {
                                             self->point_.heading = p.heading;
                                         }
                                         self->point_.portal_trigger = p.portal_trigger;
+                                        // REACH_0 — the bubble's second
+                                        // sensor comes home on the same
+                                        // wire, COMPOSED HERE, the one
+                                        // site: the GPU's raw word (bit 0)
+                                        // ∧ a ribbon actually rendered ∧
+                                        // the PAWN hosting. Free-fly earns
+                                        // nothing; a stale saddle cannot
+                                        // arm the door.
+                                        self->point_.bubble.ribbon_reach =
+                                            (p.sensor_bits & 1u) != 0u
+                                            && self->ribbon_state_.rendered_slot != UINT32_MAX
+                                            && self->point_.host == PointHost::PAWN;
                                         // ATRIUM_5 — THE PASSER WITNESS, here
                                         // because here is where the route state
                                         // becomes readable: it is written on the

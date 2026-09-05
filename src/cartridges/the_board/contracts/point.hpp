@@ -80,6 +80,12 @@ inline constexpr float POINT_BUBBLE_RADIUS = 80.0f;   // world units; boot-pinne
 
 struct PointBubble {
     float radius = POINT_BUBBLE_RADIUS;   // the awareness bound (the portal's vertical gate today)
+    // REACH_0 — the second sensor. TRUE means: the rendered ribbon's seat
+    // sits within RIBBON_LIVE.reach of the pawn, PAWN host, this frame's
+    // harvest. Composed at the ONE site (the witness harvest); the boarding
+    // door reads it and nothing else writes it. Rests false; teardown
+    // re-darkens it.
+    bool  ribbon_reach = false;
 };
 
 // ═══ THE WITNESS'S OWN DIALS ═══════════════════════════════════════
