@@ -3501,3 +3501,12 @@ no-cache — zero overlap with the root writer's conditionals, so the
 verbatim fold stands as landed. Still Jean's: masters in, placeholder
 copy (5 markers, 3 links), pipelines + deploy, and the functions/
 pickup check at deploy time.
+
+## GOL_GRID_0/P — parked residue
+
+- a 64-cell zone shadows arch placement over ~150 wu of radius (Arch–GoL
+  separation 0, footprint radii add): a LODESTAR cell whose core falls
+  under one loses its designated door to the neighbor cell (~800 wu
+  ceiling) · origin: GOL_GRID_0 · unblocks: Jean's walk gate — levers are
+  the promoted rows' cells column, or a zone-aware lodestar designation
+  (its own campaign).
