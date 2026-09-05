@@ -317,13 +317,24 @@ void commit_entity_queue(MachineCtx* c, wgpu::Queue& queue);
 // The preamble template (SEAM[spawn_engine:P11]) — DECLARATION only;
 // the definition rides machine/spawn_engine.hpp (end-of-TU
 // instantiation binds every pre-tail caller).
+//
+// SPAWN_DECL_0 — THE TENTH PARAMETER IS PART OF THE SIGNATURE. LODESTAR_0
+// gave the definition `force_spawn`; this declaration kept nine, and a
+// template declared with nine parameters is a DIFFERENT template from one
+// defined with ten. Every pre-tail caller bound to the nine and wasm-ld
+// found no definition — a link that failed after file_packager had already
+// refreshed the package, which is how a fresh .data came to ship beside a
+// stale .js (PAIR_0). The default lives HERE, on the declaration the
+// callers see, and not on the definition: once per scope, where it is
+// visible.
 template<typename C, typename ActiveT>
 SpawnGatePreambleResult run_spawn_preamble(C* c,
     int32_t gx, int32_t gz,
     ActiveT* active_arr, uint32_t max_instances,
     uint32_t spawn_roll_prop, float spawn_chance,
     const float* mood_mult,
-    uint32_t family);
+    uint32_t family,
+    bool force_spawn = false);
 
 // The generic gate — DECLARATION only; defined beside run_spawn_preamble at
 // the cohort tail. Same binding law: the nine family run_gates that call it

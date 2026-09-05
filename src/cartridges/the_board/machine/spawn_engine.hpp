@@ -216,7 +216,7 @@ SpawnGatePreambleResult run_spawn_preamble(C* c,
     uint32_t spawn_roll_prop, float spawn_chance,
     const float* mood_mult,
     uint32_t family,
-    bool force_spawn = false)
+    bool force_spawn)          // SPAWN_DECL_0: the default is on the decl
 {
     SpawnGatePreambleResult r{};
     r.ok = false;
