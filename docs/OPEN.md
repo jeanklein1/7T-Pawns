@@ -3454,3 +3454,15 @@ that authored this section. · ORRERY_0 R2 ·
   night "brighter" than the sunset's field when the sunset row holds `0.85f` —
   the night is DIMMER, not brighter. The replacement drops both words, so the
   sentence now claims only what the row gives: fuller and slower.
+
+## USHER_0/P — parked residue
+
+- finite_outdoor is DARK, not cut: `mood_weights[3] = 0` (mood_constants.hpp);
+  every other surface of the mood stands, `?mood=3` and the panel dial reach it
+  · origin: USHER_0 U1 · unblocks: a finite-outdoor design worth a door (reopen
+  = one table cell), or a ruling to cut the mood whole — its own campaign
+  (MOOD_COUNT shrinks, ids renumber, every per-mood table loses a row).
+- the boot draw includes the atrium at its portal weight (0.02): roughly one
+  visitor in fifty wakes in the small dark room · origin: USHER_0 U3 ·
+  unblocks: Jean's visual gate — if unwanted, the lever is the same weight
+  dial (which also shuts its portal) or a one-line exclusion at the boot draw.
