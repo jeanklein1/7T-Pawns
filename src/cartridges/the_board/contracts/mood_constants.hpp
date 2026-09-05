@@ -97,12 +97,12 @@ struct WorldDrawSurface {
 
 inline constexpr WorldDrawSurface WORLD_DRAW_TABLE = {
     1.00f,   // portal_density — every Doorway arch is a portal today
-    { 0.20f, 0.20f, 0.20f, 0.10f, 0.15f, 0.15f, 0.02f },   // mood_weights by id: sunset, flat, vault,
-                                                           // finite, night, noon, ATRIUM — PORTAL_2's
-                                                           // 0.10 finite kept; the old even thirds
-                                                           // re-cut to seat the two new skies
-                                                           // (ATMOS_1); the atrium is the rarest door
-                                                           // in the open field (ATRIUM_1) — the walk
+    { 0.20f, 0.20f, 0.20f, 0.00f, 0.15f, 0.15f, 0.02f },   // mood_weights by id: sunset, flat, vault,
+                                                           // finite, night, noon, ATRIUM — finite
+                                                           // outdoor's door SHUT (USHER_0: weight 0,
+                                                           // mood kept; the panel dial reopens it);
+                                                           // the atrium is the rarest door in the
+                                                           // open field (ATRIUM_1) — the walk
                                                            // normalises
     { 0.42f, 0.43f, 0.10f, 0.05f },          // cathedral / quartet / gallery / sanctum (ATRIUM_13 — the
                                              // atrium's weight-0 fifth went with its row)
