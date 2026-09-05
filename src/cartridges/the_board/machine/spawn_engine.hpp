@@ -215,7 +215,8 @@ SpawnGatePreambleResult run_spawn_preamble(C* c,
     ActiveT* active_arr, uint32_t max_instances,
     uint32_t spawn_roll_prop, float spawn_chance,
     const float* mood_mult,
-    uint32_t family)
+    uint32_t family,
+    bool force_spawn = false)
 {
     SpawnGatePreambleResult r{};
     r.ok = false;
@@ -241,14 +242,23 @@ SpawnGatePreambleResult run_spawn_preamble(C* c,
 
     // 7. Spawn gate (seed + roll; the chance arrives composed)
     auto ctx = evaluate_spawn_gate(c, gx, gz, spawn_roll_prop, composed.chance);
-    if (!ctx.passed) return r;
+    if (!ctx.passed && !force_spawn) return r;   // LODESTAR_0: the designated door ignores the dice — never the pool (below)
 
     // 8-9. Find and reserve slot
     uint32_t slot = UINT32_MAX;
     for (uint32_t i = 0; i < max_instances; i++) {
         if (!active_arr[i].active) { slot = i; break; }
     }
-    if (slot == UINT32_MAX) return r;
+    if (slot == UINT32_MAX) {
+        // LODESTAR_0 — THE POOL WALL, OUT LOUD (P6). MAX_ARCH_INSTANCES
+        // is a GPU-buffer dimension, so the wall stands; a wall that can
+        // eat a guarantee must not be silent. Arch-scoped: other
+        // families' saturation may be their design.
+        if (family == PopFamily::ARCH)
+            std::cout << "[SPAWN] arch pool FULL — patch (" << gx << "," << gz
+                      << ") dropped" << (force_spawn ? " (LODESTAR door lost)" : "") << "\n";
+        return r;
+    }
     active_arr[slot].active = true;
 
 
@@ -281,10 +291,17 @@ template<typename ActiveT>
 inline SpawnGateOutput gate_from_traits(MachineCtx* c, int32_t gx, int32_t gz,
     const EntityFamilyTraits& t, ActiveT* active_arr)
 {
+    // LODESTAR_0 — ARCH + open field + designated patch = the loaded
+    // roll. Finite worlds are excluded whole: their doors are the
+    // triad's, and a forced DOORWAY indoors opens nowhere.
+    const bool lodestar = t.family_id == PopFamily::ARCH
+        && !c->world_state_.finite_mode
+        && arch_lodestar_designated(c->world_state_.active_seed, gx, gz);
     auto gate = run_spawn_preamble(c, gx, gz,
         active_arr, t.max_instances,
         t.spawn_roll_prop, t.spawn_chance,
-        t.mood_multiplier, t.family_id);
+        t.mood_multiplier, t.family_id,
+        lodestar);
     return { gate.ok, gate.seed, gate.slot, gate.theme_idx };
 }
 
