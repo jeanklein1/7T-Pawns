@@ -51,11 +51,16 @@ That's the only dependency. Everything else is standard library.
 python tools/collection_dist.py
 python tools/about_dist.py
 python tools/gates/collection_gate.py
+python tools/web_dist.py
 ```
 
-Order matters twice: web_dist.py wipes dist/ whole, so the engine
-builds first — and the about page's four-image strip points into the
-collection's output, so the collection builds first.
+Order matters twice: the about page's four-image strip points into the
+collection's output, so the collection builds first — and web_dist.py
+runs LAST. Since WEBSITE_1 it deletes only the engine's own names
+(dist/ tenants survive), and its root _headers folds the collection's
+fragment and emits the /fonts/* and /about/ rules only when those
+folders already sit in dist/. On a machine that cannot build the
+engine, skip the last line — the three site pipelines stand alone.
 
 Then serve the result — opening `index.html` by double-clicking will not
 work properly, because browsers block fonts and some paths on `file://`:
