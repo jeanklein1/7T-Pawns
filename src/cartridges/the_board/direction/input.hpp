@@ -313,8 +313,9 @@ inline void on_key_down(InputDeps* c, int key,
         break;
     case GLFW_KEY_CAPS_LOCK:  try_possess_nearest(agent_state, &agents_deps, q);  break;
     // R RIDES. Down edge only — the held flag above is why. From the ribbon
-    // it dismounts back to the pawn; from anywhere else it boards, if there
-    // is a ribbon to board. CAMERA stays reachable through the panel row.
+    // it dismounts back to the pawn; from anywhere else it asks to board and
+    // the REACH gate answers (possess refuses out of reach). CAMERA stays
+    // reachable through the panel row.
     case GLFW_KEY_R:
         if (!c->keys_.ride_held) {
             c->keys_.ride_held = true;
@@ -551,6 +552,15 @@ inline void possess(InputDeps* c, PointHost next) {
     if (next == PointHost::RIBBON
         && c->ribbon_state_.rendered_slot == UINT32_MAX) {
         std::cout << "[Point] no ribbon to ride\n";
+        return;
+    }
+    // REACH_0 — BOARDING IS EARNED. The bubble's second sensor must be
+    // live: the rendered ribbon's seat within RIBBON_LIVE.reach of the
+    // pawn — in practice a colossus summit under a crossing, because the
+    // pen's floor makes that the one place the gap closes. The descend
+    // direction is NEVER gated: we come back down from anywhere.
+    if (next == PointHost::RIBBON && !c->point_.bubble.ribbon_reach) {
+        std::cout << "[Point] ribbon out of reach\n";
         return;
     }
     c->mount_.from[0] = c->point_.x;
