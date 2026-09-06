@@ -777,8 +777,16 @@ struct PyramidTierRow {
 // frustum like its siblings; the temple's 0.25 (a 10 wu mesa) narrows.
 // (3) No tier is pointed: the promotion FRUSTUM_0 is named for.
 inline constexpr PyramidTierRow PYRAMID_TIERS[] = {
+    // SPREAD_0 — the obelisk's flank was the steepest in the world:
+    // atan(84/48) = 60 degrees, at the slope law's own limit
+    // (PAWN_MAX_SLOPE), so half of them could not be walked. Jean's
+    // stamp: the narrowest ones ~15 degrees wider — base half 48 -> 84,
+    // flank 60 -> 45 degrees; every obelisk climbable now. The cap keeps
+    // the door's width: truncation 0.10 -> 0.06 so 0.06 x 84 ~ 5.0 wu
+    // (POINT_SUMMIT_RADIUS). Aspect sigma tightened so a squashed axis
+    // cannot hand the steepness back.
     /* OBELISK  */ {
-        { 0.50f, 0.0f, { {84.0f, 18.0f}, {48.0f, 9.0f},  {1.0f, 0.15f}, {0.10f, 0.02f}, {4.5f, 0.9f}  }},
+        { 0.50f, 0.0f, { {84.0f, 18.0f}, {84.0f, 16.0f}, {1.0f, 0.10f}, {0.06f, 0.01f}, {4.5f, 0.9f}  }},
         0.10f, 0.04f
     },
     /* TEMPLE   */ {
