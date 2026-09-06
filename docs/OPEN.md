@@ -698,6 +698,12 @@ CullMode::None drew both; the dark twin won a view-dependent depth
 fight. Struck: both shoulder discs and their loop. Priced: the
 classical columns' step discs fight the same way, invisibly.
 
+**SPORE_0 — the sea is never still.** Uniform 3x3 cells roll one coin
+per 5x5 block per tick (0.75 spores per zone per tick, beat-clock
+entropy) and a hit flips the block — sized to persist under Vote,
+boil under Conway. Spawn chance 0.60 -> 0.70. Jean's dials:
+GOL_SPORE_PER_ZONE_TICK, GOL_SPORE_BLOCK (world.wgsl).
+
 ## SKIRT_WELD_1/P — THE PERIMETER SKIRT HANGS FROM THE BASE BAND (landed; one seam held)
 
 Sibling of SKIRT_WELD_1 on 7T-Music, landed there at `be0eb28f`. The patch
