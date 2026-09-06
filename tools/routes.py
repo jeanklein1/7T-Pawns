@@ -102,12 +102,57 @@ def nav_html(side, base, indent="    "):
             attrs = ' onclick="return !(window.opener &amp;&amp; !window.opener.closed &amp;&amp; (window.close(), window.closed))"'
         items.append('<a data-route="%s" href="%s"%s>%s</a>'
                      % (esc(r["id"]), esc(href), attrs, esc(r["label"])))
+    # DOORS_4 — WRITE ME IS A BOX, NOT A PAGE BAND, and it lives in the
+    # site's sandwich under the links. The engine keeps its own pane.
+    if side == "site":
+        items.append(write_box_html(base, indent=indent))
     return ("\n" + indent).join(items)
 
 
 def menu_css():
     with open(MENU_CSS, encoding="utf-8") as fh:
         return fh.read().rstrip("\n")
+
+
+def write_box_html(base, indent="  "):
+    """Write me, as a small box inside the site sandwich (DOORS_4): a
+    nested <details>, the same fields the engine's pane sends, posting to
+    the same function. The inline script is the courtesy layer — without
+    it the native POST still lands, and the function answers in JSON.
+
+    NOTE, and it is a real one: the about page's old band showed
+    site.json's address when the endpoint refused. This box cannot — it
+    renders for every site page from a file that has never read
+    site.json, and only about_dist's fill() knows __EMAIL__. The engine's
+    Write pane keeps the mailto fallback; the site's box says try again.
+    Registered for Jean."""
+    action = rel("/api/message", base)
+    lines = [
+        '<details class="writebox">',
+        '  <summary>Write me</summary>',
+        '  <form method="post" action="%s">' % esc(action),
+        '    <label>name<input name="name" autocomplete="name"></label>',
+        '    <label>email, if you want an answer<input name="email" type="email" autocomplete="email"></label>',
+        '    <label>message<textarea name="message" required rows="4"></textarea></label>',
+        '    <label class="hp" aria-hidden="true">leave this empty<input name="website" tabindex="-1" autocomplete="off"></label>',
+        '    <div class="row"><button type="submit">Send</button><span class="said" role="status"></span></div>',
+        '  </form>',
+        '  <script>(function () {',
+        '    var d = document.currentScript.closest("details");',
+        '    var f = d.querySelector("form"), s = d.querySelector(".said");',
+        '    f.addEventListener("submit", function (e) {',
+        '      e.preventDefault(); s.textContent = "Sending…";',
+        '      var data = {}; ["name", "email", "message", "website"].forEach(function (k) {',
+        '        var el = f.elements[k]; data[k] = el ? el.value : "";',
+        '      });',
+        '      fetch(f.action, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })',
+        '        .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); s.textContent = "Sent. Thank you."; f.reset(); })',
+        '        .catch(function () { s.textContent = "It did not go through — try again in a moment."; });',
+        '    });',
+        '  })();</script>',
+        '</details>',
+    ]
+    return ("\n" + indent).join(lines)
 
 
 def follow_html(indent="    "):

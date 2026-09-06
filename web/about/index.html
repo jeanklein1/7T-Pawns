@@ -82,6 +82,7 @@
   .door:hover .go, .door:focus-visible .go { border-color: var(--ink); }
   .door p { margin: 0 0 var(--s2); color: var(--dim); max-width: 30em; }
   .door small { display: block; margin-top: var(--s2); font-size: 13.5px; color: var(--faint); }
+  .door .door-img { display: block; width: 100%; height: auto; margin-top: var(--s2); }
 
   /* wider than its column on a phone: scrolls inside itself rather
      than handing the whole page a scrollbar */
@@ -96,52 +97,12 @@
   .strip::-webkit-scrollbar { display: none; }
   .strip img { display: block; height: clamp(70px, 8vw, 112px); width: auto; }
 
-  /* ── bands ────────────────────────────────────────────────────── */
-  section.band { padding: 0 var(--edge) var(--s6); }
-
-  .write { max-width: 34em; }
-  .write p.leadin { margin: 0 0 var(--s4); color: var(--dim); font-style: italic; }
-  .field { margin-bottom: var(--s3); }
-  .field label {
-    display: block;
-    font-size: 13.5px;
-    letter-spacing: 0.06em;
-    color: var(--faint);
-    margin-bottom: 6px;
-  }
-  .field input, .field textarea {
-    width: 100%;
-    background: transparent;
-    border: 0;
-    border-bottom: 1px solid var(--faint);
-    color: var(--ink);
-    font: inherit;
-    padding: 6px 0 8px;
-    border-radius: 0;
-  }
-  .field textarea { min-height: 7.5em; resize: vertical; }
-  .field input:focus, .field textarea:focus { outline: none; border-bottom-color: var(--ink); }
-  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
-  .write button {
-    border: 1px solid var(--dim);
-    background: transparent;
-    color: var(--ink);
-    font: inherit;
-    padding: 9px 26px;
-    cursor: pointer;
-    transition: border-color 200ms ease;
-  }
-  .write button:hover, .write button:focus-visible { border-color: var(--ink); }
-  .write button[disabled] { color: var(--faint); border-color: var(--faint); cursor: default; }
-  .write .said { margin-top: var(--s2); color: var(--dim); font-style: italic; min-height: 1.5em; }
-  .write .said a { color: var(--dim); }
 /* __MENU_CSS__ */
 </style>
 </head>
 <body>
 
 <div class="top">
-  <p class="site">the ever expanding board</p>
   <!-- DOORS_0 — THE SANDWICH. A native <details>: it opens with no
        script, so this page keeps working with JavaScript off. The links
        are rendered by tools/routes.py from web/routes.json — the one
@@ -171,6 +132,7 @@
 <div class="doors">
   <a class="door" href="../">
     <h2><span class="go">Navigate the world</span></h2>
+    <!-- __WORLD__ -->
   </a>
   <a class="door" href="../collection/">
     <h2><span class="go">the collection</span></h2>
@@ -179,39 +141,12 @@
       <!-- __STRIP__ -->
     </div>
   </a>
-  <a class="door" href="../text/">
-    <h2><span class="go">text</span></h2>
+  <a class="door" href="../writings/">
+    <h2><span class="go">writings</span></h2>
     <!-- PLACEHOLDER: one line -->
     <p>The pawn is a vessel for projected intent.</p>
   </a>
 </div>
-
-<section class="band" id="write">
-  <h2 class="band-label">write</h2>
-  <div class="write">
-    <!-- PLACEHOLDER: one line, why someone would write -->
-    <p class="leadin">A message box for the audience. It reaches us, not a list.</p>
-    <form id="mform" method="post" action="../api/message">
-      <div class="field">
-        <label for="m-name">name</label>
-        <input id="m-name" name="name" autocomplete="name">
-      </div>
-      <div class="field">
-        <label for="m-email">email, if you want an answer</label>
-        <input id="m-email" name="email" type="email" autocomplete="email">
-      </div>
-      <div class="field">
-        <label for="m-text">message</label>
-        <textarea id="m-text" name="message" required></textarea>
-      </div>
-      <div class="hp" aria-hidden="true">
-        <label>leave this empty<input name="website" tabindex="-1" autocomplete="off"></label>
-      </div>
-      <button type="submit">send</button>
-      <p class="said" id="m-said" role="status"></p>
-    </form>
-  </div>
-</section>
 
 <footer>
   <span>set in Newsreader · no trackers</span>
@@ -234,37 +169,6 @@ if (HERO && HERO.wide.length) {
   document.getElementById("hero").href = "../collection/#w" + pick.n;
   document.getElementById("hero-title").textContent = "no. " + pick.n;
 }
-
-/* ── the message box ────────────────────────────────────────────────
-   Progressive: no JavaScript posts the form to api/message directly;
-   with it, we stay on the page. If the endpoint is missing or unhappy,
-   the direct address appears instead — the box never dead-ends. */
-const form = document.getElementById("mform");
-const said = document.getElementById("m-said");
-const EMAIL = "__EMAIL__";
-
-form.addEventListener("submit", async e => {
-  e.preventDefault();
-  const btn = form.querySelector("button");
-  btn.disabled = true;
-  said.textContent = "sending…";
-  try {
-    const body = Object.fromEntries(new FormData(form).entries());
-    const r = await fetch(form.action, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!r.ok) throw new Error(String(r.status));
-    form.reset();
-    said.textContent = "received. thank you.";
-  } catch (err) {
-    said.innerHTML = 'the box is not listening right now — write to ' +
-      '<a href="mailto:' + EMAIL + '">' + EMAIL + "</a>";
-  } finally {
-    btn.disabled = false;
-  }
-});
 </script>
 </body>
 </html>

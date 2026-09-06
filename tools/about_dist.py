@@ -48,6 +48,8 @@ DIST_ROOT = os.path.join(ROOT, "dist")
 DIST = os.path.join(DIST_ROOT, "about")
 
 HERO_EDGES = (1600, 800)
+WORLD_EDGE = 1600      # DOORS_4 — the world door's picture, the hero's long edge
+WORLD_JPEG_Q = 78
 HERO_JPEG_Q = 82
 STRIP_H = 240          # strip images are small; one size is enough
 
@@ -150,6 +152,37 @@ def build_strip(Image, site, preview):
     return "\n      ".join(tags)
 
 
+def build_world(Image, preview):
+    """DOORS_4 — THE WORLD DOOR'S PICTURE. Jean drops the file at
+    assets/about/world.jpg (or .jpeg/.png); it is baked like the hero and
+    the door shows it. Absent = a warning and a door without a picture,
+    NEVER a refused build: the door must not hold the site hostage.
+    Shaped like build_hero and build_strip — embeds in preview mode,
+    writes a derivative in dist mode — so a preview stays self-contained."""
+    for ext in ("jpg", "jpeg", "png"):
+        src = os.path.join(SRC, "world." + ext)
+        if not os.path.isfile(src):
+            continue
+        with Image.open(src) as im:
+            if preview:
+                uri = data_uri(im, 1600, 66)
+                return ('<img class="door-img" src="%s" alt="" '
+                        'loading="lazy" decoding="async">' % uri)
+            step = im.convert("RGB")
+            if step.width > WORLD_EDGE:
+                step = step.resize((WORLD_EDGE,
+                                    round(step.height * WORLD_EDGE / step.width)),
+                                   Image.LANCZOS)
+            os.makedirs(DIST, exist_ok=True)
+            step.save(os.path.join(DIST, "world.jpg"), "JPEG",
+                      quality=WORLD_JPEG_Q, optimize=True, progressive=True)
+            return ('<img class="door-img" src="world.jpg" alt="" '
+                    'width="%d" height="%d" loading="lazy" decoding="async">'
+                    % (step.size[0], step.size[1]))
+    say("  world door: assets/about/world.jpg not found — the door ships without its picture")
+    return ""
+
+
 def build_writings():
     """The writings, one home: assets/writings/NN_slug.txt. First line the
     title, then the body; blank lines break stanzas; line breaks inside a
@@ -230,6 +263,7 @@ def main():
         "MENU_CSS": routes.menu_css(),                        # DOORS_0
         "HERO": hero_tag,
         "STRIP": build_strip(Image, site, preview),
+        "WORLD": build_world(Image, preview),                # DOORS_4 — the world door's picture
         "HERO_DATA": hero_data,
         "EMAIL": site["email"],
     })

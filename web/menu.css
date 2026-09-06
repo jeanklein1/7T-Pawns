@@ -26,7 +26,9 @@
 .menu > summary:hover, .menu > summary:focus-visible, .menu[open] > summary { color: var(--ink); }
 .menu > nav {
   position: absolute; right: 0; top: 100%; z-index: 20;
-  min-width: 13em; padding: 6px 0;
+  /* DOORS_4 — 13em was a list's width; the write box lives here now and
+     a 159px textarea is not a message box. Measured, then widened. */
+  min-width: min(92vw, 20em); padding: 6px 0;
   background: var(--bg); border: 1px solid #33323c; border-radius: 2px;
 }
 .menu > nav a, .menu > nav button {
@@ -96,6 +98,17 @@
 .pane .wlist button:hover, .pane .wlist button:focus-visible { color: var(--ink); }
 .pane .wtitle { font-size: 17px; font-weight: 430; margin: 6px 0 8px; color: var(--ink); }
 .pane .wread .text p { white-space: pre-line; }
+
+/* ── DOORS_4 — the write box inside the site sandwich ─────────────── */
+.menu .writebox { border-top: 1px solid #1f1e26; margin-top: 6px; padding: 4px 14px 10px; }
+.menu .writebox > summary { list-style: none; cursor: pointer; color: var(--dim); padding: 7px 0; }
+.menu .writebox > summary::-webkit-details-marker { display: none; }
+.menu .writebox > summary:hover, .menu .writebox > summary:focus-visible, .menu .writebox[open] > summary { color: var(--ink); }
+.menu .writebox label { display: block; margin: 0 0 8px; }
+.menu .writebox input, .menu .writebox textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 3px; font: inherit; color: var(--ink); background: none; border: 1px solid #33323c; border-radius: 2px; padding: 6px 8px; }
+.menu .writebox .hp { position: absolute; left: -9999px; }
+.menu .writebox .row button { font: inherit; color: var(--ink); background: none; border: 1px solid #33323c; border-radius: 2px; padding: 6px 12px; cursor: pointer; }
+.menu .writebox .said { display: block; margin-top: 6px; color: var(--dim); font-style: italic; min-height: 1.4em; }
 
 /* ── DOORS_4 — HIDDEN MEANS HIDDEN, AND THIS BLOCK STAYS LAST ────────
    .pane dl sets display:grid, and an AUTHOR display beats the UA's

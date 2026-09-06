@@ -82,25 +82,14 @@ body::before {
   gap: var(--s3);
   padding: var(--s3) var(--edge);
 }
-.top .site {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 430;
-  letter-spacing: 0.01em;
-}
 /* the masthead's own links died at DOORS_0; the sandwich (web/menu.css,
    inlined per page) stands where they stood */
 .top .menu { font-size: 14.5px; }
-
-/* ── a section's opening line ────────────────────────────────────── */
-
-.band-label {
-  margin: 0 0 var(--s3);
-  font-size: 15px;
-  font-weight: 430;
-  letter-spacing: 0.14em;
-  color: var(--dim);
-}
+/* DOORS_4 — the name left the site pages (ruling 8: it appears once, and
+   its home is the engine's wordmark). .top is a space-between flex row,
+   so with one child the sandwich would slide LEFT into the vacancy;
+   margin-left:auto keeps it on the right edge where it has always been. */
+.top .menu { margin-left: auto; }
 
 /* ── footer ──────────────────────────────────────────────────────── */
 
