@@ -169,10 +169,15 @@ def build_world(Image, preview):
                 return ('<img class="door-img" src="%s" alt="" '
                         'loading="lazy" decoding="async">' % uri)
             step = im.convert("RGB")
-            if step.width > WORLD_EDGE:
-                step = step.resize((WORLD_EDGE,
-                                    round(step.height * WORLD_EDGE / step.width)),
-                                   Image.LANCZOS)
+            # THE LONG EDGE, not the width. The constant says so, the
+            # docstring says "baked like the hero", and the preview arm's
+            # data_uri caps the long edge with thumbnail() — but this arm
+            # tested `width` alone, so a PORTRAIT world.jpg shipped
+            # unresized and the two arms showed different pictures.
+            # (DOORS_4 R5.) thumbnail() is the hero's own tool and it
+            # never upscales.
+            if max(step.size) > WORLD_EDGE:
+                step.thumbnail((WORLD_EDGE, WORLD_EDGE), Image.LANCZOS)
             os.makedirs(DIST, exist_ok=True)
             step.save(os.path.join(DIST, "world.jpg"), "JPEG",
                       quality=WORLD_JPEG_Q, optimize=True, progressive=True)
@@ -196,7 +201,12 @@ def build_writings():
     for name in sorted(os.listdir(src)):
         if not name.endswith(".txt"):
             continue
-        with open(os.path.join(src, name), encoding="utf-8") as fh:
+        # utf-8-sig, not utf-8: several Windows editors write a BOM by
+        # default, `encoding="utf-8"` keeps it, and U+FEFF is not
+        # whitespace — `.strip()` cannot remove it, so it would ride at
+        # the head of the first title, on the page and in the json both.
+        # (DOORS_4 R5. utf-8-sig reads plain UTF-8 unchanged.)
+        with open(os.path.join(src, name), encoding="utf-8-sig") as fh:
             raw = fh.read().replace("\r\n", "\n").strip("\n")
         lines = raw.split("\n")
         title = lines[0].strip()
