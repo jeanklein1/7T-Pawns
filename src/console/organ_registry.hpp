@@ -15,6 +15,7 @@
 #include "core/instruments.hpp"                          // PURSE_0 R2 — t7::BUILD_STAMP, the tree the panel names
 #include "cartridges/the_board/realization/state.hpp"
 #include "cartridges/the_board/contracts/spine_state.hpp"   // MoodProfile + mood_def: the definition side
+#include "cartridges/the_board/contracts/entity_types.hpp"  // VISIT_0 — SlotProvenance, the roll's side-table DTO
 #include "cartridges/the_board/contracts/agent_tiers.hpp"    // TIER_LIVE, the world's definition bank
 #include "cartridges/the_board/contracts/pawn_surface.hpp"    // PAWN_AURA_LIVE (block 4)
 #include "cartridges/the_board/contracts/orb_surface.hpp"     // ORB_CONSOLE_LIVE (block 5)
@@ -26,6 +27,7 @@
 #include "coupling/canvas_surface.hpp"                        // CANVAS_LIVE (block 9, t7::canvas)
 #include "cartridges/the_board/contracts/driver_surface.hpp"  // the drivers' room (block 3)
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -306,6 +308,23 @@ inline const the_board::PointState* g_point = nullptr;
 inline void bind_home(the_board::GPUState* s) { g_home = s; }
 inline void bind_mood(const the_board::MoodState* ms) { g_mood = ms; }
 inline void bind_point(const the_board::PointState* p) { g_point = p; }
+
+// THE ROLL, BORROWED (VISIT_0). The gallery's slot array, its provenance
+// side-table and the tier names, read through pointers the cartridge
+// binds at boot — a window, not a home (the orb rule window's charter):
+// the panel can never list a picture the world has taken down, because
+// it reads the same array the GPU is fed from. The clock rides beside,
+// for the age.
+struct RollView {
+    const the_board::GPUPaintingSlot* slots      = nullptr;
+    const the_board::SlotProvenance*  prov       = nullptr;
+    const char* const*                tier_names = nullptr;
+    uint32_t                          tier_count = 0;
+};
+inline RollView g_roll;
+inline const the_board::TimeState* g_clock = nullptr;
+inline void bind_roll(RollView v)                        { g_roll = v; }
+inline void bind_clock(const the_board::TimeState* t)    { g_clock = t; }
 inline uint32_t current_mood()       { return g_mood ? g_mood->active     : 0u; }
 inline uint32_t current_regime()     { return g_mood ? g_mood->regime     : 0u; }
 inline uint32_t current_host()       { return g_point ? (uint32_t)g_point->host : 0u; }
@@ -659,6 +678,28 @@ inline bool take_go_host(uint32_t& host) {
     return true;
 }
 
+// ─── THE VISIT DOOR (VISIT_0) ─────────────────────────────────────
+// The host door's shape: a door with a parameter. The shell names a
+// painting slot; the frame boundary hands it to begin_visit, whose own
+// guards (no pawn to walk, an empty slot) refuse in words. One pending
+// id, last press wins, taken once; PAINTING_MAX_SLOTS is "no request"
+// and no slot has that index.
+inline uint32_t g_visit_pending = the_board::Dim::PAINTING_MAX_SLOTS;
+inline bool take_visit(uint32_t& slot) {
+    if (g_visit_pending >= the_board::Dim::PAINTING_MAX_SLOTS) return false;
+    slot = g_visit_pending;
+    g_visit_pending = the_board::Dim::PAINTING_MAX_SLOTS;
+    return true;
+}
+
+// THE VISIT WINDOW — a copy the boundary writes once a frame (the rule
+// window's charter): whether a walk is on, and to which slot. Packed:
+// bit 31 active, bits 0..30 the slot.
+inline uint32_t g_visit_view = 0;
+inline void set_visit_view(bool active, uint32_t slot) {
+    g_visit_view = (active ? 0x80000000u : 0u) | (slot & 0x7FFFFFFFu);
+}
+
 // The tier bank's re-apply, taken once by the frame boundary (the
 // cartridge, which owns the agents' deps and the queue — this file
 // knows neither).
@@ -955,6 +996,59 @@ EMSCRIPTEN_KEEPALIVE inline void organ_go_host(int host) {
 
 // The names, positional by id: a JSON array the shell builds its mood
 // select from, so a new mood appears there with no JS edit.
+// ═══ THE ROLL (VISIT_0) ══════════════════════════════════════════════
+// What the world has hung of its own photographs, as facts: for every
+// active snapshot slot — its index, tier, age, distance and bearing from
+// the point, size, and whether it hangs on a wall. Positions are not
+// emitted: the shell has no use for coordinates it cannot show, and the
+// distance/bearing pair is what a caption says. Built on demand into a
+// static string, organ_manifest's grammar. Empty before bind_roll.
+EMSCRIPTEN_KEEPALIVE inline const char* gallery_roll(void) {
+    using namespace t7::organ;
+    using namespace t7::the_board;
+    static std::string json;
+    json.clear();
+    json.push_back('[');
+    if (g_roll.slots && g_roll.prov && g_point) {
+        const double now = g_clock ? g_clock->seconds : 0.0;
+        char buf[256];
+        bool first = true;
+        for (uint32_t i = 0; i < Dim::PAINTING_MAX_SLOTS; ++i) {
+            const GPUPaintingSlot& s = g_roll.slots[i];
+            if (s.is_active == 0u || s.content_source != ContentSource::SNAPSHOT) continue;
+            const SlotProvenance& p = g_roll.prov[i];
+            const float dx = s.position[0] - g_point->x;
+            const float dz = s.position[2] - g_point->z;
+            const float d  = std::sqrt(dx * dx + dz * dz);
+            const float bearing = std::atan2(dx, dz) * 57.2957795f;   // degrees; 0 = +Z, clockwise — the WORLD's frame
+            const char* tier = (p.shot_type < g_roll.tier_count) ? g_roll.tier_names[p.shot_type] : "";
+            std::snprintf(buf, sizeof buf,
+                "%s{\"s\":%u,\"tier\":\"%s\",\"age\":%.0f,\"d\":%.0f,\"b\":%.0f,\"w\":%.1f,\"h\":%.1f,\"wall\":%u}",
+                first ? "" : ",", (unsigned)i, tier,
+                (p.taken_at < 0.0) ? -1.0 : (now - p.taken_at),
+                (double)d, (double)bearing, (double)s.scale_x, (double)s.scale_y,
+                (unsigned)(s.form_type == FormType::WALL_FRAME ? 1u : 0u));
+            json += buf;
+            first = false;
+        }
+    }
+    json.push_back(']');
+    return json.c_str();
+}
+
+// Ask the program to walk the pawn to a hung photograph. Out of range is
+// ignored, for organ_door's own reason.
+EMSCRIPTEN_KEEPALIVE inline void gallery_visit(uint32_t slot) {
+    using namespace t7::organ;
+    if (slot < t7::the_board::Dim::PAINTING_MAX_SLOTS) g_visit_pending = slot;
+}
+
+// The slot being walked to, or -1. The pane reads it to say so.
+EMSCRIPTEN_KEEPALIVE inline int gallery_visiting(void) {
+    using namespace t7::organ;
+    return (g_visit_view & 0x80000000u) ? (int)(g_visit_view & 0x7FFFFFFFu) : -1;
+}
+
 EMSCRIPTEN_KEEPALIVE inline const char* organ_mood_names(void) {
     static std::string json;
     json.clear();

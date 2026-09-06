@@ -865,6 +865,13 @@ namespace t7 {
                 t7::organ::bind_home(&gpuState_);
                 t7::organ::bind_mood(&mood_state_);
                 t7::organ::bind_point(&point_);   // RIBBON_1 — the panel's host row
+                // VISIT_0 — the roll's window and the clock it ages by. A
+                // window: the panel reads the array the GPU is fed from.
+                t7::organ::bind_roll(t7::organ::RollView{
+                    gallery_state_.painting_slots, gallery_state_.slot_provenance,
+                    SHOT_TYPE_NAMES, (uint32_t)ShotType::COUNT });
+                t7::organ::bind_clock(&time_state_);
+                std::cout << "[Visit] roll bound; pilot idle\n";   // P6 — the boot state, once
 
                 if constexpr (!ROSTER.all_enabled()) {
                     std::string off;
