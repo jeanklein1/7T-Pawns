@@ -24,12 +24,12 @@ carry those facts, or leave them in place and patch around them.
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:bbcaedbb3b05fdc8fdc455f502591ff4ad7142c55fd3cea313a4806d9bf209a7` |
 | `tools/binding_ledger.py` | `sha256:6d9fc58da755a8416bbcfe8efe5360f97ec11fb4a81a9d60ee41f80a2316f790` |
 | `tools/mirror_census.py` | `sha256:6991163f42dc06a0b633fe41606514b33ed616a70ec244eff6640992518cef2a` |
-| `audit/BINDING_LEDGER.md` | `sha256:ee2edf04e53ee626bdcf6a019618f88f7bbb85154a1be31ffc1a5e91ec59cba1` |
-| `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:6867c90303e0e93d13525ec42a4c247a32694309ac8b74e0834eda1f4c6e86d3` |
+| `audit/BINDING_LEDGER.md` | `sha256:2ad3698ddc1de072d8f69501f63e60623fa92edf0270d1737cd6db74137ee11a` |
+| `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:a568b168002553c66111d4292cd8c051ced63ee9d56dca69bdb57e416d972f1d` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:67d0c75fd5f2c9037b90f087a7881b33b55479b82863419ff798937b62144c76` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:9891302e1bf20ec4a71b8866d420725dc4405b8f99473ca04308465444a7a61d` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
-| `src/cartridges/the_board/cartridge.hpp` | `sha256:afeece9ea7f83ae60ddb116bd83761ee3e77251ce1c9ae2fbb9d7bd18a407dbb` |
+| `src/cartridges/the_board/cartridge.hpp` | `sha256:e87291cfd60f967a70e114271ab7b4df44962e7ddf73f2a02479fc1aac8d7f6f` |
 | `src/cartridges/the_board/realization/render_passes.hpp` | `sha256:e4d6b62cb1d1936d57322d2c4ef4372bbc27dd1404a29117d9431938e9c84149` |
 | `src/cartridges/the_board/surface/patch_system.hpp` | `sha256:1be3569e8b942fccc6a5ad003a6f227b2c413897b33a947bdcfa986947653b3c` |
 
@@ -1057,16 +1057,16 @@ wrapper, 18 wrapper calls) and are not recounted here.
 
 | site (line hint) | enclosing function | idx | group member(s) | dynamic offsets |
 |---|---|---|---|---|
-| `cartridge.hpp:2375` | `phase_entity_mesh_gen` | 0 | `worldGroup_` | — |
-| `cartridge.hpp:2376` | `phase_entity_mesh_gen` | 1 | `frameCGroup_` | — |
-| `gallery.hpp:2353` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
-| `gallery.hpp:2354` | `render_snapshot_pass` | 1 | `frameCGroup_` | — |
-| `gallery.hpp:2425` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
-| `gallery.hpp:2426` | `render_snapshot_pass` | 1 | `framePhotographerGroup_` | `1, &kFrameSlotZero` |
-| `gallery.hpp:2427` | `render_snapshot_pass` | 2 | `sceneStateGroup_` | — |
-| `gallery.hpp:2428` | `render_snapshot_pass` | 3 | `sceneTexturesGroup_` | — |
-| `gallery.hpp:2472` | `render_snapshot_pass` | 2 | `galleryStateGroup_` | — |
-| `gallery.hpp:2473` | `render_snapshot_pass` | 3 | `galleryTexturesGroup_` | — |
+| `cartridge.hpp:2389` | `phase_entity_mesh_gen` | 0 | `worldGroup_` | — |
+| `cartridge.hpp:2390` | `phase_entity_mesh_gen` | 1 | `frameCGroup_` | — |
+| `gallery.hpp:2369` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
+| `gallery.hpp:2370` | `render_snapshot_pass` | 1 | `frameCGroup_` | — |
+| `gallery.hpp:2441` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
+| `gallery.hpp:2442` | `render_snapshot_pass` | 1 | `framePhotographerGroup_` | `1, &kFrameSlotZero` |
+| `gallery.hpp:2443` | `render_snapshot_pass` | 2 | `sceneStateGroup_` | — |
+| `gallery.hpp:2444` | `render_snapshot_pass` | 3 | `sceneTexturesGroup_` | — |
+| `gallery.hpp:2488` | `render_snapshot_pass` | 2 | `galleryStateGroup_` | — |
+| `gallery.hpp:2489` | `render_snapshot_pass` | 3 | `galleryTexturesGroup_` | — |
 | `gol_zones.hpp:906` | `flush_zone_derive_requests` | 0 | `worldGroup_` | — |
 | `gol_zones.hpp:907` | `flush_zone_derive_requests` | 1 | `frameCGroup_` | — |
 | `gol_zones.hpp:994` | `dispatch_zone_sync` | 0 | `worldGroup_` | — |

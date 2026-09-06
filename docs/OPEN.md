@@ -2,6 +2,104 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## VISIT_0 — THE ROLL AS DIRECTORY (landed on the session branch; Jean's gates open)
+
+The world already photographs itself and already hangs the pictures. The
+sandwich gained a pane that lists what is hanging **as facts** — tier,
+distance, bearing, age, wall or ground — and choosing one makes the pawn
+**walk there**, the camera swinging round to face it. No texture leaves the
+GPU; the CPU reads its own slot array. Zero readback, zero new render pass,
+zero new GPU word: `world.wgsl` is byte-identical.
+
+| ruling | where it lives now |
+|---|---|
+| The pawn host WALKS — terrain height is GPU-only, so a camera pilot cannot know where the ground is at the destination | `pilot_tick` / `begin_visit`, `direction/input.hpp` |
+| The pilot is a third hand on the same wheel: `move_x/move_z` under the fold's clamp, `look_az_delta` at a bounded rate, nothing else | same |
+| Provenance is a CPU side-table, written at the two snapshot fill sites, read only beside `is_active` | `SlotProvenance`, `gs.slot_provenance[]` |
+| The roll is a window, not a home | `RollView` + `bind_roll` / `bind_clock` |
+| The visit is a door with a parameter, taken once at the frame boundary | `gallery_visit` -> `take_visit` -> `begin_visit` |
+| The pilot is a spine row, `Pilot`, first in `UPDATE_SPINE`, gated `true` | `UPhase::Pilot`, O-5f |
+
+**AWAITING JEAN:** `glaw1`; the visual rows of U3 (the walk, the swing, the
+hands' release, the stall) and U4 (the pane's captions against a real
+world); merge. Nothing below substitutes for a frame on a screen.
+
+### What was resolved here that the handoff could only bound
+
+- **The indoor stand-off's sign is NOT a mystery.** `gallery.hpp`'s wall
+  record declares `float nx, ny, nz;    // inward normal`, and
+  `fill_slot_wall_frame` copies it straight into `s.forward`. So
+  `position + forward * off` already lands IN THE ROOM, in front of the
+  picture. No sign flip is owed. Still a visual row — a derivation is not a
+  frame — but the gate is now confirming a reading, not choosing one.
+- **`PILOT_STALL_S` does outlast the landing ease.** The ease is
+  `RIBBON_LIVE.land_seconds = 3.6 s` (`board_seconds = 3.0`), against
+  `PILOT_STALL_S = 6.0`. Margin 2.4 s. **But `land_seconds` is a LIVE
+  DIAL** — raise it past 6 s on the panel and a visit begun from the ribbon
+  dies on its own doorstep, exactly as the handoff feared. Either couple the
+  two numbers or leave the pilot's stall clock unstarted until `mount_.kind`
+  returns to 0.
+- **The provenance invariant is closed, not assumed.** Exactly two sites in
+  the tree write `ContentSource::SNAPSHOT` — `gallery.hpp:2268` (outdoor,
+  inline) and `:3975` (indoor, through `fill_slot_wall_frame`) — and both
+  are the sites U1 patched. `fill_slot_wall_frame` is the only other writer
+  of `content_source` and its two remaining calls pass `AUTHORED`. So no
+  snapshot can reach a wall without its tier and moment.
+- **The spine's boot-only laws were evaluated, not trusted.** `Pilot` is
+  index 0 and `StageFadeUpload` index 7, so `no_staging_after_drain()` holds
+  for an `F_SIGNAL` row; `spine_ordered_u()` holds at 10 rows against
+  `COUNT` 10. The static ones (O-5a, O-5e, O-5f, density) compiled.
+- **Every cwrap the shell asks for reaches a real export, at the right
+  arity** — `gallery_roll` (0), `gallery_visit` (1), `gallery_visiting` (0),
+  `shell_pace` (1). The shell gate cannot see this: it reads
+  `organ_panel.js`, not `web/index.html`. Checked directly instead.
+- **The pane was driven in headless Chromium** against a stubbed ABI: 27
+  behaviours, all passing — captions in the documented shape
+  (`Cinematic · 9 wu N · 60 min ago · on a wall`), nearest-first ordering, a
+  negative age omitted rather than printed as `-1`, the 2 s poll MEASURED
+  running and MEASURED stopping on both leave-the-pane and close-the-menu
+  (no leaked interval), the empty world's words, and malformed roll JSON
+  landing as a note rather than a failure.
+
+### Residuals — VISIT_0
+
+- The pilot's seven numbers (`PILOT_ARRIVE_WU`, `PILOT_SLOW_WU`,
+  `PILOT_PROGRESS_WU`, `PILOT_TURN_RATE`, `PILOT_STALL_S`,
+  `PILOT_STANDOFF_MULT`, `PILOT_STANDOFF_MIN_WU`) are control-panel
+  material, enrolled nowhere: no measurement has asked yet.
+- `PILOT_STALL_S` against the live `land_seconds` dial — see above.
+- The bearing words (`compass`) name +Z "N". A convention this shell
+  invented, not a fact of the world; nothing else in the program agrees or
+  disagrees with it yet.
+- The roll refreshes by POLLING, 2 s, because the registry has no event out.
+  One JSON string per two seconds while one pane is open, and the timer is
+  cleared on both exits. Revisit if the pane grows.
+- **The `Pilot` spine row carries a trailing `//` comment.** Zero of the
+  other 31 rows in `UPDATE_SPINE`/`RENDER_SPINE` do; in this table per-row
+  prose has always lived in the block comment above it or in the census's
+  justification string. Written as the handoff specified, and it parses, but
+  it breaks a convention held uniformly across both spines. One edit to
+  strip it if Jean wants the table clean.
+- `FOUNDATIONAL_PHASES`' new value is the dict's first double-quoted string
+  (the justification contains an apostrophe, which would close a
+  single-quoted one). No neighbour set a precedent either way.
+- **The ROLL item — snapshots as a strip of film — WAS NOT IN THIS
+  REGISTER TO STRIKE.** VISIT_0 U5 asked for it to be struck as superseded
+  by the directory form; a search of `docs/OPEN.md` finds no such item, and
+  `docs/` carries no other copy. Nothing was removed. If it lives somewhere
+  this executor cannot see, it is superseded: the pictures never leave the
+  GPU and the list takes you to them instead of showing them.
+
+### The branch — READ THIS BEFORE MERGING
+
+VISIT_0's handoff calls for a held branch `claude/visit-0` off master, with
+DOORS_0 landing on master first. The session's harness pinned all work to
+one branch, `claude/handoff-session-vjt33w`, so **both campaigns are on it,
+in order and separated by commit**: DOORS_0 is U1..U7
+(`7da09fe5`..`c6bbeadb`) and VISIT_0 is U1..U5 after it. The split the
+handoff wanted is still available — merging up to `c6bbeadb` takes DOORS_0
+alone and leaves VISIT_0 held. Nothing else about either campaign changed.
+
 ## DOORS_0 — THE FRONT DOOR, THE SANDWICH, THE PEEK, THE IDLE (landed; Jean's visual gates open)
 
 Seven units, U1..U7. The engine stays at the root and the veil became the
