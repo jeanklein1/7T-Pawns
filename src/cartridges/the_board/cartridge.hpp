@@ -1497,6 +1497,16 @@ namespace t7 {
                         // CameraPose banner states this rule; nothing enforced
                         // it until now.
                         camera_pose_ = CameraPose{};
+                        // AND THE PILOT'S MARK IS IN THE OLD WORLD (DOORS_1,
+                        // from the post-landing review). The point teleports
+                        // to Idle::PAWN_POS below without possess(), the clock
+                        // is monotonic and the slots are zeroed, so none of
+                        // the pilot's four releases could fire and it walked
+                        // the new world toward a dead coordinate. The fifth
+                        // release — and it speaks, as the other four do.
+                        if (pilot_.active)
+                            std::cout << "[Visit] released: the world changed (slot " << pilot_.slot << ")\n";
+                        pilot_ = PilotState{};
 
                         // Capture return seed + mood + radius before overwrite
                         mood_state_.back_portal_return_seed = world_state_.active_seed;
