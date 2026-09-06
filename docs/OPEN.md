@@ -559,6 +559,12 @@ every flat top boards; caps read as one width everywhere.
 indoor room hangs all four walls. WALLS_1's three-wall argument
 struck by Jean's stamp.
 
+**FENCE_0 — indoors the walls are everyone's.** Agents clamp through
+world_box_clamp_xz at the kernel finalize, margin
+config.pawn_body_radius, identity outdoors. The eye's check: stand
+indoors and watch the walkers — none crosses a wall, none jitters
+against it.
+
 ## SKIRT_WELD_1/P — THE PERIMETER SKIRT HANGS FROM THE BASE BAND (landed; one seam held)
 
 Sibling of SKIRT_WELD_1 on 7T-Music, landed there at `be0eb28f`. The patch
