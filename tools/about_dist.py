@@ -41,7 +41,8 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 SRC = os.path.join(ROOT, "assets", "about")
-TEMPLATE = os.path.join(ROOT, "web", "about", "index.html")
+WEB = os.path.join(ROOT, "web")
+TEMPLATE = os.path.join(WEB, "about", "index.html")
 FONTS = os.path.join(ROOT, "web", "fonts")
 DIST_ROOT = os.path.join(ROOT, "dist")
 DIST = os.path.join(DIST_ROOT, "about")
@@ -217,16 +218,41 @@ def main():
     os.makedirs(DIST, exist_ok=True)
     with open(os.path.join(DIST, "index.html"), "w", encoding="utf-8") as fh:
         fh.write(page)
-    # DOORS_2 — THE ABOUT PAGE IN MINIATURE. The doctrine's own markup and
-    # the address, for the engine's Text and Write panes; taken from the
-    # page just written, so the two cannot disagree (peek.json's law). The
-    # template stays the doctrine's one home.
-    m = re.search(r'<header class="doctrine" id="text">(.*?)</header>', page, re.S)
+    # DOORS_2/DOORS_3 — THE ABOUT PAGE IN MINIATURE: the statement, today's
+    # hero (the same day-indexed pick the page makes) and the address, for
+    # the engine's About and Write panes. Taken from the page just written,
+    # so the two cannot disagree (peek.json's law). The template stays the
+    # statement's one home; the doctrine's is web/text/index.html now.
+    m = re.search(r'<header class="statement" id="statement">(.*?)</header>', page, re.S)
     if not m:
-        say("REFUSE  the doctrine header is not in the page — the engine's Text pane would have nothing to show")
+        say("REFUSE  the statement header is not in the page — the engine's About pane would have nothing to show")
         sys.exit(1)
     with open(os.path.join(DIST, "about.json"), "w", encoding="utf-8") as fh:
-        json.dump({"html": m.group(1).strip(), "email": site["email"]}, fh)
+        json.dump({"statement": m.group(1).strip(),
+                   "hero": hero_data,          # what build_hero returned: the day-indexed list the page itself rotates
+                   "email": site["email"]}, fh)
+
+    # DOORS_3 — THE TEXT PAGE, built here because this script already
+    # owns the site's chrome (routes, menu css, follow, fonts). Its one
+    # home is web/text/index.html; text.json is the engine's read of it.
+    text_tpl = os.path.join(WEB, "text", "index.html")
+    with open(text_tpl, encoding="utf-8") as fh:
+        text_page = fill(fh.read(), {
+            "ROUTES": routes.nav_html("site", "/text/", indent="      "),
+            "MENU_CSS": routes.menu_css(),
+            "FOLLOW": routes.follow_html(indent="    "),
+        })
+    text_dist = os.path.join(DIST_ROOT, "text")
+    os.makedirs(text_dist, exist_ok=True)
+    with open(os.path.join(text_dist, "index.html"), "w", encoding="utf-8") as fh:
+        fh.write(text_page)
+    m = re.search(r'<article class="text" id="text">(.*?)</article>', text_page, re.S)
+    if not m:
+        say("REFUSE  the text page has no <article class=\"text\"> — the engine's Text pane would have nothing to show")
+        sys.exit(1)
+    with open(os.path.join(text_dist, "text.json"), "w", encoding="utf-8") as fh:
+        json.dump({"html": m.group(1).strip()}, fh)
+    say("dist/text/index.html written; text.json beside it")
     dst_fonts = os.path.join(DIST_ROOT, "fonts")
     if os.path.isdir(dst_fonts):
         shutil.rmtree(dst_fonts)

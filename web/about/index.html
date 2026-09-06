@@ -41,9 +41,9 @@
   .hero-plate a { color: var(--faint); text-decoration: none; }
   .hero-plate a:hover { color: var(--dim); }
 
-  /* ── doctrine ─────────────────────────────────────────────────── */
-  .doctrine { padding: var(--s5) var(--edge) var(--s5); }
-  .doctrine h1 {
+  /* ── the statement (DOORS_3 — the doctrine moved to /text/) ─────── */
+  .statement { padding: var(--s5) var(--edge) var(--s5); }
+  .statement h1 {
     margin: 0;
     max-width: 15em;
     font-size: clamp(27px, 3.4vw, 44px);
@@ -51,7 +51,7 @@
     line-height: 1.14;
     text-wrap: balance;
   }
-  .doctrine p {
+  .statement p {
     margin: var(--s3) 0 0;
     max-width: 34em;
     font-style: italic;
@@ -61,7 +61,7 @@
     text-wrap: pretty;
   }
 
-  /* ── the two doors ────────────────────────────────────────────── */
+  /* ── the doors (three since DOORS_3) ──────────────────────────── */
   .doors {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
@@ -162,26 +162,15 @@
   <a href="../collection/">the collection →</a>
 </div>
 
-<!-- PLACEHOLDER COPY — Jean's words replace all of this.
-     Convention: the front door speaks in the FIRST PERSON. What is here
-     now is third-person curatorial language, which reads like wall text
-     rather than the artist talking. It holds the shape and the length;
-     it is not the voice. -->
-<header class="doctrine" id="text">
-  <h1>The pawn is a vessel for projected intent.</h1>
-  <p>It stands alone, or it stands beside someone. Whether it is friend or
-     antagonist, whether you are reading it or it is reading you — that is
-     not settled here, and it will not be.</p>
+<!-- PLACEHOLDER COPY — Jean's statement. The doctrine moved to /text/ at
+     DOORS_3; what stands here says what this is, in his voice. -->
+<header class="statement" id="statement">
+  <p>Paintings, and a world that hangs them.</p>
 </header>
 
 <div class="doors">
-  <!-- PLACEHOLDER: door blurbs, ~20 words each -->
   <a class="door" href="../">
-    <h2><span class="go">the world</span></h2>
-    <p>A procedurally generated place built from the paintings' logic —
-       terrain, ribbon, music, and the pawn, running live.</p>
-    <small>Runs on WebGPU: a recent Chrome or Edge. Everyone else,
-       the collection is the door.</small>
+    <h2><span class="go">Navigate the world</span></h2>
   </a>
   <a class="door" href="../collection/">
     <h2><span class="go">the collection</span></h2>
@@ -189,6 +178,11 @@
     <div class="strip">
       <!-- __STRIP__ -->
     </div>
+  </a>
+  <a class="door" href="../text/">
+    <h2><span class="go">text</span></h2>
+    <!-- PLACEHOLDER: one line -->
+    <p>The pawn is a vessel for projected intent.</p>
   </a>
 </div>
 

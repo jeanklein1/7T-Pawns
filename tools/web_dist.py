@@ -1329,6 +1329,11 @@ def main():
             fh.write("/fonts/*\n  Cache-Control: %s\n" % IMMUTABLE_RULE)
         if os.path.isdir(os.path.join(DIST, "about")):
             fh.write("/about/\n  Cache-Control: no-cache\n")
+        # DOORS_3 — the text page is the about page's twin in this respect:
+        # a constant name whose content changes, so it must revalidate. The
+        # conditional is the same one, for the same reason.
+        if os.path.isdir(os.path.join(DIST, "text")):
+            fh.write("/text/\n  Cache-Control: no-cache\n")
         # The collection pipeline knows its filenames carry a content
         # hash; its cache law arrives as the fragment it wrote beside
         # its own output, folded here verbatim. Absent fragment, absent
