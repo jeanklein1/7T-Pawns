@@ -88,6 +88,16 @@ enum class ShotType : uint32_t {
     COUNT = 8
 };
 
+// THE TIER NAMES, ONE HOME (VISIT_0 hoisted them out of capture_snapshot's
+// log line). The witness reads them, and so does the roll the sandwich
+// shows (gallery_roll, through the registry's window).
+inline constexpr const char* SHOT_TYPE_NAMES[] = {
+    "Panoramic", "Environmental", "Medium", "Close-up",
+    "Portrait", "Bird's Eye", "Low Angle", "Cinematic"
+};
+static_assert(sizeof(SHOT_TYPE_NAMES) / sizeof(SHOT_TYPE_NAMES[0]) == (size_t)ShotType::COUNT,
+    "one name per tier — the roll indexes this table by shot_type");
+
 struct ShotTypeParams {
     float distance_mean, distance_sigma;    // camera-to-pawn distance (world units)
     float elevation_mean, elevation_sigma;  // angle above horizon (radians)
@@ -741,6 +751,7 @@ struct SnapshotStagingRecord {
     float capture_z = 0.0f;
     float capture_distance = 0.0f;
     uint32_t capture_frame = 0;
+    double   capture_seconds = -1.0;   // VISIT_0 — TimeState::seconds at capture; the roll's age. Negative = never.
 };
 
 // ── Authored Staging (the ring — STAGING_LAYERS layers, walked by
@@ -1150,6 +1161,14 @@ struct GalleryState {
     uint32_t         pending_promotion_count = 0;
 
     GPUPaintingSlot painting_slots[Dim::PAINTING_MAX_SLOTS]{};
+    // VISIT_0 — WHAT A HUNG PHOTOGRAPH REMEMBERS. REPEAT_0 deleted the
+    // staging→exhibition link, so a slot could no longer say which shot
+    // it shows; this side-table holds the two facts the roll needs — the
+    // tier and the moment — written at the two snapshot fill sites and
+    // never cleared: read ONLY beside is_active, so a stale row under an
+    // empty slot is unreadable. CPU-only; world.wgsl learns no word
+    // (GalleryCenter's own charter). Indexed as painting_slots is.
+    SlotProvenance  slot_provenance[Dim::PAINTING_MAX_SLOTS]{};
     uint32_t        active_painting_count = 0;
     uint32_t        wall_frame_count = 0;
     // One past the highest ACTIVE slot index — what the two painting draws
@@ -1703,6 +1722,7 @@ inline void capture_snapshot(GalleryState& gs, GalleryDeps* c, float pawn_x, flo
     rec.capture_z = pawn_z;
     rec.capture_distance = gs.total_walk_distance;
     rec.capture_frame = gs.frame_counter;
+    rec.capture_seconds = c->time_state_.seconds;   // VISIT_0 — the clock is const on the deps face (ATRIUM_10)
     gs.snapshot_write_cursor = (layer + 1) % Dim::STAGING_LAYERS;
     if (gs.snapshot_count < Dim::STAGING_LAYERS) gs.snapshot_count++;
 
@@ -1726,11 +1746,6 @@ inline void capture_snapshot(GalleryState& gs, GalleryDeps* c, float pawn_x, flo
     gs.pending_snapshot.active = true;
     gs.pending_snapshot.target_slot = UINT32_MAX;
     gs.pending_snapshot.target_layer = layer;
-
-    const char* shot_names[] = {
-        "Panoramic", "Environmental", "Medium", "Close-up",
-        "Portrait", "Bird's Eye", "Low Angle", "Cinematic"
-    };
     // THE EXHIBITION GUARD, CLOSED (PURSE_0 R3). This was the file's own
     // standing TODO — "Autonomous stdout — exhibition-guard candidate,
     // still open" — and it closes on the same flag and for the same reason
@@ -1741,7 +1756,7 @@ inline void capture_snapshot(GalleryState& gs, GalleryDeps* c, float pawn_x, flo
     // SEES. Nothing is deleted — the lab build still narrates the pool.
     if constexpr (t7::INSTRUMENTS.stream_witness) {
         std::cout << "[Photographer] Capture -> layer " << layer
-            << " (" << shot_names[static_cast<uint32_t>(shot)] << ")"
+            << " (" << SHOT_TYPE_NAMES[static_cast<uint32_t>(shot)] << ")"
             << " aspect=" << aspect_ratio
             << " pool=" << gs.snapshot_count << "/" << Dim::STAGING_LAYERS << "\n";
     }
@@ -2260,6 +2275,7 @@ inline void commit_gallery(GalleryState& gs, MachineCtx* c,
 
             gs.exhibition_occupied[exh] = true;
             gs.snapshot_staging[staging_layer].consumed = true;
+            gs.slot_provenance[slot] = { snap.shot_type, snap.capture_seconds };   // VISIT_0
             queue_promotion(gs, true, staging_layer, exh);
             placed_this = true;
         }
@@ -3963,6 +3979,8 @@ inline void place_wall_paintings(GalleryState& gs, GalleryDeps* c, wgpu::Queue& 
 
                 gs.exhibition_occupied[exh] = true;
                 gs.snapshot_staging[f.record].consumed = true;
+                gs.slot_provenance[slot] = { gs.snapshot_staging[f.record].shot_type,     // VISIT_0
+                                             gs.snapshot_staging[f.record].capture_seconds };
                 queue_promotion(gs, true, f.record, exh);
             }
             else {

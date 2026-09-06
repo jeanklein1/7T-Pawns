@@ -31,6 +31,19 @@
 namespace t7 {
 namespace the_board {
 
+// ═══ THE ROLL'S PROVENANCE (VISIT_0) ══════════════════════════════
+// A DTO that crosses the gallery→registry boundary: what a hung
+// snapshot slot remembers of its shot. Defined here, not in gallery.hpp,
+// because the registry (console/organ_registry.hpp) reads it and may not
+// include a body. Written by the gallery's two snapshot fill sites
+// (outdoor inline, indoor twin), read by gallery_roll(). Never cleared:
+// it is read only beside painting_slots[i].is_active, so a stale row
+// under an empty slot is unreadable by construction.
+struct SlotProvenance {
+    uint32_t shot_type = 0;      // ShotType index; SHOT_TYPE_NAMES names it (gallery.hpp)
+    double   taken_at  = -1.0;   // TimeState::seconds at capture; negative = unknown
+};
+
 // ═══ THE MACHINE FACE ═════════════════════════════════════════════
 // ONE declared struct carrying what the machine may hand a family —
 // the requirements face made literal at the machine's boundary.
