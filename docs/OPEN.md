@@ -55,20 +55,28 @@ Jean's.** The corrections ride one commit so they can be reverted as one.
   a fifth release condition, and P6 wants it to speak.
 - The roll's 2 s refresh dropping keyboard focus (VISIT_0's residuals) —
   focus preservation is an addition to a poll the handoff specified.
-- **`cwrap` with a `'string'` return may never throw, making the
-  "Not in this build." guard dead for `gallery_roll`.** A reviewer reads
-  emscripten's `$cwrap` as taking the throwing fast path only when
-  `numericRet` is true (i.e. `returnType !== 'string'`), so
-  `w('gallery_roll', 'string', [])` would always return a closure and
-  `abi()` would never note the miss; the throw would instead surface inside
-  `refreshRoll`'s `JSON.parse` try/catch, leaving the pane blank with no
-  words while `note()` logged every 2 s. The same reading says
-  `-sASSERTIONS` compiles the fast path out entirely, so under the Debug
-  preset NO name can throw and `c.pace` is truthy too. **UNVERIFIED HERE** —
-  no emsdk in this container to read `libccall.js` against. Worth one look
-  on Jean's machine; the fix, if it holds, is to probe with
-  `typeof Module._gallery_roll === 'function'` rather than to rely on a
-  throw.
+- **One disjunct of the roll's "Not in this build." guard may be dead —
+  narrower than it first looked.** A reviewer reads emscripten's `$cwrap` as
+  taking the throwing fast path only when `numericRet` is true (i.e.
+  `returnType !== 'string'`), so `w('gallery_roll', 'string', [])` would
+  always return a closure and `abi()` would never note that name's absence;
+  the same reading says `-sASSERTIONS` compiles the fast path out entirely,
+  so under the Debug preset no name can throw. **UNVERIFIED** — no emsdk in
+  this container to read `libccall.js` against.
+  **But the guard is NOT dead code, and the first draft of this entry said
+  otherwise.** `refreshRoll` asks `if (!c || !c.roll)`, and `abi()` returns
+  `null` — WITHOUT caching, so it re-probes — whenever `window.Module` or
+  `Module.cwrap` is absent. That is the ordinary state the block's own
+  comment names ("the program may still be compiling when the shell runs"),
+  and the menu is static HTML a visitor can open before the wasm resolves.
+  So the words reach the pane on the common path; only the `!c.roll`
+  disjunct is in question, and only on a shell/wasm skew, which
+  `web_dist.py` ships against by writing `index.html` and the wasm in one
+  pass. Low stakes, then — but the WORDS are wrong on the path that does
+  fire: a visitor who opens Photographs while the program is still compiling
+  is told "Not in this build." when the truth is "not yet". Worth a
+  sentence of Jean's, and one look at `libccall.js` on a machine with an
+  emsdk.
 
 ## VISIT_0 — THE ROLL AS DIRECTORY (landed on the session branch; Jean's gates open)
 
