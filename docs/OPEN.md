@@ -541,6 +541,13 @@ room — the lone tap leaps and the pair rings); a visual hint that the
 left half carries two verbs; a longer arrival window if two-finger
 taps read as auras on Jean's hand.
 
+**REWIRE_0 — the ride answers the pulse.** The host-flip moved from the
+leap door to request_pulse_swap: the gesture T7_RIDE teaches is the
+gesture that works, both arrivals announced by a wave again, and a
+press the ride claims raises no swap. POINT_SUMMIT_RADIUS 15 -> 5 (the
+cap is the door). "pulse to land" shows 5 s — the shell's clock,
+the edge gate its metronome. Struck: LEAP_1 R6.
+
 ## SKIRT_WELD_1/P — THE PERIMETER SKIRT HANGS FROM THE BASE BAND (landed; one seam held)
 
 Sibling of SKIRT_WELD_1 on 7T-Music, landed there at `be0eb28f`. The patch
