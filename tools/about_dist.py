@@ -211,8 +211,11 @@ def build_writings():
     if not pieces:
         say("REFUSE  assets/writings holds no .txt — nothing to build")
         sys.exit(1)
+    # The slug is a FILENAME, and a filename can hold a quote. It is the
+    # one interpolation here that was not escaped; title and body always
+    # were. (DOORS_4 R2.)
     page = "\n".join('<article id="%s">\n<h2>%s</h2>\n%s\n</article>'
-                     % (p["slug"], esc(p["title"]), p["html"]) for p in pieces)
+                     % (esc(p["slug"]), esc(p["title"]), p["html"]) for p in pieces)
     return page, [{"title": p["title"], "html": p["html"]} for p in pieces]
 
 
@@ -256,6 +259,16 @@ def main():
         template = fh.read()
 
     site = load_site()
+    # DOORS_4 R2 — EVERY READ THAT CAN REFUSE HAPPENS BEFORE THE FIRST
+    # DIST WRITE. build_writings() refuses on an empty assets/writings, a
+    # missing title line or an empty body; run where it used to sit — after
+    # the about page shipped and BEFORE the dist/text/ sweep — such a
+    # refusal left a dist carrying a fresh about page, stale fonts, and the
+    # live dist/text/index.html the sweep exists to remove. dist.py stops
+    # the chain, so that state is never deployed; but a guarantee that
+    # depends on the order of the lines above it should not depend on it
+    # silently. It is a pure read: it has no reason to be later.
+    w_page_html, w_json = build_writings()
     hero_tag, hero_data = build_hero(Image, site, preview)
 
     page = fill(template, {
@@ -304,9 +317,9 @@ def main():
 
     # DOORS_4 — THE WRITINGS PAGE, plural and growing. One home for the
     # texts (assets/writings); this page and writings.json are built from
-    # the same read, so the engine's pane and the site can never disagree,
-    # and a new text is one new file plus a deploy.
-    w_page_html, w_json = build_writings()
+    # the same read (taken above, before any dist write), so the engine's
+    # pane and the site can never disagree, and a new text is one new file
+    # plus a deploy.
     w_tpl = os.path.join(WEB, "writings", "index.html")
     with open(w_tpl, encoding="utf-8") as fh:
         w_page = fill(fh.read(), {
