@@ -5,8 +5,8 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `f78316aa5894ba496aaa744ea152f9db02aa8c1a`
-(LEAP_2 U2 — solitude is a half's, not the glass's: the stick stops silencing the far thumb)
+Last commit touching any scanned file: `bee6314d2570f2bf4fbf08d8452d8b4d9a00147a`
+(DOORS_0 U5 — shell_pace: the menu's idle retimes the rAF loop; WRAP_0 U2's one-site claim revised)
 
 | file scanned | sha256 |
 |---|---|
@@ -18,7 +18,7 @@ Last commit touching any scanned file: `f78316aa5894ba496aaa744ea152f9db02aa8c1a
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
 | `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:6867c90303e0e93d13525ec42a4c247a32694309ac8b74e0834eda1f4c6e86d3` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:9891302e1bf20ec4a71b8866d420725dc4405b8f99473ca04308465444a7a61d` |
-| `src/the_board.cpp` | `sha256:12a89ca138da2724f66ae4fd646e2a773caaa169cba3998a9323f14c37baad2b` |
+| `src/the_board.cpp` | `sha256:50142a5f4d5e5d7b73664b2e99c4fc9020182d56b5cba5ec2b7ae777ca8d66a0` |
 | `src/console/console.hpp` | `sha256:b164d8fe82494eedb19e4e96484ab89cc15b33e8edc4965b4ae18fc8b76df5f6` |
 | `tools/command_census.py` | `sha256:09a61baed23a5caeedb44ee293461875f2e759832353f887187be35a7ae8d7cb` |
 
@@ -60,7 +60,7 @@ in `console.hpp`.
 | # | receiver | enclosing function | site |
 |---|---|---|---|
 | 1 | `queue.Submit` | `flush_zone_derive_requests` | `src/cartridges/the_board/bodies/gol_zones.hpp:921` |
-| 2 | `app->queue.Submit` | `frame` | `src/the_board.cpp:356` |
+| 2 | `app->queue.Submit` | `frame` | `src/the_board.cpp:378` |
 
 2 submit sites. The frame's one submit rides the pawn's
 render tick; the GoL derive flush issues its own (the cartridge
@@ -88,7 +88,7 @@ every landing.
 | # | label | enclosing function | site |
 |---|---|---|---|
 | 1 | `"flush_zone_derive_requests"` | `flush_zone_derive_requests` | `src/cartridges/the_board/bodies/gol_zones.hpp:897` |
-| 2 | `"frame"` | `frame` | `src/the_board.cpp:347` |
+| 2 | `"frame"` | `frame` | `src/the_board.cpp:369` |
 
 ## §3 — the swapchain reconfigure trigger
 

@@ -2,6 +2,78 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## DOORS_0 — THE FRONT DOOR, THE SANDWICH, THE PEEK, THE IDLE (landed; Jean's visual gates open)
+
+Seven units, U1..U7. The engine stays at the root and the veil became the
+front door.
+
+| ruling | where it lives now |
+|---|---|
+| The veil is no longer a tap target; `#enter` is the one entry gesture, and a static anchor is the second door | `web/index.html` — `.entry`, `enterBtn.addEventListener` x4 |
+| An eager tap is BANKED: the grants are spent at the tap, the reveal arrives at `showReady` through the same handler | `if (entered) onEntryGesture({ type: 'click' });` |
+| The card's way out is a link, not a redirect — the log pane is the diagnostic surface a redirect would steal | the second `a.btn.alt[href="/about/"]` |
+| One route list, three shells | `web/routes.json` + `web/menu.css` -> `tools/routes.py`, injected by all three dist scripts |
+| The sandwich is a native `<details>` — it opens with no script, so the site pages keep their JavaScript-off law | `.menu` on about/, collection/, and `#menu.over` on the shell |
+| Idle, not freeze: menu open -> rAF every 4th vblank + a blur on the frame; the soundtrack never rides rAF | `shell_pace` (`src/the_board.cpp`), `html.idle #frame` |
+| The peek is written by the page's own records, fetched at the menu's first opening — a gesture, never boot | `dist/collection/peek.json`, `no-cache` in `_headers.fragment` |
+
+`onEntryGesture` and `carriesActivation` are byte-identical: the
+activation-critical path did not move, only its target did.
+
+**Witnessed here, beyond the handoff's asking.** The console gate compiles
+`the_board.cpp`, so `shell_pace` has a real compile witness, not only
+`glaw1`'s. `peek_pick` was exercised end to end against a synthesised
+collection (11 works, 3 sets) and unit-tested at its edges: the
+`PEEK_COUNT` cap, an over-full featured list, an empty collection, and the
+cross-folder `n` collision its docstring names. The sandwich itself was
+driven in headless Chromium against a dist-shaped shell — 28 behaviours,
+all passing: pane switching, `#menu.paned`, the back button, the idle class
+and its blur reaching `#frame`, the peek's ONE fetch across repeated
+openings, `--tone`/`--r` on the tiles, the door-out href taken from
+`data-href`, Escape closing and resetting, and a missing `shell_pace`
+export surviving as a note. **What that cannot reach** is the wasm: no
+build ran here, so `web_dist.py`'s marker refusal and the `[PACE]` lines
+are still first exercised on Jean's machine.
+
+### Residuals — DOORS_0
+
+- `onEntryGesture` carries two inert `statusEl.removeAttribute` lines
+  (DOORS_0 kept the handler byte-identical). Delete at the next shell sweep.
+- A key to open the sandwich under pointer lock (desktop): today Esc frees
+  the mouse, then the summary is clickable. Needs the key-map census before
+  a key is chosen.
+- **The menu's key guard is bubble-phase only.** `stopPropagation` on the
+  menu subtree stops any listener on an ancestor in the BUBBLE phase, and
+  was measured doing so (W/A/S/D/Space/R: 0 of 6 reached a bubble listener
+  on `window`). A CAPTURE-phase listener still sees all six. The world's
+  keys arrive through emscripten_glfw's own listener, whose phase is not
+  readable from this tree — the glue is not vendored. If the pawn moves
+  while the menu is open, this is why, and the fix is a capture-phase guard.
+- `web_dist.py`'s new marker refusal returns **7**, which the lab-build
+  refusal already returns. Both print a distinct message, so an operator can
+  tell them apart, but the exit code no longer identifies which refused.
+  Written as the handoff specified; 1 and 8 are free.
+- The STATE 4 comment's FIRST paragraph still says the status line "stops
+  being a report and becomes a door". The handoff rewrote only its last
+  paragraph, which now contradicts it in the same comment. Jean's words.
+- `web/about/index.html`: `<a class="hero" id="hero" href="../collection/">`
+  wraps the full-bleed image — the tap-anywhere pathology, smaller blast
+  radius.
+- Collection-as-profile: collapse `.lede`, `.index` as a sticky filter, sets
+  as filter states over one flow; touch affordance on `.work`; swipe in the
+  viewer.
+- PWA manifest + Apple meta for a true fullscreen on iOS; fullscreen
+  re-entry beyond the menu button.
+- Adaptive GPU pacing (gen-8 Intel reference) — TWO_DOORS Task 3, not scoped
+  here.
+- Copy: the veil sentence, both door labels, `ENTRY_WORDS`, the Controls
+  table (verify against `console.hpp`'s touch halves before the words are
+  set), route labels.
+- Peek count and pick rule (`PEEK_COUNT`, `peek_pick`) are a first
+  authoring, to be looked at, not tuned.
+- **VISIT_0** (the roll as directory) is a separate handoff and depends on
+  DOORS_0 U3/U6 for its pane; its own entry is below.
+
 ## LEAP_0 / LEAP_1 — THE PAWN LEAPS, TUMBLES, AND PASSES ITSELF ALONG (landed; Jean's visual gate open)
 
 The pawn's height was a lookup; it is now a lookup on the ground and an
