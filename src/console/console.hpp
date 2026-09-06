@@ -282,12 +282,21 @@ namespace t7 {
         float    x0 = 0.0f, y0 = 0.0f;   // where it landed
         double   t0 = 0.0;               // when it landed, ms
         bool     slopped = false;        // has moved past TAP_SLOP since landing
-        // PULSE_1 — WAS THIS PRESS EVER ALONE? Latched at birth and cleared
-        // the moment any other finger lands; never re-set while the press
-        // lives. The pulse is the LONE-finger verb, and "lone" has to mean
-        // "alone for its whole life" — a finger that was half of a pinch and
-        // outlived its partner must not become a tap on the way up.
-        bool     alone   = true;
+        // WAS THIS PRESS EVER ALONE ON ITS OWN HALF? Latched at birth and
+        // cleared the moment another finger lands ON THE SAME SIDE; never
+        // re-set while the press lives. A finger that was half of a pinch or
+        // half of a pair must not become a tap on the way up, which is what
+        // the latch is for.
+        //
+        // LEAP_2 — THE HALF IS THE WHOLE POINT, and its absence was the bug.
+        // PULSE_1 latched this against EVERY other finger, so the stick's
+        // thumb — the one finger that is down whenever the pawn is walking —
+        // cancelled the solitude of every tap on the far side of the glass.
+        // The one-finger word was therefore unsayable while moving, on either
+        // half, from PULSE_1 through LEAP_1: the two halves were separate
+        // rooms for the stick and the look, and one room for this. Now the
+        // left thumb and a right-half tap never meet.
+        bool     solo    = true;
     };
 
     // The port's default canvas selector (Config.h kDefaultCanvasSelector).
@@ -2219,16 +2228,19 @@ namespace t7 {
                     slot->y = slot->y0 = py;
                     slot->t0      = e.timestamp;
                     slot->slopped = false;
-                    // PULSE_1 — THE LONE LATCH. This finger is alone only if
-                    // it is the only one tracked; and its arrival ends
-                    // everyone else's solitude. Cleared in both directions
-                    // here, at the one site a finger is born, so no press can
-                    // acquire the latch after the fact.
-                    slot->alone   = true;
+                    // THE SOLO LATCH (PULSE_1, half-scoped by LEAP_2). This
+                    // finger is solo only if it is the only one tracked ON
+                    // ITS OWN HALF; and its arrival ends the solitude of the
+                    // others THERE. Cleared in both directions here, at the
+                    // one site a finger is born, so no press can acquire the
+                    // latch after the fact. The other half is another room
+                    // and says nothing about this one.
+                    slot->solo = true;
                     for (TouchPoint& other : touches_) {
                         if (&other == slot || !other.active) continue;
-                        other.alone = false;
-                        slot->alone = false;
+                        if (other.left != slot->left) continue;  // LEAP_2 — the far half is not company
+                        other.solo = false;
+                        slot->solo = false;
                     }
 
                     // U4 — THE PAIR FORMS. Undecided on purpose: two
@@ -2373,13 +2385,23 @@ namespace t7 {
             // LATENCY, and the proof is in their own conditions, not in a
             // timer this had to add:
             //   aura    — fires on a left finger that is NOT the primary, so
-            //             it needs a SECOND left finger down; `alone` is
-            //             false for both of them.
-            //   possess — fires on the second of a right-half PAIR, so both
-            //             its fingers have had company; `alone` is false.
+            //             it needs a SECOND LEFT finger down; `solo` is false
+            //             for both of them, and both are on the far half from
+            //             this verb anyway.
+            //   swap    — fires on the second of a right-half PAIR, so both
+            //             its fingers have had company ON THIS HALF; `solo`
+            //             is false. This is the conjunct that keeps a pair
+            //             from also leaping when its second finger lifts.
             // Neither verb has to wait to find out whether a tap was meant,
             // and this one resolves at lift like they do.
-            if (clean && t.alone && !t.left
+            //
+            // LEAP_2 — AND THE STICK IS NO LONGER COMPANY. `solo` is scoped
+            // to the half now, so the left thumb may drive while this finger
+            // speaks. The residual, named rather than mechanised: a right
+            // finger already DOWN (a look drag in progress) is still company,
+            // so the leap waits for the look to lift. Slop-aware company is
+            // priced in the register and unbuilt — no measurement has asked.
+            if (clean && t.solo && !t.left
                 && (now_ms - lastPulseMs_) >= TouchControls::PULSE_DEBOUNCE_MS) {
                 lastPulseMs_    = now_ms;
                 tapPulsePending_ = true;
