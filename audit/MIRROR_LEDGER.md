@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `cfa763700710ac8a4ed607ece6f29e4fab57420d` |
-| | FENCE_0 U2 — the ledgers follow |
+| source commit | `99ddae6c65e0bdab2f95f266d52173e769b40f51` |
+| | HOLD_0 U2 — the ledgers follow |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:1a495ab004505b2dc399b75897f52baf5555e5613b46bdbe1cd6b83cc5925057` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:c776a51167c445969661b2bcbaeba2e18373585cfab26af387491dfee8cfd8ea` |
