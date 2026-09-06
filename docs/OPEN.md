@@ -708,6 +708,10 @@ GOL_SPORE_PER_ZONE_TICK, GOL_SPORE_BLOCK (world.wgsl).
 0.8 / 0.8 / 0.7 (was 0.4 / 1.5 / 0.3 / 0.5 / 0.4); SPAWN_CHANCE holds
 at 0.050 against the ceiling of 8. Fresh-world reading.
 
+**MASSIF_0 — the plains recede.** Continental activation 0.70 ->
+0.91, tectonic 0.75 -> 0.975 (+30% each); amplitude untouched (the
+named flip if the stamp meant height). Fresh-world reading.
+
 ## SKIRT_WELD_1/P — THE PERIMETER SKIRT HANGS FROM THE BASE BAND (landed; one seam held)
 
 Sibling of SKIRT_WELD_1 on 7T-Music, landed there at `be0eb28f`. The patch
