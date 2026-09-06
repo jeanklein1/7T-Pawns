@@ -112,7 +112,7 @@ READERS = {
         ("src/cartridges/the_board/cartridge.hpp", "phase_motion_drivers"),
         ("src/cartridges/the_board/direction/input.hpp", "nudge_look_sensitivity"),
         ("src/cartridges/the_board/direction/input.hpp", "on_scroll"),
-        ("src/cartridges/the_board/bodies/agents.hpp", "try_possess_nearest"),
+        ("src/cartridges/the_board/bodies/agents.hpp", "find_possess_target"),
         # PULSE_1 D — the tap impulse's one reader. emit_radial_pulse takes
         # it by PARAMETER (the bus serves every writer, not just the tap), so
         # the dial is named at the call site and nowhere else, which is the

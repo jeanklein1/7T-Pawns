@@ -3326,7 +3326,9 @@ fn ground_formed_with_complexity(world_xz: vec2<f32>) -> vec2<f32> {
 // Cost: 8 iterations per evaluation point (one per ring buffer slot).
 // Dead entries (age > max or amplitude = 0) early-exit cheaply.
 
-const PULSE_SPEED: f32 = 30.0;         // world units per second (ring expansion rate)
+// PULSE_SPEED graduated to config.pulse_speed (LEAP_1): the swap's delay
+// divides by the same number this contributor multiplies by, so the ring's
+// speed has one home. Rest: contracts/control_panel.hpp PULSE_RING_SPEED.
 const PULSE_MAX_AGE: f32 = 8.0;        // seconds — pulses older than this are ignored
 const PULSE_RING_SHARPNESS: f32 = 0.3; // gaussian falloff around wavefront (lower = wider ring)
 const PULSE_DAMPING: f32 = 0.012;      // distance damping (attenuation per world unit)
@@ -3354,7 +3356,7 @@ fn contrib_radial_pulses_at(world_xz: vec2<f32>, t_seconds: f32) -> f32 {
         let dist = length(world_xz - p.xy);
 
         // Expanding ring: wavefront at radius = age × speed
-        let wavefront_r = age * PULSE_SPEED;
+        let wavefront_r = age * config.pulse_speed;
         let ring_dist = dist - wavefront_r;
 
         // Gaussian ring envelope (sharp peak at wavefront)

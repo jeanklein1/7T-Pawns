@@ -660,6 +660,10 @@ ORGAN_PARAM(PANEL, PanelSurface, possession.radius, F32, 0.5f, 80.0f, 0.5f, "Int
 // reading and not a defect: it silences the tap without silencing the
 // bus, so a soundtrack writer would still be heard.
 ORGAN_PARAM(PANEL, PanelSurface, pulse.amplitude, F32, 0.0f, 4.0f, 0.05f, "Interaction · Pulse", "tap impulse")
+// LEAP_1 — the ring speed, graduated out of world.wgsl (was PULSE_SPEED).
+// The swap's delay divides by it, so the floor is 1, not 0. Slower rings
+// make the swap's cause legible from across a room.
+ORGAN_PARAM(CONFIG, GPUDesignConfig, pulse_speed, F32, 1.0f, 120.0f, 0.5f, "Interaction · Pulse", "ring speed")
 
 // ─── Camera · Chase ─────────────────────────────────────────────────
 // THE WITNESS'S OWN BEHAVIOUR, not its pose and not its input grammar

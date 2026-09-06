@@ -303,6 +303,14 @@ namespace t7 {
             // touches it. time_state_.dt keeps the per-update value, because
             // the CPU's own integrators run on every update, rendered or not.
             float dtPending_ = 0.0f;
+            // LEAP_1 — THE SWAP THE WAVE CARRIES. Armed at the drain when
+            // the other word is spoken and a body is in reach; committed in
+            // the same phase once the ring's radius has crossed that body's
+            // distance AND the player is grounded, so no body is abandoned
+            // mid-flight. -1 = nothing pending. Teardown clears it beside
+            // the portal trigger.
+            int    pendingSwapSlot_ = -1;
+            double pendingSwapAt_   = 0.0;
 
             // ═══ THE MACHINE FACE ═══════════════════════════════════════
             // The one declared context the dispatch contract hands the
@@ -1510,6 +1518,7 @@ namespace t7 {
                             teardown_orbs(orbs_state_, &orbs_deps_);
 
                         point_.portal_trigger = -1;
+                        pendingSwapSlot_ = -1;          // LEAP_1 — the wave's promise dies with the world
                         point_.bubble.summit = false;   // REACH_2 — the sensor rests dark across a world change
                         // THE AUTHORED PRESENT (POINT_1): at a teleport the
                         // CPU is the author of the new present — the same
@@ -2424,6 +2433,58 @@ namespace t7 {
                 if (inputState_.pulse_pending) {
                     inputState_.pulse_pending = false;
                     issue_pulse_from_point();
+                }
+                // LEAP_1 — THE OTHER WORD, SPENT WHERE THE FIRST ONE IS. Both
+                // fingers rang the ground above; here the ring is given
+                // something to carry. Armed only from the GROUND: the swap is
+                // a thing you do standing, and a body taken mid-flight would
+                // inherit an arc it never launched. P6 — every arm and every
+                // refusal speaks, and the refusals are the ones
+                // try_possess_nearest used to print.
+                if (inputState_.swap_pending) {
+                    inputState_.swap_pending = false;
+                    if (transitionPhase_ != TransitionPhase::IDLE) {
+                        std::cout << "[Swap] blocked (mid-transition)\n";
+                    } else if (agent_state_.slots[player_.possessed_slot].t != 0.0f) {
+                        std::cout << "[Swap] blocked (aloft)\n";
+                    } else {
+                        const int s = find_possess_target(agent_state_, &agents_deps_);
+                        if (s < 0) {
+                            std::cout << "[Swap] no body within "
+                                      << PANEL_LIVE.possession.radius << " of the point\n";
+                        } else {
+                            const float dx = agent_state_.slots[s].pos_x - point_.x;
+                            const float dz = agent_state_.slots[s].pos_z - point_.z;
+                            const float dist = std::sqrt(dx * dx + dz * dz);
+                            const float cfg_speed = gpuState_.config().pulse_speed;
+                            const float speed = cfg_speed > 1e-3f ? cfg_speed : 1e-3f;
+                            pendingSwapSlot_ = s;
+                            pendingSwapAt_   = time_state_.seconds + dist / speed;
+                            std::cout << "[Swap] armed slot=" << s << " dist=" << dist
+                                      << " delay=" << (dist / speed) << "s\n";
+                        }
+                    }
+                }
+                // THE WAVE ARRIVES. A transition drops the promise (the world
+                // it named is leaving); a target that died or was taken drops
+                // it too; and the touchdown conjunct holds the commit until
+                // the player has landed — the wave's timing bends by a
+                // fraction rather than a body falling out of its owner.
+                if (pendingSwapSlot_ >= 0) {
+                    if (transitionPhase_ != TransitionPhase::IDLE) {
+                        pendingSwapSlot_ = -1;
+                    } else if (time_state_.seconds >= pendingSwapAt_) {
+                        const auto& tgt = agent_state_.slots[pendingSwapSlot_];
+                        if (tgt.is_active == 0u
+                            || tgt.behavior_id == AGENT_BEHAVIOR_PLAYER_CONTROLLED) {
+                            pendingSwapSlot_ = -1;
+                        } else if (agent_state_.slots[player_.possessed_slot].t == 0.0f) {
+                            std::cout << "[Swap] the wave arrives\n";
+                            commit_possession(agent_state_, &agents_deps_, c.queue,
+                                              (uint32_t)pendingSwapSlot_);
+                            pendingSwapSlot_ = -1;
+                        }
+                    }
                 }
                 retire_aged_pulses();
 

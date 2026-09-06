@@ -306,7 +306,8 @@ void respawn_evicted_agents(AgentState& as, AgentsDeps* c,
                             uint32_t world_seed,
                             wgpu::Queue& queue);
 // Player commands
-void try_possess_nearest(AgentState& as, AgentsDeps* c, wgpu::Queue& queue);
+int  find_possess_target(const AgentState& as, const AgentsDeps* c);              // LEAP_1 — the search alone
+void commit_possession(AgentState& as, AgentsDeps* c, wgpu::Queue& queue, uint32_t new_slot);   // LEAP_1 — the transaction alone
 void seed_player_body(AgentState& as, AgentsDeps* c);
 void reseed_player_body(AgentState& as, AgentsDeps* c, uint32_t preserved_tier,
                         float preserved_color_r, float preserved_color_g, float preserved_color_b,
@@ -569,26 +570,24 @@ inline void respawn_evicted_agents(AgentState& as, AgentsDeps* c,
 
 // ═══ POSSESSION TRANSFER (Caps Lock) ══════════════════════════════
 
-inline void try_possess_nearest(AgentState& as, AgentsDeps* c, wgpu::Queue& queue) {
-    if (c->transitionPhase_ != TransitionPhase::IDLE) {
-        std::cout << "[Possess] Blocked (mid-transition)\n";
-        return;
-    }
-
+// THE SEARCH, ALONE (LEAP_1). The point reaches for the nearest active
+// non-player body within PANEL_LIVE.possession.radius — the loop
+// try_possess_nearest always ran, extracted so the pulse drain can ask
+// the question a frame before it takes the body.  Returns the slot, or -1.
+//
+// THE POINT: possession reaches from the point — the nearest agent to
+// where you ARE. Pawn-host value-identical (same harvest snapshot as the
+// slot mirror); in free-fly the reach grabs a body wherever you flew
+// (xz-plane, per the spawn ruling — the population lives there).
+// ORGAN_4 P3b — THE SQUARE IS DERIVED HERE, from the live reach. The
+// retired POSSESSION_RADIUS_SQ was a constexpr twin, and a dialled radius
+// against a frozen square is the disagreement its DEFER row named. One
+// authority, squared where it is used.
+inline int find_possess_target(const AgentState& as, const AgentsDeps* c) {
     const uint32_t cur = c->player_.possessed_slot;
-    // THE POINT: possession reaches from the point — the
-    // nearest agent to where you ARE. Pawn-host value-identical (same
-    // harvest snapshot as the slot mirror); in free-fly Caps Lock
-    // grabs a body wherever you flew (xz-plane reach, per the spawn
-    // ruling — the population lives there now, so there is one).
     const float px = c->point_.x;
     const float pz = c->point_.z;
-
     int best_slot = -1;
-    // ORGAN_4 P3b — THE SQUARE IS DERIVED HERE, from the live reach. The
-    // retired POSSESSION_RADIUS_SQ was a constexpr twin, and a dialled
-    // radius against a frozen square is the disagreement its DEFER row
-    // named. One authority, squared where it is used.
     const float reach = PANEL_LIVE.possession.radius;
     float best_d2 = reach * reach;
     for (uint32_t s = 0; s < Dim::MAX_AGENTS; s++) {
@@ -605,25 +604,34 @@ inline void try_possess_nearest(AgentState& as, AgentsDeps* c, wgpu::Queue& queu
             best_slot = (int)s;
         }
     }
+    return best_slot;
+}
 
-    if (best_slot < 0) {
-        std::cout << "[Possess] No agent within " << reach
-                  << " units of the point at (" << px << "," << pz << ")\n";
-        return;
-    }
-
-    const uint32_t new_slot = (uint32_t)best_slot;
+// THE TRANSACTION (LEAP_1) — everything try_possess_nearest did past its
+// search, with the timing taken out of it: the caller decides WHEN, this
+// decides WHAT. The one commit door, and there is no other.
+//
+// LEAP_1 adds the grounding: both bodies' air clocks and vertical
+// velocities are zeroed in the mirror before the upload — the slot handed
+// back to the autonomous kernel carries no stale flight, and the slot the
+// player takes starts on the ground's law.
+inline void commit_possession(AgentState& as, AgentsDeps* c, wgpu::Queue& queue, uint32_t new_slot) {
+    const uint32_t cur = c->player_.possessed_slot;
 
     as.slots[cur].behavior_id = AGENT_BEHAVIOR_RANDOM_WALK;
+    as.slots[cur].t     = 0.0f;   // LEAP_1 — the freed body is grounded by the handover
+    as.slots[cur].vel_y = 0.0f;
     if (as.slots[cur].seed == 0u) {
         as.slots[cur].seed = cpu_hash(c->world_state_.active_seed, cur ^ 0xC11Cu);
     }
 
-    // New slot → player control. Reset velocity + portal trigger so the
+    // New slot -> player control. Reset velocity + portal trigger so the
     // player's first frame on the new body is clean.
     as.slots[new_slot].behavior_id    = AGENT_BEHAVIOR_PLAYER_CONTROLLED;
     as.slots[new_slot].vel_x          = 0.0f;
+    as.slots[new_slot].vel_y          = 0.0f;   // LEAP_1 — and the taken body starts grounded
     as.slots[new_slot].vel_z          = 0.0f;
+    as.slots[new_slot].t              = 0.0f;
     as.slots[new_slot].portal_trigger = -1;
 
     c->gpuState_.upload_agent_slot(queue, cur, &as.slots[cur]);
@@ -632,9 +640,11 @@ inline void try_possess_nearest(AgentState& as, AgentsDeps* c, wgpu::Queue& queu
     c->player_.possessed_slot = new_slot;
     c->gpuState_.set_possessed_slot(new_slot);
 
+    const float ddx = as.slots[new_slot].pos_x - c->point_.x;
+    const float ddz = as.slots[new_slot].pos_z - c->point_.z;
     std::cout << "[Possess] " << cur << " -> " << new_slot
               << " (tier " << as.slots[new_slot].tier_idx
-              << ", dist " << std::sqrt(best_d2) << ")\n";
+              << ", dist " << std::sqrt(ddx * ddx + ddz * ddz) << ")\n";
 }
 
 // ═══ DIAGNOSTIC: agent census ═════════════════════════════════════
