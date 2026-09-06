@@ -2,6 +2,133 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## DOORS_4 — MOBILE AND DESKTOP, WRITINGS, GALLERY, AND THE COPY MAP (landed on master; Jean's gates open)
+
+Seven units. The round opened on a bug Jean could see and no test could:
+the Controls toggle did nothing.
+
+| ruling | where it lives now |
+|---|---|
+| Mobile, not Smartphone, and one platform's list at a time | the `.seg` chip; `.pane [hidden]` is what makes "one at a time" true |
+| The Board's second note is *Lose yourself.* | `.pane[data-pane="board"]` |
+| The social links live in one place: the engine's sandwich | `write`/`follow` are `side: engine`; the site footers and the Follow pane's door-out are gone |
+| Text becomes Writings — plural, browsable, one home | `assets/writings/NN_slug.txt` → `build_writings()` → `/writings/` **and** `writings.json`, from one read |
+| The collection is called Gallery everywhere a menu speaks | `web/routes.json`'s label; the pane head; the one door out. The id `collection` stays — wiring |
+| The world door gets its picture | `build_world(Image, preview)`; `assets/about/world.jpg` |
+| Write me is a small box in the site sandwich | `tools/routes.py` `write_box_html`, appended to every site nav |
+| The name appears once | `<p class="site">` gone from both site pages; the engine's wordmark is its home |
+| The fallback speaks Jean's words; the button reads *Click here* | `fallback()` and the `#card` markup |
+| `docs/COPY.md` — the copy map | new; every visitor-facing string and the one file that owns it |
+
+### THE LESSON, SO THE NEXT PANE ELEMENT DOES NOT RELEARN IT
+
+**An author `display` beats the user agent's `[hidden] { display: none }`,
+at any specificity, because origin outranks specificity.** `.pane dl`
+set `display: grid`, so both platform lists rendered always; the JS
+flipped `.hidden` correctly and the cascade ignored it. Measured in
+Chromium before and after: `hidden=true, display=grid, on screen` →
+`display=none, off screen`.
+
+The shell had already learned this once — `web/index.html` carries
+`.layer[hidden] { display: none; }` for the card, for exactly this
+reason. The lesson never reached the panes.
+
+**And the fix depends on source order, so the invariant is written in the
+file.** `.pane [hidden]` is (0,2,0): it beats `.pane dl` (0,1,1) on
+specificity but TIES `.pane .row` and `.pane .seg`, and a tie is decided
+by order. So that block is the last block in `web/menu.css`, and the
+comment says: append new pane rules above it, never below. This round's
+own U3.7 and U5.2 rules were inserted above it accordingly. `!important`
+was considered and refused — the tree authors zero of them, and
+`.layer[hidden]` shows the house idiom is specificity, not priority.
+
+### MY WITNESS FAILED, AND THAT IS WHY THE BUG SHIPPED
+
+DOORS_3's Chromium drive asserted `l.hidden` — the PROPERTY the JS sets —
+instead of the computed display. It passed 64/64 on a page where nothing
+moved. **Asserting the attribute you just set proves only that you set
+it.** Every test this round asserts `getClientRects().length` and
+`getComputedStyle`, and the same rule now applies to every future round.
+
+### Two things the handoff got wrong, and one it left open
+
+- **The authority paragraph named one campaign; SEVEN had landed.** Base
+  was `27c4e466` — twenty commits and `HOLD_0`, `SPREAD_0`, `EASE_1`,
+  `CAP_0`, `SPORE_0`, `RISE_0`, `MASSIF_0`. "MASSIF_0 is the tip —
+  engine-only, no overlap" was false twice over: `EASE_1` edited
+  `web/index.html` (the landing hint 5 s → 8 s). It sits in the
+  glass-badge helper, nowhere near any FIND, so nothing was blocked.
+  **This is the second consecutive round whose authority paragraph
+  under-counted the tree** — DOORS_3's did the same. A handoff's base
+  should be read, not recited.
+- **`write_box_html`'s docstring claims an email fallback its own code
+  cannot give.** `routes.py` renders for every site page and has never
+  read `site.json`; only `about_dist`'s `fill()` knows `__EMAIL__`, and
+  `collection_dist`'s does not, so a literal `__EMAIL__` in the shared
+  nav would ship raw on the Gallery page. **THE SITE THEREFORE LOST ITS
+  MAILTO FALLBACK**: the old band offered the address when the endpoint
+  refused; the box says *try again in a moment*. The engine's Write pane
+  still offers the mailto. The docstring now says so plainly. **Jean's
+  call** — the fix is either an about-page-only box, or teaching
+  `collection_dist`'s `fill()` the `EMAIL` key.
+- **The dropdown WAS too tight**, as the handoff suspected. Measured at
+  187 px wide with a 159 px textarea, which is not a message box. Widened
+  to `min(92vw, 20em)` as proposed, then re-measured at 1100, 390 and
+  320 px on the site pages **and on the engine shell**, which shares the
+  rule: everything fits, nothing scrolls sideways. **A visual row for
+  Jean either way.**
+
+### Two hazards beyond the document, both fixed here
+
+1. **`fill()`'s refusal tuple is FIXED and checks the OUTPUT.** U0's
+   question answered: a token absent from a template never appears and
+   passes, but a token PRESENT and unsubstituted **ships silently**
+   unless it is named in the tuple — and DOORS_3's text block never had
+   to learn this, because it used only tokens already there.
+   `__WRITINGS__` and `__WORLD__` now join it. Without that, a marker
+   typo deploys a literal HTML comment where the poems belong.
+2. **A stale `dist/text/` would have shadowed the 301.** DOORS_3 made
+   `about_dist` the writer of `dist/text/`, and `web_dist` deletes only
+   "the engine's own names" — `text` is not among them. So a `dist/` from
+   before this round keeps a live `dist/text/index.html` that `wrangler`
+   uploads and Pages serves, over the redirect. `about_dist` now sweeps
+   it: the writer that made it removes it. Verified with a planted
+   sentinel. The `/text/` no-cache rule follows the page to `/writings/`.
+
+### Residuals — DOORS_4
+
+- **The site has no mailto fallback** (above). Jean's call.
+- **The write box's dropdown width** and **the world door's picture
+  proportions** are visual rows for Jean. `assets/about/world.jpg` does
+  not exist until he places it; the build says so and ships without it.
+- **`peek.json` still carries `href` per work**, read by nothing now that
+  the tiles are inert `<span>`s. Unlike `sets` it is one field of a
+  record rather than a whole shape, and the handoff named only `sets`, so
+  it stands. A later round takes it or keeps it deliberately.
+- **The Gallery tiles lost their link role and their `title` tooltip.**
+  Ruling 5 asked for exactly that — pictures, not doors — and the work's
+  name survives in each `img`'s `alt`. Named here because it is a
+  deliberate accessibility trade, not an oversight.
+- **The collection page's lede `h1` is still placeholder copy** — it
+  repeats the writings' opening line, which is the doctrine and not a
+  gallery's greeting. `COPY.md` points at it.
+- **`docs/COPY.md` exists and must be kept current.** Every future round
+  that moves words updates it. Its every pointer was checked against the
+  tree at this commit (38 symbol and path assertions).
+- **The engine menu has no plain link out**, and now neither Follow nor
+  Write has a door to the site — because the sections they pointed at are
+  gone. Deliberate; named so a later round does not read it as a loss.
+
+### Where the witnesses could not reach
+
+`assets/about` holds no hero images and the collection holds 0 works in
+this checkout, so `about_dist` and `collection_dist` were exercised
+against stubbed heroes, a stubbed strip and a planted `world.jpg` in a
+scratch dist, and the Gallery pane against a two-work `peek.json`
+fixture. On Jean's machine both run for real. The `/text/` → `/writings/`
+301 is Cloudflare's to serve; what was proved here is that nothing in
+`dist/` will shadow it.
+
 ## DOORS_3 — THE LAYOUT ROUND (landed on master; Jean's gates open)
 
 Five units. The engine's menu stopped being a list with one big pane and
