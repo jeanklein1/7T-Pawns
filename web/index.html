@@ -289,6 +289,11 @@
        time (web_dist.py, from web/menu.css). The marker must appear
        exactly once: web_dist counts it, as it counts the build id. */
     /* __MENU_CSS__ */
+    /* DOORS_0 — IDLE, NOT FREEZE. While the sandwich is open the frame
+       blurs and the loop slows (shell_pace); the world keeps breathing
+       behind the panel and the soundtrack keeps playing. */
+    #frame { transition: filter .35s; }
+    html.idle #frame { filter: blur(6px) saturate(.85); }
 
     /* ── STATE 4 — READY ──────────────────────────────────────────
        ATMOS_0. Not a new card: the SAME veil, one line different. The
@@ -865,6 +870,31 @@
     <nav>
       <!-- __ROUTES__ -->
     </nav>
+    <!-- THE PANES. One per engine-only route (data-pane matches the
+         route id). A pane replaces the nav while open (#menu.paned) and
+         carries its own way back. Controls: PLACEHOLDER COPY — the key
+         words are Jean's, and their truth is console.hpp's. -->
+    <div class="pane" data-pane="controls" hidden>
+      <button type="button" class="back" data-back>← menu</button>
+      <p class="pane-head">Controls</p>
+      <dl>
+        <dt>Move</dt><dd>W A S D · on a phone, drag one half of the screen</dd>
+        <dt>Look</dt><dd>the mouse · drag the other half</dd>
+        <dt>Ride / release</dt><dd>R</dd>
+        <dt>Pulse</dt><dd>Space · a clean tap</dd>
+        <dt>Free the mouse</dt><dd>Esc</dd>
+      </dl>
+      <div class="row">
+        <button type="button" id="ctlFull">Fullscreen</button>
+        <button type="button" id="ctlSound">Sound: on</button>
+      </div>
+    </div>
+    <div class="pane" data-pane="collection" hidden>
+      <button type="button" class="back" data-back>← menu</button>
+      <p class="pane-head">The collection</p>
+      <div class="peek" id="peek" aria-live="polite"></div>
+      <a class="out" data-out target="_blank" rel="noopener" href="/collection/">Open the collection in a new tab →</a>
+    </div>
   </details>
 
   <script>
@@ -1209,12 +1239,14 @@
       }
     }
 
-    // 2 — FULLSCREEN, coarse pointers only. A desktop visitor's entry is
-    // already the pointer-lock gesture, and taking their window away
-    // would be a second, louder answer to a question they did not ask.
-    function goFullscreen() {
+    // 2 — FULLSCREEN, coarse pointers only at entry. A desktop visitor's
+    // entry is already the pointer-lock gesture, and taking their window
+    // away would be a second, louder answer to a question they did not
+    // ask. The menu's button (DOORS_0) asks that question in words, so it
+    // passes `force` and gets fullscreen on any pointer.
+    function goFullscreen(force) {
       try {
-        if (!window.matchMedia || !window.matchMedia('(pointer: coarse)').matches) return;
+        if (!force && (!window.matchMedia || !window.matchMedia('(pointer: coarse)').matches)) return;
         var el = document.documentElement;
         var req = el.requestFullscreen || el.webkitRequestFullscreen;
         if (!req) { note('[shell] fullscreen: unavailable (older iOS stays in-page)'); return; }
@@ -1345,6 +1377,111 @@
     enterBtn.addEventListener('pointerup',   onEntryGesture);
     enterBtn.addEventListener('click',       onEntryGesture);
     enterBtn.addEventListener('click', function () { if (entered && !ready) enterBtn.classList.add('armed'); });
+
+    // ═══ DOORS_0 — THE SANDWICH'S BEHAVIOURS ═════════════════════════
+    //
+    // Three things: which pane a route button opens, the peek's one
+    // fetch (gesture-time, never boot), and the loop's pace while the
+    // menu is open — idle, not freeze (shell_pace, the_board.cpp). The
+    // C ABI is resolved lazily, organ_panel.js's way: the program may
+    // still be compiling when the shell runs, and a missing export is a
+    // note, never a failure. Keys typed at the menu are the menu's.
+    (function () {
+      if (!menu) return;
+      var panes = menu.querySelectorAll('.pane');
+      var peekEl = document.getElementById('peek');
+      var peekLoaded = false;
+      var C = null;
+      function abi() {
+        if (C) return C;
+        var M = window.Module;
+        if (!M || typeof M.cwrap !== 'function') return null;
+        function w(name, ret, args) {
+          try { return M.cwrap(name, ret, args); }
+          catch (err) { note('[shell] menu: ' + name + ' not in this build'); return null; }
+        }
+        C = {
+          pace: w('shell_pace', null, ['number'])
+        };
+        return C;
+      }
+      function idle(on) {
+        document.documentElement.classList.toggle('idle', !!on);
+        var c = abi();
+        if (c && c.pace) c.pace(on ? 1 : 0);
+      }
+      function showPane(id) {
+        panes.forEach(function (p) { p.hidden = (p.dataset.pane !== id); });
+        menu.classList.toggle('paned', !!id);
+        if (id === 'collection') loadPeek();
+      }
+      function loadPeek() {
+        if (peekLoaded || !peekEl) return;
+        peekLoaded = true;
+        fetch('/collection/peek.json', { cache: 'no-cache' }).then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        }).then(function (d) {
+          var frag = document.createDocumentFragment();
+          (d.works || []).forEach(function (w) {
+            var a = document.createElement('a');
+            a.href = w.href; a.target = '_blank'; a.rel = 'noopener';
+            a.className = 'peek-work'; a.title = w.title;
+            a.style.setProperty('--tone', w.tone);
+            a.style.setProperty('--r', w.r);
+            var img = document.createElement('img');
+            img.src = w.src; img.alt = w.title; img.loading = 'lazy'; img.decoding = 'async';
+            a.appendChild(img);
+            frag.appendChild(a);
+          });
+          var sets = document.createElement('p');
+          sets.className = 'peek-sets';
+          sets.textContent = (d.sets || []).map(function (s) { return s.label + ' (' + s.count + ')'; }).join(' · ');
+          peekEl.appendChild(frag);
+          peekEl.appendChild(sets);
+        }).catch(function (err) {
+          peekLoaded = false;                       // try again on the next opening
+          peekEl.textContent = 'The collection did not answer.';
+          note('[shell] peek: ' + err);
+        });
+      }
+      menu.addEventListener('click', function (e) {
+        var t = e.target;
+        if (!t || !t.closest) return;
+        if (t.closest('[data-back]')) { showPane(null); return; }
+        var b = t.closest('button[data-pane]');
+        if (!b) return;
+        showPane(b.dataset.pane);
+        var out = menu.querySelector('.pane[data-pane="' + b.dataset.pane + '"] a[data-out]');
+        if (out && b.dataset.href) out.href = b.dataset.href;
+      });
+      menu.addEventListener('toggle', function () {
+        idle(menu.open);
+        if (!menu.open) showPane(null);
+      });
+      window.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && menu.open) { menu.open = false; e.preventDefault(); }
+      });
+      ['keydown', 'keyup', 'keypress'].forEach(function (t) {
+        menu.addEventListener(t, function (e) { if (e.key !== 'Escape') e.stopPropagation(); });
+      });
+      // THE TWO LIVE CONTROLS — the tiny features.
+      var ctlFull = document.getElementById('ctlFull');
+      var ctlSound = document.getElementById('ctlSound');
+      if (ctlFull) ctlFull.addEventListener('click', function () { goFullscreen(true); });
+      if (ctlSound) ctlSound.addEventListener('click', function () {
+        if (!music) return;
+        if (music.paused) {
+          musicWasPlaying = true;                   // "sound is wanted" — the visibility handler's one input
+          var p = music.play();
+          if (p && p.catch) p.catch(function (err) { note('[shell] sound: ' + err); });
+        } else {
+          musicWasPlaying = false;                  // a visitor who chose silence stays in silence
+          music.pause();
+        }
+        ctlSound.textContent = music.paused ? 'Sound: off' : 'Sound: on';
+      });
+    })();
 
     // ── ATMOS_0 R — WHEN THE OS REVOKES THE SESSION ───────────────
     // Field, iPhone 14: leave the browser long enough and Safari tears
