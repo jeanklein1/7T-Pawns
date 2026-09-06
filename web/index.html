@@ -834,12 +834,12 @@
       <p class="sub" id="cardSub"></p>
       <button class="btn" id="reload" type="button" hidden>Open it again</button>
       <!-- DOORS_0 — THE WAY OUT IS STATIC. A card means no world, and
-           the paintings are the whole piece this visitor receives, so
-           DOORS_3 sends the door where the welcome points: the
-           collection. An anchor, so it works when nothing else does.
+           the website is the whole piece this visitor receives, so
+           DOORS_4 sends the door where the welcome points: our web page.
+           An anchor, so it works when nothing else does.
            RULING: a link, not a redirect — the log pane beside it is the
            diagnostic surface a redirect would take away. -->
-      <a class="btn alt" href="/collection/">The collection</a>
+      <a class="btn alt" href="/about/" aria-label="Our web page">Click here</a>
       <button id="logToggle2" class="logToggle" type="button" aria-controls="log2" aria-expanded="false">details</button>
     </div>
     <pre id="log2" class="log" aria-live="off"></pre>
@@ -1224,14 +1224,15 @@
     function fallback(reason) {             // STATE 2 — cannot run
       if (terminal) return;
       terminal = true;
-      // DOORS_3 — JEAN'S WORDS, verbatim. The technical reason is in the
-      // log pane beside the card and in record(); the visitor gets the
-      // welcome and the collection.
+      // DOORS_3/DOORS_4 — JEAN'S WORDS, verbatim, and NO LINK IN THE
+      // TEXT: the button below is the door. The technical reason is in
+      // the log pane beside the card and in record(); the visitor gets
+      // the welcome and one way onward.
       showCard(
         'Welcome.',
         'The board is a living, ever-expanding world that hangs Jean ' +
-        'Klein\'s paintings. Meanwhile <a href="/collection/">the ' +
-        'collection</a> is right here.',
+        'Klein\'s paintings. We couldn\'t run it on your browser yet. ' +
+        'Meanwhile here is our web page.',
         false
       );
       record('[shell] FALLBACK: ' + reason);
