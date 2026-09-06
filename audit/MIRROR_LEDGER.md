@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `0887561bdfd7b482291030c884c01590589fadcf` |
-| | FENCE_0 U1 — indoors the walls are everyone's: the agents meet what the pawn and the camera already met |
+| source commit | `cfa763700710ac8a4ed607ece6f29e4fab57420d` |
+| | FENCE_0 U2 — the ledgers follow |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:1a495ab004505b2dc399b75897f52baf5555e5613b46bdbe1cd6b83cc5925057` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:c776a51167c445969661b2bcbaeba2e18373585cfab26af387491dfee8cfd8ea` |
@@ -24,12 +24,12 @@ carry those facts, or leave them in place and patch around them.
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:bbcaedbb3b05fdc8fdc455f502591ff4ad7142c55fd3cea313a4806d9bf209a7` |
 | `tools/binding_ledger.py` | `sha256:6d9fc58da755a8416bbcfe8efe5360f97ec11fb4a81a9d60ee41f80a2316f790` |
 | `tools/mirror_census.py` | `sha256:6991163f42dc06a0b633fe41606514b33ed616a70ec244eff6640992518cef2a` |
-| `audit/BINDING_LEDGER.md` | `sha256:b344f38bbd091ec9136999e68ecb8161b9cd65d1adfea8a40719b5c60544eee9` |
+| `audit/BINDING_LEDGER.md` | `sha256:e7aaa2f20b0d2e083541c7f9c52883ca6732afd7ba98b34fc2cb054fb7bac110` |
 | `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:859562b79ae8143626270bebc9bc909ae672088914eb6a4527aef04518198c94` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:67d0c75fd5f2c9037b90f087a7881b33b55479b82863419ff798937b62144c76` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:9891302e1bf20ec4a71b8866d420725dc4405b8f99473ca04308465444a7a61d` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
-| `src/cartridges/the_board/cartridge.hpp` | `sha256:6af76f08fb4daba9a8d2e1fe5a9ae74cb8f01f688a996f66c1039bb0dc069041` |
+| `src/cartridges/the_board/cartridge.hpp` | `sha256:cb5385c15fc5a0ba2023f42a516ab09bd7c2d32bc8e7ef922d5a4e4eb70ad358` |
 | `src/cartridges/the_board/realization/render_passes.hpp` | `sha256:e4d6b62cb1d1936d57322d2c4ef4372bbc27dd1404a29117d9431938e9c84149` |
 | `src/cartridges/the_board/surface/patch_system.hpp` | `sha256:1be3569e8b942fccc6a5ad003a6f227b2c413897b33a947bdcfa986947653b3c` |
 
@@ -1057,8 +1057,8 @@ wrapper, 18 wrapper calls) and are not recounted here.
 
 | site (line hint) | enclosing function | idx | group member(s) | dynamic offsets |
 |---|---|---|---|---|
-| `cartridge.hpp:2399` | `phase_entity_mesh_gen` | 0 | `worldGroup_` | — |
-| `cartridge.hpp:2400` | `phase_entity_mesh_gen` | 1 | `frameCGroup_` | — |
+| `cartridge.hpp:2401` | `phase_entity_mesh_gen` | 0 | `worldGroup_` | — |
+| `cartridge.hpp:2402` | `phase_entity_mesh_gen` | 1 | `frameCGroup_` | — |
 | `gallery.hpp:2366` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
 | `gallery.hpp:2367` | `render_snapshot_pass` | 1 | `frameCGroup_` | — |
 | `gallery.hpp:2438` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
