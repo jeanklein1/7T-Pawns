@@ -13540,40 +13540,25 @@ fn column_mesh_gen(
             dc++;
         }
     } else {
-        // Antenna: disc faces at every drum shoulder (post↔drum transitions)
-        // + top cap + bottom cap
+        // Antenna: the top cap only (the bottom cap, all tiers, follows).
+        //
+        // CAP_0 — THE SHOULDER DISCS ARE STRUCK, and the loop that built
+        // them with them. They were coplanar twins of annuli the lathe
+        // already lays: the profile's "widen to drum bottom" step (dr > 0)
+        // gets a DOWN normal from the lathe's law n = (dy, -dr) and the
+        // "narrow to post" step at the drum top (dr < 0) gets UP — each
+        // the visible side, each correct. The discs restated the same two
+        // annuli with the OPPOSITE normals: interior faces, never
+        // legitimately seen. columnPipeline_ is CullMode::None, so both
+        // twins drew from above and the dark one won the depth test in a
+        // pattern set by view-space precision — the "shadow" that turned
+        // with the camera, froze when it stopped, and flickered in
+        // translation. Nothing is lost: the top cap still closes the
+        // post's centre, and the zeroed tail of the index range absorbs
+        // the two discs per drum. (Columns keep their step discs — theirs
+        // SHARE the lathe's normal, so the same fight there is invisible:
+        // same defect, no symptom, priced in the register.)
         let post_r = p.shaft_radius;
-        let drum_count_d = min(bl, 3u);
-        let drum_h_d = p.base_height;
-        let drum_ovh_d = p.base_overhang;
-        let spacer_h_d = p.capital_height;
-        let drum_taper_d = p.taper;
-        let content_h_d = f32(drum_count_d) * drum_h_d + f32(max(drum_count_d, 1u) - 1u) * spacer_h_d;
-        let drum_start_y_d = p.height - content_h_d;
-
-        for (var d = 0u; d < drum_count_d; d++) {
-            let dy_base_d = drum_start_y_d + f32(d) * (drum_h_d + spacer_h_d);
-            let bottom_r_d = post_r + drum_ovh_d * (0.6 + 0.4 * fract(f32(d) * 0.618 + f32(p.segs_around) * 0.1));
-            let top_r_d = bottom_r_d * drum_taper_d;
-            let d_cr = drum_cr[d];
-            let d_cg = drum_cg[d];
-            let d_cb = drum_cb[d];
-
-            // Bottom shoulder: annular disc facing up (post_r → bottom_r) at drum base
-            if (dc < 12u) {
-                disc_ri[dc] = post_r; disc_ro[dc] = bottom_r_d;
-                disc_y[dc] = dy_base_d - p.burial; disc_ny[dc] = 1.0;
-                disc_cr[dc] = d_cr; disc_cg[dc] = d_cg; disc_cb[dc] = d_cb;
-                dc++;
-            }
-            // Top shoulder: annular disc facing down (post_r → top_r) at drum top
-            if (dc < 12u) {
-                disc_ri[dc] = post_r; disc_ro[dc] = top_r_d;
-                disc_y[dc] = dy_base_d + drum_h_d - p.burial; disc_ny[dc] = -1.0;
-                disc_cr[dc] = d_cr; disc_cg[dc] = d_cg; disc_cb[dc] = d_cb;
-                dc++;
-            }
-        }
 
         // Top cap (post tip)
         if (dc < 12u) {
