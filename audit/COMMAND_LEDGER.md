@@ -5,8 +5,8 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `ebf3ab419551771ff05a2c967e0b6eb92e9cb43f`
-(HOLD_0 U1 — a word said in the air is said on landing: the ring waits for the feet)
+Last commit touching any scanned file: `6ebf2bd6e37881db90f135733792e92a0d59fb83`
+(SPORE_0 — the sea is never still: settled blocks roll a coin on the beat; zones a little more often met)
 
 | file scanned | sha256 |
 |---|---|
@@ -14,7 +14,7 @@ Last commit touching any scanned file: `ebf3ab419551771ff05a2c967e0b6eb92e9cb43f
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:bbcaedbb3b05fdc8fdc455f502591ff4ad7142c55fd3cea313a4806d9bf209a7` |
 | `src/cartridges/the_board/cartridge.hpp` | `sha256:cb5385c15fc5a0ba2023f42a516ab09bd7c2d32bc8e7ef922d5a4e4eb70ad358` |
 | `src/cartridges/the_board/surface/patch_system.hpp` | `sha256:1be3569e8b942fccc6a5ad003a6f227b2c413897b33a947bdcfa986947653b3c` |
-| `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:67d0c75fd5f2c9037b90f087a7881b33b55479b82863419ff798937b62144c76` |
+| `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:1946676d19b94cef38995eae403a307e3cecbb62eca3aa393c1b13815ef56504` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
 | `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:859562b79ae8143626270bebc9bc909ae672088914eb6a4527aef04518198c94` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:9891302e1bf20ec4a71b8866d420725dc4405b8f99473ca04308465444a7a61d` |
