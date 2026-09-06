@@ -1543,6 +1543,8 @@ namespace t7 {
 
                         point_.portal_trigger = -1;
                         pendingSwapSlot_ = -1;          // LEAP_1 — the wave's promise dies with the world
+                        inputState_.pulse_pending = false;  // HOLD_0 — and so does a word held for a landing
+                        inputState_.swap_pending  = false;  //          in a world that is leaving
                         point_.bubble.summit = false;   // REACH_2 — the sensor rests dark across a world change
                         // THE AUTHORED PRESENT (POINT_1): at a teleport the
                         // CPU is the author of the new present — the same
@@ -2454,23 +2456,31 @@ namespace t7 {
                 // input organ (InputState::pulse_pending) and is spent here,
                 // where the clock and the point are both in hand — the drain
                 // idiom the analog deltas already use, not a mid-event write.
-                if (inputState_.pulse_pending) {
+                // HOLD_0 — A WORD SAID IN THE AIR IS SAID ON LANDING. The
+                // ring is a thing the ground does; a body aloft has no
+                // ground to ring. So the pulse (and the reach the ring
+                // carries) stays RAISED until the harvest says the feet are
+                // down — nothing is refused, nothing is lost, and a press at
+                // the apex lands with the body. The clock is the air clock
+                // (agent.t, LEAP_0), a few frames stale by the readback;
+                // the ring arrives that much after the feet, which no eye
+                // reads. A bool holds one word, not a count: three presses
+                // aloft are one ring on landing.
+                const bool feet_down =
+                    agent_state_.slots[player_.possessed_slot].t == 0.0f;
+                if (inputState_.pulse_pending && feet_down) {
                     inputState_.pulse_pending = false;
                     issue_pulse_from_point();
                 }
                 // LEAP_1 — THE OTHER WORD, SPENT WHERE THE FIRST ONE IS. Both
                 // fingers rang the ground above; here the ring is given
-                // something to carry. Armed only from the GROUND: the swap is
-                // a thing you do standing, and a body taken mid-flight would
-                // inherit an arc it never launched. P6 — every arm and every
-                // refusal speaks, and the refusals are the ones
-                // try_possess_nearest used to print.
-                if (inputState_.swap_pending) {
+                // something to carry. HOLD_0 — the aloft refusal became the
+                // wait above: the reach is armed standing because it is
+                // spent standing. P6 — every arm and every refusal speaks.
+                if (inputState_.swap_pending && feet_down) {
                     inputState_.swap_pending = false;
                     if (transitionPhase_ != TransitionPhase::IDLE) {
                         std::cout << "[Swap] blocked (mid-transition)\n";
-                    } else if (agent_state_.slots[player_.possessed_slot].t != 0.0f) {
-                        std::cout << "[Swap] blocked (aloft)\n";
                     } else {
                         const int s = find_possess_target(agent_state_, &agents_deps_);
                         if (s < 0) {
