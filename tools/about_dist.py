@@ -162,7 +162,7 @@ def fill(template, subs):
             out = out.replace("/* __MENU_CSS__ */", val)   # DOORS_0 — the sandwich's rules, one home
         else:
             out = out.replace(marker, val)
-    for token in ("__HERO__", "__STRIP__", "__FOLLOW__",
+    for token in ("__HERO__", "__STRIP__",
                   "__HERO_DATA__", "__EMAIL__", "__ROUTES__", "__MENU_CSS__"):
         if token in out:
             say("REFUSE  template placeholder %s did not substitute" % token)
@@ -193,7 +193,6 @@ def main():
         "MENU_CSS": routes.menu_css(),                        # DOORS_0
         "HERO": hero_tag,
         "STRIP": build_strip(Image, site, preview),
-        "FOLLOW": routes.follow_html(indent="    "),          # DOORS_3 — the footer's own menu
         "HERO_DATA": hero_data,
         "EMAIL": site["email"],
     })

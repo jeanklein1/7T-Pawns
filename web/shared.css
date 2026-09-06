@@ -124,12 +124,3 @@ footer a:hover { color: var(--ink); }
   transition: border-color 200ms ease;
 }
 .rule:hover, .rule:focus-visible { border-color: var(--ink); }
-
-/* ── DOORS_3 — Follow the work: the footer's own menu ──────────────── */
-/* The footer is a wrapping flex ROW (justify-content: space-between),
-   so the nav takes a line of its own explicitly: flex 0 0 100% rather
-   than width alone, which flex-shrink could still take back. */
-footer .follow { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s3); align-items: baseline; flex: 0 0 100%; margin-bottom: var(--s3); }
-footer .follow .band-label { margin: 0; }
-footer .follow a { text-decoration: none; color: var(--dim); }
-footer .follow a:hover, footer .follow a:focus-visible { color: var(--ink); }

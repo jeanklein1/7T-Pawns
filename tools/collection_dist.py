@@ -320,8 +320,7 @@ def fill(template, index_html, works_html):
     # shell and about/ also use.
     out = out.replace("<!-- __ROUTES__ -->", routes.nav_html("site", "/collection/", indent="      "))
     out = out.replace("/* __MENU_CSS__ */", routes.menu_css())
-    out = out.replace("<!-- __FOLLOW__ -->", routes.follow_html(indent="    "))   # DOORS_3
-    for token in ("__INDEX__", "__WORKS__", "__ROUTES__", "__MENU_CSS__", "__FOLLOW__"):
+    for token in ("__INDEX__", "__WORKS__", "__ROUTES__", "__MENU_CSS__"):
         if token in out:
             say("REFUSE  template placeholder %s did not substitute" % token)
             sys.exit(1)
