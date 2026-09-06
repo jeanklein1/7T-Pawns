@@ -685,6 +685,10 @@ against it.
 swap_pending are spent only when the air clock reads zero; teardown
 lowers both. One ring per landing however many presses.
 
+**SPREAD_0 — the obelisk opens.** Base half 48 -> 84 (flank 60 -> 45
+degrees, walkable); truncation 0.10 -> 0.06 (cap 5.04 wu = the door);
+aspect sigma tightened.
+
 ## SKIRT_WELD_1/P — THE PERIMETER SKIRT HANGS FROM THE BASE BAND (landed; one seam held)
 
 Sibling of SKIRT_WELD_1 on 7T-Music, landed there at `be0eb28f`. The patch
