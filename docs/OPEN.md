@@ -63,6 +63,57 @@ world); merge. Nothing below substitutes for a frame on a screen.
 
 ### Residuals — VISIT_0
 
+- **A VISIT SURVIVES THE WORLD TEARDOWN. Fix this before the visual gate.**
+  Found by post-landing review, confirmed by two independent reviewers and
+  by reading the tree. `PilotState` is the only driver organ added to the
+  cartridge WITHOUT a teardown release. The transition machine's TEARDOWN
+  arm clears every organ that holds the old world's coordinates —
+  `camera_pose_ = CameraPose{}` (whose banner says exactly why: "the first
+  sweep of a new world read the last world's camera"), `teardown_gallery`
+  zeroing all `painting_slots`, `point_` teleported to `Idle::PAWN_POS` —
+  and does not touch `pilot_`. The pilot's four release conditions cannot
+  catch it: `point_.host` is written in exactly ONE place in the tree
+  (`possess()`), and a transition does not call it, so the host is still
+  PAWN; `time_state_.seconds` is monotonic across worlds.
+  **The failure:** begin a visit, cross an arch mid-walk. The pawn teleports
+  to (0,0) in a new world, `pilot_.active` is still true, `pilot_.tx/tz`
+  still hold the dead world's standing point, and the pilot resumes
+  authoring `move_x/move_z` and `look_az_delta` — walking the pawn under
+  machine control across a brand-new world toward a coordinate that no
+  longer exists, for up to `PILOT_STALL_S` (6 s). And the stall is not even
+  a guaranteed bound: if the post-teleport distance lands below
+  `best_d - PILOT_PROGRESS_WU`, the progress branch re-latches every frame
+  and the pilot walks the whole way, printing `[Visit] arrived: slot N` at a
+  spot with no picture. Meanwhile `set_visit_view` keeps telling the pane it
+  is walking, while `gallery_roll` correctly reports an empty wall — the two
+  halves disagree in public.
+  **The fix, one line, in the TEARDOWN arm beside `camera_pose_ = CameraPose{}`:**
+  `pilot_ = PilotState{};`
+  Left unapplied deliberately: it adds a fifth release condition, and the
+  pilot's other four each carry a witness line (P6). Whether this one speaks
+  — `[Visit] released: the world changed` — is Claude's wording and Jean's
+  call, not the executor's. One edit either way.
+- **The stride never eases to the documented quarter.** `pilot_tick` returns
+  for every `d <= PILOT_ARRIVE_WU` (2.5), so the gain is computed only when
+  `d > 2.5`, giving `d / PILOT_SLOW_WU > 0.3125`. The `std::max(0.25f, ...)`
+  floor is therefore unreachable and the true stride minimum is 0.3125, not
+  the quarter `PILOT_SLOW_WU`'s comment promises. Dead clamp, overstated
+  comment; harmless to the walk. Either lower `PILOT_ARRIVE_WU` below 2.0 or
+  correct the comment.
+- **The roll's 2 s refresh destroys keyboard focus.** Measured in headless
+  Chromium: focus a caption, wait one refresh, and `document.activeElement`
+  is `<body>` — `refreshRoll` rebuilds the list with `rollEl.innerHTML = ''`,
+  so the Photographs pane is unusable by keyboard. The cheap fix is to
+  remember `document.activeElement.dataset.visit` before the rebuild and
+  re-focus that button after it; the thorough one is to patch rows in place
+  rather than replace them. Same family as the polling residual below.
+- **`gallery_roll` emits `nan`/`inf` verbatim if any field is non-finite,**
+  which is not valid JSON and would make `JSON.parse` throw for the WHOLE
+  list, not one row. The shell catches it (`note('[shell] roll: ' + err)`) so
+  the pane freezes rather than crashing, and nothing in the tree is known to
+  produce a non-finite slot — recorded as the fragility it is, not as a
+  live defect. Truncation, by contrast, is NOT reachable: with every float
+  field at FLT_MAX the record needs 232 of `buf`'s 256 bytes (measured).
 - The pilot's seven numbers (`PILOT_ARRIVE_WU`, `PILOT_SLOW_WU`,
   `PILOT_PROGRESS_WU`, `PILOT_TURN_RATE`, `PILOT_STALL_S`,
   `PILOT_STANDOFF_MULT`, `PILOT_STANDOFF_MIN_WU`) are control-panel
