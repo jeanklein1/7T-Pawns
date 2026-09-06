@@ -456,24 +456,10 @@ inline void on_touch_tap_right(InputDeps* c) {
 // register prices the rename.
 inline void request_radial_pulse(InputDeps* c) {
     c->inputState_.jump_pending = true;    // PULSE_SPLIT_0 — the leap alone; the ring left with the second word
-
-    // REACH_2 — THE RIDE'S WORD IS THIS ONE, and the routing lives
-    // HERE — the player's door, both mouths (SPACE, the lone RIGHT tap) —
-    // so a musical pulse riding the bus (emit_radial_pulse) can never
-    // board. PULSE_SPLIT_0 took the ring off this door, so a boarding no
-    // longer arrives announced by a wave: on the ground the gesture is the
-    // leap; on a tall summit the same press boards instead — the ribbon may
-    // be anywhere, the ease is the abduction; in the sky it marks the
-    // departure. The summit check is a COURTESY (no refusal spam on every
-    // ground leap) — the LAW stays in
-    // possess(), underneath, where the panel row answers to it too.
-    // CAMERA host earns nothing, as everywhere.
-    if (c->point_.host == PointHost::RIBBON) {
-        possess(c, PointHost::PAWN);
-    } else if (c->point_.host == PointHost::PAWN
-               && c->point_.bubble.summit) {
-        possess(c, PointHost::RIBBON);
-    }
+    // REWIRE_0 — and the RIDE left with it. The shell has taught "pulse to
+    // fly / pulse to land" since REACH_1, while the routing sat on this
+    // door — which stopped being the pulse at PULSE_SPLIT_0. The wiring
+    // now answers the words: the ride is request_pulse_swap's, below.
 }
 
 // LEAP_1 — THE OTHER WORD'S OWNER DOOR (CAPS_LOCK + the right pair tap).
@@ -482,9 +468,29 @@ inline void request_radial_pulse(InputDeps* c) {
 // drain, so the ring and the arming share a frame and the wave the viewer
 // sees is the wave the swap is timed to.
 //
-// The ribbon routing is deliberately NOT here — boarding and dismounting
-// are what the body does with itself, which is the leap's door above.
+// REWIRE_0 — AND THE RIDE ANSWERS THIS DOOR NOW, because this is the
+// pulse and the shell's own words are "pulse to fly / pulse to land"
+// (web T7_RIDE, REACH_1). LEAP_1 had reasoned the boarding onto the
+// body's door; Jean's stamp is that the gesture the hint teaches must be
+// the gesture that works — wiring a verb to a door the words don't name
+// is the spaghetti. On a summit the press boards; riding, it lands; both
+// arrive ANNOUNCED BY A WAVE again (PULSE_SPLIT_0 had silenced the
+// boarding by accident of the split). When the ride claims the press the
+// REACH is not raised — a landing is not a swap, and the summit's cap
+// (POINT_SUMMIT_RADIUS, 5 wu) is smaller than the reach, so a body could
+// stand inside both. The LAW stays in possess(), underneath; the checks
+// here are the courtesy they always were. CAMERA host earns nothing.
 inline void request_pulse_swap(InputDeps* c) {
+    if (c->point_.host == PointHost::RIBBON) {
+        c->inputState_.pulse_pending = true;         // the wave marks the landing
+        possess(c, PointHost::PAWN);
+        return;
+    }
+    if (c->point_.host == PointHost::PAWN && c->point_.bubble.summit) {
+        c->inputState_.pulse_pending = true;         // the boarding is announced again
+        possess(c, PointHost::RIBBON);
+        return;
+    }
     c->inputState_.pulse_pending = true;
     c->inputState_.swap_pending  = true;
 }

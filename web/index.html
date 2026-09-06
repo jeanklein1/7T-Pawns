@@ -603,11 +603,21 @@
         el.appendChild(img); el.appendChild(txt);
         document.body.appendChild(el);
       }
+      var landT = 0;  // REWIRE_0 — the landing hint's own clock
       return {
         set: function (mode) {
           if (!el) { if (!document.body) return; build(); }
+          if (landT) { clearTimeout(landT); landT = 0; }
           if (mode === 1)      { txt.textContent = 'pulse to fly'; el.style.opacity = '1'; }
-          else if (mode === 2) { txt.textContent = 'pulse to land'; el.style.opacity = '1'; }
+          else if (mode === 2) {
+            // REWIRE_0 — "pulse to land" TEACHES AND LEAVES: five seconds,
+            // then the sky is yours. The C++ edge gate (rideFaceShown_)
+            // calls once per boarding, so the clock runs once per flight;
+            // any other face cancels it. The shell owns the look — the
+            // law (which press lands) is untouched.
+            txt.textContent = 'pulse to land'; el.style.opacity = '1';
+            landT = setTimeout(function () { el.style.opacity = '0'; landT = 0; }, 5000);
+          }
           else                 { el.style.opacity = '0'; }
         },
         setImage: function (url) {

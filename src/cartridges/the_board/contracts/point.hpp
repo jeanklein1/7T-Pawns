@@ -84,7 +84,7 @@ inline constexpr float POINT_BUBBLE_RADIUS = 80.0f;   // world units; boot-pinne
 // and the pulse boards, ribbon anywhere; the mount ease IS the
 // abduction. "Tall" is the pyramid's own measure, not its tier label.
 inline constexpr float POINT_SUMMIT_MIN_HEIGHT = 35.0f;  // wu — a pyramid this tall is a door: colossi (~78±14) and temples (~45±8) qualify; obelisks (~28±6) stay dark unless truly towering
-inline constexpr float POINT_SUMMIT_RADIUS     = 15.0f;  // wu — xz disc around the apex that counts as "the top" (~upper quarter of a mean colossus footprint)
+inline constexpr float POINT_SUMMIT_RADIUS     = 5.0f;   // wu — xz disc around the apex that counts as "the top". REWIRE_0: 15 -> 5, Jean's stamp — the door is the CAP of the frustum, not the upper slope; FRUSTUM_0 cuts every tier's cap to ~this radius.
 struct PointBubble {
     float radius = POINT_BUBBLE_RADIUS;   // the awareness bound (the portal's vertical gate today)
     // REACH_2 — the second sensor, re-aimed at the GROUND: TRUE means a
