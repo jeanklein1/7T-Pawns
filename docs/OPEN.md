@@ -119,6 +119,58 @@ it.** Every test this round asserts `getClientRects().length` and
   Write has a door to the site — because the sections they pointed at are
   gone. Deliberate; named so a later round does not read it as a loss.
 
+### What the adversarial review found after landing (R1–R3)
+
+Six finders and a completeness critic over the landed diff; every claim
+re-measured here before acting. Beyond the `[hidden]` rule above:
+
+- **The Send button was not a button in a row.** `.menu > nav button`
+  (0,1,2) makes every button in the dropdown a full-width left-aligned
+  block — right for a menu item, wrong for Send, which measured 260 px
+  and stacked ABOVE its status line. `.pane .row`'s flex could not help:
+  it needs a `.pane` ancestor the site sandwich has not got. **My U5
+  witness asked whether the box was typable and whether it posted; it
+  never asked what the button looked like.**
+- **The dropdown had no height cap** while the engine's pane has carried
+  one since DOORS_0. Capped at 80vh; verified on an 844×390 viewport.
+- **`build_writings()` could refuse after the about page had shipped and
+  before the `dist/text/` sweep**, leaving exactly the half-written dist
+  the sweep exists to prevent. It is a pure read; it now runs before any
+  write. Reproduced with a broken writing, then disproved.
+- **The slug was the one unescaped interpolation** in a function that
+  escapes its title and its body. A filename can hold a quote.
+- **The 404 page still said *collection* and offered no Writings.** It is
+  served at every wrong address and does NOT read `web/routes.json` — its
+  links are absolute because it answers from everywhere — so only reading
+  it could catch this. `COPY.md` now carries it and says so.
+- **`setLabel` and the collection page's three `footer` rules** were dead
+  matter, removed.
+
+### Still open after the review
+
+- **`#reload` is protected only by the UA rule.** `web/index.html`'s
+  `<button class="btn" id="reload" hidden>` works because `.btn` declares
+  no display — but `a.btn { display: inline-block }` sits three lines
+  away, and the card's other door is already an anchor. Make `#reload` an
+  anchor and it is permanently visible on a card that passes
+  `offerReload=false`. Outside the sandwich, so `menu.css`'s rule does not
+  reach it; `.layer[hidden]` is the local precedent to follow.
+- **The no-JS write path ends on a raw JSON body.**
+  `functions/api/message.js` answers `application/json`, so a visitor with
+  JavaScript off is navigated to `{"ok":true}` with no way home.
+  Pre-existing — the deleted band had it too — but the box put it on all
+  three site pages. Fixing it means content negotiation in a function this
+  round did not touch.
+- **The colophon now appears on one site page in three** (`/about/`
+  only). Ruling 8 asked for the name to appear once and said nothing
+  about the colophon. A visual row for Jean.
+- **The write box is a `<form>` inside a `<nav>` landmark**, so a screen
+  reader announces the message form as navigation. Valid HTML, odd
+  semantics; the alternative is a second landmark beside the nav.
+- **`build_writings` mints article ids nothing links to.** `writings.json`
+  carries only `title` and `html`, so neither the page nor the pane can
+  deep-link a piece. Registered, not a defect: no words ask for it yet.
+
 ### Where the witnesses could not reach
 
 `assets/about` holds no hero images and the collection holds 0 works in
@@ -142,7 +194,7 @@ became the site itself: seven items, seven panes, one door out of each.
 | Every item on the menu opens a pane | `web/routes.json` — seven engine panes; the `website` route died |
 | Controls is its own pane, two platforms, one shown | `.pane[data-pane="controls"]`, `showPlatform()`, `CONTROLS_DEFAULT` |
 | Follow the work has one home and two readers | `web/follow.json` → `routes.follow_html()` → every site footer and the Follow pane |
-| Text is its own page | `web/text/index.html`; `about_dist` builds `dist/text/` and `text.json` |
+| Text is its own page | *(superseded at DOORS_4: `/text/` became `/writings/`, plural, and retired by 301)* |
 | The world door says *Navigate the world* and nothing under it | `web/about/index.html`'s first door |
 | Authors and elsewhere leave | the two bands, `build_authors`, `build_links` and their CSS are gone |
 
@@ -179,7 +231,8 @@ unit was blocked; it survives untouched.
 at 390×844 with a coarse pointer — 32 assertions each, 64/64. The
 platform defaults to the visitor's own device and one tap reaches the
 other; the six verbs read in order; About fills from the day's pick with
-the `about/` prefix and links to that work; Text fills from `text.json`;
+the `about/` prefix and links to that work; Text filled from `text.json`
+(Writings reads `writings.json` since DOORS_4);
 Follow shows five https links; and DOORS_2's key blocker stays fixed
 (keydown withheld only while the menu is open, keyup never withheld, W
 reaches the world once closed, Space does not re-open it). `about_dist`
@@ -217,11 +270,11 @@ was run end to end into a scratch dist against stubbed hero images.
   `<meta name="description">` still ends "WebGPU, in the browser.", and
   it is Jean's copy to give. (The Board pane's "drawn by your GPU" died
   with the old pane.)
-- **`text.json` carries the article's placeholder HTML comment** as
-  content — inert and invisible, and it dies when Jean's copy lands.
-- **`/text/` was given the `no-cache` rule `/about/` has**, beyond the
-  handoff: it is the same shape of page (a constant name whose content
-  changes) and `web_dist`'s root `_headers` had no clause for it.
+- ~~`text.json` carries the article's placeholder HTML comment~~ —
+  **CLOSED at DOORS_4**: `text.json` is gone; `writings.json` carries no
+  comment, because `build_writings` emits only the stanzas it parsed.
+- ~~`/text/` was given the `no-cache` rule `/about/` has~~ — **CLOSED at
+  DOORS_4**: the rule followed the page to `/writings/`.
 - **The engine menu has no plain link out any more.** The `website`
   route died by ruling, and every remaining engine route is a pane; each
   pane carries its own `a[data-out]`. Deliberate, and named here because
@@ -239,7 +292,8 @@ All three leave the moment Jean's gates close them.
 
 `assets/about` holds no hero images in this checkout and the collection
 holds 0 works, so a real `python3 tools/about_dist.py` cannot run here:
-the text page's build, `about.json`'s new shape and `dist/text/` were
+the text page's build (now the writings page's), `about.json`'s new
+shape and `dist/text/` (now `dist/writings/`) were
 proven against stubbed heroes and a stubbed strip in a scratch dist, and
 the About pane against a hand-written `about.json` of the same shape.
 On Jean's machine both run for real. `collection_gate: PASS` again proved
