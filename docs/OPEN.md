@@ -522,6 +522,25 @@ being company and a second right finger may leap mid-look (R3); renaming
 `request_radial_pulse`, which raises the leap and not the ring since
 PULSE_SPLIT_0 (its own register priced this).
 
+**FPV_TAP_0 — the glass carries a camera verb on each half.** Two left
+fingers landing and lifting as one toggle FPV; CTRL is the other mouth
+and toggle_fpv_mode is untouched. The gesture mirrors the right-half
+pair with one added conjunct — the fingers must ARRIVE together —
+because a resting stick is unslopped and every aura tap would
+otherwise read as half a pair. The aura is unchanged in every case it
+owns. `TouchTapLeft` and `TouchTapPulse`'s enum comments were corrected
+in passing: the first is a second-finger tap, and the second gained a
+side in LEAP_1.
+
+**Jean's readings:** two left fingers together toggle the eye; hold the
+stick and tap a second left finger — still the aura, still no FPV;
+drive and tap — still the aura; a left pair that drags does nothing.
+
+**Priced, not built:** an FPV gesture on the right half (there is no
+room — the lone tap leaps and the pair rings); a visual hint that the
+left half carries two verbs; a longer arrival window if two-finger
+taps read as auras on Jean's hand.
+
 ## SKIRT_WELD_1/P — THE PERIMETER SKIRT HANGS FROM THE BASE BAND (landed; one seam held)
 
 Sibling of SKIRT_WELD_1 on 7T-Music, landed there at `be0eb28f`. The patch
