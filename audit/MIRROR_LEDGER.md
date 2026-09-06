@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `fb14a36f693cc13ae0bc8adeb63a6d6c6658ca95` |
-| | LEAP_1 U4 — the ledgers follow: 736 -> 752, two rows, one max raised |
+| source commit | `720d662d4fbae1da88b00d0ac2c61a57b9ef3381` |
+| | LEAP_2 U1 — the split returns: the pulse rings, the leap leaps |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:928c8504a64663cdcf6b2648f6cdd2c8fbbbe1adf1e43c1f9a58015a7c0f8823` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:c776a51167c445969661b2bcbaeba2e18373585cfab26af387491dfee8cfd8ea` |

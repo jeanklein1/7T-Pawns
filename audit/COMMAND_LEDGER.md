@@ -5,8 +5,8 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `58251f0a4f3f711d0109d014f5135fadefd729b7`
-(LEAP_1 U3 — the second word reaches for a body; the swap lands when the wave does)
+Last commit touching any scanned file: `f78316aa5894ba496aaa744ea152f9db02aa8c1a`
+(LEAP_2 U2 — solitude is a half's, not the glass's: the stick stops silencing the far thumb)
 
 | file scanned | sha256 |
 |---|---|
@@ -19,7 +19,7 @@ Last commit touching any scanned file: `58251f0a4f3f711d0109d014f5135fadefd729b7
 | `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:6867c90303e0e93d13525ec42a4c247a32694309ac8b74e0834eda1f4c6e86d3` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:9891302e1bf20ec4a71b8866d420725dc4405b8f99473ca04308465444a7a61d` |
 | `src/the_board.cpp` | `sha256:12a89ca138da2724f66ae4fd646e2a773caaa169cba3998a9323f14c37baad2b` |
-| `src/console/console.hpp` | `sha256:6ac66e6f556b31312a830a335cbc776fd9f7a12a505698e215f9ce300f09e861` |
+| `src/console/console.hpp` | `sha256:b164d8fe82494eedb19e4e96484ab89cc15b33e8edc4965b4ae18fc8b76df5f6` |
 | `tools/command_census.py` | `sha256:09a61baed23a5caeedb44ee293461875f2e759832353f887187be35a7ae8d7cb` |
 
 The handoff named `render_passes.hpp` and `renderer.hpp`; the
@@ -94,13 +94,13 @@ every landing.
 
 | # | enclosing function | site |
 |---|---|---|
-| 1 | `initSurface` | `src/console/console.hpp:1383` |
-| 2 | `reassert_canvas_target` | `src/console/console.hpp:1540` |
-| 3 | `begin_frame` | `src/console/console.hpp:1679` |
+| 1 | `initSurface` | `src/console/console.hpp:1392` |
+| 2 | `reassert_canvas_target` | `src/console/console.hpp:1549` |
+| 3 | `begin_frame` | `src/console/console.hpp:1688` |
 
 The boot-time site configures the surface once; the per-frame
 trigger is the resize branch of `Console::begin_frame`, quoted
-verbatim (`src/console/console.hpp:1669`) — its branch is what feeds the `[FRAME_1]`
+verbatim (`src/console/console.hpp:1678`) — its branch is what feeds the `[FRAME_1]`
 print. This is the debounce ruling's evidence, and it reads the
 other way now: the size test is a bare not-equal on the capped
 framebuffer size, but it only ARMS the reconfigure — the branch
