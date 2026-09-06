@@ -895,6 +895,17 @@
       <div class="peek" id="peek" aria-live="polite"></div>
       <a class="out" data-out target="_blank" rel="noopener" href="/collection/">Open the collection in a new tab →</a>
     </div>
+    <!-- VISIT_0 — THE ROLL. A directory of what the world has hung of its
+         own photographs; choosing one walks the pawn to it. The pictures
+         never leave the GPU: the list is the gallery's slot array read
+         through the registry's window (gallery_roll). Placeholder words. -->
+    <div class="pane" data-pane="roll" hidden>
+      <button type="button" class="back" data-back>← menu</button>
+      <p class="pane-head">Photographs</p>
+      <p class="pane-note">What the world has hung of its own pictures. Choose one and the pawn walks to it; touch anything to stop.</p>
+      <ol class="roll" id="roll"></ol>
+      <p class="roll-state" id="rollState" hidden></p>
+    </div>
   </details>
 
   <script>
@@ -1401,7 +1412,10 @@
           catch (err) { note('[shell] menu: ' + name + ' not in this build'); return null; }
         }
         C = {
-          pace: w('shell_pace', null, ['number'])
+          pace:     w('shell_pace', null, ['number']),
+          roll:     w('gallery_roll', 'string', []),          // VISIT_0
+          visit:    w('gallery_visit', null, ['number']),     // VISIT_0
+          visiting: w('gallery_visiting', 'number', [])       // VISIT_0
         };
         return C;
       }
@@ -1414,6 +1428,7 @@
         panes.forEach(function (p) { p.hidden = (p.dataset.pane !== id); });
         menu.classList.toggle('paned', !!id);
         if (id === 'collection') loadPeek();
+        if (id === 'roll') startRoll(); else stopRoll();     // VISIT_0
       }
       function loadPeek() {
         if (peekLoaded || !peekEl) return;
@@ -1445,10 +1460,58 @@
           note('[shell] peek: ' + err);
         });
       }
+      // ═══ VISIT_0 — THE ROLL: WHAT THE WORLD HAS HUNG OF ITS OWN PICTURES
+      // A directory, not a gallery: the pictures stay in the world; the
+      // list takes you to them. gallery_roll() is the gallery's slot array
+      // read through the registry's window; gallery_visit(slot) is a door
+      // with a parameter; gallery_visiting() says whether a walk is on.
+      // Refreshed every two seconds while the pane is open: the world
+      // rehangs, and a list that does not move is a list of ghosts.
+      var rollEl = document.getElementById('roll');
+      var rollState = document.getElementById('rollState');
+      var rollTimer = null;
+      function compass(b) {            // bearing from the point, 0 = +Z, clockwise. Words, not law.
+        var n = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+        return n[Math.round((((b % 360) + 360) % 360) / 45) % 8];
+      }
+      function caption(w) {
+        var age = w.age < 0 ? '' : (w.age < 90 ? Math.round(w.age) + ' s ago' : Math.round(w.age / 60) + ' min ago');
+        return [w.tier, Math.round(w.d) + ' wu ' + compass(w.b), age, w.wall ? 'on a wall' : 'on the ground']
+          .filter(Boolean).join(' · ');
+      }
+      function refreshRoll() {
+        if (!rollEl || !rollState) return;
+        var c = abi();
+        if (!c || !c.roll) { rollEl.innerHTML = ''; rollState.hidden = false; rollState.textContent = 'Not in this build.'; return; }
+        var list;
+        try { list = JSON.parse(c.roll()); } catch (err) { note('[shell] roll: ' + err); return; }
+        rollEl.innerHTML = '';
+        if (!list.length) { rollState.hidden = false; rollState.textContent = 'Nothing hung yet — walk a while.'; return; }
+        list.sort(function (a, b) { return a.d - b.d; });
+        list.forEach(function (w) {
+          var li = document.createElement('li');
+          var b = document.createElement('button');
+          b.type = 'button'; b.dataset.visit = w.s; b.textContent = caption(w);
+          li.appendChild(b); rollEl.appendChild(li);
+        });
+        var v = c.visiting ? c.visiting() : -1;
+        rollState.hidden = v < 0;
+        if (v >= 0) rollState.textContent = 'Walking to one — touch anything to stop.';
+      }
+      function startRoll() { refreshRoll(); if (!rollTimer) rollTimer = setInterval(refreshRoll, 2000); }
+      function stopRoll()  { if (rollTimer) { clearInterval(rollTimer); rollTimer = null; } }
+
       menu.addEventListener('click', function (e) {
         var t = e.target;
         if (!t || !t.closest) return;
         if (t.closest('[data-back]')) { showPane(null); return; }
+        var v = t.closest('button[data-visit]');                             // VISIT_0
+        if (v) {                                                              // choosing one closes the menu:
+          var c = abi();                                                      // the walk happens in full view,
+          if (c && c.visit) c.visit(+v.dataset.visit);                        // the world un-idles
+          menu.open = false;
+          return;
+        }
         var b = t.closest('button[data-pane]');
         if (!b) return;
         showPane(b.dataset.pane);

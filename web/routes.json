@@ -1,5 +1,6 @@
 [
   { "id": "controls",   "label": "Controls",       "engine": "pane" },
+  { "id": "roll",       "label": "Photographs",    "engine": "pane" },
   { "id": "about",      "label": "About",          "href": "/about/" },
   { "id": "collection", "label": "The collection", "href": "/collection/", "engine": "pane" },
   { "id": "text",       "label": "Text",           "href": "/about/#text" },
