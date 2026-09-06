@@ -704,6 +704,10 @@ entropy) and a hit flips the block — sized to persist under Vote,
 boil under Conway. Spawn chance 0.60 -> 0.70. Jean's dials:
 GOL_SPORE_PER_ZONE_TICK, GOL_SPORE_BLOCK (world.wgsl).
 
+**RISE_0 — doors across themes.** Pyramid spawn_weight 0.8 / 1.5 /
+0.8 / 0.8 / 0.7 (was 0.4 / 1.5 / 0.3 / 0.5 / 0.4); SPAWN_CHANCE holds
+at 0.050 against the ceiling of 8. Fresh-world reading.
+
 ## SKIRT_WELD_1/P — THE PERIMETER SKIRT HANGS FROM THE BASE BAND (landed; one seam held)
 
 Sibling of SKIRT_WELD_1 on 7T-Music, landed there at `be0eb28f`. The patch
