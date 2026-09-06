@@ -6,3 +6,8 @@
 /main/   /about/   302
 /world   /         302
 /world/  /         302
+
+# DOORS_4 — /text/ retired into /writings/. 301, unlike the aliases
+# above: this path is not moving again, and burning it in is the point.
+/text     /writings/   301
+/text/    /writings/   301

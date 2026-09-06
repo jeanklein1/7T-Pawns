@@ -150,6 +150,39 @@ def build_strip(Image, site, preview):
     return "\n      ".join(tags)
 
 
+def build_writings():
+    """The writings, one home: assets/writings/NN_slug.txt. First line the
+    title, then the body; blank lines break stanzas; line breaks inside a
+    stanza are kept (white-space: pre-line on the page, <br> nowhere).
+    Filename order is page order. Returns (page_html, json_list)."""
+    src = os.path.join(ROOT, "assets", "writings")
+    if not os.path.isdir(src):
+        say("REFUSE  assets/writings is missing — the writings have one home and this is it")
+        sys.exit(1)
+    pieces = []
+    for name in sorted(os.listdir(src)):
+        if not name.endswith(".txt"):
+            continue
+        with open(os.path.join(src, name), encoding="utf-8") as fh:
+            raw = fh.read().replace("\r\n", "\n").strip("\n")
+        lines = raw.split("\n")
+        title = lines[0].strip()
+        body = "\n".join(lines[1:]).strip("\n")
+        if not title or not body:
+            say("REFUSE  %s needs a title line and a body" % name)
+            sys.exit(1)
+        stanzas = [s.strip("\n") for s in body.split("\n\n") if s.strip()]
+        html = "\n".join("<p>%s</p>" % esc(s) for s in stanzas)
+        slug = os.path.splitext(name)[0]
+        pieces.append({"slug": slug, "title": title, "html": html})
+    if not pieces:
+        say("REFUSE  assets/writings holds no .txt — nothing to build")
+        sys.exit(1)
+    page = "\n".join('<article id="%s">\n<h2>%s</h2>\n%s\n</article>'
+                     % (p["slug"], esc(p["title"]), p["html"]) for p in pieces)
+    return page, [{"title": p["title"], "html": p["html"]} for p in pieces]
+
+
 def fill(template, subs):
     out = template
     for key, val in subs.items():
@@ -162,7 +195,11 @@ def fill(template, subs):
             out = out.replace("/* __MENU_CSS__ */", val)   # DOORS_0 — the sandwich's rules, one home
         else:
             out = out.replace(marker, val)
-    for token in ("__HERO__", "__STRIP__",
+    # DOORS_4 — THE TUPLE IS THE ONLY GUARD. fill() checks the OUTPUT, so a
+    # token absent from a given template simply never appears and passes;
+    # but a token PRESENT and unsubstituted ships silently unless it is
+    # named here. __WRITINGS__ and __WORLD__ join for that reason.
+    for token in ("__HERO__", "__STRIP__", "__WRITINGS__", "__WORLD__",
                   "__HERO_DATA__", "__EMAIL__", "__ROUTES__", "__MENU_CSS__"):
         if token in out:
             say("REFUSE  template placeholder %s did not substitute" % token)
@@ -231,27 +268,36 @@ def main():
                    "hero": hero_data,          # what build_hero returned: the day-indexed list the page itself rotates
                    "email": site["email"]}, fh)
 
-    # DOORS_3 — THE TEXT PAGE, built here because this script already
-    # owns the site's chrome (routes, menu css, follow, fonts). Its one
-    # home is web/text/index.html; text.json is the engine's read of it.
-    text_tpl = os.path.join(WEB, "text", "index.html")
-    with open(text_tpl, encoding="utf-8") as fh:
-        text_page = fill(fh.read(), {
-            "ROUTES": routes.nav_html("site", "/text/", indent="      "),
+    # DOORS_4 — THE WRITINGS PAGE, plural and growing. One home for the
+    # texts (assets/writings); this page and writings.json are built from
+    # the same read, so the engine's pane and the site can never disagree,
+    # and a new text is one new file plus a deploy.
+    w_page_html, w_json = build_writings()
+    w_tpl = os.path.join(WEB, "writings", "index.html")
+    with open(w_tpl, encoding="utf-8") as fh:
+        w_page = fill(fh.read(), {
+            "ROUTES": routes.nav_html("site", "/writings/", indent="      "),
             "MENU_CSS": routes.menu_css(),
-            "FOLLOW": routes.follow_html(indent="    "),
+            "WRITINGS": w_page_html,
         })
-    text_dist = os.path.join(DIST_ROOT, "text")
-    os.makedirs(text_dist, exist_ok=True)
-    with open(os.path.join(text_dist, "index.html"), "w", encoding="utf-8") as fh:
-        fh.write(text_page)
-    m = re.search(r'<article class="text" id="text">(.*?)</article>', text_page, re.S)
-    if not m:
-        say("REFUSE  the text page has no <article class=\"text\"> — the engine's Text pane would have nothing to show")
-        sys.exit(1)
-    with open(os.path.join(text_dist, "text.json"), "w", encoding="utf-8") as fh:
-        json.dump({"html": m.group(1).strip()}, fh)
-    say("dist/text/index.html written; text.json beside it")
+    w_dist = os.path.join(DIST_ROOT, "writings")
+    os.makedirs(w_dist, exist_ok=True)
+    with open(os.path.join(w_dist, "index.html"), "w", encoding="utf-8") as fh:
+        fh.write(w_page)
+    with open(os.path.join(w_dist, "writings.json"), "w", encoding="utf-8") as fh:
+        json.dump(w_json, fh)
+    say("dist/writings/index.html written; writings.json beside it (%d piece(s))" % len(w_json))
+
+    # DOORS_4 — AND THE OLD PAGE IS SWEPT, because nothing else will.
+    # DOORS_3 made this script the writer of dist/text/, and web_dist
+    # deletes only "the engine's own names" — text is not among them. So
+    # a dist/ from before this round keeps a live dist/text/index.html
+    # that the deploy would upload and serve, SHADOWING the 301 in
+    # _redirects. The writer that made it is the one that removes it.
+    stale_text = os.path.join(DIST_ROOT, "text")
+    if os.path.isdir(stale_text):
+        shutil.rmtree(stale_text)
+        say("dist/text/ swept — /text/ is a 301 to /writings/ now")
     dst_fonts = os.path.join(DIST_ROOT, "fonts")
     if os.path.isdir(dst_fonts):
         shutil.rmtree(dst_fonts)

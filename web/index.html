@@ -938,18 +938,23 @@
       <div class="peek" id="peek" aria-live="polite"></div>
       <a class="out" data-out target="_blank" rel="opener" href="collection/">Open the collection in a new tab →</a>
     </div>
-    <!-- DOORS_2/DOORS_3 — THE SITE IN MINIATURE. Four panes, two fetches,
-         both at gesture time and never at boot: text/text.json feeds Text
-         (the text page's own words, as it wrote them) and about/about.json
-         feeds About and Write (the statement, the day's painting, and the
-         address). The message door posts to the same function the site
-         opens (functions/api/message.js takes JSON). Words are
-         placeholders; the address is site.json's. -->
-    <div class="pane" data-pane="text" hidden>
+    <!-- DOORS_2/DOORS_4 — THE SITE IN MINIATURE. Four panes, two fetches,
+         both at gesture time and never at boot: writings/writings.json
+         feeds Writings (built from assets/writings, the same read the page
+         gets) and about/about.json feeds About and Write (the statement,
+         the day's painting, and the address). The message door posts to
+         the same function the site opens (functions/api/message.js takes
+         JSON). Words are placeholders; the address is site.json's. -->
+    <div class="pane" data-pane="writings" hidden>
       <button type="button" class="back" data-back>← menu</button>
-      <p class="pane-head">Text</p>
-      <div class="text" id="miniText"></div>
-      <a class="out" data-out target="_blank" rel="opener" href="text/">Read it on the website →</a>
+      <p class="pane-head">Writings</p>
+      <ol class="wlist" id="wList"></ol>
+      <div class="wread" id="wRead" hidden>
+        <button type="button" class="back" id="wBack">← writings</button>
+        <h2 class="wtitle" id="wTitle"></h2>
+        <div class="text" id="wBody"></div>
+      </div>
+      <a class="out" data-out target="_blank" rel="opener" href="writings/">Read on the website →</a>
     </div>
     <div class="pane" data-pane="write" hidden>
       <button type="button" class="back" data-back>← menu</button>
@@ -1500,7 +1505,7 @@
         panes.forEach(function (p) { p.hidden = (p.dataset.pane !== id); });
         menu.classList.toggle('paned', !!id);
         if (id === 'collection') loadPeek();
-        if (id === 'text') loadText();                       // DOORS_3 — the text page's own words
+        if (id === 'writings') loadWritings();               // DOORS_4 — the writings, browsed here
         if (id === 'about' || id === 'write') loadAbout();   // DOORS_2/DOORS_3 — statement, hero, address
         if (id === 'controls') showPlatform(platform);       // DOORS_3
       }
@@ -1510,7 +1515,6 @@
       // to. Text has its own fetch now, below, because text has its own
       // page.
       var about = null, aboutLoading = false;
-      var miniText = document.getElementById('miniText');
       var miniStatement = document.getElementById('miniStatement');
       var miniHero = document.getElementById('miniHero');
       function loadAbout() {
@@ -1550,25 +1554,50 @@
           note('[shell] about: ' + err);
         });
       }
-      // DOORS_3 — TEXT HAS ITS OWN PAGE AND ITS OWN FETCH. about_dist wrote
-      // text.json from the page it wrote, so the pane and /text/ cannot
-      // disagree. Trusted markup, our own template, same as the statement.
-      var text = null, textLoading = false;
-      function loadText() {
-        if (text || textLoading) return;
-        textLoading = true;
-        fetch('text/text.json', { cache: 'no-cache' }).then(function (r) {
+      // DOORS_4 — WRITINGS, BROWSED IN THE WORLD. A list of titles; choose
+      // one and read it here, music on, world breathing behind the blur;
+      // back to the list. writings.json is built from the same files as
+      // the page, so a new text on the site is a new text here.
+      var writings = null, writingsLoading = false;
+      var wList = document.getElementById('wList');
+      var wRead = document.getElementById('wRead');
+      var wTitle = document.getElementById('wTitle');
+      var wBody = document.getElementById('wBody');
+      var wBack = document.getElementById('wBack');
+      function showWriting(i) {
+        var p = writings && writings[i];
+        if (!p) return;
+        wTitle.textContent = p.title;
+        wBody.innerHTML = p.html;          // our own build's markup (about_dist), not visitor text
+        wList.hidden = true; wRead.hidden = false;
+      }
+      function loadWritings() {
+        // THE PANE ALWAYS OPENS ON THE LIST, whatever was read last.
+        if (wRead) { wRead.hidden = true; }
+        if (wList) { wList.hidden = false; }
+        if (writings || writingsLoading || !wList) return;
+        writingsLoading = true;
+        fetch('writings/writings.json', { cache: 'no-cache' }).then(function (r) {
           if (!r.ok) throw new Error('HTTP ' + r.status);
           return r.json();
         }).then(function (d) {
-          text = d;
-          if (miniText) miniText.innerHTML = d.html || '';
+          writings = d;
+          wList.innerHTML = '';
+          d.forEach(function (p, i) {
+            var li = document.createElement('li');
+            var b = document.createElement('button');
+            b.type = 'button'; b.dataset.writing = i; b.textContent = p.title;
+            li.appendChild(b); wList.appendChild(li);
+          });
         }).catch(function (err) {
-          textLoading = false;                       // retry on the next opening
-          if (miniText) miniText.textContent = 'The text did not answer.';
-          note('[shell] text: ' + err);
+          writingsLoading = false;                   // retry on the next opening
+          wList.innerHTML = '';
+          var li = document.createElement('li'); li.textContent = 'The writings did not answer.';
+          wList.appendChild(li);
+          note('[shell] writings: ' + err);
         });
       }
+      if (wBack) wBack.addEventListener('click', function () { wRead.hidden = true; wList.hidden = false; });
       var mini = document.getElementById('mini');
       var miniSaid = document.getElementById('miniSaid');
       if (mini) mini.addEventListener('submit', function (e) {
@@ -1642,6 +1671,8 @@
         if (t.closest('[data-back]')) { showPane(null); return; }
         var pb = t.closest('.seg [data-platform]');                          // DOORS_3
         if (pb) { showPlatform(pb.dataset.platform); return; }
+        var wb = t.closest('button[data-writing]');                          // DOORS_4
+        if (wb) { showWriting(+wb.dataset.writing); return; }
         var b = t.closest('button[data-pane]');
         if (!b) return;
         showPane(b.dataset.pane);

@@ -90,6 +90,14 @@
 .pane .follow-list a { display: block; padding: 6px 0; color: var(--dim); text-decoration: none; }
 .pane .follow-list a:hover, .pane .follow-list a:focus-visible { color: var(--ink); }
 
+/* ── DOORS_4 — Writings, browsed in the pane ──────────────────────── */
+.pane .wlist { list-style: none; margin: 0 0 10px; padding: 0; }
+.pane .wlist li + li { border-top: 1px solid #1f1e26; }
+.pane .wlist button { display: block; width: 100%; text-align: left; font: inherit; color: var(--dim); background: none; border: 0; padding: 8px 0; cursor: pointer; }
+.pane .wlist button:hover, .pane .wlist button:focus-visible { color: var(--ink); }
+.pane .wtitle { font-size: 17px; font-weight: 430; margin: 6px 0 8px; color: var(--ink); }
+.pane .wread .text p { white-space: pre-line; }
+
 /* ── DOORS_4 — HIDDEN MEANS HIDDEN, AND THIS BLOCK STAYS LAST ────────
    .pane dl sets display:grid, and an AUTHOR display beats the UA's
    [hidden]{display:none} at any specificity, because origin outranks

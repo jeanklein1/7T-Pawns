@@ -2,7 +2,7 @@
   { "id": "board",      "label": "The Board",       "engine": "pane" },
   { "id": "controls",   "label": "Controls",        "engine": "pane" },
   { "id": "collection", "label": "The collection",  "href": "/collection/",   "engine": "pane" },
-  { "id": "text",       "label": "Text",            "href": "/text/",         "engine": "pane" },
+  { "id": "writings",   "label": "Writings",        "href": "/writings/",     "engine": "pane" },
   { "id": "about",      "label": "About",           "href": "/about/",        "engine": "pane" },
   { "id": "write",      "label": "Write me",        "side": "engine", "engine": "pane" },
   { "id": "follow",     "label": "Follow the work", "side": "engine", "engine": "pane" },
