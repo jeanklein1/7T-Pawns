@@ -2178,7 +2178,9 @@ namespace t7 {
             touchZoomAccum_ = 0.0f;
             pinchDeclared_ = false;
             rightTapPending_ = false;
+            leftTapPending_ = false;        // FPV_TAP_0
             tapAuraPending_ = false;
+            tapFpvPending_ = false;         // FPV_TAP_0
             tapPossessPending_ = false;
             // lastPulseMs_ is NOT cleared: it is the debounce's memory, and a
             // cancel is exactly when a spurious second tap is most likely.
@@ -2255,6 +2257,13 @@ namespace t7 {
                         rightPairT0_   = e.timestamp;
                         rightPairSep_  = (a && b) ? separation(*a, *b) : 0.0f;
                         pinchDeclared_ = false;
+                    }
+                    // FPV_TAP_0 — AND THE LEFT PAIR, the same way. No
+                    // separation is kept: the left half has no pinch to tell
+                    // a tap from, only a stick, and the stick is told from a
+                    // tap by slop and by arrival — not by spreading.
+                    if (slot->left && half_count(true) == 2) {
+                        leftPairT0_ = e.timestamp;
                     }
                     continue;
                 }
@@ -2408,6 +2417,31 @@ namespace t7 {
             }
 
             if (t.left) {
+                // FPV (FPV_TAP_0) — A LEFT PAIR THAT LANDED AS ONE AND LIFTED
+                // AS ONE. The right half's pair, mirrored, plus ONE CONJUNCT
+                // THE RIGHT HALF DOES NOT NEED: the two fingers must have
+                // ARRIVED within a tap of each other.
+                //
+                // Without it this verb would eat the aura. The aura is a
+                // second finger landing on a stick that is ALREADY HELD —
+                // and a held, resting stick is unslopped, so every aura tap
+                // would read as half of a clean pair. The arrival test is
+                // exactly the difference the hand already makes: two fingers
+                // together, or one after the other.
+                const bool in_window = (now_ms - leftPairT0_) <= TouchControls::TAP_MS;
+                if (half_count(true) == 2) {
+                    TouchPoint* a = half_touch(true, 0);
+                    TouchPoint* b = half_touch(true, 1);
+                    leftTapPending_ = in_window && a && b
+                                      && !a->slopped && !b->slopped
+                                      && (b->t0 - a->t0) <= TouchControls::TAP_MS;
+                    if (leftTapPending_) return;   // the pair claims this lift; the aura does not see it
+                } else if (leftTapPending_) {
+                    if (in_window && !t.slopped) tapFpvPending_ = true;
+                    leftTapPending_ = false;
+                    return;
+                }
+
                 // AURA — the SECOND left finger. Never the stick: the
                 // primary is the stick whether it is dragging or resting,
                 // so a tap is only ever a finger that is not it. That is
@@ -2536,6 +2570,12 @@ namespace t7 {
                 inputEvents_.push_back(e);
                 tapPulsePending_ = false;
             }
+            if (tapFpvPending_) {           // FPV_TAP_0
+                InputEvent e{};
+                e.type = InputEvent::Type::TouchTapFpv;
+                inputEvents_.push_back(e);
+                tapFpvPending_ = false;
+            }
         }
 
     public:
@@ -2659,7 +2699,14 @@ namespace t7 {
         float      rightPairSep_ = 0.0f;    // its separation at the last reading
         bool       pinchDeclared_ = false;  // pinch, or still a possible tap
         bool       rightTapPending_ = false;// one of a clean pair has lifted; waiting on the other
+        // FPV_TAP_0 — THE LEFT PAIR, mirroring the right's. It needs its own
+        // T0 because the two halves' pairs can be alive at once (a swap tap
+        // and an FPV tap are one gesture apart), and a shared stamp would let
+        // either half's clock close the other half's window.
+        double     leftPairT0_ = 0.0;       // when the left-half pair formed
+        bool       leftTapPending_ = false; // one of a clean LEFT pair has lifted; waiting on the other
         bool       tapAuraPending_ = false; // edge-fired verbs, spent on the next tick
+        bool       tapFpvPending_ = false;  // FPV_TAP_0
         bool       tapPossessPending_ = false;
         bool       tapPulsePending_ = false;  // PULSE_1 — the lone-finger verb
         double     lastPulseMs_ = -1e9;       // the debounce's memory; survives a cancel

@@ -33,9 +33,14 @@ struct InputEvent {
         TouchMove,      // x, y = analog move vector, already dead-zoned and unit-clamped
         TouchLook,      // x, y = look delta, LOOK_SENS_TOUCH already applied
         TouchZoom,      // y    = zoom delta, PINCH_SENS already applied
-        TouchTapLeft,   // a clean two-finger-left tap  — the aura verb
-        TouchTapRight,  // a clean two-finger-right tap — the possession verb
-        TouchTapPulse   // a clean LONE-finger tap, either half — the pulse verb
+        TouchTapLeft,   // a clean SECOND-left-finger tap — the aura verb
+        TouchTapRight,  // a clean two-finger-right tap   — the swap verb
+        TouchTapPulse,  // a clean LONE-finger tap, RIGHT half — the leap verb
+                        // (LEAP_1 gave it a side; this line had not followed)
+        TouchTapFpv     // a clean two-finger-LEFT tap, landed and lifted
+                        // together — the FPV verb (FPV_TAP_0). Distinct from
+                        // TouchTapLeft: the aura is one finger arriving on a
+                        // stick already held, this is two arriving as one.
     };
     
     Type type;

@@ -3501,6 +3501,9 @@ namespace t7 {
                 case InputEvent::Type::TouchTapPulse:
                     on_touch_tap_pulse(&input_deps_);
                     break;
+                case InputEvent::Type::TouchTapFpv:
+                    on_touch_tap_fpv(&input_deps_);
+                    break;
                 }
             }
 

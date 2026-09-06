@@ -205,6 +205,7 @@ void on_touch_zoom(InputDeps* c, float delta);
 // ride the parameters, because the driver owns neither of them and the
 // root addresses them at the call site through the owner doors.
 void on_touch_tap_left(InputDeps* c, PawnState& pawn_state, PawnDeps& pawn_deps);
+void on_touch_tap_fpv(InputDeps* c);       // FPV_TAP_0 — the left pair (CTRL's door)
 void on_touch_tap_right(InputDeps* c);
 void request_radial_pulse(InputDeps* c);   // the pulse's owner door (SPACE + the lone RIGHT tap): the ring and the body's own verb
 void request_pulse_swap(InputDeps* c);     // LEAP_1 — the hand's other word (CAPS_LOCK + the right PAIR tap): the ring and the reach for a body
@@ -418,6 +419,15 @@ inline void on_touch_zoom(InputDeps* c, float delta) {
 inline void on_touch_tap_left(InputDeps* c, PawnState& pawn_state, PawnDeps& pawn_deps) {
     (void)c;
     toggle_aura(pawn_state, &pawn_deps);
+}
+
+// LEFT, two fingers landing and lifting as one — FPV (FPV_TAP_0). CTRL's
+// other mouth, and nothing here but the reach: the eye's whole transaction
+// already lives in toggle_fpv_mode, which is why this campaign is a
+// gesture and not a feature. The glass's two halves now carry a verb each
+// for the CAMERA — the left says whose eye, the right says where it looks.
+inline void on_touch_tap_fpv(InputDeps* c) {
+    toggle_fpv_mode(c);
 }
 
 // RIGHT, two fingers, clean tap — THE OTHER WORD (LEAP_1, CAPS_LOCK's
