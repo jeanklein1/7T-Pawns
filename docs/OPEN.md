@@ -67,6 +67,17 @@ open, every key this pane lists is `stopPropagation`'d, so a visitor cannot
 try one while reading it. Correct — the keys are the menu's while it is open
 — but it means the pane teaches rather than demonstrates.
 
+### DOORS_2 U2 HAS NO COMMIT OF ITS OWN — an executor's slip, recorded
+
+The return path (U2: the `return` flag, `nav_html`'s `attrs`, and the two
+`rel="opener"`s in the shell) was applied and witnessed, then swept into
+**`c9418a20`**, U4's commit, by a `git add -A` — so that commit carries two
+units and its message names only one. One commit per logical unit is the
+rule and this round broke it once. The history is pushed to master and is
+not being rewritten for a bookkeeping error; the code is all present, and
+`git log -S'rel="opener"' -- tools/routes.py` finds it. Named here so no
+reader concludes U2 was skipped.
+
 ### Residuals — DOORS_2
 
 - **THE COLLECTION GATE IS RED ON MASTER, AND DOORS_2 U1 PUT IT IN THE BUILD
