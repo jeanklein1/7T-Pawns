@@ -98,10 +98,15 @@ reader concludes U2 was skipped.
   exactly `rel(href, base)`, **DOORS_1's declared work**;
   **(b)** the gate learns that a root-absolute ref is a site link, not a
   collection artifact — skip `^/`, or better, resolve `^/collection/` against
-  DIST and skip the rest. Left unapplied: (a) pre-empts DOORS_1's design and
-  (b) edits a gate's law to make it pass. Jean's call. Until then the old
-  build line (`python tools\web_dist.py`) still works — only the new one door
-  stops.
+  DIST and skip the rest.
+  **RULED (Jean, this round): (a) — it waits for DOORS_1.** The cause is the
+  absolute href, not the gate's law, and `rel(href, base)` is DOORS_1's
+  declared work; a gate edited to make itself pass is the second kind of
+  thing CLAUDE.md warns about. The gate therefore stays red ON PURPOSE, and
+  **`python tools\dist.py` stops at `gate`** until DOORS_1 lands — the old
+  build line (`python tools\web_dist.py`) still works and is what CLAUDE.md
+  still documents. When DOORS_1 lands this residual closes with it; confirm
+  with `python3 tools/gates/collection_gate.py`.
 - **DOORS_1 NEVER LANDED, and DOORS_2 declares it as its base.** `tools/routes.py`
   has no `rel(href, base)` — DOORS_2 U0's own test, reading 0. Two adaptations
   were made under P2 (boundaries are symbols, recomputed against the tree):
