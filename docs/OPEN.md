@@ -555,6 +555,10 @@ POINT_SUMMIT_RADIUS; spawn chance 0.030 -> 0.050 under the ceiling of
 with its one reader. The eye's checks: obelisks read as architecture;
 every flat top boards; caps read as one width everywhere.
 
+**FOURWALLS_0 — four, always.** wall_count_t3 0.2775 -> 0.0; every
+indoor room hangs all four walls. WALLS_1's three-wall argument
+struck by Jean's stamp.
+
 ## SKIRT_WELD_1/P — THE PERIMETER SKIRT HANGS FROM THE BASE BAND (landed; one seam held)
 
 Sibling of SKIRT_WELD_1 on 7T-Music, landed there at `be0eb28f`. The patch
