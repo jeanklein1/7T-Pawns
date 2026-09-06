@@ -2,6 +2,122 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## DOORS_3 — THE LAYOUT ROUND (landed on master; Jean's gates open)
+
+Five units. The engine's menu stopped being a list with one big pane and
+became the site itself: seven items, seven panes, one door out of each.
+
+| ruling | where it lives now |
+|---|---|
+| The veil says two names and nothing else | `#enter` is *The Board*, the anchor is *About*; the sentence, `details` and the veil's log pane are gone |
+| No GPU talk anywhere a visitor reads before choosing | the noscript paragraph, and `classify()`'s status line (*Waking your device*) |
+| The fallback speaks Jean's words, and the card's door follows them | `fallback()`'s *Welcome.*; the static door goes to `/collection/` |
+| Every item on the menu opens a pane | `web/routes.json` — seven engine panes; the `website` route died |
+| Controls is its own pane, two platforms, one shown | `.pane[data-pane="controls"]`, `showPlatform()`, `CONTROLS_DEFAULT` |
+| Follow the work has one home and two readers | `web/follow.json` → `routes.follow_html()` → every site footer and the Follow pane |
+| Text is its own page | `web/text/index.html`; `about_dist` builds `dist/text/` and `text.json` |
+| The world door says *Navigate the world* and nothing under it | `web/about/index.html`'s first door |
+| Authors and elsewhere leave | the two bands, `build_authors`, `build_links` and their CSS are gone |
+
+**The six controls rows are the tree's, read at U0** — and two had moved
+since the handoff was written, so the pane carries the tree's answer:
+
+| verb | desktop | smartphone |
+|---|---|---|
+| Directions | W A S D | drag the left half |
+| Rotation | drag with the mouse held · the wheel zooms | drag the right half · two fingers to zoom |
+| Pulse | Caps Lock — on a summit it boards the ribbon, and lands it again | two fingers, one clean tap on the right half — same |
+| Aura | 3 lights it · 2 raises it | a second finger on the left half |
+| Leap | Space | one clean tap on the right half |
+| FPV | Ctrl | two fingers on the left half, landing together and lifting as one |
+
+`FPV_TAP_0` answered the handoff's open question — the phone HAS an FPV
+mouth (`on_touch_tap_fpv`), the LEFT pair, told from the aura by the
+ARRIVAL window: the aura is a second finger landing on a stick that is
+already held. `REWIRE_0` moved the ride off `request_radial_pulse` onto
+`request_pulse_swap`, so the gesture the glass teaches (*pulse to fly /
+pulse to land*) is the gesture that works; the leap no longer rings. Both
+rulings landed from another session while DOORS_3 was being written.
+
+### The handoff's authority paragraph was wrong on two counts
+
+It named `FRUSTUM_0`, `FOURWALLS_0` and `FENCE_0` and said "none touch
+`web/` or the dist scripts". Two more campaigns had landed —
+`FPV_TAP_0` and `REWIRE_0` — and `REWIRE_0 U1` **did** edit
+`web/index.html`: a `landT` clock that hides *pulse to land* after five
+seconds. It sits in the glass-badge helper, nowhere near any FIND, so no
+unit was blocked; it survives untouched.
+
+**Witnessed here:** the shell driven in headless Chromium at 1280×800 and
+at 390×844 with a coarse pointer — 32 assertions each, 64/64. The
+platform defaults to the visitor's own device and one tap reaches the
+other; the six verbs read in order; About fills from the day's pick with
+the `about/` prefix and links to that work; Text fills from `text.json`;
+Follow shows five https links; and DOORS_2's key blocker stays fixed
+(keydown withheld only while the menu is open, keyup never withheld, W
+reaches the world once closed, Space does not re-open it). `about_dist`
+was run end to end into a scratch dist against stubbed hero images.
+
+### Residuals — DOORS_3
+
+- **The photographer is PARKED, not removed.** The roll pane, its 2 s
+  refresh, its focus-preserving rebuild and the three `cwrap` wrappers
+  left `web/index.html` at U4. `gallery_roll`, `gallery_visit` and
+  `gallery_visiting` are still exported by `organ_registry.hpp`, still
+  reachable from the console, and the pilot (`PilotState`, `pilot_tick`,
+  the Pilot spine row, the five releases) is untouched. The pane's markup
+  and script are in git at `d998022`^ — resurrect with
+  `git checkout d998022^ -- web/index.html` and take the block.
+- **`assets/about/site.json` keeps `authors` and `links`, now read by
+  nothing.** The file is Jean's; he prunes.
+- **TikTok's href is written canonically** (`/@kleinjean1`), not in the
+  bare form Jean wrote. If it does not resolve, his form is the one to
+  keep. `web/follow.json` is the one home.
+- **`.doors` was left as it stood** — `repeat(auto-fit, minmax(min(340px,
+  100%), 1fr))` already takes a third door without a rule change. Three
+  columns where the width allows, wrapping below. **A visual row for
+  Jean.**
+- **The footer nav takes `flex: 0 0 100%`**, not `width` alone: the footer
+  is a wrapping flex row with `justify-content: space-between`, and
+  flex-shrink would otherwise claw the width back. **A visual row for
+  Jean.**
+- **`.statement h1` matches nothing today.** The statement Jean's
+  placeholder leaves is a single `<p>`. The rule was renamed from
+  `.doctrine` rather than deleted, because whether the slot grows a
+  heading is his copy's call — unlike the band CSS, which was deleted
+  because those bands can never return.
+- **Two GPU survivors are visitor-facing and were NOT touched**: the
+  `<meta name="description">` still ends "WebGPU, in the browser.", and
+  it is Jean's copy to give. (The Board pane's "drawn by your GPU" died
+  with the old pane.)
+- **`text.json` carries the article's placeholder HTML comment** as
+  content — inert and invisible, and it dies when Jean's copy lands.
+- **`/text/` was given the `no-cache` rule `/about/` has**, beyond the
+  handoff: it is the same shape of page (a constant name whose content
+  changes) and `web_dist`'s root `_headers` had no clause for it.
+- **The engine menu has no plain link out any more.** The `website`
+  route died by ruling, and every remaining engine route is a pane; each
+  pane carries its own `a[data-out]`. Deliberate, and named here because
+  it is the kind of thing a later round would otherwise read as a loss.
+
+### One discipline gap, closed here
+
+`docs/HANDOFFS/` holds open work orders only, and DOORS_1 and DOORS_2
+were never filed there when they landed — their OPEN.md entries say
+"Jean's gates open", so the directory contradicted the register for two
+campaigns. Both are filed now beside DOORS_3, verbatim as Jean sent them.
+All three leave the moment Jean's gates close them.
+
+### Where the witnesses could not reach
+
+`assets/about` holds no hero images in this checkout and the collection
+holds 0 works, so a real `python3 tools/about_dist.py` cannot run here:
+the text page's build, `about.json`'s new shape and `dist/text/` were
+proven against stubbed heroes and a stubbed strip in a scratch dist, and
+the About pane against a hand-written `about.json` of the same shape.
+On Jean's machine both run for real. `collection_gate: PASS` again proved
+the NAV refs only, for the same reason DOORS_1 recorded.
+
 ## DOORS_1 — THE GATE'S VERDICT, AND FOUR FINDINGS FROM THE REVIEW (landed on master; Jean's gates open)
 
 Six units. It arrived AFTER DOORS_2 — its own base was `44dcf6d`, and
