@@ -2,6 +2,65 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## DOORS_1 — THE GATE'S VERDICT, AND FOUR FINDINGS FROM THE REVIEW (landed on master; Jean's gates open)
+
+Six units. It arrived AFTER DOORS_2 — its own base was `44dcf6d`, and
+DOORS_2 had already landed on top — and it composed anyway.
+
+| ruling | where it lives now |
+|---|---|
+| The gate was right and the renderer was wrong: a route list must be spoken from the page rendering it | `rel(href, base)`, `nav_html(side, base, indent)` in `tools/routes.py` |
+| A menu does not list where you are | the `"./"` drop; `/about/` no longer offers "About" |
+| The gate's refusal now says WHY a leading slash is neither the site's nor the collection's | `collection_gate.py`'s hint line |
+| The pilot's fifth release — the world changed — and it speaks, as the other four do | `cartridge.hpp`, beside `camera_pose_ = CameraPose{}` |
+| The stride's ease is linear; the quarter floor it could never reach is gone | `PILOT_SLOW_WU`'s comment, and the clamp |
+| The roll keeps the hand's place across its refresh | `refreshRoll`'s `had`/`again` |
+| "Still waking" and "not in this build" are two different sentences | `refreshRoll`'s two guards |
+| A non-finite slot loses its row rather than the whole list | `gallery_roll`'s `isfinite` continue |
+
+**`collection_gate: PASS (0 local refs)`** — the state it was in before
+DOORS_0 gave the collection page an absolute-href menu. The regression that
+opened this campaign is closed.
+
+### It landed out of order, and that cost one merge
+
+DOORS_1 U1.1 quotes `nav_html` as it stood before DOORS_2 U2 added the
+return path's `attrs` branch, so its FIND missed and its REPLACE would have
+deleted `rel="opener"` and the close-or-navigate `onclick`. **The two
+handoffs compose exactly**: DOORS_2 U2.2's own FIND matches DOORS_1's
+replacement function verbatim, so the merge was DOORS_1's text with DOORS_2's
+text applied on top of it — zero hand-written lines, no third author. Every
+other DOORS_1 anchor matched at 1 on the landed tree, and `cartridge.hpp`,
+`organ_registry.hpp` and `collection_gate.py` were blob-identical to its own
+table.
+
+The rollback was considered and refused: it would have rewritten eight
+pushed commits — merged to master expressly so collaborators could see them
+— and put at risk work that lives in neither handoff (the corrected controls
+table, the ride row reconciled with the glass, the four post-review
+corrections).
+
+**Witnessed here:** `rel()` on 13 cases, every output resolving to its
+intended URL under `urljoin`; the nav rendered from all three bases; the
+focus fix measured in headless Chromium — focus survives the 2 s rebuild on
+the same slot, and falls to the first caption when that picture comes down;
+both new sentences fired from their own conditions (`Still waking` with no
+Module, `Not in this build.` with a Module missing the export).
+
+### Residuals — DOORS_1
+
+- **`tools/gates/collection_gate.py` is a deploy-chain gate with no row in
+  CLAUDE.md's gate table.** That absence is why DOORS_0's recon never saw it
+  and why the regression went unnoticed for two campaigns. The row is
+  proposed in this round's report; CLAUDE.md is Jean's file and was not
+  edited. Proposed text: `| collection gate | `python3 tools/gates/collection_gate.py` | no engine artifact reaches the collection's closure, and every local ref it names exists | PASS |`
+- The collection here holds **0 works**, so `collection_gate: PASS` proved
+  the NAV refs and did not re-prove the `srcset` refs — those were passing
+  before DOORS_0 and are untouched. On Jean's machine the count will not be 0.
+- `assets/about` is Jean's, so `/about/`'s rendered nav is proven by
+  `python3 tools/routes.py` and by `about_dist.fill()` on the real template,
+  not by a full `about_dist` run.
+
 ## DOORS_2 — THE MENU AS THE WEBSITE IN MINIATURE (landed on master; Jean's gates open)
 
 Seven units. The menu stopped being a list of links and became the website
@@ -80,42 +139,14 @@ reader concludes U2 was skipped.
 
 ### Residuals — DOORS_2
 
-- **THE COLLECTION GATE IS RED ON MASTER, AND DOORS_2 U1 PUT IT IN THE BUILD
-  PATH. This one blocks `python tools/dist.py`.** `tools/gates/collection_gate.py`
-  check 2 asserts that every local `src`/`href` the collection page names
-  exists under `dist/collection`, skipping `https?:`, `data:`, `#`, `../` and
-  `mailto:` — but NOT root-absolute. DOORS_0 U3 gave that page a menu whose
-  hrefs are absolute (`/about/`, `/collection/`, `/about/#text`,
-  `/about/#write`), so the gate now fails with four lines. Measured: at
-  `b901422e`, before DOORS_0, the gate passed with **0 local refs** (the old
-  masthead's links were `../`, which it skips). **This is a regression DOORS_0
-  shipped**, unnoticed because the collection gate is not a row in CLAUDE.md's
-  gate table and nothing ran it; U1 made it fatal by putting it third in the
-  pipeline, so the `web` stage never runs. Two candidate repairs, and they
-  belong to different campaigns:
-  **(a)** site-page hrefs become relative (`../about/`), which the gate
-  already skips and which is correct for a page at `/collection/` — this is
-  exactly `rel(href, base)`, **DOORS_1's declared work**;
-  **(b)** the gate learns that a root-absolute ref is a site link, not a
-  collection artifact — skip `^/`, or better, resolve `^/collection/` against
-  DIST and skip the rest.
-  **RULED (Jean, this round): (a) — it waits for DOORS_1.** The cause is the
-  absolute href, not the gate's law, and `rel(href, base)` is DOORS_1's
-  declared work; a gate edited to make itself pass is the second kind of
-  thing CLAUDE.md warns about. The gate therefore stays red ON PURPOSE, and
-  **`python tools\dist.py` stops at `gate`** until DOORS_1 lands — the old
-  build line (`python tools\web_dist.py`) still works and is what CLAUDE.md
-  still documents. When DOORS_1 lands this residual closes with it; confirm
-  with `python3 tools/gates/collection_gate.py`.
-- **DOORS_1 NEVER LANDED, and DOORS_2 declares it as its base.** `tools/routes.py`
-  has no `rel(href, base)` — DOORS_2 U0's own test, reading 0. Two adaptations
-  were made under P2 (boundaries are symbols, recomputed against the tree):
-  U2.2's attrs logic was transplanted onto this tree's `r["href"]` instead of
-  DOORS_1's `href` local, and U2.3/U5.3's hrefs were left ABSOLUTE
-  (`/collection/`, `/about/#text`, `/api/message`, `/about/about.json`) rather
-  than made relative, because relative is DOORS_1's convention and this tree
-  is absolute throughout. Both resolve identically from the engine at the
-  root. When DOORS_1 lands it should take these five hrefs with it.
+- **The collection gate red on master — CLOSED at DOORS_1 U1.** The cause was
+  DOORS_0's absolute-href menu, not the gate's law; `rel(href, base)` now speaks
+  every route from the page rendering it and the gate reads
+  `collection_gate: PASS`. `python tools/dist.py` runs all four stages again.
+- **DOORS_1 not having landed — CLOSED.** It landed after DOORS_2 and composed with
+  it (see the DOORS_1 entry above). Both adaptations are retired: `nav_html` carries
+  DOORS_1's `rel()` and DOORS_2's `attrs` together, and the shell's six hand-written
+  hrefs are relative, as DOORS_2 specified.
 - **The readback (exhibition texture → CPU)** is the one mechanism that would
   yield BOTH miniatures of the world's photographs in the menu AND "the
   world's own photographs sent to the visitor". Priced at DOORS_0's recon (a
@@ -292,57 +323,18 @@ world); merge. Nothing below substitutes for a frame on a screen.
 
 ### Residuals — VISIT_0
 
-- **A VISIT SURVIVES THE WORLD TEARDOWN. Fix this before the visual gate.**
-  Found by post-landing review, confirmed by two independent reviewers and
-  by reading the tree. `PilotState` is the only driver organ added to the
-  cartridge WITHOUT a teardown release. The transition machine's TEARDOWN
-  arm clears every organ that holds the old world's coordinates —
-  `camera_pose_ = CameraPose{}` (whose banner says exactly why: "the first
-  sweep of a new world read the last world's camera"), `teardown_gallery`
-  zeroing all `painting_slots`, `point_` teleported to `Idle::PAWN_POS` —
-  and does not touch `pilot_`. The pilot's four release conditions cannot
-  catch it: `point_.host` is written in exactly ONE place in the tree
-  (`possess()`), and a transition does not call it, so the host is still
-  PAWN; `time_state_.seconds` is monotonic across worlds.
-  **The failure:** begin a visit, cross an arch mid-walk. The pawn teleports
-  to (0,0) in a new world, `pilot_.active` is still true, `pilot_.tx/tz`
-  still hold the dead world's standing point, and the pilot resumes
-  authoring `move_x/move_z` and `look_az_delta` — walking the pawn under
-  machine control across a brand-new world toward a coordinate that no
-  longer exists, for up to `PILOT_STALL_S` (6 s). And the stall is not even
-  a guaranteed bound: if the post-teleport distance lands below
-  `best_d - PILOT_PROGRESS_WU`, the progress branch re-latches every frame
-  and the pilot walks the whole way, printing `[Visit] arrived: slot N` at a
-  spot with no picture. Meanwhile `set_visit_view` keeps telling the pane it
-  is walking, while `gallery_roll` correctly reports an empty wall — the two
-  halves disagree in public.
-  **The fix, one line, in the TEARDOWN arm beside `camera_pose_ = CameraPose{}`:**
-  `pilot_ = PilotState{};`
-  Left unapplied deliberately: it adds a fifth release condition, and the
-  pilot's other four each carry a witness line (P6). Whether this one speaks
-  — `[Visit] released: the world changed` — is Claude's wording and Jean's
-  call, not the executor's. One edit either way.
-- **The stride never eases to the documented quarter.** `pilot_tick` returns
-  for every `d <= PILOT_ARRIVE_WU` (2.5), so the gain is computed only when
-  `d > 2.5`, giving `d / PILOT_SLOW_WU > 0.3125`. The `std::max(0.25f, ...)`
-  floor is therefore unreachable and the true stride minimum is 0.3125, not
-  the quarter `PILOT_SLOW_WU`'s comment promises. Dead clamp, overstated
-  comment; harmless to the walk. Either lower `PILOT_ARRIVE_WU` below 2.0 or
-  correct the comment.
-- **The roll's 2 s refresh destroys keyboard focus.** Measured in headless
-  Chromium: focus a caption, wait one refresh, and `document.activeElement`
-  is `<body>` — `refreshRoll` rebuilds the list with `rollEl.innerHTML = ''`,
-  so the Photographs pane is unusable by keyboard. The cheap fix is to
-  remember `document.activeElement.dataset.visit` before the rebuild and
-  re-focus that button after it; the thorough one is to patch rows in place
-  rather than replace them. Same family as the polling residual below.
-- **`gallery_roll` emits `nan`/`inf` verbatim if any field is non-finite,**
-  which is not valid JSON and would make `JSON.parse` throw for the WHOLE
-  list, not one row. The shell catches it (`note('[shell] roll: ' + err)`) so
-  the pane freezes rather than crashing, and nothing in the tree is known to
-  produce a non-finite slot — recorded as the fragility it is, not as a
-  live defect. Truncation, by contrast, is NOT reachable: with every float
-  field at FLT_MAX the record needs 232 of `buf`'s 256 bytes (measured).
+- **The pilot outliving a world teardown — FIXED at DOORS_1 U2.** `pilot_ = PilotState{};`
+  now sits beside `camera_pose_ = CameraPose{}` in the TEARDOWN arm, and it
+  speaks: `[Visit] released: the world changed (slot N)`. Jean's gate row:
+  begin a visit, cross an arch mid-walk, and the pawn stands still.
+- **The stride's unreachable quarter floor — FIXED at DOORS_1 U3.** The clamp is
+  deleted and the ease is linear; `PILOT_SLOW_WU`'s comment now says what it does.
+- **The roll's refresh dropping keyboard focus — FIXED at DOORS_1 U4.** It remembers
+  the focused caption's slot and restores it, falling to the first caption when
+  that picture has come down. Both measured in headless Chromium.
+- **A non-finite slot poisoning the whole list — FIXED at DOORS_1 U5.** `gallery_roll`
+  skips such a row; the absence is the artifact, with no per-frame line (P6).
+  Truncation was never reachable: 232 of `buf`'s 256 bytes at FLT_MAX, measured.
 - The pilot's seven numbers (`PILOT_ARRIVE_WU`, `PILOT_SLOW_WU`,
   `PILOT_PROGRESS_WU`, `PILOT_TURN_RATE`, `PILOT_STALL_S`,
   `PILOT_STANDOFF_MULT`, `PILOT_STANDOFF_MIN_WU`) are control-panel
