@@ -9735,6 +9735,23 @@ fn update_other_agents(@builtin(global_invocation_id) gid: vec3<u32>) {
         agent.is_active = 0u;
     }
 
+    // ── FENCE_0 — INDOORS THE WALLS ARE EVERYONE'S ───────────────────
+    // The pawn clamps itself (HEM_0, its behavior) and the camera goes
+    // through indoor_bounds_resolve; agents alone walked through walls.
+    // Same law, same spelling: world_box_clamp_xz, identity outdoors
+    // (bounds 0). The margin is the pawn's own body-radius wire — one
+    // inset for every body, and the note on world_box_clamp_xz for why a
+    // zero margin is not a coordinate a body may hold. Position-only,
+    // like the pawn's: a fenced walker keeps its heading and the random
+    // walk turns it away in its own time, which reads as a body meeting
+    // a wall rather than a body bouncing.
+    {
+        let fenced = world_box_clamp_xz(vec2(agent.pos_x, agent.pos_z),
+                                        config.pawn_body_radius);
+        agent.pos_x = fenced.x;
+        agent.pos_z = fenced.y;
+    }
+
     agent_state[slot] = agent;
 }
 
