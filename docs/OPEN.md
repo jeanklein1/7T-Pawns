@@ -2,7 +2,7 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
-## LEAP_0 — THE PAWN LEAPS (landed; Jean's visual gate open)
+## LEAP_0 / LEAP_1 — THE PAWN LEAPS, TUMBLES, AND PASSES ITSELF ALONG (landed; Jean's visual gate open)
 
 The pawn's height was a lookup; it is now a lookup on the ground and an
 integration aloft, one clock (`agent.t`) saying which. The door is the
@@ -20,6 +20,30 @@ world's risers (3 wu = two pawn heights); a tap on a summit still boards.
 resolves at lift); the ring at touchdown instead of takeoff (needs the
 P5 harvest, like `portal_trigger`); a CPU airborne sensor to silence the
 somersault's ring (R1 kept every tap ringing).
+
+**LEAP_1 — the hand has two words, and both ring.** One finger on the
+right half (SPACE) is the body's own verb: the leap, then the flip,
+then the taller flip — 3.0 / 4.5 / 6.5 wu, one clock, band 64 — and on
+a summit, the boarding. Two fingers on the right half (CAPS_LOCK) is
+the reach: the ring goes out and the swap commits when the wavefront
+crosses the target, `dist / config.pulse_speed` (PULSE_SPEED
+graduated, 0.67 s at the reach's edge). The left half is the stick's
+entire. `try_possess_nearest` retired into `find_possess_target` +
+`commit_possession`; `on_key_down` shed two parameters with it. Both
+bodies are grounded by the handover. Config 736 -> 752.
+
+**Jean's readings, all against the screen:** drive with the left thumb
+and tap the right half with a second finger — the leap arrives without
+the walk stopping; the lone left tap does nothing; the three rungs
+read clearly taller each; two right fingers near a pawn and the swap
+lands ON the ring's edge, not before it; leap first, then swap-tap,
+and the swap waits for your feet; a mood change mid-wave cancels the
+promise in silence.
+
+**Priced, not built:** a double turn on the third rung (a value in the
+tumble line); the swap's own voice on the bus; arming from the air
+(R2 holds it to the ground); a visible mark on the armed body; an
+instant operator swap (R4 retired it — one line to restore).
 
 ## SKIRT_WELD_1/P — THE PERIMETER SKIRT HANGS FROM THE BASE BAND (landed; one seam held)
 
