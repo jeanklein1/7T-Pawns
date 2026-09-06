@@ -166,9 +166,10 @@ static bool init_world() {
 // emscripten_set_main_loop RESETS the timing mode, and with
 // simulate_infinite_loop it never returns — so the pace can only be armed
 // from a frame, once, after the registration that would have cleared it.
-// Idempotent by the flag: nothing else in this program re-arms the loop
-// (one set_main_loop call in the tree, no resize or veil-lift path touches
-// it), so one application holds for the session.
+// Idempotent by the flag. ONE other site retimes the loop — shell_pace,
+// below, the menu's idle (DOORS_0) — and it reads the pace this one
+// applied; no resize or veil-lift path touches the timing. (The older
+// claim here, "nothing else re-arms the loop", was true until DOORS_0.)
 static void apply_pace_once() {
     if (app->pace_applied) return;
     app->pace_applied = true;
@@ -177,6 +178,27 @@ static void apply_pace_once() {
     emscripten_set_main_loop_timing(EM_TIMING_RAF, (int)app->pace);
     std::cout << "[PACE] forced " << (60u / app->pace)
               << " fps target (rAF every " << app->pace << " vblank(s))\n";
+}
+
+// ── DOORS_0 — THE SHELL'S HAND ON THE METRONOME ──────────────────────
+//
+// The sandwich over the canvas asks the loop to slow while it is open —
+// IDLE, NOT FREEZE: the world keeps stepping (one update per presented
+// frame, as ever), the soundtrack is an HTML element rAF never touches,
+// and closing the menu restores the boot pace. This is the second arm
+// site, and the only other one. Transitions are witnessed (P6); the
+// boot state is apply_pace_once's line. Reachable from JS through
+// cwrap; the shell resolves it lazily and tolerates its absence.
+static constexpr uint32_t SHELL_IDLE_PACE = 4u;   // rAF every 4th vblank: ~15 fps on a 60 Hz panel
+extern "C" EMSCRIPTEN_KEEPALIVE void shell_pace(int idle) {
+    if (!app || !app->pace_applied) return;   // before the loop is armed there is nothing to slow
+    const uint32_t want = idle ? (app->pace > SHELL_IDLE_PACE ? app->pace : SHELL_IDLE_PACE)
+                               : app->pace;
+    if (want == t7::g_present_pace) return;
+    t7::g_present_pace = want;
+    emscripten_set_main_loop_timing(EM_TIMING_RAF, (int)want);
+    std::cout << "[PACE] shell " << (idle ? "idle" : "live")
+              << " -> rAF every " << want << " vblank(s)\n";
 }
 
 // ── the offer, once the exhibition has a floor under it ────────────
