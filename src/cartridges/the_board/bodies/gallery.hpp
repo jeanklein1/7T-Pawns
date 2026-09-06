@@ -487,21 +487,18 @@ struct WallArtConfig {
 
 inline constexpr WallArtConfig WALL_ART = {
     // wall_count cumulative thresholds:
-    //   0% → 1 wall, 0% → 2, 27.75% → 3, residual ~72.25% → 4
+    //   0% → 1 wall, 0% → 2, 0% → 3, residual 100% → 4
     //
-    // THREE OR FOUR, ALWAYS (WALLS_1). The one- and two-wall rooms are gone,
-    // not made rare: a room with two bare walls reads as unfinished rather
-    // than as sparse, and 0.75% of rooms was never worth the shape. The
-    // three-wall case STAYS at 27.75% and is deliberate — four full walls in
-    // every room reads as a showroom, and the empty wall is what tells the
-    // eye the other three were hung on purpose.
-    //
-    // This commit is NOT the fix for the empty rooms. It was already 99.25%
-    // three-or-four; the rooms Jean saw were selected walls arriving with no
-    // content. See COMMIT 2.
+    // FOUR, ALWAYS (FOURWALLS_0). WALLS_1 kept a 27.75% three-wall case and
+    // argued for it — the bare wall as the proof the others were hung on
+    // purpose. Jean's stamp, after play, is the opposite reading: indoors,
+    // a bare wall reads as a room the hanging never reached. The
+    // distribution is truncated to its residual; the sampler below is
+    // untouched and the dead thresholds keep their rows so the shape of
+    // the law stays visible.
     /* wall_count_t1 */ 0.0f,
     /* wall_count_t2 */ 0.0f,
-    /* wall_count_t3 */ 0.2775f,
+    /* wall_count_t3 */ 0.0f,
 
     // per-wall row density — the division yields 5 / 10 / 14 / 19 at radius
     // 1..4, and the cap flattens the top two to 7
