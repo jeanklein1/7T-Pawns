@@ -839,7 +839,7 @@
            An anchor, so it works when nothing else does.
            RULING: a link, not a redirect — the log pane beside it is the
            diagnostic surface a redirect would take away. -->
-      <a class="btn alt" href="/about/" aria-label="Our web page">Click here</a>
+      <a class="btn alt" href="/about/" aria-label="Click here — our web page">Click here</a>
       <button id="logToggle2" class="logToggle" type="button" aria-controls="log2" aria-expanded="false">details</button>
     </div>
     <pre id="log2" class="log" aria-live="off"></pre>
@@ -1512,8 +1512,8 @@
       // DOORS_2/DOORS_3 — ONE FETCH FOR TWO PANES: the statement and the
       // day's painting for About (trusted markup — it is our own template,
       // written by about_dist) and the address the Write pane falls back
-      // to. Text has its own fetch now, below, because text has its own
-      // page.
+      // to. The Writings have their own fetch, below, against
+      // writings/writings.json — the same read the page gets.
       var about = null, aboutLoading = false;
       var miniStatement = document.getElementById('miniStatement');
       var miniHero = document.getElementById('miniHero');

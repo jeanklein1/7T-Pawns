@@ -33,14 +33,33 @@ The shell had already learned this once — `web/index.html` carries
 `.layer[hidden] { display: none; }` for the card, for exactly this
 reason. The lesson never reached the panes.
 
-**And the fix depends on source order, so the invariant is written in the
-file.** `.pane [hidden]` is (0,2,0): it beats `.pane dl` (0,1,1) on
-specificity but TIES `.pane .row` and `.pane .seg`, and a tie is decided
-by order. So that block is the last block in `web/menu.css`, and the
-comment says: append new pane rules above it, never below. This round's
-own U3.7 and U5.2 rules were inserted above it accordingly. `!important`
-was considered and refused — the tree authors zero of them, and
-`.layer[hidden]` shows the house idiom is specificity, not priority.
+**THE FIRST FIX WAS STILL TOO WEAK, and the review caught it (R1).**
+U1 wrote `.pane [hidden]` and claimed in its comment that it beat every
+other display rule in the file. Measured, it does not. Four rules declare
+`display` at (0,2,1) and outranked it — `.pane a.out`,
+`.pane .mini-hero img`, `.pane .follow-list a`, `.pane .wlist button` —
+all four rendering with `hidden` set. And a DESCENDANT selector never
+matched the panes themselves, which stayed on the UA rule while
+`#menu.over > .pane` sits at (1,2,0): one `display` added there and all
+six panes render at once, the same bug at six times the scale.
+
+**So the landed rule is `!important`, and refusing it at U1 was my
+error.** `hidden` is a user-agent invariant this stylesheet broke by
+accident; restoring it is precisely what `!important` is for, which is
+why every CSS reset writes this line. Specificity cannot do the job — no
+class-based selector outranks an id-based one, so no amount of ordering
+discipline would ever have held. The rule is three selectors, scoped to
+the sandwich:
+
+```css
+.menu [hidden], .pane[hidden], .pane [hidden] { display: none !important; }
+```
+
+**So the lesson is two lessons.** The first is that origin beats
+specificity. The second is that a fix for a cascade bug must be MEASURED
+against every element it claims to cover — reasoning about specificity
+numbers in a comment is exactly how the second version shipped broken
+too.
 
 ### MY WITNESS FAILED, AND THAT IS WHY THE BUG SHIPPED
 
@@ -109,9 +128,18 @@ it.** Every test this round asserts `getClientRects().length` and
   Ruling 5 asked for exactly that — pictures, not doors — and the work's
   name survives in each `img`'s `alt`. Named here because it is a
   deliberate accessibility trade, not an oversight.
-- **The collection page's lede `h1` is still placeholder copy** — it
-  repeats the writings' opening line, which is the doctrine and not a
-  gallery's greeting. `COPY.md` points at it.
+- **The collection page's lede `h1` is still placeholder copy**, and the
+  review corrected what I wrote about it: it does NOT repeat the
+  writings' opening line. It is *The pawn is a vessel for projected
+  intent.* — the doctrine that opened the about page until DOORS_3, moved
+  to `/text/`, and deleted with that page at DOORS_4. It is on neither
+  poem, so the Gallery page and two `<meta>` descriptions are now the
+  only place that sentence lives. Jean's to write, or to move back into
+  `assets/writings/`.
+- **The Gallery page's `<title>`, `og:title` and `description` still say
+  *collection*.** Ruling 5 scoped "Gallery" to *everywhere a menu
+  speaks*, and a `<title>` is not a menu — so this is left as written and
+  named for **Jean's naming gate**. `COPY.md` now points at it.
 - **`docs/COPY.md` exists and must be kept current.** Every future round
   that moves words updates it. Its every pointer was checked against the
   tree at this commit (38 symbol and path assertions).
@@ -193,7 +221,7 @@ became the site itself: seven items, seven panes, one door out of each.
 | The fallback speaks Jean's words, and the card's door follows them | `fallback()`'s *Welcome.*; the static door goes to `/collection/` |
 | Every item on the menu opens a pane | `web/routes.json` — seven engine panes; the `website` route died |
 | Controls is its own pane, two platforms, one shown | `.pane[data-pane="controls"]`, `showPlatform()`, `CONTROLS_DEFAULT` |
-| Follow the work has one home and two readers | `web/follow.json` → `routes.follow_html()` → every site footer and the Follow pane |
+| Follow the work has one home and two readers | `web/follow.json` → `routes.follow_html()` *(one reader since DOORS_4: the engine's Follow pane; the site footers went with ruling 3)* |
 | Text is its own page | *(superseded at DOORS_4: `/text/` became `/writings/`, plural, and retired by 301)* |
 | The world door says *Navigate the world* and nothing under it | `web/about/index.html`'s first door |
 | Authors and elsewhere leave | the two bands, `build_authors`, `build_links` and their CSS are gone |
@@ -275,7 +303,8 @@ was run end to end into a scratch dist against stubbed hero images.
   comment, because `build_writings` emits only the stanzas it parsed.
 - ~~`/text/` was given the `no-cache` rule `/about/` has~~ — **CLOSED at
   DOORS_4**: the rule followed the page to `/writings/`.
-- **The engine menu has no plain link out any more.** The `website`
+- **The engine menu has no plain link out any more** *(and since DOORS_4
+  neither Follow nor Write has a door to the site either)*. The `website`
   route died by ruling, and every remaining engine route is a pane; each
   pane carries its own `a[data-out]`. Deliberate, and named here because
   it is the kind of thing a later round would otherwise read as a loss.

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # ─── tools/routes.py ─────────────────────────────────────────────
 #
-# THE ROUTE LIST HAS ONE HOME: web/routes.json. Three pages carry the
-# same sandwich menu — the engine shell, about/, collection/ — and this
-# is the one renderer all three dist scripts call, so a route added to
-# the JSON appears on every page with no markup edit anywhere. The
-# menu's rules have one home too, web/menu.css, inlined by menu_css().
-# Neither file ships; both are build-time only.
+# THE ROUTE LIST HAS ONE HOME: web/routes.json. Four pages carry the same
+# sandwich menu — the engine shell, about/, collection/, writings/ — and
+# this is the one renderer all the dist scripts call, so a route added to
+# the JSON appears on every page with no markup edit anywhere. The menu's
+# rules have one home too, web/menu.css, inlined by menu_css(). Neither
+# file ships; both are build-time only.
 #
 #   side    "site" | "engine" | absent (both)
 #   href    an ABSOLUTE site path ("/about/#text"). The renderer speaks it
@@ -27,8 +27,9 @@
 #           link if it has an href and skips it otherwise.
 #
 #   follow  web/follow.json — the five external links, rendered by
-#           follow_html(). The website's bottom menu (DOORS_3), and the
-#           engine's Follow pane; the same list, one home.
+#           follow_html(). The ENGINE'S FOLLOW PANE is its only reader
+#           since DOORS_4 ruling 3 — the site footers that carried it are
+#           gone. One list, one home, one place it is shown.
 import json
 import os
 
@@ -161,7 +162,9 @@ def write_box_html(base, indent="  "):
 
 def follow_html(indent="    "):
     """Follow the work — the website's bottom menu, one home (web/follow.json).
-    External links, so the collection gate exempts them (https:)."""
+    External links, so the collection gate exempts them (https:).
+    ONE READER since DOORS_4: the engine's Follow pane. web_dist injects
+    it; about_dist and collection_dist no longer do."""
     with open(FOLLOW, encoding="utf-8") as fh:
         links = json.load(fh)
     items = []

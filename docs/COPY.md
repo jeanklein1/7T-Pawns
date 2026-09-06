@@ -54,8 +54,17 @@ pane both. `tools/about_dist.py` `build_writings` is the reader.
 
 ## The gallery page — `web/collection/index.html`
 - the lede — `header.lede`'s `h1` and `p`. **STILL PLACEHOLDER COPY**: the
-  `h1` repeats the writings' first line, which is the doctrine and not a
-  gallery's opening. Jean's to write.
+  `h1` is *The pawn is a vessel for projected intent.* — the doctrine that
+  opened the about page until DOORS_3, moved to `/text/`, and deleted with
+  it at DOORS_4. It is on NEITHER poem (the writings open *The Mirror in
+  the Sand*), so this page and two `<meta>` descriptions are now its only
+  home. Jean's to write, or to move back into `assets/writings/`.
+- **the tab, the bookmark and every share card** — `<title>`,
+  `<meta property="og:title">` and `<meta name="description">` in that
+  page's `<head>`. They still say *collection*. DOORS_4 ruling 5 scoped
+  "Gallery" to *everywhere a menu speaks*, and a `<title>` is not a menu,
+  so this was left deliberately — **Jean's naming gate**, listed here so
+  it is findable rather than forgotten.
 - set labels — each `assets/collection/*/set.json`
 
 ## The writings page chrome — `web/writings/index.html`

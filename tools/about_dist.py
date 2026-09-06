@@ -315,7 +315,8 @@ def main():
     # hero (the same day-indexed pick the page makes) and the address, for
     # the engine's About and Write panes. Taken from the page just written,
     # so the two cannot disagree (peek.json's law). The template stays the
-    # statement's one home; the doctrine's is web/text/index.html now.
+    # statement's one home; the writings' is assets/writings/, and their
+    # page is web/writings/index.html (DOORS_4).
     m = re.search(r'<header class="statement" id="statement">(.*?)</header>', page, re.S)
     if not m:
         say("REFUSE  the statement header is not in the page — the engine's About pane would have nothing to show")
