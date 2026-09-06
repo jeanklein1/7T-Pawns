@@ -285,6 +285,11 @@
 
     @media (prefers-reduced-motion: reduce) { #veil.lifting { transition: none; } }
 
+    /* ── DOORS_0 — THE SANDWICH'S RULES land on the next line at build
+       time (web_dist.py, from web/menu.css). The marker must appear
+       exactly once: web_dist counts it, as it counts the build id. */
+    /* __MENU_CSS__ */
+
     /* ── STATE 4 — READY ──────────────────────────────────────────
        ATMOS_0. Not a new card: the SAME veil, one line different. The
        poster and the wordmark do not move, because nothing about the
@@ -847,6 +852,21 @@
     </p>
   </noscript>
 
+  <!-- ── DOORS_0 — THE SANDWICH OVER THE WORLD ──────────────────────
+       Hidden until present() and hidden again by any card: the veil
+       carries its own doors. A native <details>, as on the site pages.
+       Its links are web/routes.json rendered by web_dist.py at the
+       marker below; its rules are web/menu.css inlined at the stylesheet
+       marker above. Engine-only routes arrive as pane buttons
+       (data-pane); the panes and their behaviours are the shell's own
+       (DOORS_0 U6). -->
+  <details id="menu" class="menu over" hidden>
+    <summary aria-label="menu">menu</summary>
+    <nav>
+      <!-- __ROUTES__ -->
+    </nav>
+  </details>
+
   <script>
   (function () {
     'use strict';
@@ -875,6 +895,7 @@
     var music   = document.getElementById('music');
     var cardPoster = document.getElementById('cardPoster');
     var enterBtn = document.getElementById('enter');   // DOORS_0 — the one entry target
+    var menu     = document.getElementById('menu');    // DOORS_0 — the sandwich over the world
 
     // TWO flags, not one. `terminal` means a designed END was reached —
     // FALLBACK or LOST — and nothing may override it. `shown` merely
@@ -1025,6 +1046,7 @@
       window.T7_AUBADE.report();
       card.hidden = true;                   // clears a watchdog card, if any
       shown = true;
+      if (menu) menu.hidden = false;        // DOORS_0 — the sandwich arrives with the world
       veil.classList.add('lifting');
       setTimeout(function () { if (!terminal) veil.hidden = true; }, 950);
     }
@@ -1065,6 +1087,7 @@
     function showCard(say, sub, offerReload) {
       shown = true;
       veil.hidden = true;
+      if (menu) { menu.hidden = true; menu.open = false; }   // DOORS_0 — no world, no menu over it
       // The door is gone with the veil that carried it. Clearing the
       // class as well as the element keeps a hidden node from holding an
       // interactive state it can no longer honour.

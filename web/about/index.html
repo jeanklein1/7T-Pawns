@@ -147,18 +147,23 @@
 
   .links ul { list-style: none; margin: 0; padding: 0; }
   .links li { margin: 0 0 0.55em; }
+/* __MENU_CSS__ */
 </style>
 </head>
 <body>
 
 <div class="top">
   <p class="site">the ever expanding board</p>
-  <nav>
-    <a href="../">world</a>
-    <a href="../collection/">collection</a>
-    <a href="#authors">authors</a>
-    <a href="#write">write</a>
-  </nav>
+  <!-- DOORS_0 — THE SANDWICH. A native <details>: it opens with no
+       script, so this page keeps working with JavaScript off. The links
+       are rendered by tools/routes.py from web/routes.json — the one
+       home the engine shell and collection/ also read. -->
+  <details class="menu">
+    <summary aria-label="menu">menu</summary>
+    <nav>
+      <!-- __ROUTES__ -->
+    </nav>
+  </details>
 </div>
 
 <a class="hero" id="hero" href="../collection/">
@@ -174,7 +179,7 @@
      now is third-person curatorial language, which reads like wall text
      rather than the artist talking. It holds the shape and the length;
      it is not the voice. -->
-<header class="doctrine">
+<header class="doctrine" id="text">
   <h1>The pawn is a vessel for projected intent.</h1>
   <p>It stands alone, or it stands beside someone. Whether it is friend or
      antagonist, whether you are reading it or it is reading you — that is

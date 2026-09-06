@@ -32,6 +32,7 @@ import base64
 import io
 import glob
 import json
+import routes   # DOORS_0 — web/routes.json + web/menu.css, the sandwich's one renderer
 import os
 import shutil
 import sys
@@ -172,15 +173,17 @@ def build_links(site):
 def fill(template, subs):
     out = template
     for key, val in subs.items():
-        marker = "<!-- __%s__ -->" % key if key not in ("HERO_DATA", "EMAIL") else None
+        marker = "<!-- __%s__ -->" % key if key not in ("HERO_DATA", "EMAIL", "MENU_CSS") else None
         if key == "HERO_DATA":
             out = out.replace("/* __HERO_DATA__ */ null", json.dumps(val))
         elif key == "EMAIL":
             out = out.replace("__EMAIL__", val)
+        elif key == "MENU_CSS":
+            out = out.replace("/* __MENU_CSS__ */", val)   # DOORS_0 — the sandwich's rules, one home
         else:
             out = out.replace(marker, val)
     for token in ("__HERO__", "__STRIP__", "__AUTHORS__", "__LINKS__",
-                  "__HERO_DATA__", "__EMAIL__"):
+                  "__HERO_DATA__", "__EMAIL__", "__ROUTES__", "__MENU_CSS__"):
         if token in out:
             say("REFUSE  template placeholder %s did not substitute" % token)
             sys.exit(1)
@@ -206,6 +209,8 @@ def main():
     hero_tag, hero_data = build_hero(Image, site, preview)
 
     page = fill(template, {
+        "ROUTES": routes.nav_html("site", indent="      "),   # DOORS_0
+        "MENU_CSS": routes.menu_css(),                        # DOORS_0
         "HERO": hero_tag,
         "STRIP": build_strip(Image, site, preview),
         "AUTHORS": build_authors(site),

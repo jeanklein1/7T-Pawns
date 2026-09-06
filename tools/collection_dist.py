@@ -51,6 +51,7 @@ import os
 import re
 import shutil
 import sys
+import routes   # DOORS_0 — the sandwich's one renderer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -268,9 +269,15 @@ def index_markup(sets):
 def fill(template, index_html, works_html):
     out = template.replace("<!-- __INDEX__ -->", index_html)
     out = out.replace("<!-- __WORKS__ -->", works_html)
-    if "__INDEX__" in out or "__WORKS__" in out:
-        say("REFUSE  template placeholder did not substitute")
-        sys.exit(1)
+    # DOORS_0 — the sandwich: links from web/routes.json, rules from
+    # web/menu.css, through tools/routes.py — the renderer the engine
+    # shell and about/ also use.
+    out = out.replace("<!-- __ROUTES__ -->", routes.nav_html("site", indent="      "))
+    out = out.replace("/* __MENU_CSS__ */", routes.menu_css())
+    for token in ("__INDEX__", "__WORKS__", "__ROUTES__", "__MENU_CSS__"):
+        if token in out:
+            say("REFUSE  template placeholder %s did not substitute" % token)
+            sys.exit(1)
     return out
 
 

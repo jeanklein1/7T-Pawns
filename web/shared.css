@@ -88,10 +88,9 @@ body::before {
   font-weight: 430;
   letter-spacing: 0.01em;
 }
-.top nav { font-size: 14.5px; color: var(--dim); }
-.top nav a { text-decoration: none; margin-left: 1.1em; }
-.top nav a:first-child { margin-left: 0; }
-.top nav a:hover, .top nav a:focus-visible { color: var(--ink); }
+/* the masthead's own links died at DOORS_0; the sandwich (web/menu.css,
+   inlined per page) stands where they stood */
+.top .menu { font-size: 14.5px; }
 
 /* ── a section's opening line ────────────────────────────────────── */
 

@@ -35,6 +35,7 @@ import os
 import re
 import shutil
 import sys
+import routes   # DOORS_0 — the sandwich's one renderer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -1019,6 +1020,22 @@ def main():
     shader_sha = shader_sha_full[:SHADER_SHA_LEN]
     shell_out = shell_src.replace(BUILD_ID_PLACEHOLDER, build_id)
     shell_out = shell_out.replace(SHADER_SHA_PLACEHOLDER, shader_sha)
+
+    # ── DOORS_0 — THE SANDWICH ───────────────────────────────────────
+    # The route list and the menu's rules have one home each
+    # (web/routes.json, web/menu.css) and one renderer (tools/routes.py),
+    # the same one about_dist and collection_dist call. The shell holds
+    # two markers; the build fills them. Refuse rather than ship a page
+    # with no menu, on the build-id law's own precedent.
+    for marker in ("<!-- __ROUTES__ -->", "/* __MENU_CSS__ */"):
+        if shell_out.count(marker) != 1:
+            print("")
+            print("REFUSING TO SHIP A SHELL WITHOUT ITS MENU MARKER.")
+            print("  web/index.html must carry %s exactly once (found %d)."
+                  % (marker, shell_out.count(marker)))
+            return 7
+    shell_out = shell_out.replace("<!-- __ROUTES__ -->", routes.nav_html("engine", indent="      "))
+    shell_out = shell_out.replace("/* __MENU_CSS__ */", routes.menu_css())
 
     # ── AUBADE U7 — FIRST LIGHT STARTS AT HTML PARSE ────────────────
     #
