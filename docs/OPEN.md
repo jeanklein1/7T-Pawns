@@ -681,6 +681,10 @@ config.pawn_body_radius, identity outdoors. The eye's check: stand
 indoors and watch the walkers — none crosses a wall, none jitters
 against it.
 
+**HOLD_0 — the ring waits for the feet.** pulse_pending and
+swap_pending are spent only when the air clock reads zero; teardown
+lowers both. One ring per landing however many presses.
+
 ## SKIRT_WELD_1/P — THE PERIMETER SKIRT HANGS FROM THE BASE BAND (landed; one seam held)
 
 Sibling of SKIRT_WELD_1 on 7T-Music, landed there at `be0eb28f`. The patch
