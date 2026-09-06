@@ -194,7 +194,8 @@ NOT_FOUND_PAGE = """<!DOCTYPE html>
 <p style="margin:0 0 14px">There is nothing at this address. The board is a living,
 ever-expanding world that hangs Jean Klein's paintings.</p>
 <p style="margin:0"><a style="color:#e8e6e0" href="/">world</a> &middot;
-<a style="color:#e8e6e0" href="/collection/">collection</a> &middot;
+<a style="color:#e8e6e0" href="/collection/">gallery</a> &middot;
+<a style="color:#e8e6e0" href="/writings/">writings</a> &middot;
 <a style="color:#e8e6e0" href="/about/">about</a></p>
 </div>
 </body>

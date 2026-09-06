@@ -278,7 +278,9 @@ def peek_entry(s, rec, meta, featured=False):
     the engine page lives at the root."""
     first = rec["variants"][0]
     return {
-        "n": rec["n"], "set": s["slug"], "setLabel": s["label"],
+        # DOORS_4 — setLabel left with the sets line that was its only
+        # reader (`set` and `featured` still have server-side ones).
+        "n": rec["n"], "set": s["slug"],
         "title": meta.get("title") or ("no. %d" % rec["n"]),
         "tone": rec["tone"], "r": round(rec["w"] / rec["h"], 4),
         "src": "/collection/%s/%s" % (s["slug"], first[2]),

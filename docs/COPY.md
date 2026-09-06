@@ -61,6 +61,13 @@ pane both. `tools/about_dist.py` `build_writings` is the reader.
 ## The writings page chrome — `web/writings/index.html`
 The `<title>` only. The texts come from `assets/writings/`.
 
+## The 404 page — `tools/web_dist.py`'s `NOT_FOUND_PAGE`
+Served at every wrong address, so its links are absolute and its menu is
+its own — it does NOT read `web/routes.json`. **A route renamed or added
+must be renamed or added here by hand.** DOORS_4 found it still saying
+*collection* and missing Writings entirely. Wording is Jean-gated, like
+the card's.
+
 ## The colophon — `web/about/index.html`'s `<footer>`
 *set in Newsreader · no trackers*. It is the only footer left on the
 site (ruling 8: the name appears once, and its home is the engine's
