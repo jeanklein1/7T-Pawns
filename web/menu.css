@@ -27,8 +27,12 @@
 .menu > nav {
   position: absolute; right: 0; top: 100%; z-index: 20;
   /* DOORS_4 — 13em was a list's width; the write box lives here now and
-     a 159px textarea is not a message box. Measured, then widened. */
+     a 159px textarea is not a message box. Measured, then widened. And
+     capped: the engine's pane has carried max-height/overflow since
+     DOORS_0, and an open write box in a short window (a phone held
+     sideways) needs the same courtesy. */
   min-width: min(92vw, 20em); padding: 6px 0;
+  max-height: 80vh; overflow-y: auto;
   background: var(--bg); border: 1px solid #33323c; border-radius: 2px;
 }
 .menu > nav a, .menu > nav button {
@@ -107,23 +111,49 @@
 .menu .writebox label { display: block; margin: 0 0 8px; }
 .menu .writebox input, .menu .writebox textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 3px; font: inherit; color: var(--ink); background: none; border: 1px solid #33323c; border-radius: 2px; padding: 6px 8px; }
 .menu .writebox .hp { position: absolute; left: -9999px; }
-.menu .writebox .row button { font: inherit; color: var(--ink); background: none; border: 1px solid #33323c; border-radius: 2px; padding: 6px 12px; cursor: pointer; }
+/* THE SEND ROW IS A ROW. `.menu > nav button` (0,1,2) makes every button
+   in the dropdown a full-width, left-aligned block — right for a menu
+   item, wrong for a Send button, which was stacking above its status
+   line at 260px. `.pane .row`'s flex cannot help: it needs a .pane
+   ancestor the site sandwich has not got. Measured, then stated here. */
+.menu .writebox .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.menu .writebox .row button { display: inline-block; width: auto; text-align: center; font: inherit; color: var(--ink); background: none; border: 1px solid #33323c; border-radius: 2px; padding: 6px 12px; cursor: pointer; }
 .menu .writebox .said { display: block; margin-top: 6px; color: var(--dim); font-style: italic; min-height: 1.4em; }
 
-/* ── DOORS_4 — HIDDEN MEANS HIDDEN, AND THIS BLOCK STAYS LAST ────────
+/* ── DOORS_4 — HIDDEN MEANS HIDDEN, EVERYWHERE IN THE SANDWICH ───────
    .pane dl sets display:grid, and an AUTHOR display beats the UA's
    [hidden]{display:none} at any specificity, because origin outranks
-   specificity. That is why both platform lists rendered and the
-   toggle "did nothing": the JS flipped .hidden correctly and the
-   cascade ignored it.
+   specificity. That is why both platform lists rendered and the toggle
+   "did nothing": the JS flipped .hidden correctly and the cascade
+   ignored it.
 
-   THE SHELL ALREADY LEARNED THIS ONCE — web/index.html carries
-   `.layer[hidden] { display: none; }` for the card, for this exact
-   reason. The lesson did not reach the panes. This rule generalises it.
+   THE FIRST FIX WAS `.pane [hidden]`, AND IT WAS TOO WEAK. Its comment
+   claimed it won over "every other display rule in this file"; measured
+   in Chromium, it does not. Two holes, both real, neither hypothetical:
 
-   IT WINS ON SPECIFICITY over `.pane dl` (0,2,0 vs 0,1,1) and every
-   other display rule in this file that a hidden element can carry.
-   Against a TIE — `.pane .row` and `.pane .seg` are also (0,2,0) —
-   it wins only by SOURCE ORDER. So: this block is the last block in
-   this file. Append new pane rules ABOVE it, never below. */
-.pane [hidden] { display: none; }
+     · (0,2,0) LOSES TO (0,2,1). `.pane a.out`, `.pane .mini-hero img`,
+       `.pane .follow-list a` and `.pane .wlist button` each declare
+       display and each outranks it. All four render today with hidden
+       set. Source order cannot save a rule that loses on specificity.
+     · IT NEVER MATCHED THE PANES. A descendant selector does not match
+       `.pane` itself, so the six panes — the elements the whole
+       mechanism turns on — were held up by the UA rule alone, and
+       `#menu.over > .pane` is (1,2,0): one `display` added there and
+       every pane renders at once, this bug at six times the scale.
+
+   SO THE RULE IS !important, AND THAT IS THE RIGHT TOOL, not a defeat.
+   `hidden` is a USER-AGENT invariant this stylesheet broke by accident;
+   restoring it is exactly what !important is for, which is why every
+   CSS reset in existence writes this line. Specificity cannot do the
+   job — no class-based selector outranks an id-based one — and a rule
+   that can be lost is the defect we already shipped once.
+
+   THE SELECTOR IS THREE, and each earns its place: `.menu [hidden]`
+   is the sandwich's whole tree — every pane, every pane's child, and
+   the site's write box, on all three pages; `.pane[hidden]` and
+   `.pane [hidden]` cover a pane and its children wherever a pane may
+   one day live, since the first form's reach is the only thing scoping
+   costs. Outside the sandwich web/index.html keeps its own
+   `.layer[hidden]` for the card — the same lesson, learned there
+   first. */
+.menu [hidden], .pane[hidden], .pane [hidden] { display: none !important; }
