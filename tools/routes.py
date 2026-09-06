@@ -25,6 +25,10 @@
 #           the menu (the shell owns the pane's content); its href, if
 #           any, is the pane's door out. A site page renders it as a
 #           link if it has an href and skips it otherwise.
+#
+#   follow  web/follow.json — the five external links, rendered by
+#           follow_html(). The website's bottom menu (DOORS_3), and the
+#           engine's Follow pane; the same list, one home.
 import json
 import os
 
@@ -32,6 +36,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 WEB = os.path.join(os.path.dirname(HERE), "web")
 ROUTES = os.path.join(WEB, "routes.json")
 MENU_CSS = os.path.join(WEB, "menu.css")
+FOLLOW = os.path.join(WEB, "follow.json")
 
 
 def esc(s):
@@ -105,9 +110,24 @@ def menu_css():
         return fh.read().rstrip("\n")
 
 
+def follow_html(indent="    "):
+    """Follow the work — the website's bottom menu, one home (web/follow.json).
+    External links, so the collection gate exempts them (https:)."""
+    with open(FOLLOW, encoding="utf-8") as fh:
+        links = json.load(fh)
+    items = []
+    for l in links:
+        if not l.get("label") or not str(l.get("href", "")).startswith("https://"):
+            raise SystemExit("REFUSE  web/follow.json: every entry needs a label and an https href")
+        items.append('<a href="%s" rel="me noopener" target="_blank">%s</a>' % (esc(l["href"]), esc(l["label"])))
+    return ("\n" + indent).join(items)
+
+
 if __name__ == "__main__":
     for base in ("/about/", "/collection/"):
         print("--- site @ %s" % base)
         print(nav_html("site", base))
     print("--- engine @ /")
     print(nav_html("engine", "/"))
+    print("--- follow")
+    print(follow_html())

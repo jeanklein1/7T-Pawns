@@ -149,28 +149,6 @@ def build_strip(Image, site, preview):
     return "\n      ".join(tags)
 
 
-def build_authors(site):
-    blocks = []
-    for a in site["authors"]:
-        lines = "".join("<p>%s</p>" % esc(l) for l in a.get("lines", []))
-        blocks.append('<div class="author"><h3>%s</h3>%s</div>'
-                      % (esc(a["name"]), lines))
-    return "\n    ".join(blocks)
-
-
-def build_links(site):
-    items = []
-    for l in site["links"]:
-        if "REPLACE" in l.get("url", ""):
-            say("  link %-12s has no real url yet — left out" % l["label"])
-            continue
-        items.append('<li><a class="rule" href="%s" rel="me noopener">%s</a></li>'
-                     % (esc(l["url"]), esc(l["label"])))
-    if not items:
-        items.append("<li>links arrive here.</li>")
-    return "\n      ".join(items)
-
-
 def fill(template, subs):
     out = template
     for key, val in subs.items():
@@ -183,7 +161,7 @@ def fill(template, subs):
             out = out.replace("/* __MENU_CSS__ */", val)   # DOORS_0 — the sandwich's rules, one home
         else:
             out = out.replace(marker, val)
-    for token in ("__HERO__", "__STRIP__", "__AUTHORS__", "__LINKS__",
+    for token in ("__HERO__", "__STRIP__", "__FOLLOW__",
                   "__HERO_DATA__", "__EMAIL__", "__ROUTES__", "__MENU_CSS__"):
         if token in out:
             say("REFUSE  template placeholder %s did not substitute" % token)
@@ -214,8 +192,7 @@ def main():
         "MENU_CSS": routes.menu_css(),                        # DOORS_0
         "HERO": hero_tag,
         "STRIP": build_strip(Image, site, preview),
-        "AUTHORS": build_authors(site),
-        "LINKS": build_links(site),
+        "FOLLOW": routes.follow_html(indent="    "),          # DOORS_3 — the footer's own menu
         "HERO_DATA": hero_data,
         "EMAIL": site["email"],
     })

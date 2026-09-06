@@ -99,15 +99,6 @@
   /* ── bands ────────────────────────────────────────────────────── */
   section.band { padding: 0 var(--edge) var(--s6); }
 
-  .authors {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
-    gap: var(--s5);
-    max-width: 62em;
-  }
-  .author h3 { margin: 0 0 0.4em; font-size: clamp(20px, 2vw, 25px); font-weight: 400; }
-  .author p { margin: 0 0 0.6em; color: var(--dim); max-width: 32em; }
-
   .write { max-width: 34em; }
   .write p.leadin { margin: 0 0 var(--s4); color: var(--dim); font-style: italic; }
   .field { margin-bottom: var(--s3); }
@@ -144,9 +135,6 @@
   .write button[disabled] { color: var(--faint); border-color: var(--faint); cursor: default; }
   .write .said { margin-top: var(--s2); color: var(--dim); font-style: italic; min-height: 1.5em; }
   .write .said a { color: var(--dim); }
-
-  .links ul { list-style: none; margin: 0; padding: 0; }
-  .links li { margin: 0 0 0.55em; }
 /* __MENU_CSS__ */
 </style>
 </head>
@@ -204,13 +192,6 @@
   </a>
 </div>
 
-<section class="band" id="authors">
-  <h2 class="band-label">authors</h2>
-  <div class="authors">
-    <!-- __AUTHORS__ -->
-  </div>
-</section>
-
 <section class="band" id="write">
   <h2 class="band-label">write</h2>
   <div class="write">
@@ -238,16 +219,13 @@
   </div>
 </section>
 
-<section class="band" id="links">
-  <h2 class="band-label">elsewhere</h2>
-  <div class="links">
-    <ul>
-      <!-- __LINKS__ -->
-    </ul>
-  </div>
-</section>
-
 <footer>
+  <!-- DOORS_3 — FOLLOW THE WORK: the website's bottom menu, from
+       web/follow.json through tools/routes.py. -->
+  <nav class="follow" id="follow" aria-label="Follow the work">
+    <span class="band-label">Follow the work</span>
+    <!-- __FOLLOW__ -->
+  </nav>
   <span>the ever expanding board</span>
   <span>set in Newsreader · no trackers</span>
 </footer>

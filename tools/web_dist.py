@@ -950,15 +950,16 @@ def main():
     # carrying a literal __BUILD_ID__ and no menu, which is the very
     # stale-pair defect the first refusal exists to prevent. It cited the
     # build-id law as its precedent; this is that law.
-    for marker in ("<!-- __ROUTES__ -->", "/* __MENU_CSS__ */"):
+    for marker in ("<!-- __ROUTES__ -->", "/* __MENU_CSS__ */", "<!-- __FOLLOW__ -->"):
         if shell_src.count(marker) != 1:
             print("")
             print("REFUSING TO SHIP A SHELL WITHOUT ITS MENU MARKER.")
             print("  %s must carry %s exactly once (found %d)."
                   % (shell_src_path, marker, shell_src.count(marker)))
-            print("  The route list and the menu's rules are injected at these two")
-            print("  markers (web/routes.json + web/menu.css, through tools/routes.py);")
-            print("  without them the page ships with no way out of the engine.")
+            print("  The route list, the menu's rules and the follow links are")
+            print("  injected at these three markers (web/routes.json + web/menu.css")
+            print("  + web/follow.json, through tools/routes.py); without them the")
+            print("  page ships with no way out of the engine.")
             return 7
 
     # POSTER_0 — THE SECOND REFUSAL, and before rmtree for the reason the
@@ -1048,6 +1049,7 @@ def main():
     # above, before rmtree, with the other three.
     shell_out = shell_out.replace("<!-- __ROUTES__ -->", routes.nav_html("engine", "/", indent="      "))
     shell_out = shell_out.replace("/* __MENU_CSS__ */", routes.menu_css())
+    shell_out = shell_out.replace("<!-- __FOLLOW__ -->", routes.follow_html(indent="        "))   # DOORS_3 — the Follow pane
 
     # ── AUBADE U7 — FIRST LIGHT STARTS AT HTML PARSE ────────────────
     #
