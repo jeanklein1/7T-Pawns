@@ -34,6 +34,7 @@ import glob
 import json
 import routes   # DOORS_0 — web/routes.json + web/menu.css, the sandwich's one renderer
 import os
+import re
 import shutil
 import sys
 
@@ -239,6 +240,16 @@ def main():
     os.makedirs(DIST, exist_ok=True)
     with open(os.path.join(DIST, "index.html"), "w", encoding="utf-8") as fh:
         fh.write(page)
+    # DOORS_2 — THE ABOUT PAGE IN MINIATURE. The doctrine's own markup and
+    # the address, for the engine's Text and Write panes; taken from the
+    # page just written, so the two cannot disagree (peek.json's law). The
+    # template stays the doctrine's one home.
+    m = re.search(r'<header class="doctrine" id="text">(.*?)</header>', page, re.S)
+    if not m:
+        say("REFUSE  the doctrine header is not in the page — the engine's Text pane would have nothing to show")
+        sys.exit(1)
+    with open(os.path.join(DIST, "about.json"), "w", encoding="utf-8") as fh:
+        json.dump({"html": m.group(1).strip(), "email": site["email"]}, fh)
     dst_fonts = os.path.join(DIST_ROOT, "fonts")
     if os.path.isdir(dst_fonts):
         shutil.rmtree(dst_fonts)

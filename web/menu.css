@@ -80,3 +80,15 @@
 .pane .pane-sub { margin: 12px 0 6px; color: var(--ink); letter-spacing: .06em; font-size: 13px; }
 .pane ul.try { margin: 0 0 10px; padding-left: 1.1em; }
 .pane ul.try li { margin: 0 0 4px; }
+
+/* ── DOORS_2 — the about page in miniature ─────────────────────────── */
+.pane .text h1 { font-size: 18px; font-weight: 430; margin: 0 0 8px; color: var(--ink); }
+.pane .text p { margin: 0 0 8px; }
+.pane form label { display: block; margin: 0 0 8px; }
+.pane form input, .pane form textarea {
+  display: block; width: 100%; box-sizing: border-box; margin-top: 3px;
+  font: inherit; color: var(--ink); background: none;
+  border: 1px solid #33323c; border-radius: 2px; padding: 6px 8px;
+}
+.pane form .hp { position: absolute; left: -9999px; }
+.pane form .said { align-self: center; }

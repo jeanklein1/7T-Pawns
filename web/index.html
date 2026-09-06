@@ -922,6 +922,29 @@
       <div class="peek" id="peek" aria-live="polite"></div>
       <a class="out" data-out target="_blank" rel="opener" href="/collection/">Open the collection in a new tab →</a>
     </div>
+    <!-- DOORS_2 — THE ABOUT PAGE IN MINIATURE. Two panes fed by one fetch of
+         /about/about.json (gesture-time, never boot): the doctrine as the
+         site wrote it, and the same message door the site opens, posting to
+         the same function (functions/api/message.js takes JSON). Words are
+         placeholders; the address is site.json's. -->
+    <div class="pane" data-pane="text" hidden>
+      <button type="button" class="back" data-back>← menu</button>
+      <p class="pane-head">Text</p>
+      <div class="text" id="miniText"></div>
+      <a class="out" data-out target="_blank" rel="opener" href="/about/#text">Read it on the website →</a>
+    </div>
+    <div class="pane" data-pane="write" hidden>
+      <button type="button" class="back" data-back>← menu</button>
+      <p class="pane-head">Write me</p>
+      <form id="mini" method="post" action="/api/message">
+        <label>name<input name="name" autocomplete="name"></label>
+        <label>email, if you want an answer<input name="email" type="email" autocomplete="email"></label>
+        <label>message<textarea name="message" required rows="4"></textarea></label>
+        <label class="hp" aria-hidden="true">leave this empty<input name="website" tabindex="-1" autocomplete="off"></label>
+        <div class="row"><button type="submit" id="miniSend">Send</button><span class="said" id="miniSaid"></span></div>
+      </form>
+      <a class="out" data-out target="_blank" rel="opener" href="/about/#write">Write from the website →</a>
+    </div>
   </details>
 
   <script>
@@ -1444,8 +1467,46 @@
         panes.forEach(function (p) { p.hidden = (p.dataset.pane !== id); });
         menu.classList.toggle('paned', !!id);
         if (id === 'collection') loadPeek();
+        if (id === 'text' || id === 'write') loadAbout();    // DOORS_2
         if (id === 'board') startRoll(); else stopRoll();    // VISIT_0 / DOORS_2: the roll lives in The Board
       }
+      // DOORS_2 — ONE FETCH FOR TWO PANES: the doctrine (trusted markup — it
+      // is our own template, written by about_dist) and the address the
+      // Write pane falls back to.
+      var about = null, aboutLoading = false;
+      var miniText = document.getElementById('miniText');
+      function loadAbout() {
+        if (about || aboutLoading) return;
+        aboutLoading = true;
+        fetch('/about/about.json', { cache: 'no-cache' }).then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        }).then(function (d) {
+          about = d;
+          if (miniText) miniText.innerHTML = d.html || '';
+        }).catch(function (err) {
+          aboutLoading = false;                      // retry on the next opening
+          if (miniText) miniText.textContent = 'The website did not answer.';
+          note('[shell] about: ' + err);
+        });
+      }
+      var mini = document.getElementById('mini');
+      var miniSaid = document.getElementById('miniSaid');
+      if (mini) mini.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var data = {};
+        ['name', 'email', 'message', 'website'].forEach(function (k) {
+          var f = mini.elements[k]; data[k] = f ? f.value : '';
+        });
+        miniSaid.textContent = 'Sending…';
+        fetch('/api/message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+          .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); miniSaid.textContent = 'Sent. Thank you.'; mini.reset(); })
+          .catch(function (err) {
+            note('[shell] write: ' + err);
+            var mail = about && about.email ? about.email : '';
+            miniSaid.innerHTML = 'It did not go through' + (mail ? ' — <a href="mailto:' + mail + '">mail me instead</a>' : ' — try the website') + '.';
+          });
+      });
       function loadPeek() {
         if (peekLoaded || !peekEl) return;
         peekLoaded = true;
