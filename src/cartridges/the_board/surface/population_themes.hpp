@@ -140,7 +140,15 @@ static_assert(offsetof(PopulationTheme, weight) ==
 // shifts spawn rates or tier draws; changing one changes worlds.
 inline constexpr PopulationTheme THEMES[THEME_COUNT] = {
     // ── 0: TRANSITION — sparse connective tissue ─────────────────
-    {   { 0.4f, 0.75f, 0.7f, 0.3f, 0.3f, 0.3f, 0.5f, 0.3f, 1.0f, 0.5f, 0.5f, 0.5f },  // spawn_weight [pyr..sph, ribn, cube, gol, gall]
+    // RISE_0 — the pyramid column, all rows: a pyramid is a DOOR now
+    // (FRUSTUM_0 promoted every summit to a fly base), and a door the
+    // themes suppress is a function the visitor meets by luck. The
+    // sub-1.0 cells rise — 0.4/0.3/0.5/0.4 -> 0.8/0.8/0.8/0.7 — so every
+    // theme carries doors; MONUMENTAL keeps its 1.5 crown and BARREN
+    // stays the leanest. PyramidConfig::SPAWN_CHANCE holds at 0.050
+    // (FRUSTUM_0): the instance ceiling is 8, and the remaining
+    // suppressor was this column, not the roll.
+    {   { 0.8f, 0.75f, 0.7f, 0.3f, 0.3f, 0.3f, 0.5f, 0.3f, 1.0f, 0.5f, 0.5f, 0.5f },  // spawn_weight [pyr..sph, ribn, cube, gol, gall]
         { 1.0f, 1.0f, 1.0f },                                       // tier_pyr
         { 1.233f, 0.3f, 1.0f },                                     // tier_arch
         { 0.1f, 0.2f, 0.3f },                                       // tier_col
@@ -170,7 +178,7 @@ inline constexpr PopulationTheme THEMES[THEME_COUNT] = {
         0.30f
     },
     // ── 2: COLONNADE — dense columns, moderate arches ────────────
-    {   { 0.3f, 0.75f, 4.0f, 0.5f, 0.3f, 0.3f, 0.5f, 0.3f, 1.0f, 0.3f, 0.5f, 0.4f },
+    {   { 0.8f, 0.75f, 4.0f, 0.5f, 0.3f, 0.3f, 0.5f, 0.3f, 1.0f, 0.3f, 0.5f, 0.4f },  // RISE_0: pyr 0.3 -> 0.8 (the largest map share starved the doors hardest)
         { 1.0f, 1.0f, 1.0f },
         { 1.423f, 0.5f, 1.0f },
         { 0.3f, 3.0f, 5.0f },
@@ -185,7 +193,7 @@ inline constexpr PopulationTheme THEMES[THEME_COUNT] = {
         0.31f
     },
     // ── 3: ANTENNA — antenna-dominant corridor ───────────────────
-    {   { 0.5f, 0.75f, 1.0f, 4.0f, 0.5f, 0.5f, 0.5f, 0.3f, 1.0f, 0.3f, 0.3f, 0.3f },
+    {   { 0.8f, 0.75f, 1.0f, 4.0f, 0.5f, 0.5f, 0.5f, 0.3f, 1.0f, 0.3f, 0.3f, 0.3f },  // RISE_0: pyr 0.5 -> 0.8
         { 1.0f, 0.05f, 2.0f },
         { 0.949f, 0.2f, 0.8f },
         { 0.1f, 0.3f, 0.3f },
@@ -200,7 +208,7 @@ inline constexpr PopulationTheme THEMES[THEME_COUNT] = {
         0.18f
     },
     // ── 4: BARREN — near-empty ───────────────────────────────────
-    {   { 0.4f, 0.75f, 0.5f, 0.3f, 0.2f, 0.2f, 0.1f, 0.3f, 1.0f, 0.1f, 0.2f, 0.6f },
+    {   { 0.7f, 0.75f, 0.5f, 0.3f, 0.2f, 0.2f, 0.1f, 0.3f, 1.0f, 0.1f, 0.2f, 0.6f },  // RISE_0: pyr 0.4 -> 0.7 — barren keeps its lean, but even the desert has doors
         { 2.0f, 0.5f, 0.2f },
         { 1.897f, 1.0f, 1.0f },
         { 0.2f, 0.5f, 0.5f },
