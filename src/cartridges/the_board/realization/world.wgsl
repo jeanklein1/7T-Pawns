@@ -908,9 +908,10 @@ struct AgentState {
     pos_x: f32,
     pos_y: f32,
     pos_z: f32,
-    t: f32,         // the possessed slot's AIR CLOCK (LEAP_0): 0 on the ground;
-                    // +seconds since the leap; −seconds since the somersault (spent).
-                    // Zero on every other slot. Mirrors GPUAgentState.t.
+    t: f32,         // the possessed slot's AIR CLOCK (LEAP_0/1): 0 on the ground;
+                    // +seconds since the leap; (−BAND, 0) = the first somersault's
+                    // seconds; ≤ −BAND = the second's, offset by LEAP_FLIP_BAND —
+                    // both spent. Zero on every other slot. Mirrors GPUAgentState.t.
     vel_x: f32,
     vel_y: f32,
     vel_z: f32,
@@ -1909,7 +1910,16 @@ struct DesignConfig {
     leap_rise: f32,                 // 720
     leap_fall_ratio: f32,           // 724
     leap_flip_apex: f32,            // 728
-    _pad736_0: f32,                 // 732
+    // LEAP_1 — the second somersault's apex and the ring's speed (PULSE_SPEED
+    // graduated — the contributor reads it here now). Mirror of
+    // GPUDesignConfig (state.hpp) — GROWTH LAW, same commit, same order, same
+    // types. One pad consumed in place, one appended, three fresh pads:
+    // 736 -> 752 (state.hpp carries the witness). Was _pad736_0.
+    leap_flip2_apex: f32,           // 732
+    pulse_speed: f32,               // 736
+    _pad752_0: f32,                 // 740
+    _pad752_1: f32,                 // 744
+    _pad752_2: f32,                 // 748
 }
 
 // §2.2 — THE TERRAIN_LOOKS PANEL (WGSL room)
@@ -2195,6 +2205,11 @@ const PAWN_AIR_LIP: f32 = 0.35;
 // leap's apex over flat ground at the authored rests; the screen is the
 // gate. Shape, not a dial.
 const LEAP_FLIP_SECONDS: f32 = 0.45;
+// THE SECOND TUMBLE'S BAND (LEAP_1). One float carries three air states:
+// t in (0, inf) = leaping, no flip spent; t in (-BAND, 0) = the first
+// tumble's clock; t <= -BAND = the second's, offset by the band — both
+// spent. 64 is exact in f32 and no flight approaches it. Shape, not a dial.
+const LEAP_FLIP_BAND: f32 = 64.0;
 
 // Chess pawn mesh resolution (GPU-generated from vertex_index)
 const PAWN_SEGMENTS: u32 = 48u;
@@ -8321,9 +8336,14 @@ fn behavior_player_controlled(agent_in: AgentState) -> AgentState {
         if (door && agent.t == 0.0) {                       // THE LEAP — from the ground
             agent.vel_y = 2.0 * config.leap_apex / rise;
             agent.t = dt;
-        } else if (door && agent.t > 0.0) {                 // THE SOMERSAULT — once, from the air
+        } else if (door && agent.t > 0.0) {                 // THE SOMERSAULT — from the air
             agent.vel_y = sqrt(2.0 * g_rise * max(config.leap_flip_apex, 0.0));
-            agent.t = -dt;                                  // spent; the tumble's clock starts
+            agent.t = -dt;                                  // the first tumble's clock starts
+        } else if (door && agent.t < 0.0 && agent.t > -LEAP_FLIP_BAND) {
+            // THE THIRD TAP (LEAP_1) — taller still, once. The band marks
+            // both flips spent; touchdown clears it.
+            agent.vel_y = sqrt(2.0 * g_rise * max(config.leap_flip2_apex, 0.0));
+            agent.t = -(LEAP_FLIP_BAND + dt);
         }
         if (agent.t != 0.0) {
             // THE BODY'S LAW. Rising and falling gravity differ — the apex
@@ -8391,7 +8411,8 @@ fn behavior_player_controlled(agent_in: AgentState) -> AgentState {
         // tumble reads backward on the screen, negate `turn` — a value, not
         // a shape.
         if (agent.t < 0.0) {
-            let turn = 6.2831853 * saturate(-agent.t / LEAP_FLIP_SECONDS);
+            let tumble = select(-agent.t, -agent.t - LEAP_FLIP_BAND, agent.t <= -LEAP_FLIP_BAND);
+            let turn = 6.2831853 * saturate(tumble / LEAP_FLIP_SECONDS);
             orient_target = quat_multiply(orient_target, quat_from_axis_angle(vec3(1.0, 0.0, 0.0), turn));
         }
 

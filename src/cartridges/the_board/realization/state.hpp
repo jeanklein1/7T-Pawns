@@ -950,7 +950,19 @@ namespace t7 {
             float leap_rise;               // 720  s — ground to apex; the dial floors it above 0
             float leap_fall_ratio;         // 724  falling gravity / rising gravity — the apex hang
             float leap_flip_apex;          // 728  wu — the somersault's own apex over where it fired
-            float _pad736_0;               // 732
+            // LEAP_1 — the second somersault's apex and the ring's speed.
+            // Mirror of world.wgsl's config (GROWTH LAW: same commit, same
+            // order, same types). pulse_speed is PULSE_SPEED graduated: the
+            // ring's expansion was a WGSL const and the swap's delay needs
+            // the same number CPU-side — one home ends the twin. Rests:
+            // contracts/control_panel.hpp LEAP_FLIP2_APEX / PULSE_RING_SPEED.
+            // One pad consumed IN PLACE, one appended, three fresh pads to
+            // the boundary: 736 -> 752. Was _pad736_0.
+            float leap_flip2_apex;         // 732  wu — the third tap's taller somersault
+            float pulse_speed;             // 736  wu/s — the ring's expansion; the swap's clock
+            float _pad752_0;               // 740
+            float _pad752_1;               // 744
+            float _pad752_2;               // 748
         };
 
         struct alignas(16) GPUTileGridEntry {
@@ -982,9 +994,11 @@ namespace t7 {
             float pos_x;           //  0
             float pos_y;           //  4
             float pos_z;           //  8
-            float t;               // 12 — the possessed slot's AIR CLOCK (LEAP_0): 0 on the
-                                   //      ground; +seconds since the leap; −seconds since the
-                                   //      somersault (spent). Zero on every other slot.
+            float t;               // 12 — the possessed slot's AIR CLOCK (LEAP_0/1): 0 on the
+                                   //      ground; +seconds since the leap; (−BAND, 0) = seconds
+                                   //      since the first somersault; ≤ −BAND = the second's,
+                                   //      offset by LEAP_FLIP_BAND (64) — both spent. Zero on
+                                   //      every other slot.
             float vel_x;           // 16
             float vel_y;           // 20
             float vel_z;           // 24
@@ -2034,8 +2048,8 @@ namespace t7 {
         // 624 -> 672. Both rooms, same commit.
         // RIBBON_2: the wander brain's four join them — one pad consumed,
         // three appended, one fresh pad; 672 -> 688. Both rooms, same commit.
-        static_assert(sizeof(GPUDesignConfig) == 736,
-            "GPUDesignConfig must be 736 bytes. PRUNING_1 P3 removed nine "
+        static_assert(sizeof(GPUDesignConfig) == 752,
+            "GPUDesignConfig must be 752 bytes. PRUNING_1 P3 removed nine "
             "zero-read fields (44 B) and added 12 B of DECLARED PAD: WGSL "
             "aligns vec3 to 16 while C++ packs float[3] at 4, and dropping "
             "44 B moved all four vec3 members off their boundaries. "
@@ -2055,7 +2069,8 @@ namespace t7 {
             "met that: no pad to reuse, two appended, two fresh pads to the "
             "boundary; 688 -> 704. PANORAMA_1: the two subtraction masks — one pad consumed IN PLACE, one appended, three fresh pads to the "
             "boundary; 704 -> 720. PANORAMA_1: the PCF tap count consumes one of those three pads IN PLACE — 720 unmoved. "
-            "LEAP_0: the leap's four dials — one pad consumed IN PLACE, three appended, one fresh pad to the boundary; 720 -> 736.)");
+            "LEAP_0: the leap's four dials — one pad consumed IN PLACE, three appended, one fresh pad to the boundary; 720 -> 736. "
+            "LEAP_1: the second somersault's apex and the graduated ring speed — one pad consumed IN PLACE, one appended, three fresh pads; 736 -> 752.)");
         // THE ALIGNMENT LAW (L4, docs/LAWS.md). These four are the only
         // offsets where the two rooms can disagree, and no witness here fires
         // when they do — grow at the TAIL (after checker_resultant's group) or
@@ -5544,6 +5559,9 @@ namespace t7 {
                 config_.leap_rise              = LEAP_RISE;
                 config_.leap_fall_ratio        = LEAP_FALL_RATIO;
                 config_.leap_flip_apex         = LEAP_FLIP_APEX;
+                // LEAP_1 — the same road: the second flip and the ring's speed.
+                config_.leap_flip2_apex        = LEAP_FLIP2_APEX;
+                config_.pulse_speed            = PULSE_RING_SPEED;
                 config_.freeze_sphere = 0;
                 config_.fpv_mode = 0;
                 config_.world_seed = 42;

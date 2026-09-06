@@ -239,7 +239,15 @@ inline constexpr float PULSE_TAP_AMPLITUDE = 1.5f;
 inline constexpr float LEAP_APEX       = 3.0f;   // wu — two pawn heights (PAWN_HEIGHT 1.5)
 inline constexpr float LEAP_RISE       = 0.30f;  // s — ground to apex
 inline constexpr float LEAP_FALL_RATIO = 1.8f;   // falling gravity / rising gravity — the apex hang
-inline constexpr float LEAP_FLIP_APEX  = 1.2f;   // wu — the somersault's own apex over where it fired
+inline constexpr float LEAP_FLIP_APEX  = 4.5f;   // wu — the somersault's own apex over where it fired; LEAP_1 raised 1.2 -> 4.5 (the flip stands taller than the leap)
+inline constexpr float LEAP_FLIP2_APEX = 6.5f;   // wu — the third tap's somersault, taller still (LEAP_1)
+// THE RING'S SPEED, graduated out of world.wgsl (was const PULSE_SPEED —
+// LEAP_1): the swap's delay divides by it CPU-side and the contributor
+// multiplies by it GPU-side, and two rooms holding one number is the twin
+// the possession radius already retired. The organ's CONFIG row edits the
+// live copy; at this rest and POSSESSION_RADIUS the wave reaches the
+// farthest body it can take in 0.67 s.
+inline constexpr float PULSE_RING_SPEED = 30.0f; // wu/s — ring expansion
 
 inline constexpr PanelSurface PANEL_TABLE = {
     { FIELD_BEACON_R0, FIELD_BEACON_R, FIELD_BEACON_S, FIELD_BEACON_LIFT },
