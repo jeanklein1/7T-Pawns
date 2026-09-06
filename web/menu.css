@@ -89,3 +89,21 @@
 .pane .mini-hero img { display: block; width: 100%; height: auto; max-height: 40vh; object-fit: cover; }
 .pane .follow-list a { display: block; padding: 6px 0; color: var(--dim); text-decoration: none; }
 .pane .follow-list a:hover, .pane .follow-list a:focus-visible { color: var(--ink); }
+
+/* ── DOORS_4 — HIDDEN MEANS HIDDEN, AND THIS BLOCK STAYS LAST ────────
+   .pane dl sets display:grid, and an AUTHOR display beats the UA's
+   [hidden]{display:none} at any specificity, because origin outranks
+   specificity. That is why both platform lists rendered and the
+   toggle "did nothing": the JS flipped .hidden correctly and the
+   cascade ignored it.
+
+   THE SHELL ALREADY LEARNED THIS ONCE — web/index.html carries
+   `.layer[hidden] { display: none; }` for the card, for this exact
+   reason. The lesson did not reach the panes. This rule generalises it.
+
+   IT WINS ON SPECIFICITY over `.pane dl` (0,2,0 vs 0,1,1) and every
+   other display rule in this file that a hidden element can carry.
+   Against a TIE — `.pane .row` and `.pane .seg` are also (0,2,0) —
+   it wins only by SOURCE ORDER. So: this block is the last block in
+   this file. Append new pane rules ABOVE it, never below. */
+.pane [hidden] { display: none; }
