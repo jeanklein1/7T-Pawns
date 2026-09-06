@@ -77,6 +77,12 @@ AVIF_SPEED = 7
 # rows vary, and the penalty for a miss is one rung, not a wrong image.
 SIZES = "(max-width: 620px) 94vw, (max-width: 1500px) 30vw, 24vw"
 
+# DOORS_0 — THE PEEK. How many works the engine's menu shows of the
+# collection: featured first, in set order, then the first work of each
+# set round-robin. The pacing decision stays where it is authored
+# (set.json's "featured"); this only counts.
+PEEK_COUNT = 12
+
 PREVIEW_EDGE = 900
 PREVIEW_Q = 62
 
@@ -266,6 +272,46 @@ def index_markup(sets):
     return '<span>·</span>'.join(links)
 
 
+def peek_entry(s, rec, meta, featured=False):
+    """One work as the engine's menu sees it: the 640 rung, the tone, the
+    title and the page address of the full work. Absolute paths, because
+    the engine page lives at the root."""
+    first = rec["variants"][0]
+    return {
+        "n": rec["n"], "set": s["slug"], "setLabel": s["label"],
+        "title": meta.get("title") or ("no. %d" % rec["n"]),
+        "tone": rec["tone"], "r": round(rec["w"] / rec["h"], 4),
+        "src": "/collection/%s/%s" % (s["slug"], first[2]),
+        "href": "/collection/#w%d" % rec["n"],
+        "featured": bool(featured),
+    }
+
+
+def peek_pick(entries):
+    """Featured first, in set order; then the first work of each set,
+    round-robin, until PEEK_COUNT. Keyed on (set, n): a number is unique
+    within a folder, not across folders (load_sets)."""
+    out = [e for e in entries if e["featured"]][:PEEK_COUNT]
+    seen = set((e["set"], e["n"]) for e in out)
+    lanes = {}
+    for e in entries:
+        lanes.setdefault(e["set"], []).append(e)
+    lanes = list(lanes.values())
+    i = 0
+    while len(out) < PEEK_COUNT and any(lanes) and i < 10000:
+        lane = lanes[i % len(lanes)]
+        i += 1
+        while lane and (lane[0]["set"], lane[0]["n"]) in seen:
+            lane.pop(0)
+        if lane:
+            e = lane.pop(0)
+            seen.add((e["set"], e["n"]))
+            out.append(e)
+    for e in out:
+        e.pop("featured", None)
+    return out
+
+
 def fill(template, index_html, works_html):
     out = template.replace("<!-- __INDEX__ -->", index_html)
     out = out.replace("<!-- __WORKS__ -->", works_html)
@@ -350,6 +396,7 @@ def main():
 
     index_html_parts, sections = [], []
     bytes_jpg = bytes_avf = 0
+    peek = []   # DOORS_0 — every work's record, for peek_pick
 
     for s in sets:
         out_dir = os.path.join(DIST, s["slug"])
@@ -371,6 +418,8 @@ def main():
                     tiles.append(tile_markup(
                         s["slug"], rec, s["work_meta"].get(str(n), {}),
                         featured=n in s["featured"]))
+                    peek.append(peek_entry(s, rec, s["work_meta"].get(str(n), {}),
+                                           featured=n in s["featured"]))
                     for (_, _, jn, an) in rec["variants"]:
                         bytes_jpg += os.path.getsize(os.path.join(out_dir, jn))
                         bytes_avf += os.path.getsize(os.path.join(out_dir, an))
@@ -398,6 +447,14 @@ def main():
 
     with open(os.path.join(DIST, "index.html"), "w", encoding="utf-8") as fh:
         fh.write(page)
+    # DOORS_0 — THE PEEK. A dozen works for the engine's menu, drawn from
+    # the same records that just wrote the page, so the two cannot
+    # disagree. The shell fetches it on the first opening of the menu —
+    # a gesture, never boot (web_dist's boot-set law).
+    with open(os.path.join(DIST, "peek.json"), "w", encoding="utf-8") as fh:
+        json.dump({"sets": [{"slug": s["slug"], "label": s["label"],
+                             "count": len(s["files"])} for s in sets],
+                   "works": peek_pick(peek)}, fh, separators=(",", ":"))
     # fonts live once, at the deployment root: front_dist.py ships
     # web/fonts/ to dist/fonts/, and this page reaches up to ../fonts/
 
@@ -411,6 +468,8 @@ def main():
                  "/collection/\n"
                  "  Cache-Control: no-cache\n"
                  "/collection/index.html\n"
+                 "  Cache-Control: no-cache\n"
+                 "/collection/peek.json\n"
                  "  Cache-Control: no-cache\n")
 
     files = sum(len(fs) for _, _, fs in os.walk(DIST))
