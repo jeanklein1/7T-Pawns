@@ -692,6 +692,12 @@ aspect sigma tightened.
 **EASE_1.** Mount eases 2.55 / 3.06 s (15% faster, ratio kept);
 "pulse to land" shows 8 s.
 
+**CAP_0 — the antenna's turning shadow.** Diagnosed: the disc pass
+restated the lathe's two flat annuli per drum with inverted normals;
+CullMode::None drew both; the dark twin won a view-dependent depth
+fight. Struck: both shoulder discs and their loop. Priced: the
+classical columns' step discs fight the same way, invisibly.
+
 ## SKIRT_WELD_1/P — THE PERIMETER SKIRT HANGS FROM THE BASE BAND (landed; one seam held)
 
 Sibling of SKIRT_WELD_1 on 7T-Music, landed there at `be0eb28f`. The patch
