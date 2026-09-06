@@ -874,37 +874,53 @@
          route id). A pane replaces the nav while open (#menu.paned) and
          carries its own way back. Controls: PLACEHOLDER COPY — the key
          words are Jean's, and their truth is console.hpp's. -->
-    <div class="pane" data-pane="controls" hidden>
+    <div class="pane" data-pane="board" hidden>
       <button type="button" class="back" data-back>← menu</button>
-      <p class="pane-head">Controls</p>
+      <p class="pane-head">The Board</p>
+      <!-- PLACEHOLDER COPY — Jean's sentence. -->
+      <p class="pane-note">A living world drawn by your GPU. It photographs itself and hangs the pictures; the paintings it hangs are on the website.</p>
+      <p class="pane-sub">Controls</p>
+      <!-- THE FACTS ARE input.hpp's and console.hpp's; the WORDS are
+           placeholders. DOORS_2 proposed "Ride / release: R" and "Free the
+           mouse: Esc" — U0 found R BOUND TO NOTHING in the tree (only the
+           #ifndef fallback) and no GLFW_KEY_ESCAPE at all, so both rows are
+           the tree's answer instead of the handoff's. The ribbon is boarded
+           by the leap gesture on a summit (request_radial_pulse); the
+           pointer door is Numpad ✱ (console.hpp intercepts it). -->
       <dl>
-        <dt>Move</dt><dd>W A S D · on a phone, drag one half of the screen</dd>
-        <dt>Look</dt><dd>the mouse · drag the other half</dd>
-        <dt>Ride / release</dt><dd>R</dd>
-        <dt>Pulse</dt><dd>Space · a clean tap</dd>
-        <dt>Free the mouse</dt><dd>Esc</dd>
+        <dt>Walk</dt><dd>W A S D · on a phone, drag the left half of the screen</dd>
+        <dt>Look</dt><dd>drag with the mouse held · on a phone, the right half</dd>
+        <dt>Zoom</dt><dd>the wheel · two fingers on the right half</dd>
+        <dt>Leap</dt><dd>Space · on a phone, one clean tap on the right half</dd>
+        <dt>Ring the ground</dt><dd>Caps Lock · two fingers, one clean tap — the wave reaches for a body as it goes</dd>
+        <dt>Aura</dt><dd>3 lights it · 2 raises it · on a phone, a second finger on the left half</dd>
+        <dt>Ride the ribbon</dt><dd>climb a tall pyramid — at the top the same leap boards it; leap again to step off</dd>
+        <dt>First person</dt><dd>Ctrl</dd>
+        <dt>Other worlds</dt><dd>walk through an arch · or 4 to 9, six worlds to jump to</dd>
+        <dt>Free the mouse</dt><dd>Numpad ✱ · Esc is the browser's own</dd>
       </dl>
+      <p class="pane-sub">Things to try</p>
+      <!-- PLACEHOLDER COPY — Jean's suggestions. -->
+      <ul class="try">
+        <li>Stand by a wall of pictures and wait for the next one to be hung.</li>
+        <li>Press Space among the cubes and watch where they go.</li>
+        <li>Find an arch and walk through it.</li>
+      </ul>
       <div class="row">
+        <button type="button" id="ctlPhoto">Take a photo</button>
         <button type="button" id="ctlFull">Fullscreen</button>
         <button type="button" id="ctlSound">Sound: on</button>
       </div>
+      <p class="pane-sub">Its own photographs</p>
+      <p class="pane-note">What the world has hung of its own pictures. Choose one and the pawn walks there; touch anything to stop.</p>
+      <ol class="roll" id="roll"></ol>
+      <p class="roll-state" id="rollState" hidden></p>
     </div>
     <div class="pane" data-pane="collection" hidden>
       <button type="button" class="back" data-back>← menu</button>
       <p class="pane-head">The collection</p>
       <div class="peek" id="peek" aria-live="polite"></div>
-      <a class="out" data-out target="_blank" rel="noopener" href="/collection/">Open the collection in a new tab →</a>
-    </div>
-    <!-- VISIT_0 — THE ROLL. A directory of what the world has hung of its
-         own photographs; choosing one walks the pawn to it. The pictures
-         never leave the GPU: the list is the gallery's slot array read
-         through the registry's window (gallery_roll). Placeholder words. -->
-    <div class="pane" data-pane="roll" hidden>
-      <button type="button" class="back" data-back>← menu</button>
-      <p class="pane-head">Photographs</p>
-      <p class="pane-note">What the world has hung of its own pictures. Choose one and the pawn walks to it; touch anything to stop.</p>
-      <ol class="roll" id="roll"></ol>
-      <p class="roll-state" id="rollState" hidden></p>
+      <a class="out" data-out target="_blank" rel="opener" href="/collection/">Open the collection in a new tab →</a>
     </div>
   </details>
 
@@ -1428,7 +1444,7 @@
         panes.forEach(function (p) { p.hidden = (p.dataset.pane !== id); });
         menu.classList.toggle('paned', !!id);
         if (id === 'collection') loadPeek();
-        if (id === 'roll') startRoll(); else stopRoll();     // VISIT_0
+        if (id === 'board') startRoll(); else stopRoll();    // VISIT_0 / DOORS_2: the roll lives in The Board
       }
       function loadPeek() {
         if (peekLoaded || !peekEl) return;
@@ -1440,7 +1456,7 @@
           var frag = document.createDocumentFragment();
           (d.works || []).forEach(function (w) {
             var a = document.createElement('a');
-            a.href = w.href; a.target = '_blank'; a.rel = 'noopener';
+            a.href = w.href; a.target = '_blank'; a.rel = 'opener';   // DOORS_2 — the site tab can find its way back
             a.className = 'peek-work'; a.title = w.title;
             a.style.setProperty('--tone', w.tone);
             a.style.setProperty('--r', w.r);
@@ -1563,6 +1579,35 @@
           music.pause();
         }
         ctlSound.textContent = music.paused ? 'Sound: off' : 'Sound: on';
+      });
+      // THE VISITOR'S OWN CAMERA (DOORS_2). The world photographs itself
+      // for its walls; this is the other camera — what the visitor sees,
+      // handed to their own device: the share sheet where there is one
+      // (Messages, Mail, AirDrop, Photos), a download where there is not.
+      // No server, no readback, no address to abuse. HYPOTHESIS (P1): a
+      // WebGPU canvas keeps its last presented image for toBlob; a black
+      // picture is the gate row, and the fallback is registered.
+      var ctlPhoto = document.getElementById('ctlPhoto');
+      var canvasEl = document.getElementById('canvas');
+      if (ctlPhoto && canvasEl) ctlPhoto.addEventListener('click', function () {
+        try {
+          canvasEl.toBlob(function (blob) {
+            if (!blob) { note('[shell] photo: the canvas gave no image'); return; }
+            var name = 'the_board_' + (window.T7_BUILD_ID || '') + '_'
+                     + new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19) + '.png';
+            var file = window.File ? new File([blob], name, { type: 'image/png' }) : null;
+            if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+              navigator.share({ files: [file], title: 'the_board' })
+                .catch(function (err) { if (!err || err.name !== 'AbortError') note('[shell] photo: ' + err); });
+              return;
+            }
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url; a.download = name;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+          }, 'image/png');
+        } catch (err) { note('[shell] photo: ' + err); }
       });
     })();
 

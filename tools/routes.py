@@ -9,6 +9,11 @@
 # Neither file ships; both are build-time only.
 #
 #   side    "site" | "engine" | absent (both)
+#   return  true — on a site page, when this tab was opened by the engine
+#           (window.opener, same origin), the link CLOSES the tab: the world
+#           is still there, where it was. Without an opener it navigates.
+#           The engine's own links open a new tab with rel="opener" for
+#           exactly this, whatever the visitor browses in between.
 #   engine  "pane" — on the engine shell the route opens a pane inside
 #           the menu (the shell owns the pane's content); its href, if
 #           any, is the pane's door out. A site page renders it as a
@@ -52,8 +57,17 @@ def nav_html(side, indent="    "):
             continue
         if not r.get("href"):
             continue
-        items.append('<a data-route="%s" href="%s">%s</a>'
-                     % (esc(r["id"]), esc(r["href"]), esc(r["label"])))
+        attrs = ""
+        if side == "engine":
+            # DOORS_2 — the world tab is never left; rel=opener because
+            # _blank implies noopener since 2021 and the return path needs it.
+            attrs = ' target="_blank" rel="opener"'
+        elif r.get("return"):
+            # DOORS_2 — close-or-navigate: close() only counts if the tab
+            # actually closed (window.closed), else the link runs.
+            attrs = ' onclick="return !(window.opener &amp;&amp; !window.opener.closed &amp;&amp; (window.close(), window.closed))"'
+        items.append('<a data-route="%s" href="%s"%s>%s</a>'
+                     % (esc(r["id"]), esc(r["href"]), attrs, esc(r["label"])))
     return ("\n" + indent).join(items)
 
 

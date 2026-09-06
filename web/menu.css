@@ -75,3 +75,8 @@
 .roll button { display: block; width: 100%; text-align: left; font: inherit; color: var(--dim); background: none; border: 0; padding: 7px 0; cursor: pointer; }
 .roll button:hover, .roll button:focus-visible { color: var(--ink); }
 .roll-state { margin: 8px 0 0; color: var(--ink); }
+
+/* ── DOORS_2 — The Board's sections ───────────────────────────────── */
+.pane .pane-sub { margin: 12px 0 6px; color: var(--ink); letter-spacing: .06em; font-size: 13px; }
+.pane ul.try { margin: 0 0 10px; padding-left: 1.1em; }
+.pane ul.try li { margin: 0 0 4px; }
