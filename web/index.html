@@ -920,10 +920,10 @@
       <button type="button" class="back" data-back>← menu</button>
       <p class="pane-head">The collection</p>
       <div class="peek" id="peek" aria-live="polite"></div>
-      <a class="out" data-out target="_blank" rel="opener" href="/collection/">Open the collection in a new tab →</a>
+      <a class="out" data-out target="_blank" rel="opener" href="collection/">Open the collection in a new tab →</a>
     </div>
     <!-- DOORS_2 — THE ABOUT PAGE IN MINIATURE. Two panes fed by one fetch of
-         /about/about.json (gesture-time, never boot): the doctrine as the
+         about/about.json (gesture-time, never boot): the doctrine as the
          site wrote it, and the same message door the site opens, posting to
          the same function (functions/api/message.js takes JSON). Words are
          placeholders; the address is site.json's. -->
@@ -931,19 +931,19 @@
       <button type="button" class="back" data-back>← menu</button>
       <p class="pane-head">Text</p>
       <div class="text" id="miniText"></div>
-      <a class="out" data-out target="_blank" rel="opener" href="/about/#text">Read it on the website →</a>
+      <a class="out" data-out target="_blank" rel="opener" href="about/#text">Read it on the website →</a>
     </div>
     <div class="pane" data-pane="write" hidden>
       <button type="button" class="back" data-back>← menu</button>
       <p class="pane-head">Write me</p>
-      <form id="mini" method="post" action="/api/message">
+      <form id="mini" method="post" action="api/message">
         <label>name<input name="name" autocomplete="name"></label>
         <label>email, if you want an answer<input name="email" type="email" autocomplete="email"></label>
         <label>message<textarea name="message" required rows="4"></textarea></label>
         <label class="hp" aria-hidden="true">leave this empty<input name="website" tabindex="-1" autocomplete="off"></label>
         <div class="row"><button type="submit" id="miniSend">Send</button><span class="said" id="miniSaid"></span></div>
       </form>
-      <a class="out" data-out target="_blank" rel="opener" href="/about/#write">Write from the website →</a>
+      <a class="out" data-out target="_blank" rel="opener" href="about/#write">Write from the website →</a>
     </div>
   </details>
 
@@ -1478,7 +1478,7 @@
       function loadAbout() {
         if (about || aboutLoading) return;
         aboutLoading = true;
-        fetch('/about/about.json', { cache: 'no-cache' }).then(function (r) {
+        fetch('about/about.json', { cache: 'no-cache' }).then(function (r) {
           if (!r.ok) throw new Error('HTTP ' + r.status);
           return r.json();
         }).then(function (d) {
@@ -1499,7 +1499,7 @@
           var f = mini.elements[k]; data[k] = f ? f.value : '';
         });
         miniSaid.textContent = 'Sending…';
-        fetch('/api/message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+        fetch('api/message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
           .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); miniSaid.textContent = 'Sent. Thank you.'; mini.reset(); })
           .catch(function (err) {
             note('[shell] write: ' + err);
