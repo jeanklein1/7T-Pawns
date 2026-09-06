@@ -59,6 +59,25 @@ requests a radial pulse, and naming is Jean's gate (`request_leap` /
 routing off this door: it still rides the leap's word (LEAP_1 R6), which
 is why a dismount tap still fires a leap off the saddle.
 
+**LEAP_2 — the latch was the bug, and it predates the campaigns.**
+`TouchPoint::alone` was cleared by any finger anywhere, so the stick's thumb
+cancelled the solitude of every tap on the far half: the one-finger word
+could not be said while walking, from PULSE_1 through LEAP_1, and LEAP_1's
+own reading claimed otherwise. It is `solo` now and scoped to the half — the
+two halves were already separate rooms for the stick and the look, and are
+separate rooms for the latch. The pulse/leap split (PULSE_SPLIT_0, reverted
+at `cde4c47`) is restored unchanged: it was never what was wrong.
+
+**Jean's readings:** walk with the left thumb and tap the right half — the
+leap arrives and the walk does not stop (this is the reading LEAP_1 owed and
+could not have passed); three taps climb the ladder while walking; two right
+fingers ring and swap without leaping; one right finger never rings.
+
+**Priced, not built:** slop-aware company, so a look drag in progress stops
+being company and a second right finger may leap mid-look (R3); renaming
+`request_radial_pulse`, which raises the leap and not the ring since
+PULSE_SPLIT_0 (its own register priced this).
+
 ## SKIRT_WELD_1/P — THE PERIMETER SKIRT HANGS FROM THE BASE BAND (landed; one seam held)
 
 Sibling of SKIRT_WELD_1 on 7T-Music, landed there at `be0eb28f`. The patch
