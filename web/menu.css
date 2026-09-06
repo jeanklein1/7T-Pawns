@@ -10,6 +10,19 @@
   letter-spacing: 0.06em; padding: 8px 10px; user-select: none;
 }
 .menu > summary::-webkit-details-marker { display: none; }
+/* the glyph: three bars, drawn — a unicode ☰ renders as whatever the
+   font has, which over the world is often a box. The accessible name
+   is the summary's aria-label; the span is decoration. */
+.menu > summary .bars {
+  display: inline-block; width: 22px; height: 14px; vertical-align: middle;
+  border-top: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  position: relative;
+}
+.menu > summary .bars::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 4px;
+  border-top: 2px solid currentColor;
+}
+.menu[open] > summary .bars { opacity: .6; }
 .menu > summary:hover, .menu > summary:focus-visible, .menu[open] > summary { color: var(--ink); }
 .menu > nav {
   position: absolute; right: 0; top: 100%; z-index: 20;
