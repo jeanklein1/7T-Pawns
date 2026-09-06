@@ -147,7 +147,7 @@ struct PilotState {
 // measurement has asked). PILOT_STALL_S must outlast possess()'s landing
 // ease, or a visit begun from the ribbon dies on its own doorstep.
 inline constexpr float  PILOT_ARRIVE_WU       = 2.5f;   // within this of the standing point: arrived
-inline constexpr float  PILOT_SLOW_WU         = 8.0f;   // inside this the stride eases to a quarter
+inline constexpr float  PILOT_SLOW_WU         = 8.0f;   // inside this the stride eases linearly; at the door it is ARRIVE/SLOW (~0.31) of a stride
 inline constexpr float  PILOT_PROGRESS_WU     = 0.25f;  // an approach shorter than this is not progress
 inline constexpr float  PILOT_TURN_RATE       = 1.8f;   // rad/s the pilot may swing the orbit
 inline constexpr double PILOT_STALL_S         = 6.0;    // no progress for this long: release, say so
@@ -604,7 +604,7 @@ inline void pilot_tick(InputDeps* c, double now, double dt) {
     const float az = c->camera_pose_.azimuth;
     const float ca = std::cos(az), sa = std::sin(az);
     const float ux = dx / d, uz = dz / d;
-    const float gain = std::min(1.0f, std::max(0.25f, d / PILOT_SLOW_WU));
+    const float gain = std::min(1.0f, d / PILOT_SLOW_WU);   // linear ease; at the door it is ARRIVE/SLOW of a stride
     c->inputState_.move_x = (ux * ca - uz * sa) * gain;
     c->inputState_.move_z = (ux * sa + uz * ca) * gain;
     {   // the fold's own clamp: two hands cannot buy more than full speed, nor can a third
