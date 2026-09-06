@@ -49,11 +49,13 @@ Module, `Not in this build.` with a Module missing the export).
 
 ### Residuals — DOORS_1
 
-- **`tools/gates/collection_gate.py` is a deploy-chain gate with no row in
-  CLAUDE.md's gate table.** That absence is why DOORS_0's recon never saw it
-  and why the regression went unnoticed for two campaigns. The row is
-  proposed in this round's report; CLAUDE.md is Jean's file and was not
-  edited. Proposed text: `| collection gate | `python3 tools/gates/collection_gate.py` | no engine artifact reaches the collection's closure, and every local ref it names exists | PASS |`
+- **The collection gate's missing table row — TAKEN.** CLAUDE.md now carries it,
+  earned by the file's own standard (a non-zero exit shown on three perturbed
+  trees: an engine token in the closure, a ref naming a file that is not there,
+  and the leading slash that was DOORS_0's regression). The paragraph under the
+  table gained the rule the tree had now learned twice: **a gate with no row is
+  a gate nobody runs.** Every gate in the tree is listed; `gol_census.py` is not
+  a gate (no verdict, no `--check`) and stays out.
 - The collection here holds **0 works**, so `collection_gate: PASS` proved
   the NAV refs and did not re-prove the `srcset` refs — those were passing
   before DOORS_0 and are untouched. On Jean's machine the count will not be 0.
@@ -177,9 +179,9 @@ reader concludes U2 was skipped.
   boots a fresh world even when the tab has an opener; only the menu's route
   returns. Decide whether the doors should return too — one attribute each,
   in the template.
-- CLAUDE.md's build line (`python tools\web_dist.py` → `python tools\dist.py`)
-  and a gate-table row for `collection_gate.py` — both Jean's, both proposed
-  here, neither taken.
+- CLAUDE.md's build line — TAKEN: it reads `python tools\dist.py`, with four lines
+  saying what the one door does and noting that `web_dist.py` alone still builds
+  the engine's half and skips the gate guarding the other one.
 - Email-to-self of the visitor's photo through `api/message` (Resend takes
   attachments) is possible and is an open relay unless gated; not built.
 - Copy: The Board's sentence and its three suggestions, the pane sentences,

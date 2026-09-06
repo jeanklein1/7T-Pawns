@@ -18,8 +18,12 @@ improvising on authority-bearing decisions. Cite symbols, not line numbers.
 
 ## Build & deploy (Jean runs these; listed for orientation)
 cmake --preset the-board-web → cmake --build --preset the-board-web
-→ python tools\web_dist.py → npx wrangler pages deploy dist --project-name=7t
+→ python tools\dist.py → npx wrangler pages deploy dist --project-name=7t
 (the persistent EMSDK user variable carries the presets — L40)
+`dist.py` is the one door (DOORS_2): collection → about → the collection gate
+→ web_dist, in that order, stopping at the first that fails in its own words.
+The halves stay agnostic; only the ORDER lives there. `web_dist.py` alone still
+builds the engine's half, and skips the gate that guards the other one.
 dist/ is the deploy target. web/ holds the shell sources and receives the
 build artifacts; only dist/ ships.
 
@@ -55,6 +59,7 @@ python3 and clang++ do.
 | G-LAW 2 | `python3 tools/gates/glaw2/run.py` | no dangling name, no structural break in `world.wgsl` | GREEN |
 | TU gate | `python3 tools/gates/console_gate/run.py` | `cartridge.hpp` and `console.hpp` type-check with zero diagnostics | PASS |
 | shell gate | `python3 tools/gates/shell_gate/run.py` | the seam between `organ_registry.hpp` and `web/organ_panel.js` agrees | GREEN |
+| collection gate | `python3 tools/gates/collection_gate.py` | no engine artifact reaches the collection's closure, and every local ref its page names exists on disk | PASS |
 | sha256 gate | `python3 tools/gates/sha256_gate/run.py` | `src/core/sha256.hpp` agrees with hashlib, `world.wgsl` included | PASS |
 | score census | `python3 tools/gates/score/run.py` | roster ↔ frame-spine bijection | GREEN |
 | WGSL gate | `python3 tools/wgsl_gate.py` | naga parses, scopes and validates the raw module | PASS |
@@ -73,6 +78,17 @@ organ tools returned 0 on every path; and the command census — which writes
 caught its stale digest did not exist. **A gate that cannot lose is a report.**
 Each row above is now backed by a non-zero exit on a perturbed tree; that is
 the standard a row must meet to be listed here.
+
+**And it happened a second time, which is why the rule is now written down.**
+`tools/gates/collection_gate.py` is a real gate — in the gates' own directory,
+standing in the deploy chain — and it had no row. So DOORS_0's recon never saw
+it (P16 names the omission), no round ran it, and it sat RED for two campaigns
+on a regression DOORS_0 itself had caused: an absolute-href menu on a page that
+speaks in `../`. DOORS_1 repaired the cause and DOORS_2's `dist.py` put the gate
+back in the chain. **A gate with no row is a gate nobody runs.** Every gate in
+the tree is listed above; a new one is not finished until its row is written and
+its perturbation shown. (A measurement harness is not a gate — `gol_census.py`
+has no verdict and no `--check`, and is correctly absent.)
 
 **Every row green, and the room rebuilds.** Delete the five files in `audit/`,
 run the five tools above, and the tree is byte-identical again (L33's standing
