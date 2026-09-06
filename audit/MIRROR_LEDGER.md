@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `6ebf2bd6e37881db90f135733792e92a0d59fb83` |
-| | SPORE_0 — the sea is never still: settled blocks roll a coin on the beat; zones a little more often met |
+| source commit | `a71b8ea015e1788a03866669f5aa48415bcb0240` |
+| | SPORE_0 U2 — the ledgers follow |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:5eb79a001ff034500419e65da9c14ad001f2a91576c6bc36551089c02fc5b988` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:c776a51167c445969661b2bcbaeba2e18373585cfab26af387491dfee8cfd8ea` |
