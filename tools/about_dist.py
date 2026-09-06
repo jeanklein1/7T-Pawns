@@ -210,7 +210,7 @@ def main():
     hero_tag, hero_data = build_hero(Image, site, preview)
 
     page = fill(template, {
-        "ROUTES": routes.nav_html("site", indent="      "),   # DOORS_0
+        "ROUTES": routes.nav_html("site", "/about/", indent="      "),   # DOORS_0 / DOORS_1: spoken from this page
         "MENU_CSS": routes.menu_css(),                        # DOORS_0
         "HERO": hero_tag,
         "STRIP": build_strip(Image, site, preview),

@@ -318,7 +318,7 @@ def fill(template, index_html, works_html):
     # DOORS_0 — the sandwich: links from web/routes.json, rules from
     # web/menu.css, through tools/routes.py — the renderer the engine
     # shell and about/ also use.
-    out = out.replace("<!-- __ROUTES__ -->", routes.nav_html("site", indent="      "))
+    out = out.replace("<!-- __ROUTES__ -->", routes.nav_html("site", "/collection/", indent="      "))
     out = out.replace("/* __MENU_CSS__ */", routes.menu_css())
     for token in ("__INDEX__", "__WORKS__", "__ROUTES__", "__MENU_CSS__"):
         if token in out:

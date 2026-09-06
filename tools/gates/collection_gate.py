@@ -75,7 +75,9 @@ def main():
         if re.match(r"^(https?:|data:|#|\.\./|mailto:)", ref):
             continue
         if not os.path.isfile(os.path.join(DIST, ref)):
-            bad.append("index.html names %s — no such file in dist/collection" % ref)
+            hint = ("  (a leading slash names the SITE root; this page speaks in ../ — "
+                    "tools/routes.py rel())") if ref.startswith("/") else ""
+            bad.append("index.html names %s — no such file in dist/collection%s" % (ref, hint))
 
     if bad:
         fail(bad)

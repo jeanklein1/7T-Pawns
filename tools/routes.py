@@ -9,6 +9,13 @@
 # Neither file ships; both are build-time only.
 #
 #   side    "site" | "engine" | absent (both)
+#   href    an ABSOLUTE site path ("/about/#text"). The renderer speaks it
+#           RELATIVE to the page it is rendering (rel, below): the site's
+#           own convention (../fonts/, ../shared.css) and the collection
+#           gate's jurisdiction line — a "../" reference is the site's, a
+#           bare one is the collection's, and a leading slash is neither.
+#           A route that names the page it is on is dropped: a menu does
+#           not list where you are. (DOORS_1, after the gate refused.)
 #   return  true — on a site page, when this tab was opened by the engine
 #           (window.opener, same origin), the link CLOSES the tab: the world
 #           is still there, where it was. Without an opener it navigates.
@@ -43,19 +50,41 @@ def load():
     return routes
 
 
-def nav_html(side, indent="    "):
-    """The <nav> body for one shell. Absolute hrefs, so the same markup is
-    right at /, /about/ and /collection/."""
+def rel(href, base):
+    """An absolute site path, spoken from a page at `base` (a directory,
+    "/collection/"). "/about/#text" is "../about/#text" from /collection/
+    and "#text" from /about/; a page's own address is "./"."""
+    path, frag = (href.split("#", 1) + [""])[:2]
+    frag = ("#" + frag) if frag else ""
+    b = [seg for seg in base.split("/") if seg]
+    t = [seg for seg in path.split("/") if seg]
+    i = 0
+    while i < len(b) and i < len(t) and b[i] == t[i]:
+        i += 1
+    parts = [".."] * (len(b) - i) + t[i:]
+    if not parts:
+        return frag or "./"
+    out = "/".join(parts)
+    if path.endswith("/"):
+        out += "/"
+    return out + frag
+
+
+def nav_html(side, base, indent="    "):
+    """The <nav> body for one shell, spoken from the page at `base`."""
     items = []
     for r in load():
         if r.get("side") not in (None, side):
             continue
+        href = rel(r["href"], base) if r.get("href") else ""
+        if href == "./":
+            continue   # the page itself
         if side == "engine" and r.get("engine") == "pane":
-            href = (' data-href="%s"' % esc(r["href"])) if r.get("href") else ""
+            data = (' data-href="%s"' % esc(href)) if href else ""
             items.append('<button type="button" data-route="%s" data-pane="%s"%s>%s</button>'
-                         % (esc(r["id"]), esc(r["id"]), href, esc(r["label"])))
+                         % (esc(r["id"]), esc(r["id"]), data, esc(r["label"])))
             continue
-        if not r.get("href"):
+        if not href:
             continue
         attrs = ""
         if side == "engine":
@@ -67,7 +96,7 @@ def nav_html(side, indent="    "):
             # actually closed (window.closed), else the link runs.
             attrs = ' onclick="return !(window.opener &amp;&amp; !window.opener.closed &amp;&amp; (window.close(), window.closed))"'
         items.append('<a data-route="%s" href="%s"%s>%s</a>'
-                     % (esc(r["id"]), esc(r["href"]), attrs, esc(r["label"])))
+                     % (esc(r["id"]), esc(href), attrs, esc(r["label"])))
     return ("\n" + indent).join(items)
 
 
@@ -77,6 +106,8 @@ def menu_css():
 
 
 if __name__ == "__main__":
-    print(nav_html("site"))
-    print("---")
-    print(nav_html("engine"))
+    for base in ("/about/", "/collection/"):
+        print("--- site @ %s" % base)
+        print(nav_html("site", base))
+    print("--- engine @ /")
+    print(nav_html("engine", "/"))

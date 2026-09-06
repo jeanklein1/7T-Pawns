@@ -1046,7 +1046,7 @@ def main():
     # the same one about_dist and collection_dist call. The shell holds two
     # markers; the build fills them here. The REFUSAL that guards them is
     # above, before rmtree, with the other three.
-    shell_out = shell_out.replace("<!-- __ROUTES__ -->", routes.nav_html("engine", indent="      "))
+    shell_out = shell_out.replace("<!-- __ROUTES__ -->", routes.nav_html("engine", "/", indent="      "))
     shell_out = shell_out.replace("/* __MENU_CSS__ */", routes.menu_css())
 
     # ── AUBADE U7 — FIRST LIGHT STARTS AT HTML PARSE ────────────────
