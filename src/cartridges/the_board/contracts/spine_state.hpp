@@ -173,18 +173,15 @@ struct InputState {
     float pan_x_delta = 0.0f;
     float pan_y_delta = 0.0f;
     // PULSE_1 — THE TAP'S INTENT, not a delta: an EDGE, raised by the
-    // right-half PAIR tap and CAPS_LOCK (PULSE_SPLIT_0 — it was the glass
-    // tap and the SPACE key, until the leap stopped ringing), spent exactly once by the frame
-
+    // glass tap and the SPACE key, spent exactly once by the frame
     // (phase_live_card_write) and therefore NOT cleared by
     // clear_input_deltas. It is a bool rather than a count because the
     // glass debounce is 80 ms and the key is a down-edge, so two taps
     // cannot reach one frame; a musician wanting both would call
     // emit_radial_pulse directly, which is what the bus is for.
     bool  pulse_pending = false;
-    // LEAP_0 — THE BODY'S OWN VERB, and since PULSE_SPLIT_0 the ONLY thing
-    // the one-finger word (request_radial_pulse) raises: that door stopped
-    // ringing the ground, so this intent travels alone. The signal
+    // LEAP_0 — THE SAME TAP'S SECOND INTENT. The door that rings the ground
+    // (request_radial_pulse) raises this beside pulse_pending; the signal
     // fill ships it as FrameSignal.jump_edge and frame_submitted() lowers
     // it — the dtPending_ idiom, because an edge written on an update the
     // GPU never consumed would otherwise be overwritten and lost. Which verb
@@ -193,9 +190,8 @@ struct InputState {
     bool  jump_pending = false;
     // LEAP_1 — THE HAND'S OTHER WORD. The right-half PAIR tap (and
     // CAPS_LOCK) raises this and pulse_pending, never jump_pending: two
-    // fingers ring the ground and reach for a body, one finger only leaps
-    // (PULSE_SPLIT_0 took the ring off that word). Spent at the drain
-    // pulse_pending is spent at, where the
+    // fingers ring the ground and reach for a body, one finger rings it and
+    // leaps. Spent at the same drain pulse_pending is spent at, where the
     // point and the population are both in hand — the arming is a question
     // about the world, which no input door may ask.
     bool  swap_pending = false;

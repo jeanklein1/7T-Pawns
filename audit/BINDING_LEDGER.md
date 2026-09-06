@@ -35,7 +35,7 @@ only — `draw_orbs` is called from `bodies/orbs.hpp`, not from
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:9891302e1bf20ec4a71b8866d420725dc4405b8f99473ca04308465444a7a61d` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
 | `src/cartridges/the_board/cartridge.hpp` | `sha256:afeece9ea7f83ae60ddb116bd83761ee3e77251ce1c9ae2fbb9d7bd18a407dbb` |
-| `src/cartridges/the_board/contracts/spine_state.hpp` | `sha256:278e53169a13ad8170dcb807258ae5f414704382ee721df760f7dc7c8889dbea` |
+| `src/cartridges/the_board/contracts/spine_state.hpp` | `sha256:4cfce2e856f1a058c6e1cce419b6568e8575b90e9c87a3dbbe02c824f9111c46` |
 | `src/cartridges/the_board/direction/mood.hpp` | `sha256:59ae34bcedba17d046538834a3d5be381b2ad971222a5f2bbb63ae85c48796cb` |
 | `src/cartridges/the_board/realization/render_passes.hpp` | `sha256:e4d6b62cb1d1936d57322d2c4ef4372bbc27dd1404a29117d9431938e9c84149` |
 | `src/cartridges/the_board/surface/patch_system.hpp` | `sha256:1be3569e8b942fccc6a5ad003a6f227b2c413897b33a947bdcfa986947653b3c` |

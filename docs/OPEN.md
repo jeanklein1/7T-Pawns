@@ -45,20 +45,6 @@ tumble line); the swap's own voice on the bus; arming from the air
 (R2 holds it to the ground); a visible mark on the armed body; an
 instant operator swap (R4 retired it — one line to restore).
 
-**PULSE_SPLIT_0 — the leap stops ringing.** LEAP_0's R1 ("every tap
-rings; the ring is the tap's word") is REVERSED. `request_radial_pulse`
-raises `jump_pending` alone now: one finger on the right half, and SPACE,
-are the body's verb and nothing else. The ring has exactly two producers
-left — the two-finger word (`request_pulse_swap`: CAPS_LOCK, the
-right-half pair tap) and the musical bus (`emit_radial_pulse`). One line
-of behaviour; the rest was comment made true again.
-
-**Priced, not built:** the rename — `request_radial_pulse` no longer
-requests a radial pulse, and naming is Jean's gate (`request_leap` /
-`request_body_verb` are the candidates; ~6 sites). Moving the ribbon
-routing off this door: it still rides the leap's word (LEAP_1 R6), which
-is why a dismount tap still fires a leap off the saddle.
-
 ## SKIRT_WELD_1/P — THE PERIMETER SKIRT HANGS FROM THE BASE BAND (landed; one seam held)
 
 Sibling of SKIRT_WELD_1 on 7T-Music, landed there at `be0eb28f`. The patch

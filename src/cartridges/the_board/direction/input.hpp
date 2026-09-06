@@ -399,34 +399,27 @@ inline void on_touch_tap_right(InputDeps* c) {
     request_pulse_swap(c);
 }
 
-// THE LEAP'S OWNER DOOR (PULSE_SPLIT_0 — it was the pulse's). Published
-// here at its SECOND consumer (the standing law): the lone tap raised it,
-// SPACE joined, and a thumb and a keyboard reach one implementation rather
-// than two — the arrangement key 3 / CAPS_LOCK already keep with
-// toggle_aura and the swap.
+// THE PULSE'S OWNER DOOR. Published here at its SECOND consumer (the
+// standing law): the lone tap raised it, SPACE joined, and a thumb and a
+// keyboard reach one implementation rather than two — the arrangement
+// key 3 / CAPS_LOCK already keep with toggle_aura and try_possess_nearest.
 //
-// IT NO LONGER RINGS. LEAP_0's R1 held that every tap rings and the ring
-// is the tap's word; LEAP_1 split the hand into two words and the ring was
-// the half only one of them wanted. The ring belongs to the TWO-finger
-// word now (request_pulse_swap) and to the bus (emit_radial_pulse). This
-// door raises the body's verb and routes the ride, and nothing else.
-//
-// It RAISES AN INTENT rather than stamping anything: the onset's origin is
-// the point and its time is the frame's, and neither is an input door's to
-// know. The name is kept for this round — naming is Jean's gate, and the
-// register prices the rename.
+// It RAISES AN INTENT rather than stamping the ring. The onset's origin
+// is the point and its time is the frame's, and neither is an input
+// door's to know; the frame spends it in phase_live_card_write, where
+// both are in hand and where the rest law reads the ring immediately
+// after — the drain idiom the analog deltas already use.
 inline void request_radial_pulse(InputDeps* c) {
-    c->inputState_.jump_pending = true;    // PULSE_SPLIT_0 — the leap alone; the ring left with the second word
-
-    // REACH_2 — THE RIDE'S WORD IS THIS ONE, and the routing lives
-    // HERE — the player's door, both mouths (SPACE, the lone RIGHT tap) —
-    // so a musical pulse riding the bus (emit_radial_pulse) can never
-    // board. PULSE_SPLIT_0 took the ring off this door, so a boarding no
-    // longer arrives announced by a wave: on the ground the gesture is the
-    // leap; on a tall summit the same press boards instead — the ribbon may
-    // be anywhere, the ease is the abduction; in the sky it marks the
-    // departure. The summit check is a COURTESY (no refusal spam on every
-    // ground leap) — the LAW stays in
+    c->inputState_.pulse_pending = true;
+    c->inputState_.jump_pending = true;    // LEAP_0 — one word, two verbs: the ring, and the body's leap or somersault
+    // REACH_2 — THE PULSE IS ALSO THE RIDE'S WORD, and the routing lives
+    // HERE — the player's door, both mouths (SPACE, the lone tap) — so a
+    // musical pulse riding the bus (emit_radial_pulse) can never board.
+    // The wave fires regardless, above: on the ground it is the gesture
+    // as ever; on a tall summit the same wave announces the boarding
+    // it begins — the ribbon may be anywhere, the ease is the abduction;
+    // in the sky it marks the departure. The summit check is a COURTESY
+    // (no refusal spam on every ground pulse) — the LAW stays in
     // possess(), underneath, where the panel row answers to it too.
     // CAMERA host earns nothing, as everywhere.
     if (c->point_.host == PointHost::RIBBON) {
