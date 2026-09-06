@@ -2,6 +2,143 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## DOORS_2 — THE MENU AS THE WEBSITE IN MINIATURE (landed on master; Jean's gates open)
+
+Seven units. The menu stopped being a list of links and became the website
+in miniature.
+
+| ruling | where it lives now |
+|---|---|
+| One door for the build — four stages in the one lawful order, stopping at the first that fails | `tools/dist.py` |
+| The return path is the browser's own tab: engine links open with `rel="opener"`, and *The world* closes the site tab when an opener exists | `tools/routes.py` `nav_html`, the `return` flag in `web/routes.json` |
+| The sandwich is a glyph — three bars drawn in CSS, `aria-label` carrying the name | `web/menu.css` `.bars`, the three `<summary>`s |
+| "Controls" became "The Board": what it is, the controls, things to try, the live row, and the world's own photographs | `.pane[data-pane="board"]`; the Photographs route died |
+| Text and Write me became panes — the about page in miniature, one fetch | `about_dist` emits `dist/about/about.json`; `loadAbout()` |
+| The visitor's own camera — the canvas's last frame to their device, share sheet or download | `#ctlPhoto` |
+| Miniatures of the world's photographs are NOT built — they need the readback | registered below |
+| The pilot aims only on approach, and proportionally | `PILOT_AIM_WU`, `PILOT_AIM_GAIN` |
+
+**Witnessed here:** 22 shell behaviours in headless Chromium — the glyph's
+three drawn bars, The Board's ten control rows, the roll folded in and still
+listing, the Text pane rendering the doctrine out of the real `about.json`
+emission, the Write pane's four fields and its honeypot, a 501 falling back
+to `mailto:` with the address from `about.json`, and a 200 saying thank you
+and resetting. `tools/dist.py`'s loop was exercised on all three paths
+(all-pass, mid-fail, last-fail): it stops at the first failure, returns that
+stage's own exit code, and runs nothing after it.
+
+### THE CONTROLS TABLE WAS WRONG, AND IS NOW THE TREE'S
+
+DOORS_2 ruled "the controls FACTS are not [placeholders]" and its U0 ordered
+the ride key found rather than assumed. Found, and most of the rest with it:
+
+- **`R` IS BOUND TO NOTHING.** `GLFW_KEY_R` occurs twice in the whole tree,
+  both in `input.hpp`'s `#ifndef` fallback. There is no case for it in
+  `on_key_down`. The ribbon is boarded — and left — by the SAME LEAP
+  GESTURE (Space, or a lone clean tap on the right half), gated on
+  `point_.bubble.summit`: `request_radial_pulse` calls `possess(RIBBON)`
+  from a summit and `possess(PAWN)` from the ribbon. **Two comments still
+  name the dead key** — `begin_visit`'s "The R key's own transaction" and
+  `organ_boundary.inc`'s "the same transaction key R presses". Stale prose
+  over a dead binding; VISIT_0 wrote the first of them.
+- **There is no `GLFW_KEY_ESCAPE` in `src/` at all.** The program's pointer
+  door is `Numpad ✱` (`console.hpp` intercepts `GLFW_KEY_KP_MULTIPLY` before
+  dispatch). Esc freeing a locked pointer is the BROWSER's rule, not this
+  tree's — and the one thing Esc verifiably does while a visitor reads the
+  pane is close the pane.
+- **A bare mouse does not look.** `on_mouse_move` writes the look deltas only
+  under `mouse_.left_dragging`. The RIGHT button drag is a PAN, a control the
+  table still does not mention.
+- **The phone halves are specific**, and the vagueness was the lie: the LEFT
+  half walks (a floating stick, born where the thumb lands), the RIGHT half
+  looks. A visitor told "one half" who drags the right half looks instead.
+- **Zoom was missing entirely** — the wheel, and two fingers on the right half.
+- **Space is the LEAP ALONE** since PULSE_SPLIT_0; the ring left with the
+  other hand (Caps Lock, or a two-finger clean tap), which also reaches for a
+  body as the wave goes.
+- **4 to 9 is six worlds**, not seven: noon, sunset, indoor flat, indoor
+  vault, finite outdoor, night. `MOOD_ATRIUM` — the boot mood — has no key.
+- Bound and still unlisted, deliberately (panel knobs, not visitor controls):
+  `V` the rim, `[` `]` the render radius, `0` the orb palette, `KP_+/-` look
+  sensitivity, `KP_8` the orb motion rule, `KP_.` the orb gesture.
+
+**And a consequence of the sandwich's own key guard:** while the menu is
+open, every key this pane lists is `stopPropagation`'d, so a visitor cannot
+try one while reading it. Correct — the keys are the menu's while it is open
+— but it means the pane teaches rather than demonstrates.
+
+### Residuals — DOORS_2
+
+- **THE COLLECTION GATE IS RED ON MASTER, AND DOORS_2 U1 PUT IT IN THE BUILD
+  PATH. This one blocks `python tools/dist.py`.** `tools/gates/collection_gate.py`
+  check 2 asserts that every local `src`/`href` the collection page names
+  exists under `dist/collection`, skipping `https?:`, `data:`, `#`, `../` and
+  `mailto:` — but NOT root-absolute. DOORS_0 U3 gave that page a menu whose
+  hrefs are absolute (`/about/`, `/collection/`, `/about/#text`,
+  `/about/#write`), so the gate now fails with four lines. Measured: at
+  `b901422e`, before DOORS_0, the gate passed with **0 local refs** (the old
+  masthead's links were `../`, which it skips). **This is a regression DOORS_0
+  shipped**, unnoticed because the collection gate is not a row in CLAUDE.md's
+  gate table and nothing ran it; U1 made it fatal by putting it third in the
+  pipeline, so the `web` stage never runs. Two candidate repairs, and they
+  belong to different campaigns:
+  **(a)** site-page hrefs become relative (`../about/`), which the gate
+  already skips and which is correct for a page at `/collection/` — this is
+  exactly `rel(href, base)`, **DOORS_1's declared work**;
+  **(b)** the gate learns that a root-absolute ref is a site link, not a
+  collection artifact — skip `^/`, or better, resolve `^/collection/` against
+  DIST and skip the rest. Left unapplied: (a) pre-empts DOORS_1's design and
+  (b) edits a gate's law to make it pass. Jean's call. Until then the old
+  build line (`python tools\web_dist.py`) still works — only the new one door
+  stops.
+- **DOORS_1 NEVER LANDED, and DOORS_2 declares it as its base.** `tools/routes.py`
+  has no `rel(href, base)` — DOORS_2 U0's own test, reading 0. Two adaptations
+  were made under P2 (boundaries are symbols, recomputed against the tree):
+  U2.2's attrs logic was transplanted onto this tree's `r["href"]` instead of
+  DOORS_1's `href` local, and U2.3/U5.3's hrefs were left ABSOLUTE
+  (`/collection/`, `/about/#text`, `/api/message`, `/about/about.json`) rather
+  than made relative, because relative is DOORS_1's convention and this tree
+  is absolute throughout. Both resolve identically from the engine at the
+  root. When DOORS_1 lands it should take these five hrefs with it.
+- **The readback (exhibition texture → CPU)** is the one mechanism that would
+  yield BOTH miniatures of the world's photographs in the menu AND "the
+  world's own photographs sent to the visitor". Priced at DOORS_0's recon (a
+  fifth readback machine, a channel swap, a megabyte a shot). Not built until
+  a measurement asks. Note for whoever prices it again: `surfaceConfig_.usage`
+  is **never assigned** in `console.hpp` — it keeps `RenderAttachment` only,
+  so there is no `COPY_SRC` on the swapchain texture and the C++-side fallback
+  needs that line changed before anything else.
+- **The camera's guard cannot catch its own failure mode.** DOORS_2 registers
+  a black picture as the gate row and `if (!blob)` as the guard. Measured in
+  headless Chromium: `toBlob` on a canvas that HAS a webgpu context returns a
+  valid PNG (1572 bytes, correct magic) — **it does not return null**. So the
+  guard fires only when there is no context at all; a blank or black frame
+  arrives as a perfectly well-formed PNG and the visitor is handed it. Nothing
+  in the shell can tell. Jean's eye is the only gate, and the fallback stays
+  the engine-side copy above.
+- **The cursor orb appears in the visitor's photo** — the roadmap's "hidden
+  during recording" item now has a second reader.
+- **The pane and the glass use two names for one press.** `window.T7_RIDE`
+  draws "pulse to fly" / "pulse to land" on the badge; PULSE_SPLIT_0 took the
+  ring off that door, so what it actually does now is leap and board. The
+  pane says "Space", and names the badge's word rather than choosing between
+  them. One vocabulary, one home — Jean's naming gate.
+- **Two comments still name the dead R key**: `begin_visit`'s "The R key's own
+  transaction" (VISIT_0 wrote it) and `organ_boundary.inc`'s "the same
+  transaction key R presses". Stale prose over a binding that does not exist.
+- The about page's big *the world* door (`.door` and the hero-plate link)
+  boots a fresh world even when the tab has an opener; only the menu's route
+  returns. Decide whether the doors should return too — one attribute each,
+  in the template.
+- CLAUDE.md's build line (`python tools\web_dist.py` → `python tools\dist.py`)
+  and a gate-table row for `collection_gate.py` — both Jean's, both proposed
+  here, neither taken.
+- Email-to-self of the visitor's photo through `api/message` (Resend takes
+  attachments) is possible and is an open relay unless gated; not built.
+- Copy: The Board's sentence and its three suggestions, the pane sentences,
+  the send/fail words, and every control row's WORDS (their facts are the
+  tree's).
+
 ## THE POST-LANDING REVIEW OF DOORS_0 + VISIT_0 — what it found, and what was done
 
 Six reviewers read the landed diff adversarially, one per dimension. The
