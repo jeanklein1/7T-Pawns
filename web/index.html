@@ -1563,9 +1563,19 @@
       function refreshRoll() {
         if (!rollEl || !rollState) return;
         var c = abi();
-        if (!c || !c.roll) { rollEl.innerHTML = ''; rollState.hidden = false; rollState.textContent = 'Not in this build.'; return; }
+        // TWO STATES, TWO SENTENCES (DOORS_1). No Module yet is the common
+        // case — the menu is static HTML a visitor can open before the
+        // wasm resolves — and it is not "not in this build". Placeholder words.
+        if (!c)      { rollEl.innerHTML = ''; rollState.hidden = false; rollState.textContent = 'Still waking — open this again in a moment.'; return; }
+        if (!c.roll) { rollEl.innerHTML = ''; rollState.hidden = false; rollState.textContent = 'Not in this build.'; return; }
         var list;
         try { list = JSON.parse(c.roll()); } catch (err) { note('[shell] roll: ' + err); return; }
+        // REBUILD, KEEPING THE HAND'S PLACE (DOORS_1, from the review): the
+        // visitor may be arrowing down the list when the world rehangs.
+        // Remember the focused caption's slot, rebuild, put focus back on
+        // that slot — or on the first caption if that picture came down.
+        var had = (document.activeElement && rollEl.contains(document.activeElement))
+                  ? document.activeElement.dataset.visit : null;
         rollEl.innerHTML = '';
         if (!list.length) { rollState.hidden = false; rollState.textContent = 'Nothing hung yet — walk a while.'; return; }
         list.sort(function (a, b) { return a.d - b.d; });
@@ -1575,6 +1585,10 @@
           b.type = 'button'; b.dataset.visit = w.s; b.textContent = caption(w);
           li.appendChild(b); rollEl.appendChild(li);
         });
+        if (had !== null && had !== undefined) {
+          var again = rollEl.querySelector('button[data-visit="' + had + '"]') || rollEl.querySelector('button');
+          if (again) again.focus();
+        }
         var v = c.visiting ? c.visiting() : -1;
         rollState.hidden = v < 0;
         if (v >= 0) rollState.textContent = 'Walking to one — touch anything to stop.';
