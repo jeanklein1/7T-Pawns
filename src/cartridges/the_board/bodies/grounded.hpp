@@ -468,7 +468,11 @@ inline constexpr float PYRAMID_SANDSTONE_VARIANCE = 0.05f;
 
 // ── Spawn Configuration ──────────────────────────────────────────
 struct PyramidConfig {
-    static constexpr float SPAWN_CHANCE = 0.030f;
+    // FRUSTUM_0 — 0.030 -> 0.050: pyramids a little more frequent across
+    // themes (Jean's stamp). MAX_PYRAMID_INSTANCES (8) is the ceiling the
+    // chance fills toward; the mood table's pyramid column is 1.0
+    // everywhere, so the chance is the one dial.
+    static constexpr float SPAWN_CHANCE = 0.050f;
     static constexpr float POSITION_JITTER = 0.25f;
 };
 

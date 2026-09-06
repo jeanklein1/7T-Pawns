@@ -768,17 +768,25 @@ struct PyramidTierRow {
 //   color_override/color_variance are retained but unread today —
 //   see pyramid_compute_colors' dead-code note.
 // Biography determinant — frozen biography (§12).
+// FRUSTUM_0 — THREE STAMPS, ONE TABLE. (1) The obelisk is tripled in
+// every linear dimension (height, base half, edge blend): at 28 wu the
+// small pyramid read as furniture, not architecture. (2) Every tier's
+// TRUNCATION is retargeted so the flat cap comes out ~5 wu across —
+// cap_wu = truncation x base_half — matching POINT_SUMMIT_RADIUS
+// exactly: the door IS the cap. The obelisk's 0.00 (a point) becomes a
+// frustum like its siblings; the temple's 0.25 (a 10 wu mesa) narrows.
+// (3) No tier is pointed: the promotion FRUSTUM_0 is named for.
 inline constexpr PyramidTierRow PYRAMID_TIERS[] = {
     /* OBELISK  */ {
-        { 0.50f, 0.0f, { {28.0f, 6.0f},  {16.0f, 3.0f},  {1.0f, 0.15f}, {0.00f, 0.00f}, {1.5f, 0.3f}  }},
+        { 0.50f, 0.0f, { {84.0f, 18.0f}, {48.0f, 9.0f},  {1.0f, 0.15f}, {0.10f, 0.02f}, {4.5f, 0.9f}  }},
         0.10f, 0.04f
     },
     /* TEMPLE   */ {
-        { 0.25f, 0.0f, { {45.0f, 8.0f},  {40.0f, 6.0f},  {1.0f, 0.20f}, {0.25f, 0.08f}, {3.0f, 0.75f} }},
+        { 0.25f, 0.0f, { {45.0f, 8.0f},  {40.0f, 6.0f},  {1.0f, 0.20f}, {0.12f, 0.03f}, {3.0f, 0.75f} }},
         0.15f, 0.04f
     },
     /* COLOSSUS */ {
-        { 0.25f, 0.0f, { {78.0f, 14.4f}, {60.0f, 9.6f},  {1.0f, 0.10f}, {0.05f, 0.04f}, {3.6f, 1.0f}  }},
+        { 0.25f, 0.0f, { {78.0f, 14.4f}, {60.0f, 9.6f},  {1.0f, 0.10f}, {0.08f, 0.02f}, {3.6f, 1.0f}  }},
         0.20f, 0.04f
     },
 };

@@ -78,18 +78,19 @@ enum class PointHost : uint32_t {
 
 inline constexpr float POINT_BUBBLE_RADIUS = 80.0f;   // world units; boot-pinned into config.point_bubble_radius (the WGSL side reads the config field). 20 until the desk raised it 4×: the vertical gate lets an arch fire from far higher up now.
 
-// ═══ THE SUMMIT LAW (REACH_2) ══════════════════════════════════════
+// ═══ THE SUMMIT LAW (REACH_2, FRUSTUM_0) ═══════════════════════════
 // Jean's stamp, after play: the crossing was chance and chance read as
-// nothing. The door is the GROUND now — stand atop a tall pyramid
-// and the pulse boards, ribbon anywhere; the mount ease IS the
-// abduction. "Tall" is the pyramid's own measure, not its tier label.
-inline constexpr float POINT_SUMMIT_MIN_HEIGHT = 35.0f;  // wu — a pyramid this tall is a door: colossi (~78±14) and temples (~45±8) qualify; obelisks (~28±6) stay dark unless truly towering
+// nothing. The door is the GROUND — stand atop a pyramid and the pulse
+// boards, ribbon anywhere; the mount ease IS the abduction. FRUSTUM_0
+// struck the height gate: EVERY pyramid is a fly base now (Jean's
+// promotion), so "tall" left the law with POINT_SUMMIT_MIN_HEIGHT, and
+// the one measure that remains is the cap underfoot.
 inline constexpr float POINT_SUMMIT_RADIUS     = 5.0f;   // wu — xz disc around the apex that counts as "the top". REWIRE_0: 15 -> 5, Jean's stamp — the door is the CAP of the frustum, not the upper slope; FRUSTUM_0 cuts every tier's cap to ~this radius.
 struct PointBubble {
     float radius = POINT_BUBBLE_RADIUS;   // the awareness bound (the portal's vertical gate today)
-    // REACH_2 — the second sensor, re-aimed at the GROUND: TRUE means a
-    // tall summit underfoot (xz inside the apex disc of a pyramid
-    // ≥ POINT_SUMMIT_MIN_HEIGHT — the single-valued heightfield makes
+    // REACH_2 / FRUSTUM_0 — the second sensor, re-aimed at the GROUND:
+    // TRUE means a summit underfoot (xz inside the apex cap of ANY
+    // pyramid — the single-valued heightfield makes
     // horizontal arrival vertical arrival), PAWN host, a ribbon rendered
     // somewhere. Composed at the ONE site (the witness harvest); the
     // boarding door reads it and nothing else writes it. Rests false;

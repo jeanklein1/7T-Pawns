@@ -1798,7 +1798,7 @@ namespace t7 {
                                         for (uint32_t pi = 0; pi < Dim::MAX_PYRAMID_INSTANCES; pi++) {
                                             if (!self->entities_state_.pyramids[pi].active) continue;
                                             const auto& gp = self->entities_state_.cpu_pyramids.instances[pi];
-                                            if (gp.height < POINT_SUMMIT_MIN_HEIGHT) continue;
+                                            // FRUSTUM_0 — no height gate: every pyramid is a door.
                                             const float sdx = self->point_.x - gp.origin[0];
                                             const float sdz = self->point_.z - gp.origin[1];
                                             if (sdx * sdx + sdz * sdz
