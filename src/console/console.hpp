@@ -2360,9 +2360,14 @@ namespace t7 {
             const bool clean = !t.slopped
                 && (now_ms - t.t0) <= TouchControls::TAP_MS;
 
-            // PULSE — A PRESS THAT GOES NOWHERE, ALONE, ON EITHER HALF. One
-            // word, two mouths: whichever thumb is free speaks, and the
-            // player never learns which half of the glass owns it.
+            // THE LEAP — A PRESS THAT GOES NOWHERE, ALONE, ON THE RIGHT
+            // (LEAP_1). It was either half, on the reasoning that whichever
+            // thumb is free should speak. But the left thumb is free only
+            // while the pawn stands still, so the word cost the walk: the
+            // stick had to be abandoned to say it. The right half is the
+            // look's half, where a thumb that lifts and taps interrupts
+            // nothing, and the left half is the stick's entire. SPACE is
+            // this door's other mouth.
             //
             // SEPARABLE FROM THE OTHER TWO VERBS WITHOUT COSTING EITHER ANY
             // LATENCY, and the proof is in their own conditions, not in a
@@ -2374,7 +2379,7 @@ namespace t7 {
             //             its fingers have had company; `alone` is false.
             // Neither verb has to wait to find out whether a tap was meant,
             // and this one resolves at lift like they do.
-            if (clean && t.alone
+            if (clean && t.alone && !t.left
                 && (now_ms - lastPulseMs_) >= TouchControls::PULSE_DEBOUNCE_MS) {
                 lastPulseMs_    = now_ms;
                 tapPulsePending_ = true;

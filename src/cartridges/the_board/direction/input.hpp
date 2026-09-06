@@ -165,7 +165,6 @@ struct InputDeps {
 void on_key_down(InputDeps* c, int key,
     PawnState& pawn_state, PawnDeps& pawn_deps,
     OrbsState& orbs_state, OrbsDeps& orbs_deps,
-    AgentState& agent_state, AgentsDeps& agents_deps,
     CubeBehaviorsState& cube_behaviors_state, CubeDeps& cube_deps,
     TransitionPhase& transitionPhase, PortalDestination& pendingDestination,
     MoodState& mood_state);
@@ -180,8 +179,9 @@ void on_touch_zoom(InputDeps* c, float delta);
 // ride the parameters, because the driver owns neither of them and the
 // root addresses them at the call site through the owner doors.
 void on_touch_tap_left(InputDeps* c, PawnState& pawn_state, PawnDeps& pawn_deps);
-void on_touch_tap_right(InputDeps* c, AgentState& agent_state, AgentsDeps& agents_deps);
-void request_radial_pulse(InputDeps* c);   // the pulse's owner door (SPACE + the lone tap)
+void on_touch_tap_right(InputDeps* c);
+void request_radial_pulse(InputDeps* c);   // the pulse's owner door (SPACE + the lone RIGHT tap): the ring and the body's own verb
+void request_pulse_swap(InputDeps* c);     // LEAP_1 — the hand's other word (CAPS_LOCK + the right PAIR tap): the ring and the reach for a body
 void on_touch_tap_pulse(InputDeps* c);
 void on_mouse_button(InputDeps* c, int button, bool pressed);
 void on_scroll(InputDeps* c, float delta);
@@ -254,7 +254,6 @@ void nudge_look_sensitivity(InputDeps* c, bool up);   // KP_+ / KP_- — multipl
 inline void on_key_down(InputDeps* c, int key,
     PawnState& pawn_state, PawnDeps& pawn_deps,
     OrbsState& orbs_state, OrbsDeps& orbs_deps,
-    AgentState& agent_state, AgentsDeps& agents_deps,
     CubeBehaviorsState& cube_behaviors_state, CubeDeps& cube_deps,
     TransitionPhase& transitionPhase, PortalDestination& pendingDestination,
     MoodState& mood_state)
@@ -308,7 +307,7 @@ inline void on_key_down(InputDeps* c, int key,
     case GLFW_KEY_RIGHT_CONTROL:
         toggle_fpv_mode(c);
         break;
-    case GLFW_KEY_CAPS_LOCK:  try_possess_nearest(agent_state, &agents_deps, q);  break;
+    case GLFW_KEY_CAPS_LOCK:  request_pulse_swap(c);                             break;
     }
     update_movement_intent(c);
 }
@@ -392,10 +391,12 @@ inline void on_touch_tap_left(InputDeps* c, PawnState& pawn_state, PawnDeps& paw
     toggle_aura(pawn_state, &pawn_deps);
 }
 
-// RIGHT, two fingers, clean tap — possession (CAPS_LOCK's door).
-inline void on_touch_tap_right(InputDeps* c, AgentState& agent_state, AgentsDeps& agents_deps) {
-    wgpu::Queue q = c->device_.GetQueue();
-    try_possess_nearest(agent_state, &agents_deps, q);
+// RIGHT, two fingers, clean tap — THE OTHER WORD (LEAP_1, CAPS_LOCK's
+// door still). It was the immediate possession; it rings the ground now
+// and lets the ring's own wavefront carry the swap. The organs it used to
+// take are the drain's to reach, so the parameters go with the verb.
+inline void on_touch_tap_right(InputDeps* c) {
+    request_pulse_swap(c);
 }
 
 // THE PULSE'S OWNER DOOR. Published here at its SECOND consumer (the
@@ -429,7 +430,20 @@ inline void request_radial_pulse(InputDeps* c) {
     }
 }
 
-// EITHER HALF, one finger, clean tap — the pulse (SPACE's twin mouth).
+// LEAP_1 — THE OTHER WORD'S OWNER DOOR (CAPS_LOCK + the right pair tap).
+// It raises the ring and the REACH, never the leap: the swap is two
+// fingers' word and the leap is one's. Both intents are spent at the same
+// drain, so the ring and the arming share a frame and the wave the viewer
+// sees is the wave the swap is timed to.
+//
+// The ribbon routing is deliberately NOT here — boarding and dismounting
+// are what the body does with itself, which is the leap's door above.
+inline void request_pulse_swap(InputDeps* c) {
+    c->inputState_.pulse_pending = true;
+    c->inputState_.swap_pending  = true;
+}
+
+// RIGHT HALF, one finger, clean tap — the leap (SPACE's twin mouth).
 inline void on_touch_tap_pulse(InputDeps* c) {
     request_radial_pulse(c);
 }

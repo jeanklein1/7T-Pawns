@@ -188,6 +188,13 @@ struct InputState {
     // the body performs (leap from the ground, somersault from the air) is
     // the GPU's word: the CPU does not know where the body is.
     bool  jump_pending = false;
+    // LEAP_1 — THE HAND'S OTHER WORD. The right-half PAIR tap (and
+    // CAPS_LOCK) raises this and pulse_pending, never jump_pending: two
+    // fingers ring the ground and reach for a body, one finger rings it and
+    // leaps. Spent at the same drain pulse_pending is spent at, where the
+    // point and the population are both in hand — the arming is a question
+    // about the world, which no input door may ask.
+    bool  swap_pending = false;
 };
 
 

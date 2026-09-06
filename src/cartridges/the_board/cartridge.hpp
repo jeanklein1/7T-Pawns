@@ -3378,7 +3378,6 @@ namespace t7 {
                     on_key_down(&input_deps_, event.key,
                         pawn_state_, pawn_deps_,
                         orbs_state_, orbs_deps_,
-                        agent_state_, agents_deps_,
                         cube_behaviors_state_, cube_deps_,
                         transitionPhase_, pendingDestination_, mood_state_);
                     break;
@@ -3410,7 +3409,7 @@ namespace t7 {
                     on_touch_tap_left(&input_deps_, pawn_state_, pawn_deps_);
                     break;
                 case InputEvent::Type::TouchTapRight:
-                    on_touch_tap_right(&input_deps_, agent_state_, agents_deps_);
+                    on_touch_tap_right(&input_deps_);
                     break;
                 case InputEvent::Type::TouchTapPulse:
                     on_touch_tap_pulse(&input_deps_);
