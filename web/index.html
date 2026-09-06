@@ -615,7 +615,7 @@
             // any other face cancels it. The shell owns the look — the
             // law (which press lands) is untouched.
             txt.textContent = 'pulse to land'; el.style.opacity = '1';
-            landT = setTimeout(function () { el.style.opacity = '0'; landT = 0; }, 5000);
+            landT = setTimeout(function () { el.style.opacity = '0'; landT = 0; }, 8000);  // EASE_1: 5 s -> 8 s
           }
           else                 { el.style.opacity = '0'; }
         },
