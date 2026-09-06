@@ -5,14 +5,14 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `eabd008c411123986cd85226f0aac421176f0bf2`
-(FPV_TAP_0 U1 — the left half learns whose eye: two fingers as one)
+Last commit touching any scanned file: `7ca25123150cfd7196d21fa84cdd164f7adcd631`
+(FRUSTUM_0 U1 — the obelisk stands, every tip is cut to the door's width, every summit boards; the height law dies with its reader)
 
 | file scanned | sha256 |
 |---|---|
 | `src/cartridges/the_board/realization/render_passes.hpp` | `sha256:e4d6b62cb1d1936d57322d2c4ef4372bbc27dd1404a29117d9431938e9c84149` |
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:bbcaedbb3b05fdc8fdc455f502591ff4ad7142c55fd3cea313a4806d9bf209a7` |
-| `src/cartridges/the_board/cartridge.hpp` | `sha256:4bdb23beff45be88feb09949bb458f5b9517798bd4faa2b2ac622970103c1370` |
+| `src/cartridges/the_board/cartridge.hpp` | `sha256:6af76f08fb4daba9a8d2e1fe5a9ae74cb8f01f688a996f66c1039bb0dc069041` |
 | `src/cartridges/the_board/surface/patch_system.hpp` | `sha256:1be3569e8b942fccc6a5ad003a6f227b2c413897b33a947bdcfa986947653b3c` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:67d0c75fd5f2c9037b90f087a7881b33b55479b82863419ff798937b62144c76` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
