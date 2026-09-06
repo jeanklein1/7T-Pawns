@@ -132,6 +132,28 @@ struct TouchMoveState {
     float z = 0.0f;
 };
 
+// VISIT_0 — THE PILOT'S ORGAN. The driver's private state for a walk to
+// a hung photograph (begin_visit / pilot_tick, below). Instance at the
+// root beside touch_, like every driver organ.
+struct PilotState {
+    bool     active  = false;
+    uint32_t slot    = UINT32_MAX;         // painting_slots index being visited
+    float    tx = 0.0f, tz = 0.0f;         // the STANDING point: position + forward * stand-off
+    float    aim_x = 0.0f, aim_z = 0.0f;   // the painting's centre — the orbit turns to face it
+    float    best_d  = 1e9f;               // closest approach so far
+    double   best_at = 0.0;                // when best_d last improved (the stall clock)
+};
+// The pilot's numbers. Control-panel material, enrolled nowhere yet (no
+// measurement has asked). PILOT_STALL_S must outlast possess()'s landing
+// ease, or a visit begun from the ribbon dies on its own doorstep.
+inline constexpr float  PILOT_ARRIVE_WU       = 2.5f;   // within this of the standing point: arrived
+inline constexpr float  PILOT_SLOW_WU         = 8.0f;   // inside this the stride eases to a quarter
+inline constexpr float  PILOT_PROGRESS_WU     = 0.25f;  // an approach shorter than this is not progress
+inline constexpr float  PILOT_TURN_RATE       = 1.8f;   // rad/s the pilot may swing the orbit
+inline constexpr double PILOT_STALL_S         = 6.0;    // no progress for this long: release, say so
+inline constexpr float  PILOT_STANDOFF_MULT   = 1.4f;   // × the painting's larger side
+inline constexpr float  PILOT_STANDOFF_MIN_WU = 4.0f;
+
 // ═══ THE DEPS FACE ═══════════════════════════════════════════════
 //
 // Input's own organs plus its true reaches — the driver's face (v3
@@ -155,6 +177,8 @@ struct InputDeps {
     PointState&   point_;         // the point — the host, and the mirror possess() captures the edge from
     MountState&   mount_;         // the mount's edge + ease (RIBBON_1); possess() writes it, FillSignal ships it
     CameraControls& camera_;      // the first live panel dial (KP_+/KP_-)
+    const CameraPose& camera_pose_;   // VISIT_0 — the P5 mirror of the orbit (azimuth for the pilot's frame; eye for its aim). Read-only, one frame stale by law (E-4).
+    PilotState&   pilot_;             // VISIT_0 — the third hand's organ
 };
 
 // ═══ MODULE FUNCTIONS — DECLARATIONS ═════════════════════════════
@@ -188,6 +212,9 @@ void on_scroll(InputDeps* c, float delta);
 // Per-frame
 void update_movement_intent(InputDeps* c);
 void clear_input_deltas(InputDeps* c);
+// VISIT_0 — the pilot: per-frame (the Pilot spine row) and the door's verb.
+void pilot_tick(InputDeps* c, double now, double dt);
+void begin_visit(InputDeps* c, uint32_t slot, float px, float pz, float fx, float fz, float span, double now);
 // Camera / view commands
 void toggle_fpv_mode(InputDeps* c);
 void possess(InputDeps* c, PointHost next);   // THE ONE TRANSACTION — capture the edge, flip the host both rooms, start the ease
@@ -503,6 +530,119 @@ inline void clear_input_deltas(InputDeps* c) {
     c->inputState_.zoom_delta = 0.0f;
     c->inputState_.pan_x_delta = 0.0f;
     c->inputState_.pan_y_delta = 0.0f;
+}
+
+// ═══ THE PILOT (VISIT_0) — A THIRD HAND ON THE SAME WHEEL ═══════════
+//
+// A visit is the sandwich asking the body to walk to a hung photograph.
+// The pilot authors exactly what the keys and the stick author —
+// move_x/move_z under the fold's unit clamp, look_az_delta at a bounded
+// rate — and nothing else: no position, no trajectory, no GPU word, no
+// host flip beyond the R key's own transaction. The pawn kernel's
+// terrain snap carries the body over the ground and the kite carries
+// the camera; that is why the pilot walks the PAWN (the ruling: the CPU
+// cannot sample terrain, so a camera-host flight cannot know where the
+// ground is at the destination; the walk solves it by construction, and
+// the walk is the feature).
+//
+// THE HANDS WIN. Any hand-authored move, look or zoom this frame ends
+// the visit at once, with a line. So does arriving, the point leaving
+// the pawn, and a stall — no closer approach for PILOT_STALL_S: a wall,
+// a monument, a body the whisper could not bend around.
+//
+// THE FRAME. coupling_input_to_pawn_velocity (world.wgsl) maps intent
+// (mx, mz) to world velocity (mx·cos az + mz·sin az, −mx·sin az +
+// mz·cos az), az = camera_state.azimuth. Its inverse is its transpose:
+// for a unit world direction (ux, uz),
+//     mx = ux·cos az − uz·sin az,   mz = ux·sin az + uz·cos az.
+// W is mz = −1 and lands on (−sin az, −cos az), the camera's forward —
+// the same frame the free-fly branch uses, verified against both. The
+// azimuth is the P5 readback's, one frame stale (E-4): a quarter of a
+// world unit at PAWN_SPEED.
+//
+// THE AIM. build_view_projection_matrix looks along −(sin az, cos az)
+// in XZ, so the azimuth that faces the painting from the eye is
+// atan2(−vx, −vz) for v = painting − eye; the pilot turns the orbit
+// toward it at PILOT_TURN_RATE and stops within a degree.
+inline void pilot_tick(InputDeps* c, double now, double dt) {
+    PilotState& p = c->pilot_;
+    if (!p.active) return;
+    // Re-fold the hands from their held state (pure in keys_/touch_), so
+    // move_x/move_z are the HANDS' this frame and the pilot's own last
+    // write is gone before anything reads it as a hand.
+    update_movement_intent(c);
+    const InputState& in = c->inputState_;
+    if (in.move_x != 0.0f || in.move_z != 0.0f
+        || in.look_az_delta != 0.0f || in.look_el_delta != 0.0f
+        || in.zoom_delta != 0.0f) {
+        std::cout << "[Visit] released: hands (slot " << p.slot << ")\n";
+        p.active = false;
+        return;
+    }
+    if (c->point_.host != PointHost::PAWN) {
+        std::cout << "[Visit] released: the point left the pawn (slot " << p.slot << ")\n";
+        p.active = false;
+        return;
+    }
+    const float dx = p.tx - c->point_.x;
+    const float dz = p.tz - c->point_.z;
+    const float d  = std::sqrt(dx * dx + dz * dz);
+    if (d <= PILOT_ARRIVE_WU) {
+        std::cout << "[Visit] arrived: slot " << p.slot << ", " << d << " wu from the mark\n";
+        p.active = false;
+        return;
+    }
+    if (d < p.best_d - PILOT_PROGRESS_WU) { p.best_d = d; p.best_at = now; }
+    else if (now - p.best_at > PILOT_STALL_S) {
+        std::cout << "[Visit] released: stalled " << d << " wu from slot " << p.slot << "\n";
+        p.active = false;
+        return;
+    }
+    if (!c->camera_pose_.valid) return;   // no pose yet: wait, do not guess
+    const float az = c->camera_pose_.azimuth;
+    const float ca = std::cos(az), sa = std::sin(az);
+    const float ux = dx / d, uz = dz / d;
+    const float gain = std::min(1.0f, std::max(0.25f, d / PILOT_SLOW_WU));
+    c->inputState_.move_x = (ux * ca - uz * sa) * gain;
+    c->inputState_.move_z = (ux * sa + uz * ca) * gain;
+    {   // the fold's own clamp: two hands cannot buy more than full speed, nor can a third
+        const float m = std::sqrt(c->inputState_.move_x * c->inputState_.move_x
+                                + c->inputState_.move_z * c->inputState_.move_z);
+        if (m > 1.0f) { c->inputState_.move_x /= m; c->inputState_.move_z /= m; }
+    }
+    const float vx = p.aim_x - c->camera_pose_.eye[0];
+    const float vz = p.aim_z - c->camera_pose_.eye[2];
+    float want = std::atan2(-vx, -vz) - az;
+    while (want >  3.14159265f) want -= 6.28318531f;
+    while (want < -3.14159265f) want += 6.28318531f;
+    const float step = PILOT_TURN_RATE * (float)dt;
+    if (std::fabs(want) > 0.0175f)
+        c->inputState_.look_az_delta = std::max(-step, std::min(step, want));
+}
+
+// THE DOOR'S VERB. Called once, at the frame boundary, with the slot's
+// facts (position, facing, larger side) — scalars, so this driver needs
+// no gallery type. `forward` is the quad's facing outdoors and the wall
+// normal indoors; the standing point is in front of the picture either
+// way, and the visual gate says which sign the wall normal carries.
+inline void begin_visit(InputDeps* c, uint32_t slot, float px, float pz,
+                        float fx, float fz, float span, double now) {
+    PilotState& p = c->pilot_;
+    // The R key's own transaction, with its own guards: a visit walks, so
+    // the pawn must host. From the ribbon this is the landing ease; the
+    // pilot waits it out (PILOT_STALL_S outlasts the ease).
+    if (c->point_.host != PointHost::PAWN) possess(c, PointHost::PAWN);
+    if (c->point_.host != PointHost::PAWN) {
+        std::cout << "[Visit] refused: no pawn to walk (slot " << slot << ")\n";
+        return;
+    }
+    const float off = std::max(PILOT_STANDOFF_MIN_WU, span * PILOT_STANDOFF_MULT);
+    p.tx = px + fx * off;   p.tz = pz + fz * off;
+    p.aim_x = px;           p.aim_z = pz;
+    p.slot = slot;          p.active = true;
+    p.best_d = 1e9f;        p.best_at = now;
+    std::cout << "[Visit] slot " << slot << ": walking to (" << p.tx << ", " << p.tz
+              << "), stand-off " << off << " wu\n";
 }
 
 // ═══ CAMERA / VIEW COMMANDS ══════════════════════════════════════

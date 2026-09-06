@@ -88,6 +88,7 @@ SHARED_ROWS = [('phase_promotion_drain', {'gallery', 'indoor_shell'})]
 
 # ── DIRECTION B: foundational phases — gate MUST be `true`, justified ──
 FOUNDATIONAL_PHASES = {
+    'phase_pilot':                 "the driver's third hand — intent authored before FillSignal copies the channel (VISIT_0)",
     'phase_fill_signal':           'the clock+signal fill is unconditional (every frame)',
     'phase_advance_clock':         'the tempo follower is unconditional',
     'phase_motion_drivers':        'the music driver + fog stage — atmosphere foundational (K4)',

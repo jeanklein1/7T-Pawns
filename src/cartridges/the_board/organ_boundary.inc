@@ -47,6 +47,29 @@
                         possess(&input_deps_, static_cast<PointHost>(host));
                 }
 
+                // THE VISIT DOOR (VISIT_0) — a door with a parameter, taken
+                // once: the shell names a hung photograph; begin_visit turns
+                // its slot into a standing point the pilot walks to. An
+                // empty slot is refused here, in words, because the roll the
+                // shell pressed may be two seconds older than the wall.
+                {
+                    uint32_t slot = 0;
+                    if (t7::organ::take_visit(slot)) {
+                        const GPUPaintingSlot& s = gallery_state_.painting_slots[slot];
+                        if (s.is_active == 0u)
+                            std::cout << "[Visit] refused: slot " << slot << " is empty now\n";
+                        else
+                            begin_visit(&input_deps_, slot,
+                                        s.position[0], s.position[2],
+                                        s.forward[0],  s.forward[2],
+                                        std::max(s.scale_x, s.scale_y),
+                                        time_state_.seconds);
+                    }
+                }
+                // THE VISIT WINDOW, refreshed here and nowhere else (the rule
+                // window's charter): the pane reads whether a walk is on.
+                t7::organ::set_visit_view(pilot_.active, pilot_.slot);
+
                 uint32_t def_mood = 0;
                 if (t7::organ::take_definition_dirty(def_mood)
                     && def_mood == mood_state_.active) {
