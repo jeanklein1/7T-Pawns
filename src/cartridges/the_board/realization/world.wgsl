@@ -475,12 +475,20 @@ const TERRAIN_BAND_COUNT: u32 = 6u;
 const TERRAIN_BANDS = array<TerrainBand, 6>(
     //              spacing  freq_μ  freq_σ  amp_μ  amp_σ  damp_μ  damp_σ  damp_min activ  t_freq
     //                                                                      reach≈3/min
-    TerrainBand(    200.0,   0.030,  0.010,  8.0,   3.0,   0.008,  0.004,  0.005,  0.70,  0.05  ),  // 0: continental  reach≈600
+    TerrainBand(    200.0,   0.030,  0.010,  8.0,   3.0,   0.008,  0.004,  0.005,  0.91,  0.05  ),  // 0: continental  reach≈600 — MASSIF_0: activation 0.70 -> 0.91 (+30%)
     TerrainBand(     80.0,   0.080,  0.025,  3.0,   1.5,   0.020,  0.010,  0.010,  0.65,  0.10  ),  // 1: regional     reach≈300
     TerrainBand(     30.0,   0.200,  0.060,  1.2,   1.0,   0.040,  0.020,  0.020,  0.78,  0.20  ),  // 2: local        reach≈150
     TerrainBand(     12.0,   0.500,  0.150,  0.4,   0.45,  0.080,  0.040,  0.040,  0.72,  0.40  ),  // 3: detail       reach≈75
     TerrainBand(      5.0,   1.200,  0.350,  0.12,  0.05,  0.150,  0.075,  0.060,  0.50,  0.80  ),  // 4: fine         reach≈50
-    TerrainBand(    500.0,   0.012,  0.004,  15.0,  6.0,   0.004,  0.002,  0.003,  0.75,  0.02  ),  // 5: tectonic     reach≈1000
+    // MASSIF_0 — THE TWO LOWEST-FREQUENCY BANDS THICKEN. Jean's stamp:
+    // the mountainous ground is the interesting ground, and a plain reads
+    // as boring; the plains are where the landform bands' lattice rolled
+    // no node. Concentration is the ACTIVATION column — the fraction of
+    // lattice nodes that contribute — raised 30% on continental (0.70 ->
+    // 0.91) and tectonic (0.75 -> 0.975): mountainous coverage grows,
+    // plains shrink, and no wave grows taller (amp untouched — that is
+    // the one-line flip if the stamp meant HEIGHT, not coverage).
+    TerrainBand(    500.0,   0.012,  0.004,  15.0,  6.0,   0.004,  0.002,  0.003,  0.975, 0.02  ),  // 5: tectonic     reach≈1000 — MASSIF_0: activation 0.75 -> 0.975 (+30%)
 );
 
 // Property indices for deriving wave parameters from a lattice node seed.
