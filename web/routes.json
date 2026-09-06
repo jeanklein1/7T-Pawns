@@ -1,9 +1,10 @@
 [
-  { "id": "board",      "label": "The Board",      "engine": "pane" },
-  { "id": "about",      "label": "About",          "href": "/about/" },
-  { "id": "collection", "label": "The collection", "href": "/collection/", "engine": "pane" },
-  { "id": "text",       "label": "Text",           "href": "/about/#text",  "engine": "pane" },
-  { "id": "write",      "label": "Write me",       "href": "/about/#write", "engine": "pane" },
-  { "id": "world",      "label": "The world",      "href": "/",        "side": "site", "return": true },
-  { "id": "website",    "label": "The website",    "href": "/about/",  "side": "engine" }
+  { "id": "board",      "label": "The Board",       "engine": "pane" },
+  { "id": "controls",   "label": "Controls",        "engine": "pane" },
+  { "id": "collection", "label": "The collection",  "href": "/collection/",   "engine": "pane" },
+  { "id": "text",       "label": "Text",            "href": "/text/",         "engine": "pane" },
+  { "id": "about",      "label": "About",           "href": "/about/",        "engine": "pane" },
+  { "id": "write",      "label": "Write me",        "href": "/about/#write",  "engine": "pane" },
+  { "id": "follow",     "label": "Follow the work", "href": "/about/#follow", "engine": "pane" },
+  { "id": "world",      "label": "The world",       "href": "/",  "side": "site", "return": true }
 ]

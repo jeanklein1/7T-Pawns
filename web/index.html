@@ -874,51 +874,63 @@
     <nav>
       <!-- __ROUTES__ -->
     </nav>
-    <!-- THE PANES. One per engine-only route (data-pane matches the
-         route id). A pane replaces the nav while open (#menu.paned) and
-         carries its own way back. Controls: PLACEHOLDER COPY — the key
-         words are Jean's, and their truth is console.hpp's. -->
+    <!-- THE PANES. One per engine route (data-pane matches the route id);
+         since DOORS_3 every item on the menu opens one. A pane replaces the
+         nav while open (#menu.paned) and carries its own way back. -->
     <div class="pane" data-pane="board" hidden>
       <button type="button" class="back" data-back>← menu</button>
       <p class="pane-head">The Board</p>
-      <!-- PLACEHOLDER COPY — Jean's sentence. -->
-      <p class="pane-note">A living world drawn by your GPU. It photographs itself and hangs the pictures; the paintings it hangs are on the website.</p>
-      <p class="pane-sub">Controls</p>
-      <!-- THE FACTS ARE input.hpp's and console.hpp's; the WORDS are
-           placeholders. DOORS_2 proposed "Ride / release: R" and "Free the
-           mouse: Esc" — U0 found R BOUND TO NOTHING in the tree (only the
-           #ifndef fallback) and no GLFW_KEY_ESCAPE at all, so both rows are
-           the tree's answer instead of the handoff's. The ribbon is boarded
-           by the leap gesture on a summit (request_radial_pulse); the
-           pointer door is Numpad ✱ (console.hpp intercepts it). -->
-      <dl>
-        <dt>Walk</dt><dd>W A S D · on a phone, drag the left half of the screen</dd>
-        <dt>Look</dt><dd>drag with the mouse held · on a phone, the right half</dd>
-        <dt>Zoom</dt><dd>the wheel · two fingers on the right half</dd>
-        <dt>Leap</dt><dd>Space · on a phone, one clean tap on the right half</dd>
-        <dt>Ring the ground</dt><dd>Caps Lock · two fingers, one clean tap — the wave reaches for a body as it goes</dd>
-        <dt>Aura</dt><dd>3 lights it · 2 raises it · on a phone, a second finger on the left half</dd>
-        <dt>Ride the ribbon</dt><dd>climb a tall pyramid — at the top Space boards it instead of leaping; Space again to step off. The badge on the glass calls this press the pulse.</dd>
-        <dt>First person</dt><dd>Ctrl</dd>
-        <dt>Other worlds</dt><dd>walk through an arch · or 4 to 9, six worlds to jump to</dd>
-        <dt>Free the mouse</dt><dd>Numpad ✱ · Esc is the browser's own</dd>
+      <!-- PLACEHOLDER COPY — Jean's messages to the audience, and hints.
+           Paragraphs; no controls here (Controls is its own pane). -->
+      <p class="pane-note">Welcome. Take your time; the world keeps going whether you move or not.</p>
+      <p class="pane-note">Stand by a wall of pictures and wait for the next one to be hung. Find an arch and walk through it.</p>
+    </div>
+    <div class="pane" data-pane="controls" hidden>
+      <button type="button" class="back" data-back>← menu</button>
+      <p class="pane-head">Controls</p>
+      <!-- TWO PLATFORMS, SIDE BY SIDE, ONE SHOWN. The facts in both lists
+           are the tree's (DOORS_3 U0), read at input.hpp and console.hpp;
+           the words are placeholders.
+
+           TWO ROWS MOVED SINCE THE HANDOFF WAS WRITTEN, and these are the
+           tree's answers, not the document's:
+
+           FPV HAS A PHONE MOUTH (FPV_TAP_0, on_touch_tap_fpv). It is the
+           LEFT pair — two fingers that ARRIVE within one TAP_MS of each
+           other and lift as one. The arrival test is the whole difference
+           from the aura, which is a second finger landing on a stick that
+           is already held.
+
+           THE RIDE ANSWERS THE PULSE (REWIRE_0). The boarding moved off
+           request_radial_pulse onto request_pulse_swap, so the gesture the
+           glass teaches ("pulse to fly / pulse to land") is the gesture
+           that works. On a summit the pulse boards the ribbon; riding, it
+           lands. The leap is the leap alone and no longer rings. -->
+      <div class="seg" role="tablist" aria-label="platform">
+        <button type="button" role="tab" data-platform="phone">Smartphone</button>
+        <button type="button" role="tab" data-platform="desktop">Desktop</button>
+      </div>
+      <dl class="ctl" data-platform="phone" hidden>
+        <dt>Directions</dt><dd>drag the left half of the screen</dd>
+        <dt>Rotation</dt><dd>drag the right half · two fingers to zoom</dd>
+        <dt>Pulse</dt><dd>two fingers, one clean tap on the right half — on a summit it boards the ribbon, and lands it again</dd>
+        <dt>Aura</dt><dd>a second finger on the left half</dd>
+        <dt>Leap</dt><dd>one clean tap on the right half</dd>
+        <dt>FPV</dt><dd>two fingers on the left half, landing together and lifting as one</dd>
       </dl>
-      <p class="pane-sub">Things to try</p>
-      <!-- PLACEHOLDER COPY — Jean's suggestions. -->
-      <ul class="try">
-        <li>Stand by a wall of pictures and wait for the next one to be hung.</li>
-        <li>Press Space among the cubes and watch where they go.</li>
-        <li>Find an arch and walk through it.</li>
-      </ul>
+      <dl class="ctl" data-platform="desktop" hidden>
+        <dt>Directions</dt><dd>W A S D</dd>
+        <dt>Rotation</dt><dd>drag with the mouse held · the wheel to zoom</dd>
+        <dt>Pulse</dt><dd>Caps Lock — on a summit it boards the ribbon, and lands it again</dd>
+        <dt>Aura</dt><dd>3 lights it · 2 raises it</dd>
+        <dt>Leap</dt><dd>Space</dd>
+        <dt>FPV</dt><dd>Ctrl</dd>
+      </dl>
       <div class="row">
         <button type="button" id="ctlPhoto">Take a photo</button>
         <button type="button" id="ctlFull">Fullscreen</button>
         <button type="button" id="ctlSound">Sound: on</button>
       </div>
-      <p class="pane-sub">Its own photographs</p>
-      <p class="pane-note">What the world has hung of its own pictures. Choose one and the pawn walks there; touch anything to stop.</p>
-      <ol class="roll" id="roll"></ol>
-      <p class="roll-state" id="rollState" hidden></p>
     </div>
     <div class="pane" data-pane="collection" hidden>
       <button type="button" class="back" data-back>← menu</button>
@@ -926,16 +938,18 @@
       <div class="peek" id="peek" aria-live="polite"></div>
       <a class="out" data-out target="_blank" rel="opener" href="collection/">Open the collection in a new tab →</a>
     </div>
-    <!-- DOORS_2 — THE ABOUT PAGE IN MINIATURE. Two panes fed by one fetch of
-         about/about.json (gesture-time, never boot): the doctrine as the
-         site wrote it, and the same message door the site opens, posting to
-         the same function (functions/api/message.js takes JSON). Words are
+    <!-- DOORS_2/DOORS_3 — THE SITE IN MINIATURE. Four panes, two fetches,
+         both at gesture time and never at boot: text/text.json feeds Text
+         (the text page's own words, as it wrote them) and about/about.json
+         feeds About and Write (the statement, the day's painting, and the
+         address). The message door posts to the same function the site
+         opens (functions/api/message.js takes JSON). Words are
          placeholders; the address is site.json's. -->
     <div class="pane" data-pane="text" hidden>
       <button type="button" class="back" data-back>← menu</button>
       <p class="pane-head">Text</p>
       <div class="text" id="miniText"></div>
-      <a class="out" data-out target="_blank" rel="opener" href="about/#text">Read it on the website →</a>
+      <a class="out" data-out target="_blank" rel="opener" href="text/">Read it on the website →</a>
     </div>
     <div class="pane" data-pane="write" hidden>
       <button type="button" class="back" data-back>← menu</button>
@@ -948,6 +962,22 @@
         <div class="row"><button type="submit" id="miniSend">Send</button><span class="said" id="miniSaid"></span></div>
       </form>
       <a class="out" data-out target="_blank" rel="opener" href="about/#write">Write from the website →</a>
+    </div>
+    <div class="pane" data-pane="about" hidden>
+      <button type="button" class="back" data-back>← menu</button>
+      <p class="pane-head">About</p>
+      <!-- the day's painting, as the about page picks it, and the statement -->
+      <a class="mini-hero" id="miniHero" target="_blank" rel="opener" href="collection/"></a>
+      <div class="text" id="miniStatement"></div>
+      <a class="out" data-out target="_blank" rel="opener" href="about/">About, on the website →</a>
+    </div>
+    <div class="pane" data-pane="follow" hidden>
+      <button type="button" class="back" data-back>← menu</button>
+      <p class="pane-head">Follow the work</p>
+      <nav class="follow-list" aria-label="Follow the work">
+        <!-- __FOLLOW__ -->
+      </nav>
+      <a class="out" data-out target="_blank" rel="opener" href="about/#follow">On the website →</a>
     </div>
   </details>
 
@@ -1453,11 +1483,12 @@
           try { return M.cwrap(name, ret, args); }
           catch (err) { note('[shell] menu: ' + name + ' not in this build'); return null; }
         }
+        // DOORS_3 — the photographer is PARKED, not removed: gallery_roll,
+        // gallery_visit and gallery_visiting are still exported by
+        // organ_registry.hpp and still reachable from the console. The
+        // shell simply stopped asking. The roll pane is in git.
         C = {
-          pace:     w('shell_pace', null, ['number']),
-          roll:     w('gallery_roll', 'string', []),          // VISIT_0
-          visit:    w('gallery_visit', null, ['number']),     // VISIT_0
-          visiting: w('gallery_visiting', 'number', [])       // VISIT_0
+          pace:     w('shell_pace', null, ['number'])
         };
         return C;
       }
@@ -1470,14 +1501,19 @@
         panes.forEach(function (p) { p.hidden = (p.dataset.pane !== id); });
         menu.classList.toggle('paned', !!id);
         if (id === 'collection') loadPeek();
-        if (id === 'text' || id === 'write') loadAbout();    // DOORS_2
-        if (id === 'board') startRoll(); else stopRoll();    // VISIT_0 / DOORS_2: the roll lives in The Board
+        if (id === 'text') loadText();                       // DOORS_3 — the text page's own words
+        if (id === 'about' || id === 'write') loadAbout();   // DOORS_2/DOORS_3 — statement, hero, address
+        if (id === 'controls') showPlatform(platform);       // DOORS_3
       }
-      // DOORS_2 — ONE FETCH FOR TWO PANES: the doctrine (trusted markup — it
-      // is our own template, written by about_dist) and the address the
-      // Write pane falls back to.
+      // DOORS_2/DOORS_3 — ONE FETCH FOR TWO PANES: the statement and the
+      // day's painting for About (trusted markup — it is our own template,
+      // written by about_dist) and the address the Write pane falls back
+      // to. Text has its own fetch now, below, because text has its own
+      // page.
       var about = null, aboutLoading = false;
       var miniText = document.getElementById('miniText');
+      var miniStatement = document.getElementById('miniStatement');
+      var miniHero = document.getElementById('miniHero');
       function loadAbout() {
         if (about || aboutLoading) return;
         aboutLoading = true;
@@ -1486,11 +1522,52 @@
           return r.json();
         }).then(function (d) {
           about = d;
-          if (miniText) miniText.innerHTML = d.html || '';
+          if (miniStatement) miniStatement.innerHTML = d.statement || '';
+          // THE PANE MAKES THE PAGE'S OWN PICK. Same day index, same
+          // tall/wide question — asked of the PANE's aspect, not the
+          // page's. build_hero emits {n, src, w, h}: no title, and src is
+          // written relative to /about/, so the shell reaches it as
+          // 'about/' + src. The alt names the painting by its number,
+          // which is the only name the work has here.
+          var day = Math.floor(Date.now() / 864e5);
+          var tall = window.matchMedia && window.matchMedia('(max-aspect-ratio: 4/5)').matches;
+          var hero = d.hero || {};
+          var list = (tall && hero.tall && hero.tall.length) ? hero.tall : (hero.wide || []);
+          var pick = list.length ? list[day % list.length] : null;
+          if (pick && miniHero) {
+            miniHero.innerHTML = '';
+            var img = document.createElement('img');
+            img.src = 'about/' + pick.src;
+            img.alt = pick.n !== undefined ? ('Painting ' + pick.n) : '';
+            if (pick.w) img.width = pick.w;
+            if (pick.h) img.height = pick.h;
+            img.loading = 'lazy'; img.decoding = 'async';
+            miniHero.appendChild(img);
+            if (pick.n !== undefined) miniHero.href = 'collection/#w' + pick.n;
+          }
         }).catch(function (err) {
           aboutLoading = false;                      // retry on the next opening
-          if (miniText) miniText.textContent = 'The website did not answer.';
+          if (miniStatement) miniStatement.textContent = 'The website did not answer.';
           note('[shell] about: ' + err);
+        });
+      }
+      // DOORS_3 — TEXT HAS ITS OWN PAGE AND ITS OWN FETCH. about_dist wrote
+      // text.json from the page it wrote, so the pane and /text/ cannot
+      // disagree. Trusted markup, our own template, same as the statement.
+      var text = null, textLoading = false;
+      function loadText() {
+        if (text || textLoading) return;
+        textLoading = true;
+        fetch('text/text.json', { cache: 'no-cache' }).then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        }).then(function (d) {
+          text = d;
+          if (miniText) miniText.innerHTML = d.html || '';
+        }).catch(function (err) {
+          textLoading = false;                       // retry on the next opening
+          if (miniText) miniText.textContent = 'The text did not answer.';
+          note('[shell] text: ' + err);
         });
       }
       var mini = document.getElementById('mini');
@@ -1544,72 +1621,28 @@
           note('[shell] peek: ' + err);
         });
       }
-      // ═══ VISIT_0 — THE ROLL: WHAT THE WORLD HAS HUNG OF ITS OWN PICTURES
-      // A directory, not a gallery: the pictures stay in the world; the
-      // list takes you to them. gallery_roll() is the gallery's slot array
-      // read through the registry's window; gallery_visit(slot) is a door
-      // with a parameter; gallery_visiting() says whether a walk is on.
-      // Refreshed every two seconds while the pane is open: the world
-      // rehangs, and a list that does not move is a list of ghosts.
-      var rollEl = document.getElementById('roll');
-      var rollState = document.getElementById('rollState');
-      var rollTimer = null;
-      function compass(b) {            // bearing from the point, 0 = +Z, clockwise. Words, not law.
-        var n = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-        return n[Math.round((((b % 360) + 360) % 360) / 45) % 8];
+      // ═══ DOORS_3 — CONTROLS' TWO PLATFORMS ═══════════════════════════
+      // Two lists, one shown. The default is the visitor's own device —
+      // a coarse pointer is a thumb — and one tap reaches the other, so
+      // nobody is told what they are holding. Jean pins the default by
+      // giving CONTROLS_DEFAULT a value.
+      var CONTROLS_DEFAULT = null;   // 'phone' | 'desktop' | null = the visitor's own device
+      var platform = CONTROLS_DEFAULT ||
+                     ((window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ? 'phone' : 'desktop');
+      var seg = menu.querySelectorAll('.seg [data-platform]');
+      var ctls = menu.querySelectorAll('.ctl[data-platform]');
+      function showPlatform(p) {
+        platform = p;
+        seg.forEach(function (b) { b.setAttribute('aria-selected', b.dataset.platform === p ? 'true' : 'false'); });
+        ctls.forEach(function (l) { l.hidden = (l.dataset.platform !== p); });
       }
-      function caption(w) {
-        var age = w.age < 0 ? '' : (w.age < 90 ? Math.round(w.age) + ' s ago' : Math.round(w.age / 60) + ' min ago');
-        return [w.tier, Math.round(w.d) + ' wu ' + compass(w.b), age, w.wall ? 'on a wall' : 'on the ground']
-          .filter(Boolean).join(' · ');
-      }
-      function refreshRoll() {
-        if (!rollEl || !rollState) return;
-        var c = abi();
-        // TWO STATES, TWO SENTENCES (DOORS_1). No Module yet is the common
-        // case — the menu is static HTML a visitor can open before the
-        // wasm resolves — and it is not "not in this build". Placeholder words.
-        if (!c)      { rollEl.innerHTML = ''; rollState.hidden = false; rollState.textContent = 'Still waking — open this again in a moment.'; return; }
-        if (!c.roll) { rollEl.innerHTML = ''; rollState.hidden = false; rollState.textContent = 'Not in this build.'; return; }
-        var list;
-        try { list = JSON.parse(c.roll()); } catch (err) { note('[shell] roll: ' + err); return; }
-        // REBUILD, KEEPING THE HAND'S PLACE (DOORS_1, from the review): the
-        // visitor may be arrowing down the list when the world rehangs.
-        // Remember the focused caption's slot, rebuild, put focus back on
-        // that slot — or on the first caption if that picture came down.
-        var had = (document.activeElement && rollEl.contains(document.activeElement))
-                  ? document.activeElement.dataset.visit : null;
-        rollEl.innerHTML = '';
-        if (!list.length) { rollState.hidden = false; rollState.textContent = 'Nothing hung yet — walk a while.'; return; }
-        list.sort(function (a, b) { return a.d - b.d; });
-        list.forEach(function (w) {
-          var li = document.createElement('li');
-          var b = document.createElement('button');
-          b.type = 'button'; b.dataset.visit = w.s; b.textContent = caption(w);
-          li.appendChild(b); rollEl.appendChild(li);
-        });
-        if (had !== null && had !== undefined) {
-          var again = rollEl.querySelector('button[data-visit="' + had + '"]') || rollEl.querySelector('button');
-          if (again) again.focus();
-        }
-        var v = c.visiting ? c.visiting() : -1;
-        rollState.hidden = v < 0;
-        if (v >= 0) rollState.textContent = 'Walking to one — touch anything to stop.';
-      }
-      function startRoll() { refreshRoll(); if (!rollTimer) rollTimer = setInterval(refreshRoll, 2000); }
-      function stopRoll()  { if (rollTimer) { clearInterval(rollTimer); rollTimer = null; } }
 
       menu.addEventListener('click', function (e) {
         var t = e.target;
         if (!t || !t.closest) return;
         if (t.closest('[data-back]')) { showPane(null); return; }
-        var v = t.closest('button[data-visit]');                             // VISIT_0
-        if (v) {                                                              // choosing one closes the menu:
-          var c = abi();                                                      // the walk happens in full view,
-          if (c && c.visit) c.visit(+v.dataset.visit);                        // the world un-idles
-          menu.open = false;
-          return;
-        }
+        var pb = t.closest('.seg [data-platform]');                          // DOORS_3
+        if (pb) { showPlatform(pb.dataset.platform); return; }
         var b = t.closest('button[data-pane]');
         if (!b) return;
         showPane(b.dataset.pane);

@@ -69,18 +69,6 @@
 .peek-work img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .peek-sets { width: 100%; margin: 6px 0 0; font-size: 13px; }
 
-/* ── VISIT_0 — the roll: a list of captions, each a button that walks ── */
-.roll { list-style: none; margin: 0; padding: 0; }
-.roll li + li { border-top: 1px solid #1f1e26; }
-.roll button { display: block; width: 100%; text-align: left; font: inherit; color: var(--dim); background: none; border: 0; padding: 7px 0; cursor: pointer; }
-.roll button:hover, .roll button:focus-visible { color: var(--ink); }
-.roll-state { margin: 8px 0 0; color: var(--ink); }
-
-/* ── DOORS_2 — The Board's sections ───────────────────────────────── */
-.pane .pane-sub { margin: 12px 0 6px; color: var(--ink); letter-spacing: .06em; font-size: 13px; }
-.pane ul.try { margin: 0 0 10px; padding-left: 1.1em; }
-.pane ul.try li { margin: 0 0 4px; }
-
 /* ── DOORS_2 — the about page in miniature ─────────────────────────── */
 .pane .text h1 { font-size: 18px; font-weight: 430; margin: 0 0 8px; color: var(--ink); }
 .pane .text p { margin: 0 0 8px; }
@@ -92,3 +80,12 @@
 }
 .pane form .hp { position: absolute; left: -9999px; }
 .pane form .said { align-self: center; }
+
+/* ── DOORS_3 — Controls' two platforms; the About pane's hero; Follow ── */
+.pane .seg { display: flex; gap: 6px; margin: 0 0 10px; }
+.pane .seg button { font: inherit; color: var(--dim); background: none; border: 1px solid #33323c; border-radius: 2px; padding: 6px 12px; cursor: pointer; }
+.pane .seg button[aria-selected="true"] { color: var(--ink); border-color: var(--dim); }
+.pane .mini-hero { display: block; margin: 0 0 10px; background: var(--mat, #16120d); }
+.pane .mini-hero img { display: block; width: 100%; height: auto; max-height: 40vh; object-fit: cover; }
+.pane .follow-list a { display: block; padding: 6px 0; color: var(--dim); text-decoration: none; }
+.pane .follow-list a:hover, .pane .follow-list a:focus-visible { color: var(--ink); }
