@@ -1019,6 +1019,12 @@ EMSCRIPTEN_KEEPALIVE inline const char* gallery_roll(void) {
             const float dz = s.position[2] - g_point->z;
             const float d  = std::sqrt(dx * dx + dz * dz);
             const float bearing = std::atan2(dx, dz) * 57.2957795f;   // degrees; 0 = +Z, clockwise — the WORLD's frame
+            // A non-finite field would print as nan/inf and break the WHOLE
+            // list's JSON (the review's fragility). Nothing in the tree is
+            // known to hang such a slot; if one appears its row is absent,
+            // and the absence is the artifact — no per-frame line (P6).
+            if (!std::isfinite(d) || !std::isfinite(bearing)
+                || !std::isfinite(s.scale_x) || !std::isfinite(s.scale_y)) continue;
             const char* tier = (p.shot_type < g_roll.tier_count) ? g_roll.tier_names[p.shot_type] : "";
             std::snprintf(buf, sizeof buf,
                 "%s{\"s\":%u,\"tier\":\"%s\",\"age\":%.0f,\"d\":%.0f,\"b\":%.0f,\"w\":%.1f,\"h\":%.1f,\"wall\":%u}",
