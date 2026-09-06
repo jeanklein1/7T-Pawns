@@ -1,7 +1,7 @@
 ════════════════════════════════════════════════════════════════════
 7T — PULSE_SPLIT_0 — THE LEAP STOPS RINGING
-Three units on master. The one-finger word sheds the ring (U1); the
-register follows (U2). Authored by Claude at Jean's word: "keep space
+Four units on master. The one-finger word sheds the ring (U1); the
+ledgers follow (U2); the register closes (U3). Authored by Claude at Jean's word: "keep space
 and one finger tap only for leap".
 ════════════════════════════════════════════════════════════════════
 
@@ -139,9 +139,27 @@ GATES: python3 tools/gates/console_gate/run.py (PASS);
 COMMIT: "PULSE_SPLIT_0 U1 — the leap stops ringing; the ring is the second word's"
 
 ────────────────────────────────────────────────────────────────────
-U2 — THE REGISTER WRITTEN, THE ORDER RETIRED
+U2 — THE LEDGERS FOLLOW
+────────────────────────────────────────────────────────────────────
+Added in flight: BINDING_LEDGER pins contracts/spine_state.hpp, whose
+comments U1 edits, so two ledgers move. Run, in this order, from the
+root:
+  python3 tools/organ_ledger.py
+  python3 tools/binding_ledger.py
+  python3 tools/mirror_census.py
+  python3 tools/command_census.py
+Expected motion: BINDING_LEDGER's spine_state.hpp pin refreshes;
+MIRROR_LEDGER's source commit and its BINDING_LEDGER pin follow. No
+row count moves — this order adds no dial and no binding. Then every
+--check row in CLAUDE.md's gate table, plus organ_gap --gate,
+organ_readers, score, shell_gate, sha256_gate: all green.
+
+COMMIT: "PULSE_SPLIT_0 U2 — the ledgers follow: one pin, one cascade"
+
+────────────────────────────────────────────────────────────────────
+U3 — THE REGISTER WRITTEN, THE ORDER RETIRED
 ────────────────────────────────────────────────────────────────────
 Append to the LEAP_0 / LEAP_1 section's body in docs/OPEN.md, then
 git rm docs/HANDOFFS/PULSE_SPLIT_0.md.
 
-COMMIT: "PULSE_SPLIT_0 U2 — the register written, the order retired"
+COMMIT: "PULSE_SPLIT_0 U3 — the register written, the order retired"
