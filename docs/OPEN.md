@@ -198,6 +198,23 @@ re-measured here before acting. Beyond the `[hidden]` rule above:
 - **`build_writings` mints article ids nothing links to.** `writings.json`
   carries only `title` and `html`, so neither the page nor the pane can
   deep-link a piece. Registered, not a defect: no words ask for it yet.
+- **`/api/message` accepts cross-origin form POSTs — an unauthenticated,
+  unrate-limited relay into Jean's inbox.** Any third-party page can host
+  a form pointed at it and auto-submit; `application/x-www-form-urlencoded`
+  is a CORS-simple request, so the browser sends it without a preflight
+  and `parseBody` accepts it. **PRE-EXISTING and untouched by DOORS_4** —
+  the deleted band posted to the same function — but the write box put
+  that door on all three site pages, so it is named here rather than left
+  to a later reader. The honeypot catches a naive bot, not a targeted
+  one. A fix is an Origin check in `functions/api/message.js`, plus a
+  rate limit; both are that file's business and this round did not open
+  it. **For Jean to rule on.**
+- **The `<noscript>` paragraph still carries in-text links** to the
+  collection and About, while U6's ruling for the card was "no link in
+  the text — the button below is the door". Different surface (a visitor
+  whose scripts never ran has no button), so it was left alone; named
+  because the two now read differently and a later round should decide
+  deliberately rather than by accident.
 
 ### Where the witnesses could not reach
 
