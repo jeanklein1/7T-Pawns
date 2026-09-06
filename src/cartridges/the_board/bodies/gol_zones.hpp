@@ -107,7 +107,7 @@ struct GoLZoneProp {
 
 // ── Spawn Configuration ──────────────────────────────────────────
 struct GoLZoneSpawnConfig {
-    static constexpr float SPAWN_CHANCE = 0.60f;  // fraction of checkerboard zones
+    static constexpr float SPAWN_CHANCE = 0.70f;  // fraction of checkerboard zones — SPORE_0: 0.60 -> 0.70, a few more zones met (Jean's stamp)
     // Fraction of zones that get extrusion. The roll refuses no zone; the
     // only flat zones left are the three tiers whose identity is flatness
     // (Conway Flash, Pulse Sparkle and Pulse Spiral set force_no_height),

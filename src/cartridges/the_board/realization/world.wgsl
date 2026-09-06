@@ -7392,6 +7392,10 @@ const GOL_BLACK_R_SHIFT_RANGE: f32  = 0.10;  // red warmth/coolness (±half)
 const GOL_BLACK_G_SHIFT_RANGE: f32  = 0.06;  // green variation (±half)
 
 
+// SPORE_0 — the spore's two shapes (see zone_gol_evolve).
+const GOL_SPORE_BLOCK: u32 = 5u;              // cells per side of a spore; 5 is the smallest blob Vote keeps
+const GOL_SPORE_PER_ZONE_TICK: f32 = 0.75;    // expected spores per zone per tick, when the whole zone has settled
+
 // --- Per-cell hash for consistent randomization
 fn gol_cell_hash(cx: u32, cy: u32) -> u32 {
     return cx * 374761393u + cy * 668265263u;
@@ -11158,7 +11162,34 @@ fn zone_gol_evolve(@builtin(global_invocation_id) gid: vec3<u32>) {
                     if (zone_life[base + GOL_CELL_TARGET + ni] > 0.5) { count++; }
                 }
             }
-            let next = coupling_gol_next_state(tgt > 0.5, count, z.rule_mask);
+            var next = coupling_gol_next_state(tgt > 0.5, count, z.rule_mask);
+            // SPORE_0 — THE SEA IS NEVER STILL. A 3x3 neighbourhood all of
+            // one state — eight alive around an alive cell, eight dead
+            // around a dead one — is a zone that has settled, and Vote
+            // (Plateau) and a starved Conway both settle to a sea: one
+            // phase, all alive or all dead. Once per tick each
+            // GOL_SPORE_BLOCK-square of settled cells rolls ONE coin — the
+            // key is the block's, so every cell in it decides alike — and a
+            // hit flips the whole block. Sized so the seed OUTLIVES the
+            // rules: a 5-square blob persists under Vote both ways (the
+            // rule is self-complementary — a 5-hole persists too), boils
+            // under Conway (a 5x5 block is a traffic-light nursery), and
+            // rings under Cauldron (B45678/S2345 makes it a period-2
+            // oscillator). Cells whose 3x3 is not uniform never roll: a
+            // living pattern is left alone. The entropy is the beat clock,
+            // which a settled sea has no other source of. The dial is per
+            // ZONE per tick, not per block, so a 16-grid and a 64-grid
+            // seed at the same felt rate.
+            let uniform = (tgt > 0.5 && count == 8) || (tgt <= 0.5 && count == 0);
+            if (uniform) {
+                let bx = cell.x / GOL_SPORE_BLOCK;
+                let by = cell.y / GOL_SPORE_BLOCK;
+                let per_side = max(z.grid_size / GOL_SPORE_BLOCK, 1u);
+                let p_block = GOL_SPORE_PER_ZONE_TICK / f32(per_side * per_side);
+                let coin = hash_property(bitcast<u32>(zone_config.t_beats),
+                                         bx * 131u + by * 7919u + zone_id * 104729u);
+                if (coin < p_block) { next = select(1.0, 0.0, tgt > 0.5); }
+            }
             zone_life[base + GOL_CELL_NEXT + idx] = next;
         }
     } else {
