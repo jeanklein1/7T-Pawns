@@ -1452,6 +1452,10 @@
           var sets = document.createElement('p');
           sets.className = 'peek-sets';
           sets.textContent = (d.sets || []).map(function (s) { return s.label + ' (' + s.count + ')'; }).join(' · ');
+          // The catch arm below writes a sentence into this box and clears
+          // peekLoaded so the next opening retries. Clear it here or the
+          // retry renders the collection UNDERNEATH the error it disproves.
+          peekEl.textContent = '';
           peekEl.appendChild(frag);
           peekEl.appendChild(sets);
         }).catch(function (err) {
@@ -1520,13 +1524,29 @@
       });
       menu.addEventListener('toggle', function () {
         idle(menu.open);
-        if (!menu.open) showPane(null);
+        if (!menu.open) {
+          showPane(null);
+          // AND THE FOCUS GOES BACK TO THE WORLD. A closed menu that still
+          // holds focus answers Space by re-opening itself, where Space is
+          // the pulse; the summary is a door, not a resting place.
+          var s = menu.querySelector('summary');
+          if (s && s.blur) s.blur();
+        }
       });
       window.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && menu.open) { menu.open = false; e.preventDefault(); }
       });
+      // THE GUARD IS THE OPEN MENU'S, AND ONLY THE OPEN MENU'S. As first
+      // written it withheld keys whenever focus sat anywhere inside #menu —
+      // and <summary> KEEPS focus after the menu closes, so W/A/S/D never
+      // reached the world again and the visitor could not move. `keyup` is
+      // never withheld at all: the engine LATCHES key state (on_key_up
+      // clears keys_.forward), so one swallowed release leaves the pawn
+      // walking for ever. Measured, both of them.
       ['keydown', 'keyup', 'keypress'].forEach(function (t) {
-        menu.addEventListener(t, function (e) { if (e.key !== 'Escape') e.stopPropagation(); });
+        menu.addEventListener(t, function (e) {
+          if (menu.open && t !== 'keyup' && e.key !== 'Escape') e.stopPropagation();
+        });
       });
       // THE TWO LIVE CONTROLS — the tiny features.
       var ctlFull = document.getElementById('ctlFull');

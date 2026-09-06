@@ -942,6 +942,25 @@ def main():
         print("REFUSING TO SHIP: %s is missing — nothing to witness." % SHADER_SRC)
         return 6
 
+    # ── DOORS_0 — THE FOURTH REFUSAL, and before rmtree for the reason the
+    # first three are. The marker count is a property of the shell SOURCE,
+    # so it can be asked here; asking it after the copy (where DOORS_0 U3
+    # first put it) refused only once dist/index.html had already been
+    # deleted and replaced by the raw, unsubstituted template — a page
+    # carrying a literal __BUILD_ID__ and no menu, which is the very
+    # stale-pair defect the first refusal exists to prevent. It cited the
+    # build-id law as its precedent; this is that law.
+    for marker in ("<!-- __ROUTES__ -->", "/* __MENU_CSS__ */"):
+        if shell_src.count(marker) != 1:
+            print("")
+            print("REFUSING TO SHIP A SHELL WITHOUT ITS MENU MARKER.")
+            print("  %s must carry %s exactly once (found %d)."
+                  % (shell_src_path, marker, shell_src.count(marker)))
+            print("  The route list and the menu's rules are injected at these two")
+            print("  markers (web/routes.json + web/menu.css, through tools/routes.py);")
+            print("  without them the page ships with no way out of the engine.")
+            return 7
+
     # POSTER_0 — THE SECOND REFUSAL, and before rmtree for the reason the
     # first one is: a dist that cannot be completed must not cost the
     # previous one. A renamed PAINTING_200 fails the build loudly here
@@ -1024,16 +1043,9 @@ def main():
     # ── DOORS_0 — THE SANDWICH ───────────────────────────────────────
     # The route list and the menu's rules have one home each
     # (web/routes.json, web/menu.css) and one renderer (tools/routes.py),
-    # the same one about_dist and collection_dist call. The shell holds
-    # two markers; the build fills them. Refuse rather than ship a page
-    # with no menu, on the build-id law's own precedent.
-    for marker in ("<!-- __ROUTES__ -->", "/* __MENU_CSS__ */"):
-        if shell_out.count(marker) != 1:
-            print("")
-            print("REFUSING TO SHIP A SHELL WITHOUT ITS MENU MARKER.")
-            print("  web/index.html must carry %s exactly once (found %d)."
-                  % (marker, shell_out.count(marker)))
-            return 7
+    # the same one about_dist and collection_dist call. The shell holds two
+    # markers; the build fills them here. The REFUSAL that guards them is
+    # above, before rmtree, with the other three.
     shell_out = shell_out.replace("<!-- __ROUTES__ -->", routes.nav_html("engine", indent="      "))
     shell_out = shell_out.replace("/* __MENU_CSS__ */", routes.menu_css())
 

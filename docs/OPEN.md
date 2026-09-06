@@ -2,6 +2,74 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## THE POST-LANDING REVIEW OF DOORS_0 + VISIT_0 — what it found, and what was done
+
+Six reviewers read the landed diff adversarially, one per dimension. The
+line taken on every finding: **a defect that breaks a campaign's OWN stated
+contract was corrected in commit `POST-REVIEW`; a finding that would EXTEND
+a contract is registered below, unapplied, because extending is Claude's and
+Jean's.** The corrections ride one commit so they can be reverted as one.
+
+### Corrected — each restored a contract the campaign already stated
+
+- **THE SANDWICH WAS EATING THE WORLD'S KEYS — a blocker.** The three
+  `stopPropagation` listeners were bound to `#menu` for the life of the page
+  with no `menu.open` test, and `<summary>` KEEPS focus after the menu
+  closes. Measured in headless Chromium: open the menu, close it (Escape or
+  a second click), and `activeElement` is still `SUMMARY` — W, A, S, D and R
+  never reached a bubble-phase document listener again, so **the visitor
+  could not move after opening the menu once**, and Space re-opened the
+  sandwich instead of firing the pulse. Worse, `keyup` was withheld too, and
+  the engine LATCHES key state (`on_key_up` clears `keys_.forward`): a key
+  held while focus entered the menu lost its release and the pawn walked for
+  ever. DOORS_0's own gate row says "WASD typed **while the menu is open**
+  does not move the pawn" — the guard exceeded its own words. It is now
+  scoped to `menu.open`, never withholds a `keyup` (a release can only CLEAR
+  a flag), and the summary is blurred when the menu closes so focus returns
+  to the world. Eight key-routing behaviours measured green.
+- **`web_dist.py` refused the menu marker AFTER destroying the previous
+  dist.** DOORS_0 U3 placed the check at the `shader_sha` line — past the
+  `rmtree` of `owned` and the `ARTIFACTS` copy — so a duplicated or lost
+  marker deleted `dist/index.html` and replaced it with the raw template
+  (literal `__BUILD_ID__`, no menu) and only THEN refused. The handoff said
+  it was refusing "on the build-id law's own precedent"; that law is stated
+  in this file as "THE REFUSAL COMES FIRST, before rmtree — a shell that
+  cannot be versioned must not cost the previous dist." The count is a
+  property of the shell SOURCE, so it now asks `shell_src` up beside the
+  other three refusals, before `rmtree`. The substitution stays in the
+  `shell_out` pipeline where it belongs.
+- **A successful peek retry rendered underneath the failure it disproved.**
+  `loadPeek`'s catch writes "The collection did not answer." and clears
+  `peekLoaded` so the next opening retries — but the success arm only
+  appended and never cleared the box. Reproduced: 503 then 200 left the
+  twelve tiles captioned by a stale error for the rest of the session. The
+  success arm now clears first.
+- **`organ_mood_names` lost its doc comment to VISIT_0's banner.** U2.4
+  anchored the roll block on the function's signature, splicing it between
+  the comment and the function it describes. The comment is back where it
+  belongs; the roll's banner sits above it.
+
+### Registered, not applied — each would EXTEND a stated contract
+
+- The pilot outliving a world teardown (VISIT_0's residuals, first entry) —
+  a fifth release condition, and P6 wants it to speak.
+- The roll's 2 s refresh dropping keyboard focus (VISIT_0's residuals) —
+  focus preservation is an addition to a poll the handoff specified.
+- **`cwrap` with a `'string'` return may never throw, making the
+  "Not in this build." guard dead for `gallery_roll`.** A reviewer reads
+  emscripten's `$cwrap` as taking the throwing fast path only when
+  `numericRet` is true (i.e. `returnType !== 'string'`), so
+  `w('gallery_roll', 'string', [])` would always return a closure and
+  `abi()` would never note the miss; the throw would instead surface inside
+  `refreshRoll`'s `JSON.parse` try/catch, leaving the pane blank with no
+  words while `note()` logged every 2 s. The same reading says
+  `-sASSERTIONS` compiles the fast path out entirely, so under the Debug
+  preset NO name can throw and `c.pace` is truthy too. **UNVERIFIED HERE** —
+  no emsdk in this container to read `libccall.js` against. Worth one look
+  on Jean's machine; the fix, if it holds, is to probe with
+  `typeof Module._gallery_roll === 'function'` rather than to rely on a
+  throw.
+
 ## VISIT_0 — THE ROLL AS DIRECTORY (landed on the session branch; Jean's gates open)
 
 The world already photographs itself and already hangs the pictures. The

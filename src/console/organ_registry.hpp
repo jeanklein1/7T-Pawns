@@ -994,8 +994,6 @@ EMSCRIPTEN_KEEPALIVE inline void organ_go_host(int host) {
     if (host >= 0 && host <= 2) g_go_host_pending = (uint32_t)host;
 }
 
-// The names, positional by id: a JSON array the shell builds its mood
-// select from, so a new mood appears there with no JS edit.
 // ═══ THE ROLL (VISIT_0) ══════════════════════════════════════════════
 // What the world has hung of its own photographs, as facts: for every
 // active snapshot slot — its index, tier, age, distance and bearing from
@@ -1049,6 +1047,8 @@ EMSCRIPTEN_KEEPALIVE inline int gallery_visiting(void) {
     return (g_visit_view & 0x80000000u) ? (int)(g_visit_view & 0x7FFFFFFFu) : -1;
 }
 
+// The names, positional by id: a JSON array the shell builds its mood
+// select from, so a new mood appears there with no JS edit.
 EMSCRIPTEN_KEEPALIVE inline const char* organ_mood_names(void) {
     static std::string json;
     json.clear();
