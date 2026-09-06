@@ -293,16 +293,17 @@
        vocabulary this file already speaks (.btn, below). Placeholder
        wording and placeholder weight; the aesthetic pass owns both.
 
-       The whole veil is the target, so the gesture is the one a phone
-       actually makes. The log toggle and its pane opt out in JS. */
-    #veil.ready { cursor: pointer; }
-    #veil.ready #status {
-      color: var(--ink);
-      border: 1px solid #33323c; border-radius: 2px;
-      padding: 11px 22px;
-      letter-spacing: .06em;
-    }
-    #veil.ready #status:focus-visible { border-color: var(--dim); outline: none; }
+       DOORS_0: the veil is no longer the target. The doors are the two
+       buttons in .entry, present from first paint; READY lights #enter
+       and changes the status line's report, nothing more. */
+    #veil .line { margin: 0; color: var(--dim); font-size: 15px; max-width: 30em; text-align: center; }
+    #veil .entry { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    a.btn { text-decoration: none; display: inline-block; }
+    .btn.alt { color: var(--dim); }
+    .btn.alt:hover, .btn.alt:focus-visible { color: var(--ink); }
+    #enter { opacity: .55; }
+    #enter.armed { opacity: .8; }
+    #veil.ready #enter { opacity: 1; }
 
     /* SHORT VIEWPORTS — a phone held sideways, and a small phone held
        upright. The overlay column is poster + wordmark + line + toggle,
@@ -407,30 +408,6 @@
         max-height: min(calc(100vh - 64px), 640px);
       }
     }
-    /* ── WEBSITE_1 — THE DOORS OUT ────────────────────────────────
-       Two words, on every ENTRANCE surface — the veil and both cards —
-       and gone while the world runs: present() hides them, showCard()
-       returns them, and with no script at all the static default keeps
-       them visible. Fixed bottom-left. z-index 30 — above the layers
-       (10), below the photo flash (40) and the panel (9999). The nav
-       box swallows no input: pointer-events revives on the anchors
-       alone, so the world keeps its gestures everywhere else. Bottom-
-       LEFT because the organ pill owns bottom-right under ?organ=1. */
-    #doors {
-      position: fixed;
-      left:   calc(12px + env(safe-area-inset-left));
-      bottom: calc(10px + env(safe-area-inset-bottom));
-      z-index: 30;
-      pointer-events: none;
-      font-size: 12px; letter-spacing: 0.04em;
-    }
-    #doors a {
-      pointer-events: auto;
-      color: var(--faint);
-      text-decoration: none;
-      padding: 10px 8px;              /* the target outgrows the word */
-    }
-    #doors a:hover, #doors a:focus-visible { color: var(--ink); }
   </style>
 </head>
 <body>
@@ -803,7 +780,23 @@
          it: it is wider than the text column and takes its own line. -->
     <div class="stack">
       <div class="wordmark">the_board</div>
+      <!-- DOORS_0 — THE SENTENCE. PLACEHOLDER COPY: Jean's words replace
+           it. One line, first person (the convention about/ names). -->
+      <p class="line">A living world drawn by your GPU, hung with the paintings.</p>
       <div id="status">Waking the world</div>
+      <!-- DOORS_0 — TWO DOORS, STATIC MARKUP, PRESENT FROM FIRST PAINT.
+           #enter is the ONLY entry-gesture target: ATMOS_1's three
+           listeners bind to it (below), not to the veil, so a stray tap
+           is a stray tap and a tap meant for the second door is not
+           spent on the first. #enter is live during the load: an eager
+           tap is BANKED — the grants are spent now, the reveal follows
+           the moment the world is ready (showReady). The second door is
+           an anchor: it works when no script of ours finishes. Both
+           labels are PLACEHOLDER COPY. -->
+      <div class="entry">
+        <button id="enter" class="btn" type="button">Enter the world</button>
+        <a class="btn alt" href="/about/">Visit the website</a>
+      </div>
       <button id="logToggle" class="logToggle" type="button" aria-controls="log" aria-expanded="false">details</button>
     </div>
     <pre id="log" class="log" aria-live="off"></pre>
@@ -831,16 +824,13 @@
     <pre id="log2" class="log" aria-live="off"></pre>
   </div>
 
-  <!-- ── WEBSITE_1 — THE DOORS OUT ─────────────────────────────────
-       Static markup, deliberately: these must render on the visit
-       where the adapter request fails and no script of ours finishes.
-       Lowercase because the wordmark is. The noscript paragraph is the
-       page for a visitor whose scripts never ran at all; its styles
-       are inline on t7card's precedent — the failure that stopped the
-       scripts may not have spared anything else. -->
-  <nav id="doors" aria-label="site">
-    <a href="/collection/">collection</a><a href="/about/">about</a>
-  </nav>
+  <!-- ── WEBSITE_1 / DOORS_0 — THE NOSCRIPT PAGE ───────────────────
+       The doors out are static markup in the veil (.entry) and on the
+       card, so they render on the visit where the adapter request fails
+       and no script of ours finishes. This paragraph is the page for a
+       visitor whose scripts never ran at all; its styles are inline on
+       t7card's precedent — the failure that stopped the scripts may not
+       have spared anything else. -->
   <noscript>
     <p style="position:fixed;left:12px;top:12px;z-index:20;max-width:34em;
       color:#8a8792;font:14px/1.5 system-ui,sans-serif;margin:0">
@@ -878,7 +868,7 @@
     var logEl2  = document.getElementById('log2');
     var music   = document.getElementById('music');
     var cardPoster = document.getElementById('cardPoster');
-    var doors   = document.getElementById('doors');
+    var enterBtn = document.getElementById('enter');   // DOORS_0 — the one entry target
 
     // TWO flags, not one. `terminal` means a designed END was reached —
     // FALLBACK or LOST — and nothing may override it. `shown` merely
@@ -1029,10 +1019,6 @@
       window.T7_AUBADE.report();
       card.hidden = true;                   // clears a watchdog card, if any
       shown = true;
-      // WEBSITE_3 — the doors leave with the veil: over the running
-      // world nothing of the page remains. Any card brings them back,
-      // and the belt (handoff -> present) rides this same line.
-      if (doors) doors.hidden = true;
       veil.classList.add('lifting');
       setTimeout(function () { if (!terminal) veil.hidden = true; }, 950);
     }
@@ -1062,17 +1048,17 @@
       // fails, and this boot presented.
       shown = true;
       statusEl.textContent = ENTRY_WORDS;
-      statusEl.setAttribute('role', 'button');
-      statusEl.setAttribute('tabindex', '0');
       veil.classList.add('ready');
+      // DOORS_0 — THE BANKED TAP. An eager visitor already spent the
+      // gesture on the grants (`entered`); the reveal they asked for
+      // arrives now, through the same handler, as a click — which
+      // carriesActivation accepts and `entered` makes grant-free.
+      if (entered) onEntryGesture({ type: 'click' });
     }
 
     function showCard(say, sub, offerReload) {
       shown = true;
       veil.hidden = true;
-      // WEBSITE_3 — a card on screen means no world on screen: the
-      // doors return, for fallback, floor, lost and watchdog alike.
-      if (doors) doors.hidden = false;
       // The door is gone with the veil that carried it. Clearing the
       // class as well as the element keeps a hidden node from holding an
       // interactive state it can no longer honour.
@@ -1151,7 +1137,7 @@
     // recorded to the log panel rather than swallowed, because "the
     // music did not start" is a thing a visitor may want to look up.
 
-    var ENTRY_WORDS = 'tap to enter';   // placeholder; the aesthetic pass owns the words
+    var ENTRY_WORDS = 'Ready';   // DOORS_0 — the status line's READY report; the door is #enter. Placeholder words.
 
     // 1 — THE SOUNDTRACK. src is assigned HERE, not in the markup: with
     // preload="none" and no src the element costs nothing until this
@@ -1318,17 +1304,18 @@
     // events do not. It costs nothing when it is not needed — after a
     // successful entry the veil is already pointer-events:none, and the
     // `entered`/`ready` guards make a second arrival a no-op regardless.
-    veil.addEventListener('pointerdown', onEntryGesture);
-    veil.addEventListener('pointerup',   onEntryGesture);
-    veil.addEventListener('click',       onEntryGesture);
-    // The keyboard's way in. A gesture is a gesture — this unlocks audio
-    // and fullscreen exactly as the finger does.
-    statusEl.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
-        e.preventDefault();
-        onEntryGesture(e);
-      }
-    });
+    // DOORS_0 — THE DOOR IS #enter, NOT THE VEIL. Same three listeners,
+    // same handler, one target: a full-screen target made every stray
+    // tap an entry, and a tap meant for the second door spent the
+    // gesture on the first. A <button> fires `click` on Enter and Space
+    // by itself, so the keyboard path that used to live on #status is
+    // the third line. The `.armed` mark is feedback for the banked tap
+    // (showReady spends it); it is cosmetic and rides its own listener
+    // so the handler above stays byte-identical.
+    enterBtn.addEventListener('pointerdown', onEntryGesture);
+    enterBtn.addEventListener('pointerup',   onEntryGesture);
+    enterBtn.addEventListener('click',       onEntryGesture);
+    enterBtn.addEventListener('click', function () { if (entered && !ready) enterBtn.classList.add('armed'); });
 
     // ── ATMOS_0 R — WHEN THE OS REVOKES THE SESSION ───────────────
     // Field, iPhone 14: leave the browser long enough and Safari tears
