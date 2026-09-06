@@ -114,6 +114,26 @@ REPLACE:
     // (PULSE_SPLIT_0 took the ring off that word). Spent at the drain
     // pulse_pending is spent at, where the
 
+FIND (direction/input.hpp):
+    // REACH_2 — THE PULSE IS ALSO THE RIDE'S WORD, and the routing lives
+    // HERE — the player's door, both mouths (SPACE, the lone tap) — so a
+    // musical pulse riding the bus (emit_radial_pulse) can never board.
+    // The wave fires regardless, above: on the ground it is the gesture
+    // as ever; on a tall summit the same wave announces the boarding
+    // it begins — the ribbon may be anywhere, the ease is the abduction;
+    // in the sky it marks the departure. The summit check is a COURTESY
+    // (no refusal spam on every ground pulse) — the LAW stays in
+REPLACE:
+    // REACH_2 — THE RIDE'S WORD IS THIS ONE, and the routing lives
+    // HERE — the player's door, both mouths (SPACE, the lone RIGHT tap) —
+    // so a musical pulse riding the bus (emit_radial_pulse) can never
+    // board. PULSE_SPLIT_0 took the ring off this door, so a boarding no
+    // longer arrives announced by a wave: on the ground the gesture is the
+    // leap; on a tall summit the same press boards instead — the ribbon may
+    // be anywhere, the ease is the abduction; in the sky it marks the
+    // departure. The summit check is a COURTESY (no refusal spam on every
+    // ground leap) — the LAW stays in
+
 GATES: python3 tools/gates/console_gate/run.py (PASS);
        python3 tools/gates/glaw2/run.py (GREEN).
 COMMIT: "PULSE_SPLIT_0 U1 — the leap stops ringing; the ring is the second word's"
