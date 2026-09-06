@@ -5,21 +5,21 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `7e0691a1f201dc7d1d7c46b959beffbc11684d83`
-(DOORS_1 U2 — the pilot releases at world teardown, and says so: the fifth release beside camera_pose_'s reset)
+Last commit touching any scanned file: `eabd008c411123986cd85226f0aac421176f0bf2`
+(FPV_TAP_0 U1 — the left half learns whose eye: two fingers as one)
 
 | file scanned | sha256 |
 |---|---|
 | `src/cartridges/the_board/realization/render_passes.hpp` | `sha256:e4d6b62cb1d1936d57322d2c4ef4372bbc27dd1404a29117d9431938e9c84149` |
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:bbcaedbb3b05fdc8fdc455f502591ff4ad7142c55fd3cea313a4806d9bf209a7` |
-| `src/cartridges/the_board/cartridge.hpp` | `sha256:840891eb2301de1769f4bac9dd88b7473ff88784d9491863a736a56376d160c8` |
+| `src/cartridges/the_board/cartridge.hpp` | `sha256:4bdb23beff45be88feb09949bb458f5b9517798bd4faa2b2ac622970103c1370` |
 | `src/cartridges/the_board/surface/patch_system.hpp` | `sha256:1be3569e8b942fccc6a5ad003a6f227b2c413897b33a947bdcfa986947653b3c` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:67d0c75fd5f2c9037b90f087a7881b33b55479b82863419ff798937b62144c76` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
 | `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:a568b168002553c66111d4292cd8c051ced63ee9d56dca69bdb57e416d972f1d` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:9891302e1bf20ec4a71b8866d420725dc4405b8f99473ca04308465444a7a61d` |
 | `src/the_board.cpp` | `sha256:50142a5f4d5e5d7b73664b2e99c4fc9020182d56b5cba5ec2b7ae777ca8d66a0` |
-| `src/console/console.hpp` | `sha256:b164d8fe82494eedb19e4e96484ab89cc15b33e8edc4965b4ae18fc8b76df5f6` |
+| `src/console/console.hpp` | `sha256:5d8cd68b06d1408fd080e48f5e5949301a6d682f85e4a81acaea170e3678b1f6` |
 | `tools/command_census.py` | `sha256:09a61baed23a5caeedb44ee293461875f2e759832353f887187be35a7ae8d7cb` |
 
 The handoff named `render_passes.hpp` and `renderer.hpp`; the

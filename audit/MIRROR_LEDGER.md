@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `e8a3154f791c2438bef6fa5f3aaf59c4d36dfc83` |
-| | VISIT_0 U5 — ledgers regenerated (gallery/cartridge pins, ORGAN line-shift); OPEN.md: VISIT_0 open awaiting Jean's gates, residuals registered; handoffs filed |
+| source commit | `7ac740dd8e1cce0d23bf0e659913900056dbee41` |
+| | DOORS_1 U6 — ledgers regenerated (cartridge.hpp pin); OPEN.md: four review findings struck as fixed, DOORS_1 closed, the collection gate's missing table row registered |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:928c8504a64663cdcf6b2648f6cdd2c8fbbbe1adf1e43c1f9a58015a7c0f8823` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:c776a51167c445969661b2bcbaeba2e18373585cfab26af387491dfee8cfd8ea` |
@@ -24,12 +24,12 @@ carry those facts, or leave them in place and patch around them.
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:bbcaedbb3b05fdc8fdc455f502591ff4ad7142c55fd3cea313a4806d9bf209a7` |
 | `tools/binding_ledger.py` | `sha256:6d9fc58da755a8416bbcfe8efe5360f97ec11fb4a81a9d60ee41f80a2316f790` |
 | `tools/mirror_census.py` | `sha256:6991163f42dc06a0b633fe41606514b33ed616a70ec244eff6640992518cef2a` |
-| `audit/BINDING_LEDGER.md` | `sha256:e264dfb978e5be91e764a498c22d25d2cdd6755db9b78a8551e6c0b339542111` |
+| `audit/BINDING_LEDGER.md` | `sha256:8104d71608af280acaaab6d6e979a03c3f293eae80eeae40c8785ad706c4ce8e` |
 | `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:a568b168002553c66111d4292cd8c051ced63ee9d56dca69bdb57e416d972f1d` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:67d0c75fd5f2c9037b90f087a7881b33b55479b82863419ff798937b62144c76` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:9891302e1bf20ec4a71b8866d420725dc4405b8f99473ca04308465444a7a61d` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
-| `src/cartridges/the_board/cartridge.hpp` | `sha256:840891eb2301de1769f4bac9dd88b7473ff88784d9491863a736a56376d160c8` |
+| `src/cartridges/the_board/cartridge.hpp` | `sha256:4bdb23beff45be88feb09949bb458f5b9517798bd4faa2b2ac622970103c1370` |
 | `src/cartridges/the_board/realization/render_passes.hpp` | `sha256:e4d6b62cb1d1936d57322d2c4ef4372bbc27dd1404a29117d9431938e9c84149` |
 | `src/cartridges/the_board/surface/patch_system.hpp` | `sha256:1be3569e8b942fccc6a5ad003a6f227b2c413897b33a947bdcfa986947653b3c` |
 
