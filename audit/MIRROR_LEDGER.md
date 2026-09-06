@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `7ac740dd8e1cce0d23bf0e659913900056dbee41` |
-| | DOORS_1 U6 — ledgers regenerated (cartridge.hpp pin); OPEN.md: four review findings struck as fixed, DOORS_1 closed, the collection gate's missing table row registered |
+| source commit | `76554ce8992eeba153916d421381e7109c1277f7` |
+| | FPV_TAP_0 U2 — the ledgers follow: three pins |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:928c8504a64663cdcf6b2648f6cdd2c8fbbbe1adf1e43c1f9a58015a7c0f8823` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:c776a51167c445969661b2bcbaeba2e18373585cfab26af387491dfee8cfd8ea` |
