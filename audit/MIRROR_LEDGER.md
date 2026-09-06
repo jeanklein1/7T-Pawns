@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `58251f0a4f3f711d0109d014f5135fadefd729b7` |
-| | LEAP_1 U3 — the second word reaches for a body; the swap lands when the wave does |
+| source commit | `fb14a36f693cc13ae0bc8adeb63a6d6c6658ca95` |
+| | LEAP_1 U4 — the ledgers follow: 736 -> 752, two rows, one max raised |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:928c8504a64663cdcf6b2648f6cdd2c8fbbbe1adf1e43c1f9a58015a7c0f8823` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:c776a51167c445969661b2bcbaeba2e18373585cfab26af387491dfee8cfd8ea` |
@@ -24,7 +24,7 @@ carry those facts, or leave them in place and patch around them.
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:bbcaedbb3b05fdc8fdc455f502591ff4ad7142c55fd3cea313a4806d9bf209a7` |
 | `tools/binding_ledger.py` | `sha256:6d9fc58da755a8416bbcfe8efe5360f97ec11fb4a81a9d60ee41f80a2316f790` |
 | `tools/mirror_census.py` | `sha256:6991163f42dc06a0b633fe41606514b33ed616a70ec244eff6640992518cef2a` |
-| `audit/BINDING_LEDGER.md` | `sha256:e9d5eb4f0cb2376de8ff9bfb6b4693792c814cd534e56df5dfb554b7b54320b6` |
+| `audit/BINDING_LEDGER.md` | `sha256:ee2edf04e53ee626bdcf6a019618f88f7bbb85154a1be31ffc1a5e91ec59cba1` |
 | `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:6867c90303e0e93d13525ec42a4c247a32694309ac8b74e0834eda1f4c6e86d3` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:67d0c75fd5f2c9037b90f087a7881b33b55479b82863419ff798937b62144c76` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:9891302e1bf20ec4a71b8866d420725dc4405b8f99473ca04308465444a7a61d` |
