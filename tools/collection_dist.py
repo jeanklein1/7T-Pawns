@@ -452,9 +452,11 @@ def main():
     # disagree. The shell fetches it on the first opening of the menu —
     # a gesture, never boot (web_dist's boot-set law).
     with open(os.path.join(DIST, "peek.json"), "w", encoding="utf-8") as fh:
-        json.dump({"sets": [{"slug": s["slug"], "label": s["label"],
-                             "count": len(s["files"])} for s in sets],
-                   "works": peek_pick(peek)}, fh, separators=(",", ":"))
+        # DOORS_4 — ONE FACT, ONE HOME, and this fact's one reader is gone:
+        # the pane's sets line died with ruling 5. The set labels still live
+        # where they always did, in each assets/collection/*/set.json, and
+        # the collection page reads them from there.
+        json.dump({"works": peek_pick(peek)}, fh, separators=(",", ":"))
     # fonts live once, at the deployment root: front_dist.py ships
     # web/fonts/ to dist/fonts/, and this page reaches up to ../fonts/
 

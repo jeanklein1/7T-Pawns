@@ -934,9 +934,9 @@
     </div>
     <div class="pane" data-pane="collection" hidden>
       <button type="button" class="back" data-back>← menu</button>
-      <p class="pane-head">The collection</p>
+      <p class="pane-head">Gallery</p>
       <div class="peek" id="peek" aria-live="polite"></div>
-      <a class="out" data-out target="_blank" rel="opener" href="collection/">Open the collection in a new tab →</a>
+      <a class="out" data-out target="_blank" rel="opener" href="collection/">Open Gallery in a new tab →</a>
     </div>
     <!-- DOORS_2/DOORS_4 — THE SITE IN MINIATURE. Four panes, two fetches,
          both at gesture time and never at boot: writings/writings.json
@@ -1624,9 +1624,10 @@
         }).then(function (d) {
           var frag = document.createDocumentFragment();
           (d.works || []).forEach(function (w) {
-            var a = document.createElement('a');
-            a.href = w.href; a.target = '_blank'; a.rel = 'opener';   // DOORS_2 — the site tab can find its way back
-            a.className = 'peek-work'; a.title = w.title;
+            // DOORS_4 — the tiles are pictures, not doors: only the link
+            // below opens the page.
+            var a = document.createElement('span');
+            a.className = 'peek-work';
             a.style.setProperty('--tone', w.tone);
             a.style.setProperty('--r', w.r);
             var img = document.createElement('img');
@@ -1634,15 +1635,11 @@
             a.appendChild(img);
             frag.appendChild(a);
           });
-          var sets = document.createElement('p');
-          sets.className = 'peek-sets';
-          sets.textContent = (d.sets || []).map(function (s) { return s.label + ' (' + s.count + ')'; }).join(' · ');
           // The catch arm below writes a sentence into this box and clears
           // peekLoaded so the next opening retries. Clear it here or the
           // retry renders the collection UNDERNEATH the error it disproves.
           peekEl.textContent = '';
           peekEl.appendChild(frag);
-          peekEl.appendChild(sets);
         }).catch(function (err) {
           peekLoaded = false;                       // try again on the next opening
           peekEl.textContent = 'The collection did not answer.';
