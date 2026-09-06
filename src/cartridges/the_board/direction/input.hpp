@@ -153,6 +153,8 @@ inline constexpr float  PILOT_TURN_RATE       = 1.8f;   // rad/s the pilot may s
 inline constexpr double PILOT_STALL_S         = 6.0;    // no progress for this long: release, say so
 inline constexpr float  PILOT_STANDOFF_MULT   = 1.4f;   // × the painting's larger side
 inline constexpr float  PILOT_STANDOFF_MIN_WU = 4.0f;
+inline constexpr float  PILOT_AIM_WU          = 24.0f;  // DOORS_2 — the orbit is steered only inside this; the kite follows the walk until then
+inline constexpr float  PILOT_AIM_GAIN        = 3.0f;   // DOORS_2 — 1/s: the orbit closes on the picture exponentially, no hunting
 
 // ═══ THE DEPS FACE ═══════════════════════════════════════════════
 //
@@ -610,14 +612,23 @@ inline void pilot_tick(InputDeps* c, double now, double dt) {
                                 + c->inputState_.move_z * c->inputState_.move_z);
         if (m > 1.0f) { c->inputState_.move_x /= m; c->inputState_.move_z /= m; }
     }
+    // THE AIM, ONLY ON APPROACH (DOORS_2). Steering the orbit every frame
+    // from a kiting, one-frame-stale eye hunted: the eye moved as the
+    // orbit turned and the target angle moved with it. So the walk leaves
+    // the camera alone — the kite follows the pawn as it does for a hand —
+    // and only inside PILOT_AIM_WU does the orbit ease onto the picture,
+    // proportionally (a fraction of the error per second, capped at the
+    // turn rate), which converges without overshoot.
+    if (d > PILOT_AIM_WU) return;
     const float vx = p.aim_x - c->camera_pose_.eye[0];
     const float vz = p.aim_z - c->camera_pose_.eye[2];
     float want = std::atan2(-vx, -vz) - az;
     while (want >  3.14159265f) want -= 6.28318531f;
     while (want < -3.14159265f) want += 6.28318531f;
+    if (std::fabs(want) <= 0.0175f) return;
     const float step = PILOT_TURN_RATE * (float)dt;
-    if (std::fabs(want) > 0.0175f)
-        c->inputState_.look_az_delta = std::max(-step, std::min(step, want));
+    const float ease = want * std::min(1.0f, PILOT_AIM_GAIN * (float)dt);
+    c->inputState_.look_az_delta = std::max(-step, std::min(step, ease));
 }
 
 // THE DOOR'S VERB. Called once, at the frame boundary, with the slot's
