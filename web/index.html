@@ -1472,6 +1472,7 @@
     // recorded to the log panel rather than swallowed, because "the
     // music did not start" is a thing a visitor may want to look up.
 
+    var musicResumeAt = 0;       // ATMOS_1 — where the piece was when the page was hidden
     var ENTRY_WORDS = 'Ready';   // DOORS_0 — the status line's READY report; the door is #enter. Placeholder words.
 
     // 1 — THE SOUNDTRACK. src is assigned HERE, not in the markup: with
@@ -2037,14 +2038,42 @@
     // tab does not quietly hold the screen awake.
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) {
-        // Unconditional: pausing something already paused costs nothing,
-        // and musicWasPlaying is not re-derived from element state here
-        // — it is the visitor's standing answer, set at the gesture.
-        if (music) { try { music.pause(); } catch (err) { /* nothing to pause */ } }
+        // ATMOS_1 — THE PIECE LEAVES THE PHONE'S HANDS. A paused element
+        // still holds its media, and a phone keeps a paused piece on the
+        // lock screen and behind the headphone button: leave the page,
+        // press play on the headphones, and the piece sings from a pocket
+        // with the page shut. Pausing is not enough; the media is
+        // RELEASED — position remembered, source removed, the element
+        // loaded empty — so the OS has nothing to resume. Return re-
+        // attaches the source and picks up where it left off.
+        // musicWasPlaying is not re-derived from element state here — it
+        // is the visitor's standing answer, set at the gesture.
+        if (music) {
+          try {
+            musicResumeAt = music.currentTime || 0;
+            music.pause();
+            music.removeAttribute('src');
+            music.load();
+          } catch (err) { /* nothing to release */ }
+          if (navigator.mediaSession) {
+            try { navigator.mediaSession.playbackState = 'none'; } catch (err) { /* no session to drop */ }
+          }
+        }
         return;
       }
       if (music && musicWasPlaying) {
         try {
+          // ATMOS_1 — the source comes back, and the position with it once
+          // the decoder knows the piece again (currentTime before metadata
+          // is ignored). Then the same resume as before.
+          if (!music.getAttribute('src')) {
+            music.setAttribute('src', music.dataset.src || '');
+            var at = musicResumeAt;
+            music.addEventListener('loadedmetadata', function seek() {
+              music.removeEventListener('loadedmetadata', seek);
+              try { music.currentTime = at; } catch (err) { /* start over */ }
+            });
+          }
           var p = music.play();
           if (p && p.catch) p.catch(function (err) {
             note('[shell] audio did not resume: ' + err);
