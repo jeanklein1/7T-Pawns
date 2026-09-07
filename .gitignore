@@ -398,6 +398,10 @@ enc_temp_folder/
 web/the_board.js
 web/the_board.wasm
 web/the_board.data
+# DARKROOM_1 — and the darkroom worker's two, by the same rule.
+# web/darkroom_worker.js is SOURCE and stays tracked; these are build.
+web/darkroom.js
+web/darkroom.wasm
 
 # SHIP_0 U4 — the deployable folder. tools/web_dist.py assembles it from
 # web/ on demand; it is a COPY of build output plus the tracked
