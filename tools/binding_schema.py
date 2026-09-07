@@ -572,7 +572,7 @@ RESOURCES = {
     'bilinearSampler_': {'kind': 'sampler', 'label': 'Bilinear Sampler (height field interpolation)', 'file': 'src/cartridges/the_board/realization/state.hpp'},
     'nearestSampler_': {'kind': 'sampler', 'label': 'Nearest Sampler (cell boundaries)', 'file': 'src/cartridges/the_board/realization/state.hpp'},
     'shadowSampler_': {'kind': 'sampler', 'label': 'Shadow Sampler (PCF comparison)', 'file': 'src/cartridges/the_board/realization/state.hpp'},
-    'paintingSampler_': {'kind': 'sampler', 'label': 'Painting Sampler (bilinear, clamp)', 'file': 'src/cartridges/the_board/realization/state.hpp'},
+    'paintingSampler_': {'kind': 'sampler', 'label': 'Painting Sampler (trilinear, clamp)', 'file': 'src/cartridges/the_board/realization/state.hpp'},
     'meterQuerySet_': {'kind': 'querySet', 'label': 'Frame Meter Timestamps', 'count_expr': 'METER_QUERY_COUNT', 'file': 'src/cartridges/the_board/realization/state.hpp'},
     'depthTexture_': {'kind': 'texture', 'label': 'Depth Texture', 'format': 'depthFormat_', 'size': 'w, h, 1', 'samples': 'effective_msaa()', 'file': 'src/console/console.hpp'},
     'msaaColorTexture_': {'kind': 'texture', 'label': 'MSAA Color Target', 'format': 'surfaceConfig_.format', 'size': 'w, h, 1', 'samples': '4', 'file': 'src/console/console.hpp'},

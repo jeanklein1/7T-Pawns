@@ -1105,7 +1105,9 @@ def capture_resources():
             r"(\w+)\s*=\s*makeTextureArray\(\s*\"([^\"]+)\"\s*,([^;]*)\);",
             st, re.S):
         args = _split_args(m.group(3))
-        if len(args) != 2:
+        # MIP_0 — the lambda gained a fourth argument, the mip count; the
+        # row's shape (size, format) is still the lambda's own.
+        if len(args) not in (2, 3):
             stop("RESOURCES: unparsed makeTextureArray for %s" % m.group(1))
         add(m.group(1), {"kind": "texture", "label": m.group(2),
                          "format": "colorFormat",

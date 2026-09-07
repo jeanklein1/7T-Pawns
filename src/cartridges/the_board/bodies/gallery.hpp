@@ -2696,6 +2696,23 @@ inline void authored_stage_decoded_image(GalleryState& gs, GPUState& gpu, wgpu::
         }
     }
 
+    // MIP_0 — THE PAD IS THE EDGE, REPLICATED. The square beyond dst_w x
+    // dst_h was zero (transparent black). A chain averages 2x2 blocks, so
+    // at every coarser level the picture's border texels would blend with
+    // the pad and a dark rim would grow with distance. Replicating the last
+    // column and the last row across the pad makes every level's border
+    // blend with itself. The quads never sample the pad directly (uv runs 0
+    // to uv_scale) and the postcard crops it away (crop_w / crop_h), so
+    // nothing else moves.
+    if (dst_w > 0 && dst_h > 0) {
+        for (uint32_t dy = 0; dy < dst_h; ++dy) {
+            const uint8_t* edge = &padded[((size_t)dy * RES + (dst_w - 1)) * 4];
+            for (uint32_t dx = dst_w; dx < RES; ++dx)
+                std::memcpy(&padded[((size_t)dy * RES + dx) * 4], edge, 4);
+        }
+        for (uint32_t dy = dst_h; dy < RES; ++dy)
+            std::memcpy(&padded[(size_t)dy * RES * 4], &padded[(size_t)(dst_h - 1) * RES * 4], (size_t)RES * 4);
+    }
     gpu.upload_authored_painting(queue, staging_layer, padded.data(), RES, RES);
 
     auto& rec = gs.authored_staging[staging_layer];
@@ -4545,7 +4562,8 @@ inline void drain_gallery_promotions(GalleryState& gs, GalleryDeps* c, wgpu::Com
         wgpu::Texture src = p.is_snapshot
             ? c->gpuState_.snapshot_staging_texture()
             : c->gpuState_.authored_staging_texture();
-        c->gpuState_.promote_to_exhibition(encoder, src, p.staging_layer, p.exhibition_layer);
+        c->gpuState_.promote_to_exhibition(encoder, src, p.staging_layer, p.exhibition_layer,
+                                           p.is_snapshot ? 1u : Dim::PAINTING_MIP_LEVELS);   // MIP_0
     }
     gs.pending_promotion_count = 0;
 }

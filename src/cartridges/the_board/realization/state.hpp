@@ -377,6 +377,16 @@ namespace t7 {
             // levers if either refuses are registered in OPEN.md
             // (PLATE_0 residuals), not improvised here.
             constexpr uint32_t PAINTING_RESOLUTION = 1024;
+            // MIP_0 — THE CHAIN, every level down to 1x1: 1024 -> 11 levels.
+            // The exhibition and the authored staging carry it (a painting is
+            // sampled through it); the snapshot staging carries level 0 only,
+            // and the shader samples a photograph at level 0 (world.wgsl,
+            // sample_exhibition) — so its higher levels, never written, are
+            // never read. One number, asserted against the resolution so the
+            // two cannot drift.
+            constexpr uint32_t PAINTING_MIP_LEVELS = 11;
+            static_assert((1u << (PAINTING_MIP_LEVELS - 1u)) == PAINTING_RESOLUTION,
+                "MIP_0: the chain must end at 1x1 — PAINTING_MIP_LEVELS is log2(RES) + 1");
             // Both raised by SUPPLY. The old 16 capped `to_load` at a sixteenth
             // of the paintings on disk and made content, not geometry, the
             // thing that ended a row — one wall would take the whole pool and
@@ -3215,6 +3225,37 @@ namespace t7 {
 
                 wgpu::Extent3D extent = { width, height, 1 };
                 queue.WriteTexture(&dest, src, width * height * 4, &layout, &extent);
+
+                // MIP_0 — THE CHAIN, built here so every authored upload has
+                // one (the loader's padded square and the boot's solid fill
+                // alike): each level is the 2x2 box mean of the level above,
+                // in the texel order already chosen. WriteTexture's row pitch
+                // has no 256-byte law (that is the buffer copies'), so the
+                // small levels write as they are. The loader replicates the
+                // picture's edge across the pad before calling here, so no
+                // level's border blends with black (gallery.hpp).
+                std::vector<uint8_t> prev(src, src + (size_t)width * height * 4);
+                uint32_t w = width, h = height;
+                for (uint32_t level = 1; level < Dim::PAINTING_MIP_LEVELS && w > 1 && h > 1; ++level) {
+                    const uint32_t nw = w / 2, nh = h / 2;
+                    std::vector<uint8_t> next((size_t)nw * nh * 4);
+                    for (uint32_t y = 0; y < nh; ++y) {
+                        for (uint32_t x = 0; x < nw; ++x) {
+                            const size_t a = ((size_t)(2 * y) * w + 2 * x) * 4;
+                            const size_t b = a + (size_t)w * 4;
+                            for (uint32_t ch = 0; ch < 4; ++ch) {
+                                const uint32_t sum = prev[a + ch] + prev[a + 4 + ch] + prev[b + ch] + prev[b + 4 + ch];
+                                next[((size_t)y * nw + x) * 4 + ch] = (uint8_t)((sum + 2u) / 4u);
+                            }
+                        }
+                    }
+                    dest.mipLevel = level;
+                    layout.bytesPerRow = nw * 4;
+                    layout.rowsPerImage = nh;
+                    wgpu::Extent3D e = { nw, nh, 1 };
+                    queue.WriteTexture(&dest, next.data(), (size_t)nw * nh * 4, &layout, &e);
+                    prev.swap(next); w = nw; h = nh;
+                }
             }
 
             void fill_painting_layer_solid(wgpu::Queue& queue, uint32_t layer,
@@ -3238,13 +3279,14 @@ namespace t7 {
                 colorFormat_ = colorFormat;
 
                 auto makeTextureArray = [&](const char* label, uint32_t layers,
-                    wgpu::TextureUsage usage) -> wgpu::Texture
+                    wgpu::TextureUsage usage, uint32_t mips) -> wgpu::Texture
                     {
                         wgpu::TextureDescriptor desc{};
                         desc.size = { Dim::PAINTING_RESOLUTION, Dim::PAINTING_RESOLUTION, layers };
                         desc.dimension = wgpu::TextureDimension::e2D;
                         desc.format = colorFormat;
                         desc.usage = usage;
+                        desc.mipLevelCount = mips;   // MIP_0 — the chain, or 1; noteAlloc prices the levels
                         return makeTexture(label, desc);
                     };
 
@@ -3263,7 +3305,8 @@ namespace t7 {
                 // photographer-model ruling (DOMESDAY R5 withdrawal, _1 report B8).
                 snapshotStagingTexture_ = makeTextureArray("Snapshot Staging",
                     Dim::STAGING_LAYERS,
-                    wgpu::TextureUsage::CopyDst | wgpu::TextureUsage::CopySrc);
+                    wgpu::TextureUsage::CopyDst | wgpu::TextureUsage::CopySrc,
+                    1u);   // MIP_0 — a shot is one level; the promotion copies one level
                 if (!snapshotStagingTexture_) return false;
                 snapshotStagingReadView_ = makeArrayView(snapshotStagingTexture_,
                     "Snapshot Staging View", Dim::STAGING_LAYERS);
@@ -3276,7 +3319,8 @@ namespace t7 {
                 // path on a vendored port (DOMESDAY R5 withdrawal).
                 authoredStagingTexture_ = makeTextureArray("Authored Staging",
                     Dim::STAGING_LAYERS,
-                    wgpu::TextureUsage::CopyDst | wgpu::TextureUsage::CopySrc);
+                    wgpu::TextureUsage::CopyDst | wgpu::TextureUsage::CopySrc,
+                    Dim::PAINTING_MIP_LEVELS);   // MIP_0 — the chain is uploaded here and copied from here
                 if (!authoredStagingTexture_) return false;
                 authoredStagingReadView_ = makeArrayView(authoredStagingTexture_,
                     "Authored Staging View", Dim::STAGING_LAYERS);
@@ -3288,7 +3332,8 @@ namespace t7 {
                 // day; the wall never needed it until a picture had to leave.
                 exhibitionTexture_ = makeTextureArray("Exhibition",
                     Dim::EXHIBITION_LAYERS,
-                    wgpu::TextureUsage::CopyDst | wgpu::TextureUsage::CopySrc | wgpu::TextureUsage::TextureBinding);
+                    wgpu::TextureUsage::CopyDst | wgpu::TextureUsage::CopySrc | wgpu::TextureUsage::TextureBinding,
+                    Dim::PAINTING_MIP_LEVELS);   // MIP_0 — sampled through the chain (paintings) or at level 0 (photographs)
                 if (!exhibitionTexture_) return false;
                 exhibitionReadView_ = makeArrayView(exhibitionTexture_,
                     "Exhibition View", Dim::EXHIBITION_LAYERS);
@@ -3956,24 +4001,32 @@ namespace t7 {
             //
             // So: any scheme that writes less than a full layer must CLEAR the
             // layer first. Do not reintroduce a partial extent here without it.
+            // MIP_0 — `levels`: the chain's length for an authored source, 1
+            // for a shot. Each level is one full copy of its own extent, so
+            // the full-layer law above holds at every level the source has;
+            // a photograph's higher levels stay as the layer's last tenant
+            // left them and are never sampled (sample_exhibition, world.wgsl).
             void promote_to_exhibition(wgpu::CommandEncoder& encoder,
                 wgpu::Texture srcTexture, uint32_t srcLayer,
-                uint32_t dstLayer)
+                uint32_t dstLayer, uint32_t levels)
             {
-                wgpu::TexelCopyTextureInfo src{};
-                src.texture = srcTexture;
-                src.mipLevel = 0;
-                src.origin = { 0, 0, srcLayer };
-                src.aspect = wgpu::TextureAspect::All;
+                for (uint32_t level = 0; level < levels; ++level) {
+                    wgpu::TexelCopyTextureInfo src{};
+                    src.texture = srcTexture;
+                    src.mipLevel = level;
+                    src.origin = { 0, 0, srcLayer };
+                    src.aspect = wgpu::TextureAspect::All;
 
-                wgpu::TexelCopyTextureInfo dst{};
-                dst.texture = exhibitionTexture_;
-                dst.mipLevel = 0;
-                dst.origin = { 0, 0, dstLayer };
-                dst.aspect = wgpu::TextureAspect::All;
+                    wgpu::TexelCopyTextureInfo dst{};
+                    dst.texture = exhibitionTexture_;
+                    dst.mipLevel = level;
+                    dst.origin = { 0, 0, dstLayer };
+                    dst.aspect = wgpu::TextureAspect::All;
 
-                wgpu::Extent3D extent = { Dim::PAINTING_RESOLUTION, Dim::PAINTING_RESOLUTION, 1 };
-                encoder.CopyTextureToTexture(&src, &dst, &extent);
+                    const uint32_t side = Dim::PAINTING_RESOLUTION >> level;
+                    wgpu::Extent3D extent = { side, side, 1 };
+                    encoder.CopyTextureToTexture(&src, &dst, &extent);
+                }
             }
             static constexpr uint32_t painting_quad_verts() { return Dim::PAINTING_QUAD_VERTS; }
             static constexpr uint32_t painting_max_slots() { return Dim::PAINTING_MAX_SLOTS; }
@@ -5507,9 +5560,10 @@ namespace t7 {
 
                 {
                     wgpu::SamplerDescriptor desc{};
-                    desc.label = "Painting Sampler (bilinear, clamp)";
+                    desc.label = "Painting Sampler (trilinear, clamp)";
                     desc.magFilter = wgpu::FilterMode::Linear;
                     desc.minFilter = wgpu::FilterMode::Linear;
+                    desc.mipmapFilter = wgpu::MipmapFilterMode::Linear;   // MIP_0 — between levels too; a level-0 sample (photographs) ignores it
                     desc.addressModeU = wgpu::AddressMode::ClampToEdge;
                     desc.addressModeV = wgpu::AddressMode::ClampToEdge;
                     paintingSampler_ = device_.CreateSampler(&desc);
