@@ -112,6 +112,12 @@ struct KeyState {
     // autorepeat an unguarded down would ask for a postcard every repeat
     // tick, and the machine would refuse each one in words.
     bool take_held = false;
+    // SHIFT_0 — the aura's held flag, and the reason is sharper here than
+    // for SPACE or P: Shift is a key a hand HABITUALLY HOLDS, and the
+    // console raises KeyDown on GLFW_REPEAT, so an unguarded toggle would
+    // flicker the aura for as long as the little finger rested. (Key 3 had
+    // this wart too; nobody holds 3, so nobody met it.)
+    bool aura_held = false;
 };
 
 // Mouse drag state — on_mouse_move reads these to decide which
@@ -283,6 +289,12 @@ void nudge_look_sensitivity(InputDeps* c, bool up);   // KP_+ / KP_- — multipl
 #ifndef GLFW_KEY_SPACE
 #define GLFW_KEY_SPACE  32
 #endif
+#ifndef GLFW_KEY_LEFT_SHIFT
+#define GLFW_KEY_LEFT_SHIFT   340
+#endif
+#ifndef GLFW_KEY_RIGHT_SHIFT
+#define GLFW_KEY_RIGHT_SHIFT  344
+#endif
 
 
 // ═══ KEY DISPATCH ════════════════════════════════════════════════
@@ -307,7 +319,19 @@ inline void on_key_down(InputDeps* c, int key,
 
     // ── World / aura toggles ─────────────────────────────────────
     case GLFW_KEY_2: toggle_aura_height(pawn_state, &pawn_deps);  break;  // pawn command door
-    case GLFW_KEY_3: toggle_aura(pawn_state, &pawn_deps);          break;  // pawn command door
+    // SHIFT_0 — the aura migrates 3 -> Shift (Jean's stamp), either Shift:
+    // the verb is a hand's reflex now, not a number-row visit. Down edge
+    // only, pulse_held's grammar. Key 3 goes DARK, not repurposed — the
+    // number row keeps 2 (aura height) and loses its neighbour; the aura
+    // family splits across rows and the comment at the glass tap (below)
+    // names the new door.
+    case GLFW_KEY_LEFT_SHIFT:
+    case GLFW_KEY_RIGHT_SHIFT:
+        if (!c->keys_.aura_held) {
+            c->keys_.aura_held = true;
+            toggle_aura(pawn_state, &pawn_deps);
+        }
+        break;
     case GLFW_KEY_5: request_mood_transition(transitionPhase, pendingDestination, mood_state, c->world_state_, MOOD_OPEN_SUNSET);    break;
     case GLFW_KEY_6: request_mood_transition(transitionPhase, pendingDestination, mood_state, c->world_state_, MOOD_INDOOR_FLAT);    break;
     case GLFW_KEY_7: request_mood_transition(transitionPhase, pendingDestination, mood_state, c->world_state_, MOOD_INDOOR_VAULT);   break;
@@ -365,6 +389,8 @@ inline void on_key_up(InputDeps* c, int key) {
     case GLFW_KEY_D: c->keys_.right = false;    break;
     case GLFW_KEY_SPACE: c->keys_.pulse_held = false; break;
     case GLFW_KEY_P:     c->keys_.take_held  = false; break;   // POSTCARD_0
+    case GLFW_KEY_LEFT_SHIFT:                                  // SHIFT_0
+    case GLFW_KEY_RIGHT_SHIFT: c->keys_.aura_held = false; break;
     }
     update_movement_intent(c);
 }
@@ -428,10 +454,10 @@ inline void on_touch_zoom(InputDeps* c, float delta) {
 // ── The reserved taps, bound (SHIP_1 U5) ─────────────────────────
 // Recon found both verbs already in the kernel with desktop bindings, so
 // both slots bind rather than staying reserved. These call the SAME
-// owner doors the keys call — key 3 and CAPS_LOCK — so a thumb and a
+// owner doors the keys call — Shift and CAPS_LOCK — so a thumb and a
 // keyboard reach one implementation, not two.
 
-// LEFT, second finger, clean tap — the aura (key 3's door).
+// LEFT, second finger, clean tap — the aura (Shift's door; was key 3, SHIFT_0).
 inline void on_touch_tap_left(InputDeps* c, PawnState& pawn_state, PawnDeps& pawn_deps) {
     (void)c;
     toggle_aura(pawn_state, &pawn_deps);
@@ -457,7 +483,7 @@ inline void on_touch_tap_right(InputDeps* c) {
 // THE LEAP'S OWNER DOOR (PULSE_SPLIT_0 — it was the pulse's). Published
 // here at its SECOND consumer (the standing law): the lone tap raised it,
 // SPACE joined, and a thumb and a keyboard reach one implementation rather
-// than two — the arrangement key 3 / CAPS_LOCK already keep with
+// than two — the arrangement Shift / CAPS_LOCK already keep with
 // toggle_aura and the swap.
 //
 // IT NO LONGER RINGS. LEAP_0's R1 held that every tap rings and the ring

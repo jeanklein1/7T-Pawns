@@ -11,7 +11,7 @@
 //          room keeps only the fog's gain.
 //   gain — the blend: out = rest + gain·(driven − rest). 1 is the coupling
 //          verbatim, 0 is full manual.
-//   aura intent — the presence ramp's rest TARGET; key 3's door, the mood
+//   aura intent — the presence ramp's rest TARGET; Shift's door (SHIFT_0), the mood
 //          policy door (force-off) and the panel write it.
 
 namespace t7 {

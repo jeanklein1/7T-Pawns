@@ -347,8 +347,9 @@ ORGAN_PARAM_RO(CONFIG, GPUDesignConfig, ceiling_height,      F32, "Terrain · In
 ORGAN_PARAM_RO(CONFIG, GPUDesignConfig, indoor_height_cap,   F32, "Terrain · Indoor", "GoL lift cap (driven)")
 
 // ─── Pawn · Aura (the drivers' room + its witnesses) ─────────────────
-// The intent is the presence ramp's rest TARGET; key 3 and the mood policy
-// door write it here too. The two driven outputs witness below.
+// The intent is the presence ramp's rest TARGET; Shift's door (SHIFT_0)
+// and the mood policy door write it here too. The two driven outputs
+// witness below.
 ORGAN_PARAM(DRIVERS, DriverSurface, aura.intent,      BOOL, 0.0f, 1.0f,  1.0f,    "Pawn · Aura", "intent")
 ORGAN_PARAM(DRIVERS, DriverSurface, aura.attack,      F32,  0.05f, 8.0f, 0.05f,   "Pawn · Aura", "attack (1/s)")
 ORGAN_PARAM(DRIVERS, DriverSurface, aura.release,     F32,  0.05f, 8.0f, 0.05f,   "Pawn · Aura", "release (1/s)")

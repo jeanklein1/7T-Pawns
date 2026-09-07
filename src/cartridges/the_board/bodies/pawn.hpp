@@ -43,7 +43,7 @@ namespace the_board {
 //    a copy of a constant nothing changed. A landmark that swaps
 //    profiles assigns the bank.)
 //   (aura intent — lives at DRIVER_LIVE.aura.intent, contracts/driver_surface.hpp;
-//    written by key 3's door, the mood policy door, and the panel. The presence
+//    written by Shift's door (SHIFT_0; was key 3), the mood policy door, and the panel. The presence
 //    ramp smooths the transition toward it, at the room's own attack/release.)
 //   aura_height_enabled — Height-effect gate (key 2, direction/input.hpp);
 //     flattens the extrusion. It USED to leave the color tint visible; since
