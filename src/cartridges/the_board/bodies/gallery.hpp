@@ -2631,8 +2631,8 @@ inline int authored_extract_number(const std::string& path) {
 // caller answers for the host: the point must be the pawn. The four numbers
 // are control-panel material, enrolled nowhere yet (the pilot's rule): no
 // measurement has asked.
-inline constexpr float TAKE_REACH_MULT   = 1.6f;     // x the picture's larger side: how deep the zone runs (PLATE_0: 2.2 -> 1.6, Jean's eye)
-inline constexpr float TAKE_REACH_MIN_WU = 6.0f;     // and never shallower: a small picture keeps a doorstep (8 -> 6; still past the pilot's 4)
+inline constexpr float TAKE_REACH_MULT   = 1.0f;     // x the picture's larger side: how deep the zone runs (PLATE_0: 2.2 -> 1.6, Jean's eye)
+inline constexpr float TAKE_REACH_MIN_WU = 3.0f;     // and never shallower: a small picture keeps a doorstep (8 -> 6; still past the pilot's 4)
 inline constexpr float TAKE_SLACK_MULT   = 0.25f;    // x the picture's width, each side, beyond the frame (0.5 -> 0.25: before, not beside)
 inline constexpr float TAKE_CONE_COS     = 0.7071f;  // cos 45 deg: the eye must hold the picture inside this
 
