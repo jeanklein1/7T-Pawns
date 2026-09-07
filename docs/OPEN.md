@@ -2,6 +2,79 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## MIP_0 — THE EXHIBITION'S CHAIN (landed on master; Jean's gates open)
+
+Paintings sample through an eleven-level chain the CPU builds at upload; photographs
+sample level 0 as before; the two are told apart by the slot's content_source. No new
+pass, pipeline or binding. +96 MiB where the chain lives.
+
+| ruling | where it lives now |
+|---|---|
+| The chain is built where the texels already pass through the CPU | `state.hpp` `upload_authored_painting`; `Dim::PAINTING_MIP_LEVELS` |
+| A photograph has no chain and asks for none — level 0, by kind | `world.wgsl` `sample_exhibition`, `CONTENT_SOURCE_SNAPSHOT` (L3 mirror of `ContentSource::SNAPSHOT`) |
+| Derivatives in uniform flow, the sample under the branch | `sample_exhibition` (`dpdx`/`dpdy` → `textureSampleGrad`) |
+| The pad is the edge, replicated | `gallery.hpp` `authored_stage_decoded_image` |
+| The promotion copies as many levels as its source has | `state.hpp` `promote_to_exhibition(…, levels)`; `gallery.hpp` `drain_gallery_promotions` |
+| The estate census reads the lambda's fourth argument | `tools/binding_gen.py` |
+
+### Residuals — MIP_0
+- **Photographs still shimmer at a distance** — unchanged from before, by ruling 2. A
+  chain for them is one blit pass (fullscreen triangle, level k → k+1, per promoted
+  layer): a pipeline, a layout, seats, a census enrollment. Priced; built when the wall's
+  seven photographs are worth a mechanism.
+- **+96 MiB of estate** (exhibition 213.3, authored staging 170.7). The phones' residency
+  row is this round's gate as it was PLATE_0's; the lever if one refuses is the chain on
+  the exhibition only, with the levels written at promotion from a CPU copy the staging
+  record retains (same bytes, moved from GPU to heap).
+- **The CPU decode grows by a third** (the box means); the `authored6` mark is still the
+  witness, and the browser-decode road registered at PLATE_0 still answers it.
+- **The WGSL gate cannot witness ruling 3, and that is this round's finding.** MIP_0
+  hands CC the gate as the round's own and rests the uniformity ruling on it. Run both
+  ways on naga-cli 30.0.1 — as written, and PERTURBED with the derivatives moved INSIDE
+  the non-uniform branch — the gate reads PASS both times. Calibrated with a textbook
+  violation in a minimal module (`textureSample` under a non-uniform `if`): naga prints
+  "Validation successful". **naga does no derivative-uniformity analysis in this
+  configuration**, so a PASS proves parse, scope and type, not ruling 3. The gate's own
+  tint arm is what would witness it — "[gate] tint arm DORMANT" — and Tint is Dawn's
+  compiler, so Jean's emcc build is this ruling's real gate; no tint binary is vendored
+  (only emdawnwebgpu headers). It also narrows gate row 6: naga is Firefox's compiler, so
+  Firefox witnesses the syntax and typing of `textureSampleGrad` on an array, not the
+  uniformity. THE CODE IS RIGHT REGARDLESS, verified structurally instead: uniformity is a
+  property of the CALL CONTEXT, and both sites are uniform — `sample_exhibition` is the
+  first statement of `gallery_frame_fs`, and in `wall_painting_canvas_fs` it sits at
+  function-body depth after `if (in.is_canvas == 0u) { discard; }`, where `discard`
+  demotes to helper without splitting control flow.
+- **The sampler's label had a schema row the handoff did not name.** M1.6 renames it to
+  *(trilinear, clamp)*; `tools/binding_schema.py` carried *(bilinear, clamp)* and
+  `binding_gen --check` read `RESOURCES ... MISMATCH`, falsifying the rehearsal's "every
+  census row PASS". `binding_schema.py` appears nowhere in MIP_0. The schema now follows
+  the tree — the label is descriptive by house convention and the sampler really is
+  trilinear — and the label is user-visible on the boot card's estate leaderboard.
+
+## RAZOR_0 — THE BACKGROUND DRAWS LAST (landed on master; Jean's gates open)
+
+The terrain plan moved from the head of the opaque list to its end, after the table
+and the gallery fork: covered terrain fragments now fail the depth test before they
+are shaded. Pixel-identical; the meter's `main_pass` row is the witness.
+
+| ruling | where it lives now |
+|---|---|
+| Order among opaques is immaterial to the picture, material to the cost; the background draws last | `render_passes.hpp` `encode_main_opaque` (one home for the bundle and the direct arm) |
+| A bind the plan lent the table is stated, not inherited (P-seq caught it) | `encode_main_opaque`, the `SetBindGroup(2, scene_state_group())` before the table |
+
+### Residuals — RAZOR_0
+- The snapshot pass (R6) keeps its own draw list and order; it runs once per ceiling and
+  was not touched. If the meter ever prices it, the same ruling applies there.
+- A depth pre-pass would finish what this starts (every pixel shaded exactly once) at the
+  price of a pass and a pipeline variant per material; not built — the overdraw the
+  meter shows after this round decides whether it is worth a mechanism.
+- **Ruling 2 was verified, not assumed.** Both call arms of `encode_main_opaque` bind
+  groups 0, 1 and 3 and never 2, so the plan really was the table's only source of the
+  scene-state bind. Perturbed on a sidecar by removing the stated bind, P-seq FAILS with
+  the handoff's own message and names all ten draws of the table — arch, blade, cactus,
+  column, monolith, palm, pawn, ribbon, shell, sphere. The bind is load-bearing and the
+  gate can lose.
+
 ## PLATE_0 — THE WALL AT 1024 (landed on master; Jean's gates open)
 
 Every painting array doubles its edge: the constant that PORT_5b cut to fit an old
