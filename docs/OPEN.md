@@ -2,6 +2,19 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## PRODUCTS_0 — THE PRODUCTS GATE (on `claude/important-handoffs-9v1wus`; Jean's gates open)
+
+The build's web products are read from CMakeLists.txt and witnessed in .gitignore, the
+build presets, web_dist.py (ARTIFACTS, IMMUTABLE_PATHS, BOOT_SET or NOT_AT_BOOT) and
+collection_gate.py. Found RED on the base with the four homes DARKROOM_1 had not visited;
+GREEN after. Joins the cascade.
+
+| ruling | where it lives now |
+|---|---|
+| The build is the authority for its products | `tools/gates/products_gate/run.py` |
+| Four homes are witnesses, not authors | the gate's rows |
+| Laziness is named once | `NOT_AT_BOOT` in `web_dist.py` (empty today) |
+
 ## ATMOS_1 — THE PIECE LEAVES THE PHONE'S HANDS (on `claude/important-handoffs-9v1wus`; Jean's gates open)
 
 Hidden releases the soundtrack's media instead of pausing it, so a headphone button
