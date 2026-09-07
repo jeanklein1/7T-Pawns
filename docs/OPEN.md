@@ -2,6 +2,52 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## SHUTTER_0 — THE SPACING FLOOR (landed on master; Jean's gates open)
+
+A wall-clock floor between photographer captures (5 s, Jean's number). The distance
+trigger — the travelogue — stays; a walk never meets the floor, a ride stops firing
+bursts of 1024² captures inside a second. Composes after PURSE_0's headroom gate and
+before its defer clock, so bounded starvation still measures headroom, not spacing.
+
+| ruling | where it lives now |
+|---|---|
+| The floor is between captures, not triggers | `gallery.hpp` `MIN_CAPTURE_SPACING_S`, the gate in `update_photographer` |
+| Spacing before the defer clock arms | the gate's position above `defer_since` |
+| Named constant, not a dial (PURSE_0's reasoning) | the config banner |
+
+### Residuals — SHUTTER_0
+- The per-shot cost (1024² since PLATE_0) is the other axis; the 512-into-the-layer arm
+  stays registered under PLATE_0 for a floor phone that asks. This round spent the clock,
+  not the pixels.
+- If Jean's ride still stutters with the floor in, the remaining suspects are not the
+  photographer: re-open the four-experiment ladder (cap, mask, taps, [PRESENT]) with the
+  meter — `python tools/web_dist.py --lab`, then `npx wrangler pages dev dist`.
+- **`last_capture_s` landed as a `double`, not the handoff's `float` — the round's one
+  deviation, in its own commit (U1b) so it can be dropped alone.** It is differenced
+  against `TimeState::seconds`, which is exactly what PLUMB_0 B1 governs, and every other
+  such stamp in the tree is a double: `spawn_engine`'s `lastCensusDump_`, `cartridge`'s
+  `rosterGolResidueDump_` and `lastCardTick_`, `floaters`' `last_alloc_time` — and
+  `defer_since` **two lines below it in the same struct**, whose comment reads "PLUMB_0 B1
+  — differenced against TimeState::seconds". The handoff's was the only float one. This is
+  not PLUMB_0's float-accumulator stall (a stamp does not accumulate) but the same family:
+  a float stamp quantises at the wall clock's magnitude. Measured against the 5 s floor —
+  ulp 0.031 s at four days (PLUMB_0's own *"four days is not a hypothetical"*), 0.25 s at
+  thirty, 1.0 s at six months, 4.0 s at 485 days, where a five-second floor stops being
+  measurable at all. The piece is permanently hosted. Behaviour is identical on any session
+  short enough for float to have been fine.
+- **The rehearsed diffstat said three ledgers; it is four.** `ORGAN.md` moves too — its four
+  `bodies/gallery.hpp` constexpr-derivation cites shift 555→566. That is +11, exactly the
+  lines U1.1 adds at `PhotographerCaptureConfig` (line 156), far above the cited region, so
+  it is the handoff's own edit and not the deviation above (U1b's lines sit below the
+  cites and move nothing). Noted only so the next round's diffstat expectation is right.
+- **Ruling 2 was checked against the function, not assumed.** `cumulative_distance` accrues
+  *before* the pending-shots block, so the new early return leaves "distance keeps accruing;
+  nothing else advances" true. And because `now` only increases while `last_capture_s` is
+  fixed, spacing once satisfied can never un-satisfy — so `defer_since` cannot be left armed
+  by a frame that was still inside the floor, and the bounded-starvation ceiling still
+  measures only headroom. The floor and the ceiling do not race: 5 s floor, 4 s ceiling, and
+  the ceiling's clock starts after the floor is met.
+
 ## GATHER_0 — THE GATE BEFORE THE TAPS; NINE GATHERS (landed on master; Jean's gates open)
 
 The spot shadow is sampled only where attenuation × cone × facing is non-zero (it

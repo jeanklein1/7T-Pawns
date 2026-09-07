@@ -24,8 +24,8 @@ carry those facts, or leave them in place and patch around them.
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:bbcaedbb3b05fdc8fdc455f502591ff4ad7142c55fd3cea313a4806d9bf209a7` |
 | `tools/binding_ledger.py` | `sha256:6d9fc58da755a8416bbcfe8efe5360f97ec11fb4a81a9d60ee41f80a2316f790` |
 | `tools/mirror_census.py` | `sha256:6991163f42dc06a0b633fe41606514b33ed616a70ec244eff6640992518cef2a` |
-| `audit/BINDING_LEDGER.md` | `sha256:f55908e6a9e85349cbc362a3beed7040076b30499a831591a43a4880edef03b3` |
-| `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:9bd76eabba6b6c8611daaca172cb4dce014f27d9d796035fe7bcbf82a7b8613b` |
+| `audit/BINDING_LEDGER.md` | `sha256:95f9981c34ba237c38797701cb9a34a93ac362a19abfdcd58f1f5fef3d92df5c` |
+| `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:a104ebb3881e2b6d38488aa02868edf5c8a151a5ffd883de8ede80261024e270` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:1946676d19b94cef38995eae403a307e3cecbb62eca3aa393c1b13815ef56504` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:9891302e1bf20ec4a71b8866d420725dc4405b8f99473ca04308465444a7a61d` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
@@ -1059,14 +1059,14 @@ wrapper, 18 wrapper calls) and are not recounted here.
 |---|---|---|---|---|
 | `cartridge.hpp:2543` | `phase_entity_mesh_gen` | 0 | `worldGroup_` | — |
 | `cartridge.hpp:2544` | `phase_entity_mesh_gen` | 1 | `frameCGroup_` | — |
-| `gallery.hpp:2367` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
-| `gallery.hpp:2368` | `render_snapshot_pass` | 1 | `frameCGroup_` | — |
-| `gallery.hpp:2439` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
-| `gallery.hpp:2440` | `render_snapshot_pass` | 1 | `framePhotographerGroup_` | `1, &kFrameSlotZero` |
-| `gallery.hpp:2441` | `render_snapshot_pass` | 2 | `sceneStateGroup_` | — |
-| `gallery.hpp:2442` | `render_snapshot_pass` | 3 | `sceneTexturesGroup_` | — |
-| `gallery.hpp:2486` | `render_snapshot_pass` | 2 | `galleryStateGroup_` | — |
-| `gallery.hpp:2487` | `render_snapshot_pass` | 3 | `galleryTexturesGroup_` | — |
+| `gallery.hpp:2399` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
+| `gallery.hpp:2400` | `render_snapshot_pass` | 1 | `frameCGroup_` | — |
+| `gallery.hpp:2471` | `render_snapshot_pass` | 0 | `worldGroup_` | — |
+| `gallery.hpp:2472` | `render_snapshot_pass` | 1 | `framePhotographerGroup_` | `1, &kFrameSlotZero` |
+| `gallery.hpp:2473` | `render_snapshot_pass` | 2 | `sceneStateGroup_` | — |
+| `gallery.hpp:2474` | `render_snapshot_pass` | 3 | `sceneTexturesGroup_` | — |
+| `gallery.hpp:2518` | `render_snapshot_pass` | 2 | `galleryStateGroup_` | — |
+| `gallery.hpp:2519` | `render_snapshot_pass` | 3 | `galleryTexturesGroup_` | — |
 | `gol_zones.hpp:906` | `flush_zone_derive_requests` | 0 | `worldGroup_` | — |
 | `gol_zones.hpp:907` | `flush_zone_derive_requests` | 1 | `frameCGroup_` | — |
 | `gol_zones.hpp:994` | `dispatch_zone_sync` | 0 | `worldGroup_` | — |
