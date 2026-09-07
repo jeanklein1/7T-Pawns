@@ -2,6 +2,59 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## DARKROOM_0 — THE PICTURES DEVELOP OFF THE FRAME (landed on master; Jean's gates open)
+
+The stutter that survived SHUTTER_0 is a painting's arrival: one 1024² decode + pad +
+chain + upload per frame on the main thread, in batches, each unit longer than a frame.
+This round removes the pad's share byte for byte (a bilinear at scale 1 is a copy).
+The decode is the floor of the main-thread route; the next round moves it off.
+
+| ruling | where it lives now |
+|---|---|
+| At scale 1 the bilinear is a copy, byte for byte | `gallery.hpp` `authored_stage_decoded_image` |
+| Scheduling cannot fix a unit larger than a frame | this entry; `pump_authored_valve` stays one per frame |
+
+### Residuals — DARKROOM_0 (the road, priced)
+- **Route A — the browser develops the picture.** `createImageBitmap` (off-thread,
+  hardware) then `copyExternalImageToTexture` into the authored staging's level 0: no
+  CPU pixels on the main thread, no WriteTexture, no swap. The chain and the edge
+  replication then move to the GPU: one blit pipeline (fullscreen triangle, level k →
+  k+1, clamped to the picture's crop so the pad becomes the replicated edge for free) —
+  the same blit MIP_0 priced for photographs, which it would also serve. Cost: a pipeline,
+  a layout, seats, a census enrollment. Integrity note: the browser's JPEG decoder is not
+  stb; pixels may differ by ±1 LSB where IDCT and chroma upsampling round differently.
+  FIRST STEP, before any handoff: prove `copyExternalImageToTexture` reaches a Dawn
+  texture from emdawnwebgpu in CC's Chromium rig (the Tint arm's), one afternoon.
+- **Route B — a thread develops it.** Emscripten pthreads: stb decode, pad, swap and chain
+  in a worker; the main thread keeps only the WriteTexture (level 0 one frame, the ten
+  small levels the next, ~4 ms each). Bit-identical to today. Cost: `-pthread` and a
+  pool in the build, COOP/COEP headers on Pages (`web_dist.py` prints "HEADERS: none"
+  today and knows where they go), an iOS witness (SharedArrayBuffer needs the headers),
+  and the memory-growth interplay. Integrity keeps every byte; the price is the build.
+- Recommendation: B if the ±1 LSB is a ruling you would refuse; A otherwise, because it
+  also retires the CPU pad and the WriteTexture, and it is the WebGPU-native shape.
+- A per-pump timing row in the meter build (the `aubade_stb` accumulator stops at first
+  present) would make the next round measured rather than estimated; three lines.
+- **Ruling 1 is proven, not estimated — the round's one addition.** The handoff offers byte
+  identity as arithmetic and says the sandbox cannot witness it ("the sandbox can't run the
+  wasm"). It does not need to: the pad is pure CPU code, so both arms were lifted verbatim
+  from `authored_stage_decoded_image` into a harness and compiled natively. **414 cases,
+  0 bytes differing** — every value 0..255 present at 1024x1024, 1024x683, 683x1024,
+  1023x1023, 511x997 and the degenerate 1x1, 1x1024, 1024x1, 1024x2, 2x3, 7x1024; 400
+  random sizes <= 1024 with random pixels; and a control ABOVE the cap (2048x1536,
+  1025x1024, 4000x3000) where the new arm delegates to the old one and must agree, which it
+  does. The `>= 1.0f` test is safe because `if (scale > 1.0f) scale = 1.0f;` sits above it,
+  so >= 1 means exactly 1; and at exactly 1, `dst_w == width`, so the row memcpy copies the
+  whole source row and nothing past it. Jean's gate 3 (byte identity) is therefore already
+  answered for the pad — what his eye is still needed for is that no OTHER stage moved.
+- **CC's Chromium rig, which Route A's first step asks for, exists.** GATHER_0 lit the WGSL
+  gate's Tint arm through Chromium's own Dawn (WebGPU `createShaderModule` over CDP,
+  SwiftShader, the page on a `file://` origin). The same rig reaches a real `GPUDevice`, so
+  the Route A probe the handoff prices at "one afternoon" — prove
+  `copyExternalImageToTexture` reaches a Dawn texture — is runnable here without a Dawn
+  checkout. The rig is not in the tree (GATHER_0's residual explains why); landing it as
+  `tools/gates/tint_arm/` would make both this probe and ruling 6 repeatable.
+
 ## SHUTTER_0 — THE SPACING FLOOR (landed on master; Jean's gates open)
 
 A wall-clock floor between photographer captures (5 s, Jean's number). The distance
