@@ -38,6 +38,7 @@
 #include <algorithm>   // std::max, std::min, std::sort, std::transform   // (impl, merged)
 #include <cmath>       // std::sqrt, std::floor, std::cos, std::sin, std::round   // (impl, merged)
 #include <chrono>      // AUBADE U1 — the stb/scale decode accumulator   // (impl, merged)
+#include <cstdio>      // POSTCARD_0 — std::snprintf (postcard_stem)   // (impl, merged)
 #include <cstdint>   // (impl, merged)
 #include <filesystem>  // paintings folder scan   // (impl, merged)
 #include <iostream>    // capture / gallery / authored logs   // (impl, merged)
@@ -2539,6 +2540,113 @@ inline int authored_extract_number(const std::string& path) {
     if (pos == std::string::npos || pos + 1 >= name.size()) return 0;
     try { return std::stoi(name.substr(pos + 1)); }
     catch (...) { return 0; }
+}
+
+// ═══ POSTCARD_0 — BEFORE A PICTURE, AS A PREDICATE ═══════════════════════
+//
+// The tide's gallery_unwatched (above) is where the world asks whether it
+// is WATCHED; this is where it asks WHICH picture the visitor stands before.
+// Pure, side-effect free, CPU-only: it reads the slot array the CPU already
+// authors and the pose the spine already harvests, and the GPU learns no
+// word. Two questions, in order:
+//
+//   THE ZONE (L13 — a boundary is a zone, not a line). The picture's own
+//   footprint pushed forward: in front of its plane (forward is the side a
+//   viewer stands on — begin_visit's standing point is position + forward
+//   x stand-off, and the pilot walks there), no deeper than TAKE_REACH_*
+//   (the pilot's stand-off is 1.4 x the larger side, min 4 wu, so 2.2 x
+//   and min 8 wu holds a visitor who arrived by pilot AND one who wandered
+//   up close), and no further sideways than the frame plus TAKE_SLACK_MULT
+//   of its width each side. Both gallery forms fall out of the one struct:
+//   a TERRAIN_QUAD's forward is its facing, a WALL_FRAME's is the wall's
+//   normal, and neither is asked which it is.
+//
+//   THE EYE. Among the pictures whose zone the pawn stands in — a wall
+//   holds several side by side — the one nearest the camera's line of
+//   sight wins, and it must sit inside TAKE_CONE_COS of that line at all:
+//   standing before a picture and looking away is not being before it.
+//   The view direction is -(cos_el*sin_az, sin_el, cos_el*cos_az), the
+//   tide's formula in full (it keeps only the ground projection), verified
+//   there against world.wgsl's build_view_projection_matrix. A pose that
+//   has not landed (valid == false) picks nothing: a badge cannot teach
+//   what the eye cannot yet confirm.
+//
+// Returns the slot index, or Dim::PAINTING_MAX_SLOTS for "no picture". The
+// caller answers for the host: the point must be the pawn. The four numbers
+// are control-panel material, enrolled nowhere yet (the pilot's rule): no
+// measurement has asked.
+inline constexpr float TAKE_REACH_MULT   = 2.2f;     // x the picture's larger side: how deep the zone runs
+inline constexpr float TAKE_REACH_MIN_WU = 8.0f;     // and never shallower: a small picture keeps a doorstep
+inline constexpr float TAKE_SLACK_MULT   = 0.5f;     // x the picture's width, each side, beyond the frame
+inline constexpr float TAKE_CONE_COS     = 0.7071f;  // cos 45 deg: the eye must hold the picture inside this
+
+inline uint32_t pick_picture_before(const GalleryState& gs, float px, float pz, const CameraPose& cam) {
+    if (!cam.valid) return Dim::PAINTING_MAX_SLOTS;
+    const float ce = std::cos(cam.elevation);
+    const float ex = -ce * std::sin(cam.azimuth);
+    const float ey = -std::sin(cam.elevation);
+    const float ez = -ce * std::cos(cam.azimuth);
+    uint32_t best = Dim::PAINTING_MAX_SLOTS;
+    float best_cos = TAKE_CONE_COS;
+    for (uint32_t i = 0; i < gs.slot_high_water && i < Dim::PAINTING_MAX_SLOTS; i++) {
+        const GPUPaintingSlot& s = gs.painting_slots[i];
+        if (s.is_active == 0u) continue;
+        // The zone.
+        const float fl = std::sqrt(s.forward[0] * s.forward[0] + s.forward[2] * s.forward[2]);
+        if (fl < 1e-4f) continue;   // a picture facing straight up or down has no "before"
+        const float nx = s.forward[0] / fl, nz = s.forward[2] / fl;
+        const float dx = px - s.position[0], dz = pz - s.position[2];
+        const float along = dx * nx + dz * nz;
+        const float span  = std::max(s.scale_x, s.scale_y);
+        const float reach = std::max(TAKE_REACH_MIN_WU, span * TAKE_REACH_MULT);
+        if (along < 0.0f || along > reach) continue;
+        const float lateral = std::fabs(dx * nz - dz * nx);
+        if (lateral > s.scale_x * (0.5f + TAKE_SLACK_MULT)) continue;
+        // The eye.
+        const float vx = s.position[0] - cam.eye[0];
+        const float vy = s.position[1] - cam.eye[1];
+        const float vz = s.position[2] - cam.eye[2];
+        const float vl = std::sqrt(vx * vx + vy * vy + vz * vz);
+        if (vl < 1e-3f) continue;
+        const float c = (vx * ex + vy * ey + vz * ez) / vl;
+        if (c > best_cos) { best_cos = c; best = i; }
+    }
+    return best;
+}
+
+// POSTCARD_0 — THE STEM OF THE POSTCARD'S NAME, from what the wall knows: a
+// painting by its number (exhibition_name -> the manifest -> the number
+// authored_extract_number reads), a photograph by its tier (slot_provenance,
+// read beside is_active as its charter says). ASCII, lower case, '_' for a
+// space, nothing else survives — a filename stem, not copy; the shell wraps
+// it (T7_POSTCARD.deliver). `cap` includes the NUL.
+inline void postcard_stem(const GalleryState& gs, uint32_t slot, char* out, size_t cap) {
+    if (cap == 0) return;
+    out[0] = '\0';
+    if (slot >= Dim::PAINTING_MAX_SLOTS) return;
+    const GPUPaintingSlot& s = gs.painting_slots[slot];
+    if (s.content_source == ContentSource::AUTHORED) {
+        int number = 0;
+        if (s.texture_layer < Dim::EXHIBITION_LAYERS) {
+            const uint32_t di = gs.exhibition_name[s.texture_layer].disk_index;
+            if (di < gs.authored_disk_manifest.size())
+                number = authored_extract_number(gs.authored_disk_manifest[di]);
+        }
+        std::snprintf(out, cap, "painting_%d", number);
+        return;
+    }
+    const uint32_t tier = gs.slot_provenance[slot].shot_type;
+    const char* name = (tier < (uint32_t)ShotType::COUNT) ? SHOT_TYPE_NAMES[tier] : "";
+    char raw[64];
+    std::snprintf(raw, sizeof raw, "photograph_%s", name);
+    size_t j = 0;
+    for (size_t i = 0; raw[i] != '\0' && j + 1 < cap; i++) {
+        unsigned char ch = (unsigned char)raw[i];
+        if (ch >= 'A' && ch <= 'Z') ch = (unsigned char)(ch - 'A' + 'a');
+        if (ch == ' ') ch = '_';
+        if ((ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '_') out[j++] = (char)ch;
+    }
+    out[j] = '\0';
 }
 
 // ── THE SCALE / PAD / UPLOAD — one body, both twins ──
