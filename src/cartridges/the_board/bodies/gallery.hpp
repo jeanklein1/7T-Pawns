@@ -2705,6 +2705,23 @@ inline void authored_stage_decoded_image(GalleryState& gs, GPUState& gpu, wgpu::
     uint32_t dst_h = std::min((uint32_t)(height * scale + 0.5f), RES);
 
     std::vector<uint8_t> padded(RES * RES * 4, 0);
+    // DARKROOM_0 — AT SCALE 1 THE BILINEAR IS A COPY, BYTE FOR BYTE. Since
+    // PLATE_0 the dist caps every shipped painting at RES on its long side
+    // and this loader never scales UP, so `scale` is exactly 1.0 for every
+    // file that can reach here: src_xf == dx and src_yf == dy exactly, the
+    // fractions are exact zeros, v == data[i00] exactly, and (uint8_t)(v +
+    // 0.5f) is data[i00] again for every value 0..255. The four-tap float
+    // loop below was therefore computing a memcpy at ~1M texels x 4
+    // channels x 4 taps, on the main thread, once per painting, inside the
+    // frame — the largest single share of the arrival stall after the
+    // decode itself. The arm below it stays for the one case that can
+    // still need it: a master past the cap that reached dist by hand.
+    if (scale >= 1.0f) {
+        for (uint32_t dy = 0; dy < dst_h; ++dy)
+            std::memcpy(&padded[(size_t)dy * RES * 4],
+                        &data[(size_t)dy * (size_t)width * 4],
+                        (size_t)dst_w * 4);
+    } else {
     for (uint32_t dy = 0; dy < dst_h; ++dy) {
         float src_yf = (float)dy / scale;
         uint32_t sy0 = (uint32_t)src_yf;
@@ -2727,6 +2744,7 @@ inline void authored_stage_decoded_image(GalleryState& gs, GPUState& gpu, wgpu::
             }
         }
     }
+    }   // DARKROOM_0 — the scale < 1 arm ends here
 
     // MIP_0 — THE PAD IS THE EDGE, REPLICATED. The square beyond dst_w x
     // dst_h was zero (transparent black). A chain averages 2x2 blocks, so
