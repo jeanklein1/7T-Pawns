@@ -128,8 +128,9 @@ SHADER_SRC = os.path.join(ROOT, "src", "cartridges", "the_board",
 # this value is therefore bytes over the wire that the GPU throws away.
 # Capping here is the only place that saves them. If PAINTING_RESOLUTION
 # moves, this moves with it.
-PAINTING_CAP = 512
-PAINTING_QUALITY = 82
+PAINTING_CAP = 1024      # PLATE_0 — follows Dim::PAINTING_RESOLUTION (512 -> 1024), as the banner above orders
+PAINTING_QUALITY = 88    # PLATE_0 — 82 -> 88: at 1024 the wall shows the file near 1:1, and the postcard
+                         # re-encodes it (JPEG 0.92), so q82's blocking would survive two generations.
 
 # THE SECOND NUMBER DIED WITH ITS MECHANISM (REPEAT_0 U6). MANIFEST_DEDUPE_CAP
 # echoed `bool disk_in_use[256]` in rotate_authored_staging — a dedupe that
