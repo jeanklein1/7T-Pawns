@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `c62efbc85cf85b39fee90c85a77876d4cd412086` |
-| | MIP_0 U2 — sampling by kind: a painting through its chain (textureSampleGrad, derivatives taken in uniform flow), a photograph at level 0; G-LAW 2 admits the three builtins |
+| source commit | `54b428c3c0d7658f612aa1484652824e76d4c1e8` |
+| | MIP_0 U3 / RAZOR_0 U2 — ledgers regenerated once after both campaigns (state/gallery/world.wgsl/render_passes pins); OPEN.md: both open on master, residuals and the round's findings registered |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:725a587a1209abab03e558cf9a556284fed03bd52bfaa78a464c22882895e472` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:bdf0efbc51d41cf20b1a66028fb8346d00df05cddde9e10505f30767a5c042af` |
