@@ -2,7 +2,7 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
-## PLATE_0 — THE WALL AT 1024 (on `claude/plate-0`; Jean's gates open)
+## PLATE_0 — THE WALL AT 1024 (landed on master; Jean's gates open)
 
 Every painting array doubles its edge: the constant that PORT_5b cut to fit an old
 laptop reverses on Jean's stamp — the laptop left the audience, the stub masters are
@@ -44,7 +44,7 @@ everywhere the old number was written down; and the take badge's doorstep pulled
 - **`dist/paintings` grows ~4×** on re-encode; paintings stream progressively as
   before, so the boot wire pays only for what hangs. No action.
 
-## POSTCARD_0 — A PICTURE LEAVES THE WALL (on `claude/postcard-0`; Jean's gates open)
+## POSTCARD_0 — A PICTURE LEAVES THE WALL (landed on master; Jean's gates open)
 
 The visitor before a picture takes it — a key, or a tap on the words the glass
 shows — and their own device keeps or sends it. DOORS_0's priced readback, built
