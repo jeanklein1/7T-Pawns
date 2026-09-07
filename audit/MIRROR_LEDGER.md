@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `3edd467f37b8aba559d690ae30ca345be8d4242e` |
-| | FREECLIMB_0 — the slope law on trial: one call site bypassed, the machinery stands, the revert is one commit |
+| source commit | `c14f0b0df44f1a67662e9324444005fdebb20ab5` |
+| | FREECLIMB_0 U2 — the ledgers follow |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:7b064071883bf8001ce9be62e5f9c83a66fd80fade21a3d52a1657f99da13770` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:006cd63866e2a08f44686e5acb62f5e37b656091cd00275c1a1f5ec6f0fffcd0` |
