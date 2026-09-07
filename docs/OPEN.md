@@ -2,6 +2,77 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## ZOOM_0 — THE COLLECTION PAGE LEARNS THE PINCH (landed on master; Jean's gates open)
+
+Five seams of the lightbox the page already had. One transform on `#big` —
+`translate(x,y) scale(s)`, origin `0 0` — anchored so the point under the cursor
+or the pinch midpoint stays put. Wheel zooms, drag pans, two pointers pinch,
+double-tap toggles 1 ↔ 2.5, ceiling 6×. `s=1` is the lightbox exactly as it was;
+any `s>1` hides the step zones (they would steal the pan) and Esc peels the zoom
+before it closes. Every `show()` and `shut()` resets, so a step always lands
+unzoomed. No library, ~80 lines of the page's own vanilla, CSS in a style block
+beside the stage. Site-only — no engine artifact, and `collection_gate` PASS.
+
+**THE ORDER'S DRAFT WOULD HAVE KILLED THE PAGE, and this is the one repair CC
+made without asking.** Its script block opened with
+`const stage = view.querySelector('.stage');` — but `stage` is already a
+top-level `const` in that same and only `<script>`, bound above `restRect`, which
+reads it. A second `const` at the same scope is not a shadow and not a warning:
+it is `SyntaxError: Identifier 'stage' has already been declared`, thrown at
+PARSE time, which discards the whole block. The grid, the filters, the lightbox,
+the history wiring — all of it, dead, on the page that is the collection. The
+landed seam reuses the existing binding and says so in place. Shown both ways
+with `node --check` on the extracted block: the draft throws the SyntaxError,
+what landed parses.
+
+**Two smaller corrections in the same seam.**
+- The draft's banner said that above `s=1` "arrows pan instead". They do not, and
+  nothing in the five seams makes them: `ArrowLeft`/`ArrowRight` still call
+  `show()`, which resets — which is what the order's own reading list asks for
+  ("arrow-stepping always lands unzoomed"). The banner now says what the code
+  does. The drag pans; the arrows step.
+- `zoomClamp()` was defined and never called, and could not have been used as
+  written — it carries `+ (big.offsetLeft ? 0 : 0)`, which is 0 either way, and a
+  branch that assigns `zoom.y` to itself. Dead on arrival, in the one file that
+  ships to the site, against the tree's living-matter rule. Struck; the attic has
+  it. If a clamp is wanted (today nothing stops a pan from carrying the picture
+  off the stage), it should be written against the transformed rect and CALLED
+  from `zoomTo` and the pan arm — a small, separate piece of work.
+
+**Witnessed in headless Chromium, not reasoned about.** Driven over CDP through
+RIG_0's own `Rig`, on the page with three synthetic works injected (the repo
+carries no collection assets):
+
+| reading | result |
+|---|---|
+| page load | 0 errors; `zoomTo`/`zoomReset`/`zoomApply` defined |
+| one wheel notch | `s` 1 → 1.2; ceiling holds at exactly 6 |
+| anchor invariant | drift **0** in the transform's own frame (`big.offsetLeft`) |
+| anchor vs. true layout origin | **0.028 image px = 0.070 on-screen px** at s = 2.488, five notches |
+| drag pan | exactly the pointer delta (+40, −25); **0,0 while `s=1`** |
+| pinch | span ×2 → `s=2`; ×3 → `s=3`, about the midpoint |
+| double-tap | 1 → 2.5 → 1 |
+| zones while zoomed | `display: none`; a `.zone.next` click did **not** step |
+| Esc | first peels (`s=1`, overlay open, transform cleared), second closes |
+| arrow while zoomed at 4.30 | steps, and lands at `s=1` |
+| wheeling down | floors at exactly 1 and clears the transform |
+
+The one non-zero number has a named cause: `big.offsetLeft` is an integer and
+the stage gutter is `clamp(18px, 3.2vw, 52px)` — 24.953125 px at the tested
+width — so the anchor is exact in its own frame and off by that 0.047 px of
+rounding against the real one. 0.07 of a CSS pixel at the ceiling is below
+anything an eye or a finger can find; left as authored.
+
+### Residuals — ZOOM_0
+- **Jean's browser is the visual gate**, and the phone is the real one: pinch,
+  pan, double-tap out, the edge zones must not steal a pan, Esc twice.
+- **No pan clamp.** A drag can carry the picture off the stage; `zoomReset` on
+  every step and close is what limits the damage today. Priced above.
+- **`setPointerCapture` throws for a pointer id with no live pointer.** Harmless
+  in a browser (ids are real); it is why the witness above stubs it. Worth
+  knowing if the seam is ever driven from a test.
+
+
 ## SKYGLASS_0 — A PORTAL WEARS ITS DESTINATION'S SKY (landed on master; Jean's gates open)
 
 The portal palette in `contracts/mood_constants.hpp` stops being seven authored
