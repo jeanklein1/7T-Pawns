@@ -12267,6 +12267,7 @@ struct GalleryVarying {
     @location(1) world_pos: vec3<f32>,
     @location(2) world_normal: vec3<f32>,
     @location(3) @interpolate(flat) texture_layer: u32,
+    @location(4) @interpolate(flat) content_source: u32,   // MIP_0 — painting or photograph: which way to sample
 };
 
 // --- Frame Deformation
@@ -12453,6 +12454,7 @@ fn gallery_frame_vs(
     out.world_pos = g.world;
     out.world_normal = g.fwd;
     out.texture_layer = g.texture_layer;
+    out.content_source = painting_slots[min(iid, PAINTING_MAX_SLOTS - 1u)].content_source;   // MIP_0
     return out;
 }
 
@@ -12473,9 +12475,28 @@ fn shadow_gallery_frame_vs(
 }
 
 // --- Fragment Shader
+// ═══ MIP_0 — SAMPLING THE EXHIBITION, BY KIND ═══════════════════════════
+// A painting samples through its chain (built on the CPU at decode, copied
+// level by level at promotion); a photograph samples level 0 only, because
+// its higher levels are never written (the snapshot staging has one level,
+// the promotion copies one). The choice is per instance, so it is NOT
+// uniform control flow, and textureSample (implicit derivatives) may not sit
+// inside it. The derivatives are taken here, uniformly, and handed to
+// textureSampleGrad, which may. CONTENT_SOURCE_SNAPSHOT mirrors
+// ContentSource::SNAPSHOT (state.hpp) — an L3 mirror with no bridge.
+const CONTENT_SOURCE_SNAPSHOT: u32 = 1u;
+fn sample_exhibition(uv: vec2<f32>, layer: u32, kind: u32) -> vec4<f32> {
+    let ddx = dpdx(uv);
+    let ddy = dpdy(uv);
+    if (kind == CONTENT_SOURCE_SNAPSHOT) {
+        return textureSampleLevel(painting_array, painting_sampler_filt, uv, layer, 0.0);
+    }
+    return textureSampleGrad(painting_array, painting_sampler_filt, uv, layer, ddx, ddy);
+}
+
 @fragment
 fn gallery_frame_fs(in: GalleryVarying) -> @location(0) vec4<f32> {
-    let painting_color = textureSample(painting_array, painting_sampler_filt, in.uv, in.texture_layer);
+    let painting_color = sample_exhibition(in.uv, in.texture_layer, in.content_source);   // MIP_0
     if (painting_color.a < 0.01) { discard; }
 
     var color = painting_color.rgb;
@@ -12708,7 +12729,7 @@ fn wall_painting_canvas_fs(in: WallPaintingVarying) -> @location(0) vec4<f32> {
     if (in.is_canvas == 0u) { discard; }
 
     let slot = painting_slots[in.painting_index];
-    let tex_color = textureSample(painting_array, painting_sampler_filt, in.uv, slot.texture_layer);
+    let tex_color = sample_exhibition(in.uv, slot.texture_layer, slot.content_source);   // MIP_0
     if (tex_color.a < 0.01) { discard; }
 
     let lit = tex_color.rgb * 0.9;

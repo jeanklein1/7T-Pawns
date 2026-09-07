@@ -56,7 +56,12 @@ BASE = "tools/gates/glaw2/baseline.json"
 #               constructor, so CALL matches it like a function.
 #   atomicSub — predeclared builtin function (atomicAdd was already in the
 #               recorded set; its sibling simply had no use yet).
-PREDECLARED = {"array", "atomicSub"}
+#   dpdx, dpdy, textureSampleGrad  predeclared builtin functions (MIP_0's
+#               sample_exhibition is their first use: the derivatives are
+#               taken in uniform control flow and handed to the explicit-
+#               gradient sample; textureSample and textureSampleLevel were
+#               in the recorded set).
+PREDECLARED = {"array", "atomicSub", "dpdx", "dpdy", "textureSampleGrad"}
 
 IDENT = re.compile(r"[A-Za-z_]\w*")
 CALL = re.compile(r"\b([A-Za-z_]\w*)\s*\(")
