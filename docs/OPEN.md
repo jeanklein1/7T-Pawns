@@ -2,6 +2,57 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## DARKROOM_1 — THE DARKROOM WORKER (landed on master; Jean's gates open)
+
+A painting's develop — decode, pad, swap, chain — left the frame: a Web Worker runs a
+second tiny wasm built from the same core/develop.hpp the program compiles, and the
+program hangs one developed painting per frame with a WriteTexture. Byte-identical by
+construction and by harness (108 cases). No shared memory, no headers, no pthreads.
+
+| ruling | where it lives now |
+|---|---|
+| One home for developing a painting | `src/core/develop.hpp` |
+| The worker develops; the frame hangs | `src/darkroom/darkroom.cpp`, `web/darkroom_worker.js`, `window.T7_DARKROOM`, `pump_authored_valve` |
+| The uploader is one function | `state.hpp` `upload_developed` |
+| Failure takes the road it always took | `t7_darkroom_done` (width 0), the main-thread arm |
+| The build exports what the bridge needs | `CMakeLists.txt` (HEAPU8, _malloc, _free; the darkroom target) |
+| The measured row | `[METER] darkroom develop=… hang=…` |
+
+### Residuals — DARKROOM_1
+- **The hang is still ~5 MiB of WriteTexture in one frame.** If the meter's `hang=` reads
+  more than a few ms on the laptop, split it: level 0 one frame, the ten levels the next
+  (the layer stays `pending` until the last write). Not built until the row asks.
+- **Development now starts on arrival, before first present** (the worker cannot block
+  the thread); the hang still waits for first present. If `authored6` moves earlier on
+  the boot card, that is this round's gift to AUBADE and worth a line there.
+- **Route A stays priced** (browser decode + GPU chain) as the road if a platform ever
+  refuses Workers — none does — or if the ±1 LSB ruling changes.
+- **Byte identity witnessed twice, independently.** CC ran its own harness against the
+  tree's real `core/develop.hpp` and the base code read out of git at `f9642df6`,
+  comparing **level 0 and all ten chain levels, with and without the BGRA swap**:
+  **108 cases, 0 bytes differ** — the handoff's own figure, reproduced rather than
+  taken. The set: twelve degenerate and exact sizes with ramp pixels (1024x1024,
+  1024x683, 683x1024, 1023x1023, 512x512, 511x997, 1024x2, 1024x1, 1x1024, 7x1024,
+  2x3, 1x1), forty random sizes ≤ 1024 with random pixels, and the above-cap bilinear
+  arm (2048x1536, 4000x3000), each with both texel orders.
+- **The developed buffers' lifetime was traced end to end**, since the shell allocates
+  them and the program frees them: `_malloc` in `T7_DARKROOM.done`, `std::free` on every
+  failure path of `t7_darkroom_done`, and `std::free` in the drain immediately after
+  `upload_developed`. No leak on any path the pump runs.
+- **A worker reply cannot outlive its world's claim, and the reason is already law.**
+  `teardown_gallery` keeps the authored staging array intact across a world boundary by
+  design (WALLS_2 — a layer keeps its picture until its own fetch lands), so a reply
+  arriving after a teardown writes into a staging layer still claimed by the same fetch.
+  This was checked because the three state readbacks all carry generation guards for the
+  opposite reason; the darkroom needs none.
+- **`-sFILESYSTEM=0` on the darkroom target is the one flag to watch**, as the handoff
+  says. `STBI_NO_STDIO` is defined nowhere in the tree, so stb's implementation TU still
+  compiles its `FILE*` path (`stb_image.h` names `FILE*`/`fopen` 32 times) even though
+  `darkroom.cpp` calls only `stbi_load_from_memory`. If the link refuses, the handoff's
+  remedy is to drop the flag; the tighter one is to keep it and add `STBI_NO_STDIO` as a
+  compile definition on `the_board_darkroom`, removing the stdio path at the source
+  instead of re-admitting the filesystem. Jean's build decides which.
+
 ## RIG_0 — THE TINT ARM LANDS, AND THE ROUTE A PROBE (landed on master; Jean's gates open)
 
 GATHER_0's ruling 6 is a tool now: `tools/gates/tint_arm/`, needing python3 and a
