@@ -43,6 +43,21 @@ everywhere the old number was written down; and the take badge's doorstep pulled
   built until a phone speaks.
 - **`dist/paintings` grows ~4×** on re-encode; paintings stream progressively as
   before, so the boot wire pays only for what hangs. No action.
+- **THE CASCADE NEEDS ONE MORE PASS THAN EVERY HANDOFF WRITES, and this is the
+  second campaign it caught.** `mirror_census.py` pins `audit/BINDING_LEDGER.md`
+  as an input and stamps "the last commit touching any input — not `HEAD`" (its
+  own words). Every handoff's D9 cascade generates the ledgers and THEN commits
+  them, so at the moment MIRROR is written, the BINDING_LEDGER.md it pins has not
+  landed yet and the stamp names the previous commit. POSTCARD_0 hit it (fixed at
+  U5c); PLATE_0 hit it again, identically. The tell is CLAUDE.md's own L33 witness
+  — delete the five files in `audit/`, run the five tools, expect byte-identical —
+  which fails on exactly this one line and passes once the stamp is settled. No
+  `--check` catches it: the mirror census does not compare its own provenance
+  stamp, so all four ledger checks stay green while the room does not rebuild.
+  **The fix is a step, not a patch:** after committing the cascade, run
+  `python3 tools/mirror_census.py` once more and commit the one-line result. It
+  converges immediately — `BINDING_LEDGER.md`'s last-touching commit stops moving —
+  and L33 holds again. The next handoff's D9 block should carry that step.
 
 ## POSTCARD_0 — A PICTURE LEAVES THE WALL (landed on master; Jean's gates open)
 

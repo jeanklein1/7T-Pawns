@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `bd8d73b9967a1fc27315d64cb12f92be594fe2e7` |
-| | PLATE_0 U1 — paintings at 1024²: the constant reverses PORT_5b (Jean's stamp; the diet's laptop left the audience); comment truth follows the number everywhere it was written down |
+| source commit | `9724fe4858864b0975d2d1f95d4b94e75574da5c` |
+| | PLATE_0 U4 — ledgers regenerated (state/gallery/cartridge pins); OPEN.md: PLATE_0 open on claude/plate-0, residuals registered; POSTCARD_0's TAKE and larger-postcard residuals amended |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:0fd3d13a8183d7e3ac3e89e418cab480dc968037c9b9f3f1bd07f81d236989aa` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:535e80a3c60b3529008b17a3e5a37ff5259d8514a58ed30e043676bd1f4820b2` |
