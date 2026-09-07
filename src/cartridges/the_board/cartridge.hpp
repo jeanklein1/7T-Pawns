@@ -51,6 +51,7 @@
 #include "core/boot_params.hpp"                                    // DOMESDAY_1 B9 — ?seed= / ?mood= boot overrides (ctor, the one authoring site)
 #include "core/boot_card.hpp"                                      // IOS_3 B2 — the world, the switches and the patch counters reach the page
 #include "core/ride_face.hpp"                                      // REACH_1 V2 — the face watcher's one call per edge
+#include "core/postcard_face.hpp"                                  // POSTCARD_0 — the take badge's edge call and the picture's one delivery
 #include "core/aubade.hpp"                                        // AUBADE U1 — the waterfall's marks and the first-present latch
 #include "core/instruments.hpp"                                    // THE INSTRUMENTS DIAL: INSTRUMENTS.frame_meter / .periodic_census gate the recurring self-measurement (compile-time, T7_INSTRUMENTS; default off)
 #include "cartridges/the_board/contracts/roster.hpp"
@@ -1490,6 +1491,13 @@ namespace t7 {
                         // named the phrase.
                         if (cameraReadbackState_ == CameraReadbackState::COPIED)
                             cameraReadbackState_ = CameraReadbackState::IDLE;
+                        // POSTCARD_0 — an arming not yet spent names a wall this
+                        // teardown empties; a COPIED or MAPPING postcard is left
+                        // alone (its bytes are a moment, the banner says why).
+                        if (postcardArmed_) {
+                            postcardArmed_ = false;
+                            std::cout << "[Postcard] dropped: the world ended before the copy\n";
+                        }
                         // AND THE POSE ITSELF IS NO LONGER TRUE. `valid` was
                         // set once and never cleared, so the tide's "no eye
                         // yet" guard could not fire again and the first sweep
@@ -1930,6 +1938,38 @@ namespace t7 {
                         this);
                 }
 
+                // POSTCARD_0 — THE POSTCARD'S MAP, the pawn's grammar,
+                // captureless (the typed-userdata overload, `this` in the
+                // trailing slot). The callback delivers to the shell THROUGH
+                // the mapped range, synchronously, and unmaps on its way out.
+                // No generation guard, by the machine's banner.
+                if (postcardState_ == PostcardState::COPIED) {
+                    postcardState_ = PostcardState::MAPPING;
+                    gpuState_.postcard_readback_staging().MapAsync(
+                        wgpu::MapMode::Read, 0, GPUState::postcard_readback_size(),
+                        wgpu::CallbackMode::AllowSpontaneous,
+                        [](wgpu::MapAsyncStatus status, wgpu::StringView, Cartridge* self) {
+                            if (status == wgpu::MapAsyncStatus::Success) {
+                                const void* data = self->gpuState_.postcard_readback_staging().GetConstMappedRange(
+                                    0, GPUState::postcard_readback_size());
+                                if (data) {
+                                    const PostcardFacts& f = self->postcardFacts_;
+                                    t7::postcard_deliver(data, Dim::PAINTING_RESOLUTION,
+                                                         self->gpuState_.exhibition_is_bgra() ? 1u : 0u,
+                                                         f.crop_w, f.crop_h, f.aspect, f.kind, f.stem);
+                                    std::cout << "[Postcard] delivered: " << f.stem << "\n";
+                                } else {
+                                    std::cout << "[Postcard] dropped: the map gave no range\n";
+                                }
+                                self->gpuState_.postcard_readback_staging().Unmap();
+                            } else {
+                                std::cout << "[Postcard] dropped: the map failed\n";
+                            }
+                            self->postcardState_ = PostcardState::IDLE;
+                        },
+                        this);
+                }
+
                 // REACH_1 V2 — THE FACE WATCHER. The formula reads what is
                 // already home (the host, the bubble the harvest composed);
                 // the difference gate means a still world costs nothing and
@@ -1943,6 +1983,24 @@ namespace t7 {
                 if (face != rideFaceShown_) {
                     rideFaceShown_ = face;
                     t7::ride_face(face);
+                }
+
+                // POSTCARD_0 — THE TAKE FACE WATCHER, the ride's grammar: the
+                // predicate reads what is already home (the wall the CPU
+                // authors, the pose R1 just harvested, the point), and the
+                // difference gate means a visitor who stands still costs one
+                // EM_ASM per edge and none per frame. Which picture is not
+                // remembered here: the door re-asks at the press, so the badge
+                // and the take can never disagree by more than a frame.
+                uint32_t take = 0u;
+                if (point_.host == PointHost::PAWN) {
+                    const uint32_t slot = pick_picture_before(gallery_state_, point_.x, point_.z, camera_pose_);
+                    if (slot < Dim::PAINTING_MAX_SLOTS)
+                        take = (gallery_state_.painting_slots[slot].content_source == ContentSource::SNAPSHOT) ? 2u : 1u;
+                }
+                if (take != takeFaceShown_) {
+                    takeFaceShown_ = take;
+                    t7::postcard_face(take);
                 }
             }
 
@@ -2010,6 +2068,90 @@ namespace t7 {
             // REACH_1 V2 — the face the shell currently wears (0 hidden,
             // 1 board, 2 land). Differenced so only EDGES cross to JS.
             uint32_t rideFaceShown_ = 0;
+
+            // ═══ POSTCARD_0 — THE POSTCARD MACHINE ═══════════════════════
+            //
+            // The fifth readback, and the first of a TEXTURE: one layer of
+            // the exhibition array leaves the GPU so the visitor can keep
+            // the picture they stand before, or send it. The grammar is the
+            // pawn's, the floaters' and the camera's — IDLE arms a copy
+            // (R11, phase_witness_capture), COPIED issues a map (R1,
+            // phase_witness_harvest), and the callback restores IDLE on its
+            // way out, so at most one is ever in flight — with two
+            // departures, both deliberate:
+            //
+            //   ON DEMAND, NEVER PER FRAME. `postcardArmed_` is set by
+            //   request_postcard (the take door's answer) and spent by R11
+            //   in the same frame; an unarmed frame encodes nothing.
+            //
+            //   NO GENERATION GUARD. The three state readbacks drop a
+            //   callback from a world that ended because their bytes would
+            //   otherwise become the NEW world's state. A postcard's bytes
+            //   are a moment, not a state: a picture pressed in a world
+            //   that ended is still the picture pressed, and its facts
+            //   (below) were taken at the same press. What teardown DOES
+            //   clear is an arming not yet spent — the wall it named is
+            //   being emptied under it.
+            //
+            // WHAT RIDES BESIDE THE BYTES is decided at the press, from the
+            // slot the eye picked: the crop (uv_scale — a painting is padded
+            // into its square at the origin), the hung aspect (scale_x /
+            // scale_y — a photograph is STORED square and hung at its lens's
+            // aspect, so the shell resamples it), the kind, and a filename
+            // stem. The shell receives RGBA, opaque; the texel order stops
+            // at the seam (core/postcard_face.hpp).
+            enum class PostcardState { IDLE, COPIED, MAPPING };
+            PostcardState postcardState_ = PostcardState::IDLE;
+            bool     postcardArmed_ = false;      // a take was pressed; R11 spends it
+            uint32_t postcardLayer_ = 0;          // the exhibition layer the press named
+            struct PostcardFacts {
+                uint32_t crop_w = 0, crop_h = 0;  // the picture's texels inside the square, from the origin
+                double   aspect = 1.0;            // width / height as hung
+                uint32_t kind   = 0;              // ContentSource::AUTHORED / SNAPSHOT
+                char     stem[64] = {};           // postcard_stem's answer
+            } postcardFacts_{};
+            // The face the shell currently wears for the take (0 hidden,
+            // 1 a painting is before you, 2 a photograph). Differenced so
+            // only EDGES cross to JS — rideFaceShown_'s grammar.
+            uint32_t takeFaceShown_ = 0;
+
+            // THE TAKE DOOR'S ANSWER, called from the frame boundary
+            // (organ_boundary.inc) with both mouths folded. Every refusal
+            // is a line (P6): the visitor pressed and nothing left, and the
+            // console must say why.
+            void request_postcard() {
+                if (point_.host != PointHost::PAWN) {
+                    std::cout << "[Postcard] refused: the point is not the pawn\n";
+                    return;
+                }
+                const uint32_t slot = pick_picture_before(gallery_state_, point_.x, point_.z, camera_pose_);
+                if (slot >= Dim::PAINTING_MAX_SLOTS) {
+                    std::cout << "[Postcard] refused: no picture before you\n";
+                    return;
+                }
+                if (postcardArmed_ || postcardState_ != PostcardState::IDLE) {
+                    std::cout << "[Postcard] refused: one is still on its way\n";
+                    return;
+                }
+                const GPUPaintingSlot& s = gallery_state_.painting_slots[slot];
+                if (s.texture_layer >= Dim::EXHIBITION_LAYERS) {
+                    std::cout << "[Postcard] refused: slot " << slot << " names layer "
+                              << s.texture_layer << ", off the wall\n";
+                    return;
+                }
+                PostcardFacts& f = postcardFacts_;
+                const float res = (float)Dim::PAINTING_RESOLUTION;
+                f.crop_w = (uint32_t)std::min(res, std::max(1.0f, std::round(res * s.uv_scale_x)));
+                f.crop_h = (uint32_t)std::min(res, std::max(1.0f, std::round(res * s.uv_scale_y)));
+                f.aspect = (s.scale_y > 0.0f) ? (double)s.scale_x / (double)s.scale_y : 1.0;
+                f.kind   = s.content_source;
+                postcard_stem(gallery_state_, slot, f.stem, sizeof f.stem);
+                postcardLayer_ = s.texture_layer;
+                postcardArmed_ = true;
+                std::cout << "[Postcard] slot " << slot << " layer " << postcardLayer_
+                          << " " << f.stem << " crop " << f.crop_w << "x" << f.crop_h
+                          << " aspect " << f.aspect << " — copying\n";
+            }
 
             void card_patch_tick_() {
                 if (!t7::boot_params().bootinfo) return;
@@ -2607,6 +2749,36 @@ namespace t7 {
                         gpuState_.camera_readback_staging(), 0,
                         GPUState::camera_state_buffer_size());
                     cameraReadbackState_ = CameraReadbackState::COPIED;
+                }
+
+                // POSTCARD_0 — THE PICTURE LEAVES THE WALL. On demand, not per
+                // frame: request_postcard armed it this frame, from the slot the
+                // eye picked; the whole layer is copied (RES x RES, rows packed
+                // at 2048 B — the 256-byte law by construction) and the shell
+                // crops. Same encoder, after the same dispatches: the wall this
+                // frame draws is the wall this copies. The buffer is born here on
+                // the first take (GPUState::postcard_readback_staging).
+                if (postcardArmed_) {
+                    postcardArmed_ = false;
+                    if (postcardState_ == PostcardState::IDLE) {
+                        gpuState_.ensure_postcard_readback_staging();
+                        wgpu::TexelCopyTextureInfo src{};
+                        src.texture  = gpuState_.exhibition_texture();
+                        src.mipLevel = 0;
+                        src.origin   = { 0, 0, postcardLayer_ };
+                        src.aspect   = wgpu::TextureAspect::All;
+                        wgpu::TexelCopyBufferInfo dst{};
+                        dst.layout.offset       = 0;
+                        dst.layout.bytesPerRow  = GPUState::postcard_bytes_per_row();
+                        dst.layout.rowsPerImage = Dim::PAINTING_RESOLUTION;
+                        dst.buffer = gpuState_.postcard_readback_staging();
+                        wgpu::Extent3D extent = { Dim::PAINTING_RESOLUTION, Dim::PAINTING_RESOLUTION, 1 };
+                        encoder.CopyTextureToBuffer(&src, &dst, &extent);
+                        postcardState_ = PostcardState::COPIED;
+                    } else {
+                        // request_postcard guards this; a line if it ever slips.
+                        std::cout << "[Postcard] dropped: the machine was busy at the copy\n";
+                    }
                 }
             }
 

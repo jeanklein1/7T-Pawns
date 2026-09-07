@@ -2397,6 +2397,7 @@ namespace t7 {
             wgpu::Buffer agentStateReadbackStaging_;
             wgpu::Buffer floatingEntityReadbackStaging_;
             wgpu::Buffer cameraReadbackStaging_;   // ATRIUM_11 — always created; the pose is a spine fact (PLUMB_0 C1)
+            wgpu::Buffer postcardReadbackStaging_; // POSTCARD_0 — born on the first take (postcard_readback_staging); null until then
             // CHORD_1 — THE AGENTS' ROOM, one buffer where five stood
             // (portals, behaviors, tier gains, and the two occupier
             // windows). agentRoomStage_ is the sovereign CPU copy: every
@@ -3170,7 +3171,7 @@ namespace t7 {
             void upload_authored_painting(wgpu::Queue& queue, uint32_t layer,
                 const uint8_t* rgba_data, uint32_t width, uint32_t height)
             {
-                bool need_swap = (colorFormat_ == wgpu::TextureFormat::BGRA8Unorm);
+                bool need_swap = exhibition_is_bgra();   // POSTCARD_0 — one home for the texel order
                 std::vector<uint8_t> swapped;
                 const uint8_t* src = rgba_data;
 
@@ -3204,7 +3205,7 @@ namespace t7 {
             void fill_painting_layer_solid(wgpu::Queue& queue, uint32_t layer,
                 uint8_t r, uint8_t g, uint8_t b)
             {
-                bool need_swap = (colorFormat_ == wgpu::TextureFormat::BGRA8Unorm);
+                bool need_swap = exhibition_is_bgra();   // POSTCARD_0 — one home for the texel order
                 uint32_t N = Dim::PAINTING_RESOLUTION;
                 std::vector<uint8_t> pixels(N * N * 4);
                 for (uint32_t i = 0; i < N * N; ++i) {
@@ -3266,9 +3267,13 @@ namespace t7 {
                     "Authored Staging View", Dim::STAGING_LAYERS);
 
                 // Exhibition — promoted images live here, GPU reads for rendering
+                // POSTCARD_0 — CopySrc: the wall's layer is what the postcard
+                // copies out (cartridge.hpp, phase_witness_capture). The
+                // photographer's staging has carried the flag from its first
+                // day; the wall never needed it until a picture had to leave.
                 exhibitionTexture_ = makeTextureArray("Exhibition",
                     Dim::EXHIBITION_LAYERS,
-                    wgpu::TextureUsage::CopyDst | wgpu::TextureUsage::TextureBinding);
+                    wgpu::TextureUsage::CopyDst | wgpu::TextureUsage::CopySrc | wgpu::TextureUsage::TextureBinding);
                 if (!exhibitionTexture_) return false;
                 exhibitionReadView_ = makeArrayView(exhibitionTexture_,
                     "Exhibition View", Dim::EXHIBITION_LAYERS);
@@ -3820,6 +3825,27 @@ namespace t7 {
             wgpu::Buffer floating_entity_readback_staging() const { return floatingEntityReadbackStaging_; }
             wgpu::Buffer camera_buffer() const { return cameraBuffer_; }                              // ATRIUM_11
             wgpu::Buffer camera_readback_staging() const { return cameraReadbackStaging_; }           // ATRIUM_11
+            // POSTCARD_0 — THE POSTCARD'S STAGING, born on the first take and
+            // kept for the session: a visitor who never takes a picture never
+            // pays the megabyte, and the estate report at boot never names a
+            // row it did not spend. One layer of the exhibition, rows packed:
+            // RES * 4 = 2048 bytes a row, a multiple of 256 by construction
+            // (WebGPU's bytesPerRow law), RES rows.
+            static constexpr uint32_t postcard_bytes_per_row() { return Dim::PAINTING_RESOLUTION * 4u; }
+            static constexpr size_t   postcard_readback_size() { return (size_t)postcard_bytes_per_row() * Dim::PAINTING_RESOLUTION; }
+            static_assert((Dim::PAINTING_RESOLUTION * 4u) % 256u == 0u,
+                "POSTCARD_0: bytesPerRow must be a multiple of 256 (WebGPU); RES * 4 is, at 512");
+            wgpu::Buffer postcard_readback_staging() const { return postcardReadbackStaging_; }   // null until ensure_postcard_readback_staging (the estate census reads this one-line shape)
+            void ensure_postcard_readback_staging() {
+                if (postcardReadbackStaging_) return;
+                postcardReadbackStaging_ = makeBuffer("Postcard Readback Staging",
+                    postcard_readback_size(),
+                    wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::MapRead);
+            }
+            // POSTCARD_0 — the texel order of the painting arrays, as ONE
+            // question: the two upload sites asked it inline, the readback's
+            // delivery asks it too, and one home answers all three.
+            bool exhibition_is_bgra() const { return colorFormat_ == wgpu::TextureFormat::BGRA8Unorm; }
             wgpu::Buffer floating_entity_buffer() const { return floatingEntityBuffer_; }
             static constexpr size_t floating_entity_buffer_size() {
                 return Dim::TOTAL_FLOATING_SLOTS * sizeof(GPUFloatingEntityState);

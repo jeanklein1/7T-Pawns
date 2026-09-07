@@ -1248,6 +1248,16 @@ def resource_reach(resources, schema, acc, views):
                 touch(name, "copy/write target")
             for name in re.findall(r"(?<![\w.])(\w+_)\b", m.group(1)):
                 touch(name, "copy/write target")
+        # POSTCARD_0 — and dst.buffer = X, the TexelCopyBufferInfo half of a
+        # CopyTextureToBuffer: the tree's first texture->buffer copy names
+        # its target through a struct field, exactly as .texture does above.
+        # Perturbation shown at the rehearsal: without this arm R-2 flags
+        # postcardReadbackStaging_ as an orphan; with it the row is reached.
+        for m in re.finditer(r"\.buffer\s*=\s*([^;]+);", text):
+            for name in re.findall(r"(\w+)\s*\(\)", m.group(1)):
+                touch(name, "copy/write target")
+            for name in re.findall(r"(?<![\w.])(\w+_)\b", m.group(1)):
+                touch(name, "copy/write target")
         # attachment .view = accessor() sites (shadow passes etc.)
         for m in re.finditer(r"\.view\s*=\s*([^;]+);", text):
             for name in re.findall(r"(\w+)\s*\(\)", m.group(1)):
