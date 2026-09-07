@@ -2,6 +2,12 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## ATMOS_1 — THE PIECE LEAVES THE PHONE'S HANDS (on `claude/important-handoffs-9v1wus`; Jean's gates open)
+
+Hidden releases the soundtrack's media instead of pausing it, so a headphone button
+cannot resume it with the page shut; visible re-attaches and seeks. ATMOS_0's grammar
+stands; ATMOS_0 R's gesture fallback covers a refusal on return.
+
 ## ZOOM_0 — THE COLLECTION PAGE LEARNS THE PINCH (landed on master; Jean's gates open)
 
 Five seams of the lightbox the page already had. One transform on `#big` —
