@@ -2754,7 +2754,7 @@ namespace t7 {
                 // POSTCARD_0 — THE PICTURE LEAVES THE WALL. On demand, not per
                 // frame: request_postcard armed it this frame, from the slot the
                 // eye picked; the whole layer is copied (RES x RES, rows packed
-                // at 2048 B — the 256-byte law by construction) and the shell
+                // at RES * 4 B — the 256-byte law by construction) and the shell
                 // crops. Same encoder, after the same dispatches: the wall this
                 // frame draws is the wall this copies. The buffer is born here on
                 // the first take (GPUState::postcard_readback_staging).

@@ -361,7 +361,22 @@ namespace t7 {
             // (bodies/gallery.hpp, `RES`), which reads THIS constant — so
             // the fit box and the destination cannot drift apart. Layer
             // counts are untouched; only the per-layer resolution moves.
-            constexpr uint32_t PAINTING_RESOLUTION = 512;
+            //
+            // PLATE_0 — 512 -> 1024 (Jean's stamp, reversing PORT_5b).
+            // The diet above answered ONE machine — an old laptop that
+            // could not make 681 MiB resident — and that machine has left
+            // the audience. The masters the 512 wall was scaled from were
+            // stubs, being replaced at this size; and the postcard
+            // (POSTCARD_0) ships the wall, so the wall's resolution is
+            // the program's public face. The same five textures reverse:
+            // Exhibition 40 -> 160 MiB, each staging 32 -> 128, offscreen
+            // color 1 -> 4, and under MSAA 4 the offscreen depth and MSAA
+            // color 4 -> 16 each: +339 MiB (+318 where MSAA runs at 1).
+            // Residency's witness is the FLOOR now, not a laptop — the
+            // Pixel and the iPhone boot rows are the gate — and the
+            // levers if either refuses are registered in OPEN.md
+            // (PLATE_0 residuals), not improvised here.
+            constexpr uint32_t PAINTING_RESOLUTION = 1024;
             // Both raised by SUPPLY. The old 16 capped `to_load` at a sixteenth
             // of the paintings on disk and made content, not geometry, the
             // thing that ended a row — one wall would take the whole pool and
@@ -3827,14 +3842,14 @@ namespace t7 {
             wgpu::Buffer camera_readback_staging() const { return cameraReadbackStaging_; }           // ATRIUM_11
             // POSTCARD_0 — THE POSTCARD'S STAGING, born on the first take and
             // kept for the session: a visitor who never takes a picture never
-            // pays the megabyte, and the estate report at boot never names a
+            // pays for it, and the estate report at boot never names a
             // row it did not spend. One layer of the exhibition, rows packed:
-            // RES * 4 = 2048 bytes a row, a multiple of 256 by construction
+            // RES * 4 bytes a row, a multiple of 256 by construction
             // (WebGPU's bytesPerRow law), RES rows.
             static constexpr uint32_t postcard_bytes_per_row() { return Dim::PAINTING_RESOLUTION * 4u; }
             static constexpr size_t   postcard_readback_size() { return (size_t)postcard_bytes_per_row() * Dim::PAINTING_RESOLUTION; }
             static_assert((Dim::PAINTING_RESOLUTION * 4u) % 256u == 0u,
-                "POSTCARD_0: bytesPerRow must be a multiple of 256 (WebGPU); RES * 4 is, at 512");
+                "POSTCARD_0: bytesPerRow must be a multiple of 256 (WebGPU); RES * 4 is, for any RES a multiple of 64");
             wgpu::Buffer postcard_readback_staging() const { return postcardReadbackStaging_; }   // null until ensure_postcard_readback_staging (the estate census reads this one-line shape)
             void ensure_postcard_readback_staging() {
                 if (postcardReadbackStaging_) return;

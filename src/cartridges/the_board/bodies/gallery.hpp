@@ -2763,8 +2763,8 @@ inline constexpr const char* EXHIBITION_PAINTINGS_DIR = "paintings/";
 // what this number really sets is how long the first field stands bare. Four
 // lanes reach the exhibition floor in two round trips instead of six.
 //
-// The cost is bounded and small: each arrival is one 512-px JPEG decode
-// (PAINTING_CAP) and one 1 MiB WriteTexture, a few ms, and four of them in
+// The cost is bounded and small: each arrival is one PAINTING_CAP-px JPEG
+// decode and one RES*RES*4 B WriteTexture, a few ms, and four of them in
 // one event turn is still a few ms. They do not even land together — four
 // round trips do not answer in lockstep.
 //
