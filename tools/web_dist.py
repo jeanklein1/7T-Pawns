@@ -239,6 +239,7 @@ AUDIO_CEILING = 20 * 1024 * 1024
 # it, and the asserts below are what keep it that way — a claim nobody
 # checks is a claim that stops being true on the commit that breaks it.
 BOOT_SET = ["index.html", "the_board.js", "the_board.wasm", "the_board.data",
+            "darkroom_worker.js", "darkroom.js", "darkroom.wasm",   # PRODUCTS_0 — the darkroom opens beside the program (DARKROOM_1); a first-visit cost, recorded
             "veil_poster.jpg", EXHIBITION_JSON]
 
 CF_LIMIT = 25 * 1024 * 1024        # Cloudflare Pages per-file
@@ -1163,7 +1164,7 @@ def main():
         print("  involved (PAIR_0, 5 Sep 2026).")
         print("  web/ holds outputs from two different links. Delete the three")
         print("  build files and build again, and READ THE BUILD'S OUTPUT:")
-        print("    del web\\the_board.js web\\the_board.wasm web\\the_board.data")
+        print("    del web\\the_board.js web\\the_board.wasm web\\the_board.data web\\darkroom.js web\\darkroom.wasm")
         print("    cmake --build --preset the-board-web")
         print("  dist/ is part-written and NOT deployable.")
         return 7

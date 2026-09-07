@@ -26,6 +26,7 @@ DIST = os.path.join(ROOT, "dist", "collection")
 
 FORBIDDEN = (
     "the_board.js", "the_board.wasm", "the_board.data",
+    "darkroom.js", "darkroom.wasm", "darkroom_worker.js",   # PRODUCTS_0 — the darkroom is the engine's too
     "organ_panel.js", "navigator.gpu", "requestAdapter",
     "emscripten", "EMSCRIPTEN",
 )
