@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `2dc89c6f18b4a5e482546b011c7bc174dea182dc` |
-| | SHUTTER_0 U2 — ledgers regenerated (gallery pin); OPEN.md: SHUTTER_0 open on master, the deviation and two findings registered |
+| source commit | `cc3413f99356b8d7718788894c91ce65b8e517f1` |
+| | DARKROOM_0 U2 — ledgers regenerated (gallery pin); OPEN.md: DARKROOM_0 open, the road priced, ruling 1 proven |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:ae3ea6da686ea31d30996560b1955795732f7089757733f0f3b5c99e8cb69ee4` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:bdf0efbc51d41cf20b1a66028fb8346d00df05cddde9e10505f30767a5c042af` |
