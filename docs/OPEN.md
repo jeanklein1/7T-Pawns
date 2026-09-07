@@ -2,6 +2,40 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## RIG_0 — THE TINT ARM LANDS, AND THE ROUTE A PROBE (landed on master; Jean's gates open)
+
+GATHER_0's ruling 6 is a tool now: `tools/gates/tint_arm/`, needing python3 and a
+Chromium and nothing else. And DARKROOM_0's Route A prerequisite has its verdict —
+OPEN in the browser, and closed to the program, which is the more useful half.
+
+| ruling | where it lives now |
+|---|---|
+| The Tint arm is the shader gate, on any machine with a Chromium | `tools/gates/tint_arm/tint_arm.py`; `T7_TINT` + `T7_CHROMIUM` |
+| The traps are written down, not remembered | `tools/gates/tint_arm/README.md` |
+| A gate that cannot lose is a report — two perturbations, both blessed by naga | the README's own section, re-run against the landed tool |
+| The Route A probe is a probe, not a gate | `tools/gates/tint_arm/probe_copy_external.py` |
+
+### Residuals — RIG_0
+
+- **THE PROBE'S VERDICT, both halves.** *Browser:* **OPEN** —
+  `copyExternalImageToTexture` takes an ImageBitmap into an `rgba8unorm` texture in the
+  rig, and the probe reads it back through a buffer and compares 64x64 texels against the
+  pattern it drew: **0 mismatches**. OPEN means the pixels were checked, not that no error
+  fired. *Program:* **CLOSED** — the vendored emdawnwebgpu C binding exposes exactly
+  `wgpuQueueAddRef`, `OnSubmittedWorkDone`, `Release`, `SetLabel`, `Submit`, `WriteBuffer`
+  and `WriteTexture`, and **no external-image copy of any kind**. So Route A as DARKROOM_0
+  sketched it has no C++ caller available: the copy would have to be issued from JS against
+  a texture the program owns — a larger seam than the one blit pipeline the residual
+  priced, and a fact that belongs in any Route A handoff before it is written.
+- **The arm is not wired into `dist.py` or any automatic run**, deliberately. It lights
+  only when `T7_TINT` names it, exactly as `wgsl_gate.py` already ruled, so a machine
+  without a Chromium keeps the naga arm and an honest DORMANT line.
+- **The rig is one Chromium per invocation** (launch, drive, terminate) — a few seconds.
+  Fine for a gate; if a future round wants it per-shader in a loop, the `Rig` class in
+  `tint_arm.py` is already the reusable half.
+- **`T7_CHROMIUM` is never guessed.** No default paths are probed, because a gate that
+  silently finds *a* browser is a gate that silently proves something about the wrong one.
+
 ## DARKROOM_0 — THE PICTURES DEVELOP OFF THE FRAME (landed on master; Jean's gates open)
 
 The stutter that survived SHUTTER_0 is a painting's arrival: one 1024² decode + pad +
@@ -153,11 +187,13 @@ gathers instead of sixteen bilinear taps, exact in the model. No pixel leaves.
   fire. The model reproduces exactly — max |pcf16 − pcf9| = 3.3306690738754696e-16 over
   the handoff's 20,000 positions, and 0.0 over an adversarial grid of exact texel centres,
   corners, half-texels and far-beyond-edge positions.
-- **The wrapper is not in the tree.** A gate tool is a mechanism, and this round's
-  authority table has `tools/wgsl_gate.py` as read-only, so nothing was added; the recipe
-  above is the whole of it. Landing it as `tools/gates/tint_arm/` would make ruling 6
-  runnable by CC on any machine with a Chromium, not only where a Dawn checkout lives —
-  Jean's call.
+- **The wrapper is not in the tree. — CLOSED at RIG_0**, which landed it as
+  `tools/gates/tint_arm/` and made it smaller on the way in: no node and no Playwright
+  (the DevTools protocol is spoken by a standard-library WebSocket client inside the
+  tool), and **no display** — which corrects the recipe below. Both `--headless=new` and
+  the old headless obtain a device on a `file://` page; headless was never the blocker,
+  `about:blank` was. The two perturbations are in its README and both were re-run against
+  the landed tool.
 
 ## MIP_0 — THE EXHIBITION'S CHAIN (landed on master; Jean's gates open)
 
