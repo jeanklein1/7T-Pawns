@@ -4665,7 +4665,7 @@ fn sample_spot_shadow_pcf(world_pos: vec3<f32>, geo_normal: vec3<f32>, light_ind
         for (var y: i32 = -2; y <= 1; y++) {
             for (var x: i32 = -2; x <= 1; x++) {
                 let offset = vec2(f32(x) + 0.5, f32(y) + 0.5) * texel_size;
-                shadow += textureSampleCompare(
+                shadow += textureSampleCompareLevel(
                     shadow_map,
                     shadow_sampler,
                     clamped_uv + offset,
@@ -4677,7 +4677,7 @@ fn sample_spot_shadow_pcf(world_pos: vec3<f32>, geo_normal: vec3<f32>, light_ind
         for (var y: i32 = -2; y <= 1; y++) {
             for (var x: i32 = -2; x <= 1; x++) {
                 let offset = vec2(f32(x) + 0.5, f32(y) + 0.5) * texel_size;
-                shadow += textureSampleCompare(
+                shadow += textureSampleCompareLevel(
                     spot_shadow_map,
                     shadow_sampler,
                     clamped_uv + offset,
@@ -4713,6 +4713,17 @@ fn calc_spot_light(world_pos: vec3<f32>, normal: vec3<f32>, geo_normal: vec3<f32
 
         // Diffuse
         let ndotl = max(dot(normal, light_dir), 0.0);
+
+        // GATHER_0 — THE GATE BEFORE THE TAPS. Attenuation, cone and facing
+        // multiply the shadow below; where their product is zero the
+        // sixteen taps were bought for nothing, and indoors that is most
+        // of the room for most of the lights. Skipping them is 0 x
+        // anything: pixel-identical. The sun's kernel was always gated this
+        // way (calc_directional_light, ndotl). The sample under this branch
+        // is non-uniform control flow, so the spot kernel takes its level
+        // explicitly — Tint enforces that rule; naga does not (MIP_0's
+        // report), which is why the gate's tint arm is lit at U0.
+        if (attenuation_sq * cone_falloff * ndotl <= 0.0) { continue; }
 
         // Per-light shadow from atlas tile
         let shadow = sample_spot_shadow_pcf(world_pos, geo_normal, i);
