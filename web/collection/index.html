@@ -255,6 +255,15 @@
 
 <div class="view" id="view" tabindex="-1" role="dialog" aria-modal="true" aria-label="Work">
   <div class="stage"><img id="big" alt=""></div>
+  <style>
+    /* ZOOM_0 — the picture under the fingers. The transform is authored
+       by the script below; touch-action none hands the stage's gestures
+       to it (the page cannot scroll while the overlay is open anyway). */
+    .stage { touch-action: none; overflow: hidden; }
+    #big { transform-origin: 0 0; will-change: transform; }
+    .view[data-zoomed] .zone { display: none; }   /* edges pan, not step, while zoomed */
+    .view[data-zoomed] .stage { cursor: grab; }
+  </style>
   <div class="plate">
     <span><b id="plate-title"></b> <span id="plate-meta"></span></span>
     <span class="pos" id="plate-pos"></span>
@@ -434,6 +443,7 @@ function show(i, push) {
   current = i;
 
   view.style.setProperty('--tone', t.style.getPropertyValue('--tone'));
+  zoomReset();                                  /* ZOOM_0 — a step lands unzoomed */
   const src = bigSrc(t);
   if (stepping && !quiet.matches) {
     /* fade out, swap, fade in — a hard cut between works is a slide show */
@@ -469,11 +479,89 @@ function step_i(d) {
   return tiles.indexOf(sibs[j]);
 }
 
+/* ── ZOOM_0 — wheel, pinch, drag, double-tap ─────────────────────────
+   One transform on #big: translate(x,y) scale(s), origin 0 0, anchored
+   so the point under the cursor (or the pinch midpoint) stays put.
+   s=1 is the lightbox exactly as it was — zones step, arrows step; any
+   s>1 hides the zones (they would steal the pan) and the drag pans.
+   THE ARROWS ALWAYS STEP, zoomed or not, and every show() resets, so an
+   arrow out of a zoom lands on the neighbour unzoomed. shut() resets too.
+   No library, no state beyond {s,x,y}.
+
+   `stage` is bound ABOVE (restRect reads it) and reused here. A second
+   top-level `const stage` is a SyntaxError, and a SyntaxError in this one
+   <script> takes the grid and the filters down with the lightbox. */
+const zoom = { s: 1, x: 0, y: 0 };
+const Z_MAX = 6;
+function zoomApply() {
+  big.style.transform = zoom.s === 1 ? '' :
+    'translate(' + zoom.x + 'px,' + zoom.y + 'px) scale(' + zoom.s + ')';
+  if (zoom.s > 1) view.setAttribute('data-zoomed', '');
+  else view.removeAttribute('data-zoomed');
+}
+function zoomReset() { zoom.s = 1; zoom.x = 0; zoom.y = 0; zoomApply(); }
+function zoomTo(s2, cx, cy) {                  /* keep (cx,cy) fixed on screen */
+  s2 = Math.min(Z_MAX, Math.max(1, s2));
+  const r = stage.getBoundingClientRect();
+  const px = cx - r.left, py = cy - r.top;     /* pointer in stage space */
+  const ox = big.offsetLeft, oy = big.offsetTop;   /* layout origin of #big */
+  /* image-space point under the pointer, at the current transform */
+  const ix = (px - ox - zoom.x) / zoom.s;
+  const iy = (py - oy - zoom.y) / zoom.s;
+  zoom.x = px - ox - ix * s2;
+  zoom.y = py - oy - iy * s2;
+  zoom.s = s2;
+  if (zoom.s === 1) { zoom.x = 0; zoom.y = 0; }
+  zoomApply();
+}
+stage.addEventListener('wheel', e => {
+  if (current < 0) return;
+  e.preventDefault();
+  zoomTo(zoom.s * (e.deltaY < 0 ? 1.2 : 1 / 1.2), e.clientX, e.clientY);
+}, { passive: false });
+stage.addEventListener('dblclick', e => {
+  e.preventDefault();
+  zoomTo(zoom.s > 1 ? 1 : 2.5, e.clientX, e.clientY);
+});
+const pts = new Map();
+let pinch0 = 0, pinchS = 1;
+stage.addEventListener('pointerdown', e => {
+  if (current < 0) return;
+  pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  stage.setPointerCapture(e.pointerId);
+  if (pts.size === 2) {
+    const [a, b] = [...pts.values()];
+    pinch0 = Math.hypot(a.x - b.x, a.y - b.y);
+    pinchS = zoom.s;
+  }
+});
+stage.addEventListener('pointermove', e => {
+  const p = pts.get(e.pointerId);
+  if (!p) return;
+  if (pts.size === 2) {
+    const q = { x: e.clientX, y: e.clientY };
+    pts.set(e.pointerId, q);
+    const [a, b] = [...pts.values()];
+    const d = Math.hypot(a.x - b.x, a.y - b.y);
+    if (pinch0 > 0) zoomTo(pinchS * d / pinch0, (a.x + b.x) / 2, (a.y + b.y) / 2);
+  } else if (zoom.s > 1) {
+    zoom.x += e.clientX - p.x;
+    zoom.y += e.clientY - p.y;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    zoomApply();
+  }
+});
+['pointerup', 'pointercancel'].forEach(t => stage.addEventListener(t, e => {
+  pts.delete(e.pointerId);
+  if (pts.size < 2) pinch0 = 0;
+}));
+
 function shut(back) {
   if (current < 0) return;
   view.removeAttribute('open');
   document.body.style.overflow = '';
   big.removeAttribute('src');
+  zoomReset();                                  /* ZOOM_0 */
   current = -1;
   if (back) history.back();
   else history.replaceState(null, '', location.pathname);
@@ -486,13 +574,13 @@ tiles.forEach((t, i) => t.addEventListener('click', e => {
   show(i, true);
 }));
 
-view.querySelector('.zone.prev').addEventListener('click', () => show(step_i(-1), false));
-view.querySelector('.zone.next').addEventListener('click', () => show(step_i(1), false));
+view.querySelector('.zone.prev').addEventListener('click', () => { if (zoom.s === 1) show(step_i(-1), false); });
+view.querySelector('.zone.next').addEventListener('click', () => { if (zoom.s === 1) show(step_i(1), false); });
 document.getElementById('shut').addEventListener('click', () => shut(true));
 
 addEventListener('keydown', e => {
   if (current < 0) return;
-  if (e.key === 'Escape')     { e.preventDefault(); shut(true); }
+  if (e.key === 'Escape')     { e.preventDefault(); if (zoom.s > 1) zoomReset(); else shut(true); }   /* ZOOM_0 — Esc peels the zoom first */
   if (e.key === 'ArrowLeft')  { e.preventDefault(); show(step_i(-1), false); }
   if (e.key === 'ArrowRight') { e.preventDefault(); show(step_i(1), false); }
 });
