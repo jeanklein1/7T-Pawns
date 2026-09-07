@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `5ff1ba512b8d7ae321933e263df223b357d868fd` |
-| | POSTCARD_0 U2 — the postcard machine: the wall gains CopySrc, the staging buffer and its estate row, the face seam, copy at R11, map at R1, the take face watcher |
+| source commit | `47e9477b5387b1c75a039f037d9437d403055182` |
+| | POSTCARD_0 U5 — ledgers regenerated (state/gallery/cartridge/spine_state pins; ORGAN.md line shift); OPEN.md: POSTCARD_0 open on claude/postcard-0, residuals registered |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:0fd3d13a8183d7e3ac3e89e418cab480dc968037c9b9f3f1bd07f81d236989aa` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:2bc1578db984038ed6c2d8e4912d81af53c12441f6904159a16db96edba8fc7b` |
