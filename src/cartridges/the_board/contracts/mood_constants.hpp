@@ -106,16 +106,27 @@ inline constexpr WorldDrawSurface WORLD_DRAW_TABLE = {
                                                            // normalises
     { 0.42f, 0.43f, 0.10f, 0.05f },          // cathedral / quartet / gallery / sanctum (ATRIUM_13 — the
                                              // atrium's weight-0 fifth went with its row)
+    // SKYGLASS_0 — A PORTAL WEARS ITS DESTINATION'S SKY (Jean's stamp).
+    // Every OUTDOOR row below is a value-stamp of that mood's drawn-regime
+    // clear_color CENTRE (contracts/spine_state.hpp, ATMOS_*.regime[0]) —
+    // a twin by stamp, named as one: deriving would need an include edge
+    // this header's own banner forbids (the ORGAN includes this file), so
+    // if a sky moves, re-stamp its row. The indoor pair are authored
+    // olives (no sky to wear); the atrium keeps white — it is the way
+    // home, not an open world, and Jean's rule names the open worlds.
     {
-        { 0.72f, 0.45f, 0.70f },  // mood 0  open_sunset     — lilac, deepened
-        { 0.95f, 0.55f, 0.15f },  // mood 1  indoor_flat     — orange
-        { 0.95f, 0.80f, 0.20f },  // mood 2  indoor_vault    — yellow
-        { 0.85f, 0.20f, 0.15f },  // mood 3  finite_outdoor  — red
-        { 0.80f, 0.85f, 0.95f },  // mood 4  open_night      — moon silver (ATMOS_1)
-        { 0.20f, 0.85f, 0.85f },  // mood 5  open_noon       — cyan (ATMOS_1)
-        { 1.00f, 1.00f, 1.00f },  // mood 6  atrium          — white: the way home (ATRIUM_1)
+        { 0.95f, 0.70f, 0.45f },  // mood 0  open_sunset     — its sky (ATMOS_SUNSET clear centre)
+        { 0.42f, 0.44f, 0.16f },  // mood 1  indoor_flat     — olive green (authored)
+        { 0.56f, 0.53f, 0.11f },  // mood 2  indoor_vault    — olive, yellow forward (authored)
+        { 0.85f, 0.78f, 0.72f },  // mood 3  finite_outdoor  — its sky (ATMOS_FINITE_DAY clear centre)
+        { 0.02f, 0.03f, 0.06f },  // mood 4  open_night      — its sky (ATMOS_NIGHT drawn-row clear centre).
+                                  //         Near-black on purpose: a hole into night. If the door
+                                  //         reads as void against dark ground, the flip is a lift
+                                  //         toward the fog centre {0.11,0.12,0.15} — one line.
+        { 0.45f, 0.68f, 0.95f },  // mood 5  open_noon       — its sky (ATMOS_NOON drawn-row clear centre)
+        { 1.00f, 1.00f, 1.00f },  // mood 6  atrium          — white: the way home (ATRIUM_1, kept)
     },
-    { 0.35f, 0.55f, 0.90f },      // back-portal — blue
+    { 0.62f, 0.61f, 0.57f },      // back-portal — cement (SKYGLASS_0; was blue)
 };
 
 inline WorldDrawSurface WORLD_DRAW_LIVE = WORLD_DRAW_TABLE;
