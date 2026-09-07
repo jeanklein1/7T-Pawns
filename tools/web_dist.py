@@ -196,7 +196,7 @@ ever-expanding world that hangs Jean Klein's paintings.</p>
 <p style="margin:0"><a style="color:#e8e6e0" href="/">world</a> &middot;
 <a style="color:#e8e6e0" href="/collection/">gallery</a> &middot;
 <a style="color:#e8e6e0" href="/writings/">writings</a> &middot;
-<a style="color:#e8e6e0" href="/about/">about</a></p>
+<a style="color:#e8e6e0" href="/about/">home</a></p>
 </div>
 </body>
 </html>

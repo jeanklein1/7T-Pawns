@@ -106,6 +106,7 @@ def nav_html(side, base, indent="    "):
     # DOORS_4 — WRITE ME IS A BOX, NOT A PAGE BAND, and it lives in the
     # site's sandwich under the links. The engine keeps its own pane.
     if side == "site":
+        items.append(follow_box_html(indent=indent))       # Jean's ask, after DOORS_4
         items.append(write_box_html(base, indent=indent))
     return ("\n" + indent).join(items)
 
@@ -113,6 +114,24 @@ def nav_html(side, base, indent="    "):
 def menu_css():
     with open(MENU_CSS, encoding="utf-8") as fh:
         return fh.read().rstrip("\n")
+
+
+def follow_box_html(indent="  "):
+    """Follow for more, as a small box inside the site sandwich — Jean's
+    ask, and the same shape the write box already uses so the sandwich
+    holds two boxes and not two idioms.
+
+    DOORS_4 ruling 3 put the social links in ONE place, the engine's
+    Follow pane, and took the nav off the three site footers. This does
+    NOT undo that: the footers stay gone (ruling 8 keeps the name and the
+    colophon where they are) and the links come back INSIDE THE MENU,
+    which is where Jean asked for them. web/follow.json is still their
+    one home; follow_html() is still the one renderer."""
+    lines = ['<details class="followbox">', '  <summary>Follow for more</summary>']
+    for line in follow_html(indent="  ").split("\n"):
+        lines.append("  " + line.strip())
+    lines.append('</details>')
+    return ("\n" + indent).join(lines)
 
 
 def write_box_html(base, indent="  "):
@@ -161,7 +180,7 @@ def write_box_html(base, indent="  "):
 
 
 def follow_html(indent="    "):
-    """Follow the work — the five external links, one home (web/follow.json).
+    """Follow for more — the five external links, one home (web/follow.json).
     External links, so the collection gate exempts them (https:).
     It WAS the website's bottom menu (DOORS_3); since DOORS_4 ruling 3 it
     has ONE reader, the engine's Follow pane. web_dist injects it;

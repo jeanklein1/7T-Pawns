@@ -2,6 +2,65 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## HOME_0 — THE PAGE IS CALLED HOME, AND FOLLOW FOR MORE COMES BACK TO THE MENU (landed on master; Jean's gates open)
+
+Two asks from Jean, straight after DOORS_4. No handoff — his words are
+the order.
+
+| ruling | where it lives now |
+|---|---|
+| Everywhere it said *About*, it says **Home** | `web/routes.json`'s label; the veil's second door; the noscript line; the pane head and its door-out; the page's `<title>`; the 404 page |
+| *Follow for more* returns to the site menu | `tools/routes.py` `follow_box_html`, appended to every site nav beside the write box |
+| One name for one thing | the engine's pane and route label follow his words too — *Follow for more*, not *Follow the work* |
+
+**THE WORD MOVED; THE PATH AND THE ID DID NOT.** `/about/` is still the
+address, `about` is still the route id and the pane id, `web/about/` is
+still the directory and `about_dist.py` still its builder. That is the
+precedent DOORS_4 set when the collection became Gallery: labels are
+words, ids are wiring, and a rename that touches the wiring breaks links
+that are already printed and already shared.
+
+**FOLLOW CAME BACK TO THE MENU, NOT TO THE FOOTERS.** Jean asked for it
+"on the menu", and that is where it went — a nested `<details>` beside
+the write box, the same idiom, so the sandwich holds two boxes and not
+two ideas. DOORS_4 ruling 8's footers stay gone. `web/follow.json` is
+still the one home and `follow_html()` still the one renderer; it now has
+two places it is shown instead of one.
+
+**AND THE LABEL IS JEAN'S, EVERYWHERE.** He wrote *Follow for more*; the
+tree said *Follow the work*. Rather than leave the program calling one
+thing by two names — the exact drift DOORS_4 spent a round removing — his
+words won on both sides: the site box's summary, the engine's route label
+and pane head, the `aria-label`, the docstring and COPY.md. Zero
+occurrences of the old phrase survive. **He confirmed the wording
+mid-round.**
+
+### Residuals — HOME_0
+
+- **The Gallery page's `<title>` still says *collection*** while the home
+  page's now says *home*. DOORS_4 left it deliberately (ruling 5 scoped
+  Gallery to "everywhere a menu speaks", and a `<title>` is not a menu);
+  this round changed the about page's title because Jean's ask was
+  "across the program". The two pages are now inconsistent with each
+  other. **One word, Jean's gate.** `COPY.md` points at both.
+- **The home page drops its own menu item**, as every page does
+  (DOORS_1: a menu does not list where you are). Worth a look on Jean's
+  visual gate — "Home" is the one label a visitor may expect to be
+  present everywhere, and the rule that hides it is older than the name.
+- **The site menu is now two boxes tall when both are open.** Measured at
+  1100, 390 and 320 px: the dropdown fits, scrolls inside its own 80vh
+  cap and never gives the page a sideways scrollbar. **A visual row for
+  Jean** all the same — it is a longer menu than it was.
+
+**Witnessed:** 45/45 across `/about/`, `/collection/` and `/writings/` in
+Chromium — no page says *About*, every other page's menu says *Home* and
+points at `../about/`, the follow box sits in the menu closed by default,
+its summary reads *Follow for more*, its five links are https with
+`rel="me noopener"` opening in a new tab, no footer carries a follow nav,
+both boxes open at once, and the dropdown never overflows. Plus the
+DOORS_4 drives re-run unchanged: 20/20, 17/17, 13/13, 62/62, 14/14,
+12/12, 2/2.
+
 ## DOORS_4 — MOBILE AND DESKTOP, WRITINGS, GALLERY, AND THE COPY MAP (landed on master; Jean's gates open)
 
 Seven units. The round opened on a bug Jean could see and no test could:

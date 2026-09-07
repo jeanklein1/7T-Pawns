@@ -120,6 +120,22 @@
 .menu .writebox .row button { display: inline-block; width: auto; text-align: center; font: inherit; color: var(--ink); background: none; border: 1px solid #33323c; border-radius: 2px; padding: 6px 12px; cursor: pointer; }
 .menu .writebox .said { display: block; margin-top: 6px; color: var(--dim); font-style: italic; min-height: 1.4em; }
 
+/* ── Follow for more, a box beside the write box (Jean, after DOORS_4) ─
+   The two share a summary idiom deliberately: the sandwich holds two
+   boxes, not two ideas. The links are ordinary menu items underneath —
+   `.menu > nav a` already makes them full-width blocks, which is right
+   here (it was wrong only for the Send BUTTON, which is not a menu
+   item), so they need padding and nothing else. */
+.menu .followbox { border-top: 1px solid #1f1e26; margin-top: 6px; padding: 4px 14px 6px; }
+.menu .followbox > summary { list-style: none; cursor: pointer; color: var(--dim); padding: 7px 0; }
+.menu .followbox > summary::-webkit-details-marker { display: none; }
+.menu .followbox > summary:hover, .menu .followbox > summary:focus-visible, .menu .followbox[open] > summary { color: var(--ink); }
+.menu .followbox a { display: block; padding: 6px 0; color: var(--dim); text-decoration: none; }
+.menu .followbox a:hover, .menu .followbox a:focus-visible { color: var(--ink); }
+/* the write box follows it, so it keeps the divider and the box above
+   does not double it up */
+.menu .followbox + .writebox { margin-top: 0; }
+
 /* ── DOORS_4 — HIDDEN MEANS HIDDEN, EVERYWHERE IN THE SANDWICH ───────
    .pane dl sets display:grid, and an AUTHOR display beats the UA's
    [hidden]{display:none} at any specificity, because origin outranks

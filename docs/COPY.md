@@ -14,29 +14,38 @@ survive at the end of every build.
 | --- | --- |
 | the wordmark, `the_board` | `#veil .stack .wordmark` (and the card's own) |
 | the veil's status line, first words | `#status`'s markup — *Waking the world* |
-| the veil's two buttons — *The Board*, *About* | `#veil .entry` |
+| the veil's two buttons — *The Board*, *Home* | `#veil .entry` |
 | loading words — *Waking your device*, *Reserving memory*, *Compiling shaders*, *Hanging the paintings*, *Growing the terrain*, *Settling the ground*, *Opening the doors* | `classify()`'s `say(...)` calls. NO GPU TALK HERE (DOORS_3 ruling 1) |
 | *Ready* | `ENTRY_WORDS` |
 | the fallback card — *Welcome.* + Jean's sentences | `fallback()`'s `showCard(...)` |
 | the fallback card's button — *Click here* | the `#card` markup, `a.btn.alt` |
 | the floor / lost / watchdog cards | their own `showCard(...)` calls; `CONTACT` is the address they offer |
 | the noscript paragraph | the `<noscript>` markup |
-| pane heads and notes — The Board, Controls, Gallery, Writings, About, Write me, Follow the work | each `.pane[data-pane="..."]`'s markup |
+| pane heads and notes — The Board, Controls, Gallery, Writings, Home, Write me, Follow for more | each `.pane[data-pane="..."]`'s markup |
 | The Board's messages | `.pane[data-pane="board"] .pane-note` — **Jean's** |
 | the two platform lists | `.pane[data-pane="controls"] dl.ctl` — **words are placeholders, THE FACTS ARE THE TREE'S**: `direction/input.hpp` and `console.hpp`. Change words, never facts |
 | the platform chips — *Mobile*, *Desktop* | the `.seg` markup. `CONTROLS_DEFAULT` pins which opens first |
 | the live row — *Take a photo*, *Fullscreen*, *Sound: on/off* | `#ctlPhoto` / `#ctlFull` / `#ctlSound` |
-| door-out labels — *Open Gallery in a new tab →*, *Read on the website →*, *About, on the website →* | each pane's `a[data-out]` |
+| door-out labels — *Open Gallery in a new tab →*, *Read on the website →*, *Home, on the website →* | each pane's `a[data-out]` |
 | *The writings did not answer.* / *The collection did not answer.* / *The website did not answer.* | `loadWritings()` / `loadPeek()` / `loadAbout()` catch arms |
 | *Sending…* / *Sent. Thank you.* / *It did not go through* | the `#mini` submit handler |
 
 ## Menus on every page
-- **the labels** — `web/routes.json` (`label`; the `id` is wiring, never words)
+- **the labels** — `web/routes.json` (`label`; the `id` is wiring, never
+  words — `about` still means the page a menu calls **Home**, and
+  `collection` the one it calls **Gallery**)
 - **the write box's words** — `tools/routes.py` `write_box_html`
+- **the follow box's summary** (*Follow for more*) — `tools/routes.py`
+  `follow_box_html`. It shows on the SITE pages only; the engine has the
+  Follow pane instead, and both take their five links from
+  `web/follow.json`.
 
 ## The social links — `web/follow.json`
-Five entries, label + https href. One home; the engine's Follow pane is
-the only reader (DOORS_4 ruling 3).
+Five entries, label + https href. One home, one renderer
+(`routes.follow_html`), two places shown: the engine's Follow pane and
+the site sandwich's *Follow for more* box. Not in any footer — DOORS_4
+ruling 3 took them off the three site footers and they did not go back
+there.
 
 ## The writings — `assets/writings/NN_slug.txt`
 First line the title, blank line, then the body. Blank lines break
@@ -44,7 +53,9 @@ stanzas; line breaks inside a stanza are kept. **Filename order is page
 order.** One new file is one new writing, on the page and in the engine's
 pane both. `tools/about_dist.py` `build_writings` is the reader.
 
-## The about page — `web/about/index.html`
+## The home page — `web/about/index.html`
+*(the directory and the route id stay `about` — wiring; only the word a
+visitor reads became **Home**)*
 - the statement — `header.statement`
 - the three door labels and blurbs — `.doors`
 - **the world door's picture**: drop the file at `assets\about\world.jpg`

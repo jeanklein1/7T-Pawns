@@ -3,8 +3,8 @@
   { "id": "controls",   "label": "Controls",        "engine": "pane" },
   { "id": "collection", "label": "Gallery",         "href": "/collection/",   "engine": "pane" },
   { "id": "writings",   "label": "Writings",        "href": "/writings/",     "engine": "pane" },
-  { "id": "about",      "label": "About",           "href": "/about/",        "engine": "pane" },
+  { "id": "about",      "label": "Home",            "href": "/about/",        "engine": "pane" },
   { "id": "write",      "label": "Write me",        "side": "engine", "engine": "pane" },
-  { "id": "follow",     "label": "Follow the work", "side": "engine", "engine": "pane" },
+  { "id": "follow",     "label": "Follow for more", "side": "engine", "engine": "pane" },
   { "id": "world",      "label": "The world",       "href": "/",  "side": "site", "return": true }
 ]
