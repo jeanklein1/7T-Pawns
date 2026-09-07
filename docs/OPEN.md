@@ -1559,6 +1559,14 @@ at 0.050 against the ceiling of 8. Fresh-world reading.
 0.91, tectonic 0.75 -> 0.975 (+30% each); amplitude untouched (the
 named flip if the stamp meant height). Fresh-world reading.
 
+**SHIFT_0 — the aura on Shift.** Either Shift, down-edge with a held
+guard (REPEAT would flicker under a resting finger); key 3 dark; the
+glass tap unchanged; four door-naming comments follow the move — and a
+fifth the campaign did not name: `console/organ_params.inc`'s Pawn-Aura
+banner carried the twin of the `driver_surface.hpp` sentence, and took
+the same correction, so no comment in the tree still points at key 3
+except the two that record it as history on purpose.
+
 ## SKIRT_WELD_1/P — THE PERIMETER SKIRT HANGS FROM THE BASE BAND (landed; one seam held)
 
 Sibling of SKIRT_WELD_1 on 7T-Music, landed there at `be0eb28f`. The patch
