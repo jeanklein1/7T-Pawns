@@ -666,36 +666,26 @@ inline void encode_main_opaque(MachineCtx* c, Enc& pass,
     // still pay the pass's vertex work and leave the meter reading no
     // difference. The mask rests open; a cleared bit is a measurement.
     const uint32_t dmask = c->gpuState_.config().draw_mask;
-
-    c->renderer_.begin_patch_terrain_plan(pass);   // OIL_1 U13: one SetPipeline for the three slots
-    // DOMESDAY_0 B3: the per-slot list window rides the vertex-buffer
-    // offset now (FC_SEG_A/B/C — the same segments the retired g2:62
-    // bind windows carved), delivered to the VS as @location(0).
-    if (dmask & DrawBit::TERRAIN_A)
-    c->renderer_.draw_patch_terrain_plan_slot(pass,
-        c->gpuState_.scene_state_group(),
-        c->gpuState_.visible_patch_indices_buffer(), FC_SEG_A_OFF, FC_SEG_A_BYTES,   // plan A window
-        c->gpuState_.patch_index_buffer(),           // full IB (zone-overlapped)
-        c->gpuState_.frustum_indirect_lod0(), 0);
-    if (dmask & DrawBit::TERRAIN_B)
-    c->renderer_.draw_patch_terrain_plan_slot(pass,
-        c->gpuState_.scene_state_group(),            // B5 (R2): the one scene group
-        c->gpuState_.visible_patch_indices_buffer(), FC_SEG_B_OFF, FC_SEG_B_BYTES,   // plan B window
-        c->gpuState_.patch_index_buffer_cap_only(),  // cap-only IB (clean LOD0)
-        c->gpuState_.frustum_indirect_lod0(), 20);
-    if (dmask & DrawBit::TERRAIN_C)
-    c->renderer_.draw_patch_terrain_plan_slot(pass,
-        c->gpuState_.scene_state_group(),            // B5 (R2): the one scene group
-        c->gpuState_.visible_patch_indices_buffer(), FC_SEG_C_OFF, FC_SEG_C_BYTES,   // plan C window
-        c->gpuState_.patch_index_buffer_lod1(),      // LOD1 IB (culled at last)
-        c->gpuState_.frustum_indirect_lod0(), 40);
-    // DOMESDAY_1 B5 (R2): the PlanB/PlanC windows collapsed into the
-    // one scene group, so plan C left the RIGHT group bound — the old
-    // restore is retired with the groups it restored from.
-
+    // RAZOR_0 — THE BACKGROUND DRAWS LAST. The terrain plan used to lead
+    // this list; it now follows the table and the gallery fork (below).
+    // Order among opaques is immaterial to the PICTURE — every draw is
+    // depth-tested — and material to the COST: the terrain is the largest
+    // surface on screen, and every terrain fragment that an entity, a
+    // wall, a painting or the pawn will cover was shaded first (sixteen
+    // shadow taps, the lights, the fog) and then overwritten. Drawn after
+    // the occluders, those fragments fail the depth test before the
+    // fragment shader runs. Pixel-identical by construction; the meter's
+    // main_pass row is the witness.
+    //
+    // The plan used to bind the scene state at group 2 for everything that
+    // followed it; now that it follows, the table's first draw needs that
+    // bind stated here rather than inherited. (binding_gen's P-seq
+    // simulation caught the inheritance at the rehearsal — the gate's job.)
+    pass.SetBindGroup(2, c->gpuState_.scene_state_group());
     // The drawable table — main members, canonical order. All opaque and
-    // depth-tested, so order among them is immaterial; this is where the
-    // ribbon's ordinal drift dies (it now draws with the entities, not late).
+    // depth-tested, so order among them is immaterial to the picture; this
+    // is where the ribbon's ordinal drift dies (it now draws with the
+    // entities, not late).
     // The ribbon is a table MEMBER, so its bit is subtracted through the
     // bind rather than by skipping the table it shares.
     DrawBind b{ /*shadow=*/false, /*ribbon_bit=*/(dmask & DrawBit::RIBBON) != 0u };
@@ -736,6 +726,35 @@ inline void encode_main_opaque(MachineCtx* c, Enc& pass,
     pass.SetBindGroup(2, c->gpuState_.scene_state_group());
     pass.SetBindGroup(3, c->gpuState_.scene_textures_group());
     }
+    // RAZOR_0 — THE TERRAIN PLAN, moved here from the head of the list
+    // (see the ruling at the top). The three draws and their windows are
+    // untouched; only their place in the order moved. They bind their own
+    // scene group, so the restore above serves them as it serves the orbs.
+    c->renderer_.begin_patch_terrain_plan(pass);   // OIL_1 U13: one SetPipeline for the three slots
+    // DOMESDAY_0 B3: the per-slot list window rides the vertex-buffer
+    // offset now (FC_SEG_A/B/C — the same segments the retired g2:62
+    // bind windows carved), delivered to the VS as @location(0).
+    if (dmask & DrawBit::TERRAIN_A)
+    c->renderer_.draw_patch_terrain_plan_slot(pass,
+        c->gpuState_.scene_state_group(),
+        c->gpuState_.visible_patch_indices_buffer(), FC_SEG_A_OFF, FC_SEG_A_BYTES,   // plan A window
+        c->gpuState_.patch_index_buffer(),           // full IB (zone-overlapped)
+        c->gpuState_.frustum_indirect_lod0(), 0);
+    if (dmask & DrawBit::TERRAIN_B)
+    c->renderer_.draw_patch_terrain_plan_slot(pass,
+        c->gpuState_.scene_state_group(),            // B5 (R2): the one scene group
+        c->gpuState_.visible_patch_indices_buffer(), FC_SEG_B_OFF, FC_SEG_B_BYTES,   // plan B window
+        c->gpuState_.patch_index_buffer_cap_only(),  // cap-only IB (clean LOD0)
+        c->gpuState_.frustum_indirect_lod0(), 20);
+    if (dmask & DrawBit::TERRAIN_C)
+    c->renderer_.draw_patch_terrain_plan_slot(pass,
+        c->gpuState_.scene_state_group(),            // B5 (R2): the one scene group
+        c->gpuState_.visible_patch_indices_buffer(), FC_SEG_C_OFF, FC_SEG_C_BYTES,   // plan C window
+        c->gpuState_.patch_index_buffer_lod1(),      // LOD1 IB (culled at last)
+        c->gpuState_.frustum_indirect_lod0(), 40);
+    // DOMESDAY_1 B5 (R2): the PlanB/PlanC windows collapsed into the
+    // one scene group, so plan C leaves the RIGHT group bound for the
+    // orbs — the old restore is retired with the groups it restored from.
     if (dmask & DrawBit::ORBS)
         render_orbs(orbs_state_, &orbs_deps_, pass);
 
