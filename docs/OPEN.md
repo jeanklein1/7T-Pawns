@@ -1567,6 +1567,16 @@ banner carried the twin of the `driver_surface.hpp` sentence, and took
 the same correction, so no comment in the tree still points at key 3
 except the two that record it as history on purpose.
 
+**ARROWS_0 — arrow-key look.** Four held flags in WASD's grammar;
+apply_arrow_look pumps ±1.6 rad/s onto look_az/el at the signal fill;
+mouse kept, signs matched, one channel downstream. The signs were
+checked against the mouse, not assumed — a rightward drag does
+`look_az_delta -= dx` and `look_right` does `az -= 1`; a downward drag
+does `look_el_delta += dy` and `look_down` does `el += 1`; the thumb's
+look uses the same convention, so all three hands agree. The dt is
+`dtPending_`, settled four lines above the pump: the frame's dt as the
+GPU will see it, capped at 100 ms, so a stall cannot spin the camera.
+
 ## SKIRT_WELD_1/P — THE PERIMETER SKIRT HANGS FROM THE BASE BAND (landed; one seam held)
 
 Sibling of SKIRT_WELD_1 on 7T-Music, landed there at `be0eb28f`. The patch
