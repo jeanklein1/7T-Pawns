@@ -61,7 +61,9 @@ BASE = "tools/gates/glaw2/baseline.json"
 #               taken in uniform control flow and handed to the explicit-
 #               gradient sample; textureSample and textureSampleLevel were
 #               in the recorded set).
-PREDECLARED = {"array", "atomicSub", "dpdx", "dpdy", "textureSampleGrad"}
+#   textureGatherCompare  predeclared builtin function (the GATHER_0 pcf
+#               kernels are its first use).
+PREDECLARED = {"array", "atomicSub", "dpdx", "dpdy", "textureSampleGrad", "textureGatherCompare"}
 
 IDENT = re.compile(r"[A-Za-z_]\w*")
 CALL = re.compile(r"\b([A-Za-z_]\w*)\s*\(")

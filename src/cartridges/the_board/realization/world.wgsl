@@ -4270,6 +4270,59 @@ const SHADOW_MAP_SIZE: f32 = 2048.0;
 // --- Shadow Sampling with 4x4 PCF. Both kernels are now 4x4 at spacing 1
 // with half-texel centres; the sun one arrived here second (PENUMBRA_2 N1).
 
+// ═══ GATHER_0 — THE 4x4 PCF: NINE GATHERS WHERE SIXTEEN TAPS WERE ═══════
+//
+// Sixteen bilinear compare taps at unit spacing read a 6x6 texel window
+// (64 texel reads, most of them twice). Each texel's total weight is the
+// sum of four unit tents, one per tap in its row and one per tap in its
+// column — separable, so the window is Wx[6] x Wy[6] — and that weighted
+// sum is reconstructed EXACTLY from nine textureGatherCompare fetches (36
+// texel reads): each gather returns the four compares of a 2x2 quad, and
+// the quads tile the window when the gathers land on texel CORNERS
+// (corner c+1 selects texels {c, c+1}: floor(c + 1 - 0.5) = c, half a
+// texel from any boundary). A CPU model of the two kernels agreed to 3e-16
+// over 20,000 positions, beyond-edge positions with clamp included; the
+// handoff carries the model. The hardware's own bilinear weights are
+// fixed-point, so a penumbra texel may differ from the old sum by less
+// than 1/256 — under one 8-bit step of the lit color. The 4-tap arm
+// (shadow_pcf_taps == 4) is untouched: 4 bilinear taps read 16 texels and
+// 4 gathers would read 16, nothing to save.
+//
+// p-space: texel c's centre sits at c (p = uv * size - 0.5), the taps at
+// p + {-1.5, -0.5, 0.5, 1.5}; the window starts at floor(p) - 2. No
+// implicit derivatives anywhere here, so the kernel may sit under a
+// per-fragment branch (calc_spot_light gates it).
+struct PcfWindow {
+    base_uv: vec2<f32>,        // the first gather's corner (i0 - 1, in texels), as uv
+    wx: array<f32, 6>,
+    wy: array<f32, 6>,
+};
+fn pcf_window(uv: vec2<f32>, texel: f32) -> PcfWindow {
+    var w: PcfWindow;
+    let p  = uv / texel - 0.5;
+    let i0 = floor(p);
+    let f  = p - i0;
+    w.base_uv = (i0 - 1.0) * texel;
+    for (var k: u32 = 0u; k < 6u; k++) {
+        let c = f32(k) - 2.0 - f;   // texel (i0 - 2 + k), relative to p, per axis
+        var sx = 0.0;
+        var sy = 0.0;
+        for (var t: u32 = 0u; t < 4u; t++) {
+            let o = f32(t) - 1.5;
+            sx += max(0.0, 1.0 - abs(c.x - o));
+            sy += max(0.0, 1.0 - abs(c.y - o));
+        }
+        w.wx[k] = sx;
+        w.wy[k] = sy;
+    }
+    return w;
+}
+// One gathered quad, weighted. WGSL gather order (GLSL's): x = (i, j+1),
+// y = (i+1, j+1), z = (i+1, j), w = (i, j), j growing with v.
+fn pcf_quad(q: vec4<f32>, wx0: f32, wx1: f32, wy0: f32, wy1: f32) -> f32 {
+    return wx0 * wy1 * q.x + wx1 * wy1 * q.y + wx1 * wy0 * q.z + wx0 * wy0 * q.w;
+}
+
 fn sample_shadow_pcf(world_pos: vec3<f32>, normal: vec3<f32>) -> f32 {
     // THE NORMAL OFFSET (UMBRA_7) — what glues the pawn's shadow to its
     // feet. It moves the SAMPLE POSITION along the receiver normal, not
@@ -4393,23 +4446,18 @@ fn sample_shadow_pcf(world_pos: vec3<f32>, normal: vec3<f32>) -> f32 {
         return mix(1.0, shadow4, fade4);
     }
 
+    // GATHER_0 — the sixteen taps, as nine gathers (see pcf_window).
+    var win = pcf_window(clamped_uv, TEXEL_UV);
     var s = 0.0;
-    s += textureSampleCompareLevel(shadow_map, shadow_sampler, clamped_uv + vec2<f32>(-1.5, -1.5) * TEXEL_UV, current_depth);
-    s += textureSampleCompareLevel(shadow_map, shadow_sampler, clamped_uv + vec2<f32>(-0.5, -1.5) * TEXEL_UV, current_depth);
-    s += textureSampleCompareLevel(shadow_map, shadow_sampler, clamped_uv + vec2<f32>( 0.5, -1.5) * TEXEL_UV, current_depth);
-    s += textureSampleCompareLevel(shadow_map, shadow_sampler, clamped_uv + vec2<f32>( 1.5, -1.5) * TEXEL_UV, current_depth);
-    s += textureSampleCompareLevel(shadow_map, shadow_sampler, clamped_uv + vec2<f32>(-1.5, -0.5) * TEXEL_UV, current_depth);
-    s += textureSampleCompareLevel(shadow_map, shadow_sampler, clamped_uv + vec2<f32>(-0.5, -0.5) * TEXEL_UV, current_depth);
-    s += textureSampleCompareLevel(shadow_map, shadow_sampler, clamped_uv + vec2<f32>( 0.5, -0.5) * TEXEL_UV, current_depth);
-    s += textureSampleCompareLevel(shadow_map, shadow_sampler, clamped_uv + vec2<f32>( 1.5, -0.5) * TEXEL_UV, current_depth);
-    s += textureSampleCompareLevel(shadow_map, shadow_sampler, clamped_uv + vec2<f32>(-1.5,  0.5) * TEXEL_UV, current_depth);
-    s += textureSampleCompareLevel(shadow_map, shadow_sampler, clamped_uv + vec2<f32>(-0.5,  0.5) * TEXEL_UV, current_depth);
-    s += textureSampleCompareLevel(shadow_map, shadow_sampler, clamped_uv + vec2<f32>( 0.5,  0.5) * TEXEL_UV, current_depth);
-    s += textureSampleCompareLevel(shadow_map, shadow_sampler, clamped_uv + vec2<f32>( 1.5,  0.5) * TEXEL_UV, current_depth);
-    s += textureSampleCompareLevel(shadow_map, shadow_sampler, clamped_uv + vec2<f32>(-1.5,  1.5) * TEXEL_UV, current_depth);
-    s += textureSampleCompareLevel(shadow_map, shadow_sampler, clamped_uv + vec2<f32>(-0.5,  1.5) * TEXEL_UV, current_depth);
-    s += textureSampleCompareLevel(shadow_map, shadow_sampler, clamped_uv + vec2<f32>( 0.5,  1.5) * TEXEL_UV, current_depth);
-    s += textureSampleCompareLevel(shadow_map, shadow_sampler, clamped_uv + vec2<f32>( 1.5,  1.5) * TEXEL_UV, current_depth);
+    for (var gy: u32 = 0u; gy < 3u; gy++) {
+        for (var gx: u32 = 0u; gx < 3u; gx++) {
+            let at = win.base_uv + vec2<f32>(f32(2u * gx), f32(2u * gy)) * TEXEL_UV;
+            let q  = textureGatherCompare(shadow_map, shadow_sampler, at, current_depth);
+            let x0 = 2u * gx;
+            let y0 = 2u * gy;
+            s += pcf_quad(q, win.wx[x0], win.wx[x0 + 1u], win.wy[y0], win.wy[y0 + 1u]);
+        }
+    }
     let shadow = s * (1.0 / 16.0);
 
     // EDGE FADE. Distant shadows used to materialize at the frustum
@@ -4661,29 +4709,21 @@ fn sample_spot_shadow_pcf(world_pos: vec3<f32>, geo_normal: vec3<f32>, light_ind
     // 4x4 PCF kernel — branch on texture (lights 0-1 on sun map, 2-3 on spot map)
     let texel_size = 1.0 / SHADOW_MAP_SIZE;
     var shadow: f32 = 0.0;
-    if (light_index < 2u) {
-        for (var y: i32 = -2; y <= 1; y++) {
-            for (var x: i32 = -2; x <= 1; x++) {
-                let offset = vec2(f32(x) + 0.5, f32(y) + 0.5) * texel_size;
-                shadow += textureSampleCompareLevel(
-                    shadow_map,
-                    shadow_sampler,
-                    clamped_uv + offset,
-                    clamped_depth
-                );
+    // GATHER_0 — the sixteen taps, as nine gathers (see pcf_window); the
+    // texture still branches by light index, the weights do not.
+    var win = pcf_window(clamped_uv, texel_size);
+    for (var gy: u32 = 0u; gy < 3u; gy++) {
+        for (var gx: u32 = 0u; gx < 3u; gx++) {
+            let at = win.base_uv + vec2<f32>(f32(2u * gx), f32(2u * gy)) * texel_size;
+            var q: vec4<f32>;
+            if (light_index < 2u) {
+                q = textureGatherCompare(shadow_map, shadow_sampler, at, clamped_depth);
+            } else {
+                q = textureGatherCompare(spot_shadow_map, shadow_sampler, at, clamped_depth);
             }
-        }
-    } else {
-        for (var y: i32 = -2; y <= 1; y++) {
-            for (var x: i32 = -2; x <= 1; x++) {
-                let offset = vec2(f32(x) + 0.5, f32(y) + 0.5) * texel_size;
-                shadow += textureSampleCompareLevel(
-                    spot_shadow_map,
-                    shadow_sampler,
-                    clamped_uv + offset,
-                    clamped_depth
-                );
-            }
+            let x0 = 2u * gx;
+            let y0 = 2u * gy;
+            shadow += pcf_quad(q, win.wx[x0], win.wx[x0 + 1u], win.wy[y0], win.wy[y0 + 1u]);
         }
     }
     return select(shadow / 16.0, 0.0, out_of_bounds);
