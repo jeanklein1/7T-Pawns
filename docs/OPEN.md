@@ -2,6 +2,70 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## POSTCARD_0 — A PICTURE LEAVES THE WALL (on `claude/postcard-0`; Jean's gates open)
+
+The visitor before a picture takes it — a key, or a tap on the words the glass
+shows — and their own device keeps or sends it. DOORS_0's priced readback, built
+because Jean asked; the roll's miniatures now have their machine.
+
+| ruling | where it lives now |
+|---|---|
+| Before a picture is a CPU predicate: the zone, then the eye | `bodies/gallery.hpp` `pick_picture_before`, `TAKE_*` |
+| The badge is the affordance; on glass it is the door; P is the key | `web/index.html` `window.T7_POSTCARD`; `input.hpp` `request_take` |
+| One door, two mouths, folded at the boundary, refusals in words | `organ_boundary.inc` THE TAKE DOOR; `organ_registry.hpp` `gallery_take` / `take_take`; `cartridge.hpp` `request_postcard` |
+| The fifth readback: on demand, no generation guard (a moment, not a state) | `cartridge.hpp` POSTCARD MACHINE; R11 copy, R1 map |
+| The wall carries CopySrc; the staging is born on the first take | `state.hpp` `makeTextureArray("Exhibition"…)`, `ensure_postcard_readback_staging` |
+| RGBA and provenance cross once; the texel order stops at the seam | `core/postcard_face.hpp` |
+| The postcard is the picture as it hangs (uv crop; a photograph resampled to its hung aspect); JPEG 0.92 | `T7_POSTCARD.deliver` |
+| One hand-off for two cameras; the message leaves from the visitor's own mail | `window.T7_KEEP`; `#ctlPhoto` calls it |
+| The estate learns `.buffer =` as a copy target | `tools/binding_gen.py` `resource_reach`; `tools/binding_schema.py` `postcardReadbackStaging_` |
+
+### Residuals — POSTCARD_0
+
+- **The four `TAKE_*` numbers are control-panel material**, enrolled nowhere until a
+  measurement asks (the pilot's rule). The reach (2.2 × the larger side, min 8 wu)
+  was chosen to contain the pilot's standing point (1.4 ×, min 4) with margin; the
+  cone (45°) to hold a third-person eye that looks down at the pawn and past it.
+  Jean's eye may move any of them; each is one number.
+- **The badge's siting is top-centre**, on the argument that the ride face's spot is
+  where thumbs land and fall through by charter. A visual row for Jean on both
+  platforms; the idiom (inline `cssText`, built on first use) is T7_RIDE's.
+- **The badge's words and the key are copy** (`docs/COPY.md`): *take this painting* /
+  *take this photograph*, *· P* on a fine pointer; the two *Postcard* rows. Jean's
+  naming gate — the facts are the tree's.
+- **A delivered photograph's orientation is a visual row.** The readback hands the
+  texel array as stored (row 0 = top for a decoded painting and for a render
+  target); if a photograph arrives inverted, the fix is one vertical flip per kind
+  in `T7_POSTCARD.deliver`, not in the engine.
+- **P does nothing while the sandwich is open** — DOORS_2's guard withholds keydown
+  inside the open menu; the badge's click is outside `#menu` and still works.
+- **A larger postcard for authored work is a dist decision**, not a mechanism: the
+  exhibition ships at `PAINTING_CAP` 512 (the Gallery ships 640/1280 for its sets).
+  The postcard is the wall's copy, second-generation JPEG. Parked at Jean's gate.
+- **The roll's miniatures** (DOORS_2's other reader of this readback) would be one
+  more door with a slot parameter through the same machine and the same `deliver`;
+  the roll is parked (DOORS_3), so they are not built.
+- **The camera's residual stands**: the cursor orb appears in the visitor's PHOTO
+  (the frame). It cannot appear in a postcard (a texture).
+- **The estate census's `.buffer =` arm is INERT on this tree, and the handoff's
+  perturbation for it does not reproduce.** The handoff expected `--check` without
+  U2.6 to read `[FAIL] R-2 ... 1 orphan(s) — FLAGGED: postcardReadbackStaging_`.
+  Measured on a sidecar at the completed U2 (P18), it reads `PASS ... 96 rows,
+  0 orphan(s)` either way. `resource_reach`'s MapAsync arm already reaches the row:
+  it scans the whole parenthesised argument text of a `MapAsync(` call, and U2.11's
+  callback lambda sits inside those parentheses naming
+  `postcard_readback_staging()` at its `GetConstMappedRange`. The rehearsal most
+  likely perturbed between U2.10 and U2.11, where `dst.buffer =` is the only
+  mention. Measured further: `\.buffer\s*=` also matches the generated
+  `binding_surface.gen.inc`, so the arm adds a redundant "copy/write target" reason
+  to **56 rows already reached as bind-group entries**, and rescues **none** from
+  orphanhood. It is kept — it never removes a reach, and it is the honest spelling
+  of a copy target against the next texture->buffer copy that is not also mapped
+  here — but it is not load-bearing, and the sentence in its own comment in
+  `tools/binding_gen.py` claiming the perturbation is one the tree falsifies.
+  Correcting a claim of record is Claude's ruling, so the comment stands verbatim
+  and the finding is registered here.
+
 ## HOME_0 — THE PAGE IS CALLED HOME, AND FOLLOW FOR MORE COMES BACK TO THE MENU (landed on master; Jean's gates open)
 
 Two asks from Jean, straight after DOORS_4. No handoff — his words are
@@ -557,8 +621,9 @@ reader concludes U2 was skipped.
 - **The readback (exhibition texture → CPU)** is the one mechanism that would
   yield BOTH miniatures of the world's photographs in the menu AND "the
   world's own photographs sent to the visitor". Priced at DOORS_0's recon (a
-  fifth readback machine, a channel swap, a megabyte a shot). Not built until
-  a measurement asks. Note for whoever prices it again: `surfaceConfig_.usage`
+  fifth readback machine, a channel swap, a megabyte a shot). BUILT at POSTCARD_0
+  (the texture readback, on demand); the roll's miniatures remain unbuilt because
+  the roll is parked. Note for whoever prices it again: `surfaceConfig_.usage`
   is **never assigned** in `console.hpp` — it keeps `RenderAttachment` only,
   so there is no `COPY_SRC` on the swapchain texture and the C++-side fallback
   needs that line changed before anything else.
@@ -589,6 +654,7 @@ reader concludes U2 was skipped.
   the engine's half and skips the gate guarding the other one.
 - Email-to-self of the visitor's photo through `api/message` (Resend takes
   attachments) is possible and is an open relay unless gated; not built.
+  POSTCARD_0 ruling 7: the share sheet is the mail path; the site sends nothing.
 - Copy: The Board's sentence and its three suggestions, the pane sentences,
   the send/fail words, and every control row's WORDS (their facts are the
   tree's).
