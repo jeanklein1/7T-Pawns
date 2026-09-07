@@ -66,6 +66,72 @@ because Jean asked; the roll's miniatures now have their machine.
   Correcting a claim of record is Claude's ruling, so the comment stands verbatim
   and the finding is registered here.
 
+### What the round found — POSTCARD_0
+
+Six things the handoff stated that the tree does not back, or states for the wrong
+reason. None is a HALT class (no file unreachable, no blob stale), so all of U1–U5
+was applied verbatim and every one is registered here instead. The gate table is
+green at the tip either way.
+
+- **`note()` IS NOT GLOBAL, so all three of the new shell guards are dead — and the
+  visitor's camera lost a diagnostic.** `web/index.html` has two inline `<script>`
+  blocks. Block 1 is wrapped `(function () { 'use strict'; ... })();` and declares
+  `function note(text)` INSIDE that IIFE; nothing assigns `window.note`. Block 0's
+  top level is global scope, and that is where `window.T7_KEEP` and
+  `window.T7_POSTCARD` live. So `typeof note === 'function'` — written three times
+  in the new code (T7_KEEP's `say`, the badge's click fallback, `deliver`'s `say`) —
+  is ALWAYS false, and every postcard diagnostic reaches `console.log` and never
+  `record()` or the `#t7card` panel. Confirmed by reading and again under node.
+  The consequence is not only cosmetic: **U4.2 is a narrow regression.** Before the
+  hoist, a `navigator.share` rejection or a throw in the download arm was reported
+  by `note(...)` from inside block 1, where it was in scope, and reached the field
+  diagnostic set (IOS_5's own permanent section, above). After the hoist those same
+  two paths run inside T7_KEEP in block 0 and reach only the console — which on the
+  phone, where the share sheet actually lives, is the one place nobody can read.
+  `#ctlPhoto`'s other two arms (`toBlob` null, the outer `catch`) still call `note`
+  directly and are unaffected. THE FIX IS ONE LINE, and it is Jean's to take: add
+  `window.note = note;` beside the declaration in block 1, after which all three
+  guards start telling the truth and the regression closes with them.
+- **The estate census's `.buffer =` arm is inert, and its perturbation does not
+  reproduce** — the long entry in the residuals above.
+- **P arrives untranslated, but not for the reason the MECHANISM AUDIT gives.** It
+  reads "`inject_key_event` converts A–Z to characters only", which implies P is
+  spared; P (80) is squarely inside `GLFW_KEY_A..GLFW_KEY_Z`, so
+  `event.character = 'P'` IS written. What makes the key work is a different fact:
+  `event.key = key;` is unconditional, and `.character` is written in five places in
+  `console.hpp` and **read nowhere in the tree** — the dispatch routes on
+  `event.key` (`on_key_down(&input_deps_, event.key, ...)`). P works; the stated
+  reason does not. Recorded so no one repairs a non-problem or mistakes `.character`
+  for a usable second channel.
+- **`GLFW_KEY_P` is the one key in the switch with no `#ifndef` fallback.**
+  `input.hpp`'s GLFW KEY CODE FALLBACKS block guards fourteen codes — KP_8,
+  KP_DECIMAL, LEFT/RIGHT_CONTROL, CAPS_LOCK, 4, 9, W, A, S, D, R, V, SPACE — and P
+  is not among them. It is an asymmetry, not a defect: `input.hpp` includes
+  `<GLFW/glfw3.h>` itself and both resolutions define `GLFW_KEY_P` as 80 (the TU
+  gate passes, which proves the stub path). One `#ifndef` restores the symmetry.
+- **`Module._gallery_take` is the shell's first direct export access.** Every other
+  C-ABI reach in `web/` goes through `cwrap` — `index.html`'s own `abi()` helper and
+  `organ_panel.js`'s eighteen sites. There is no `EXPORTED_FUNCTIONS` list to add
+  the name to and `EMSCRIPTEN_KEEPALIVE` alone attaches it, so the call is sound;
+  but it is a new idiom in this shell rather than the established one, and its
+  failure mode is the printed note the handoff wrote for it. The P key is unaffected
+  either way — that is what two independent mouths buy.
+- **`camera_pose_` is ONE FRAME STALE, by the tree's own banner.** U2.12 reads "the
+  pose R1 just harvested"; `contracts/spine_state.hpp` says of `CameraPose`: "ONE
+  FRAME STALE ... the copy is encoded at R11 and mapped at R1 of the following
+  frame." Both the badge and `request_postcard` read it, so the picture named at the
+  press is chosen from a pose one frame old. The handoff already prices this
+  ("the badge and the take can never disagree by more than a frame"); the banner's
+  phrasing is what overstates. No consequence at frame rate.
+- **`bodies/gallery.hpp` cannot see `CameraPose` on its own.** Its transitive include
+  closure is twenty files and does not reach `contracts/spine_state.hpp`; the only
+  `CameraPose` it names for itself is the forward declaration in
+  `contracts/entity_types.hpp`. Completeness comes from COHORT ORDER — `cartridge.hpp`
+  includes the definition before the body. This is pre-existing (`gallery_unwatched`
+  already dereferences a `CameraPose`), and `pick_picture_before` is simply its
+  second reader; G-LAW 1 and the TU gate are green. Registered because the file
+  cannot be compiled standalone and nothing in it says so.
+
 ## HOME_0 — THE PAGE IS CALLED HOME, AND FOLLOW FOR MORE COMES BACK TO THE MENU (landed on master; Jean's gates open)
 
 Two asks from Jean, straight after DOORS_4. No handoff — his words are
