@@ -7985,6 +7985,13 @@ fn terrain_normal_at(xz: vec2<f32>, qi: QueryInputs) -> vec3<f32> {
 
 // --- Pawn ground resolve
 //
+// FREECLIMB_0 TRIAL — CURRENTLY UNCALLED. The one call site
+// (behavior_player_controlled's ground arm) bypasses this function for
+// the duration of Jean's trial; the law is on probation, not struck, and
+// everything below remains the exact machinery a revert of the trial
+// commit restores to service. W4-2's defended-site row stands because
+// the defended thing stands.
+//
 // Two policies, not one:
 //   POLICY_WALKER       gives the resolved standing height (returned y).
 //                       The pawn rides aura-lifted ground, so its y must
@@ -8432,15 +8439,29 @@ fn behavior_player_controlled(agent_in: AgentState) -> AgentState {
                 agent.pos_y = y_air;
             }
         } else {
-            // THE GROUND'S LAW, as ever.
-            let resolved = pawn_ground_resolve(vec2(agent.pos_x, agent.pos_z), prev_xz, prev_y, qi);
-            agent.pos_x = resolved.x;
-            agent.pos_y = resolved.y;
-            agent.pos_z = resolved.z;
-            if (resolved.w < 0.5) {
-                agent.vel_x = 0.0;
-                agent.vel_z = 0.0;
-            }
+            // ── FREECLIMB_0 — THE SLOPE LAW IS ON TRIAL, NOT STRUCK ────
+            // Jean's stamp: a minor test, reversible at once. The law,
+            // pawn_ground_resolve and the tilt machinery stand in the file
+            // untouched, compiled and witnessed; THIS CALL SITE ALONE
+            // stops consulting them, so for the trial the ground's word is
+            // the walker snap and every grade is a stair — the same SHAPE
+            // of word agent_settle has always given the other bodies: a
+            // snap, not a resolve.
+            //
+            // NOT THE SAME POLICY, and the distinction is why this sentence
+            // is here. Agents snap through POLICY_WALKER_AGENT: the full
+            // GoL lift, the aura sampled externally. The pawn keeps its own
+            // POLICY_WALKER: GoL self-suppressed, the aura its scalar peak
+            // (contrib_pawn_aura_at_self's banner says why the pawn must
+            // not sample the grid at its own XZ). What the trial takes away
+            // is the SLOPE LAW that separated driver from driven — not the
+            // two contributors that still do.
+            //
+            // The happy path drops from two paired terrain queries to one
+            // single (the trial's whole compute saving, ~one thread).
+            // If the world reads wrong: git-revert THIS commit — nothing
+            // else moved, and the law resumes byte-identical.
+            agent.pos_y = query_ground_walker(vec2(agent.pos_x, agent.pos_z), qi);
         }
     }
 
