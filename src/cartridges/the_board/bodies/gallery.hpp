@@ -713,7 +713,17 @@ struct PhotographerState {
     // SHUTTER_0 — when the last capture FIRED, in TimeState seconds; the
     // spacing floor measures from here. Very negative: the first shot of a
     // session owes no spacing.
-    float last_capture_s = -1.0e9f;
+    //
+    // DOUBLE, BY PLUMB_0 B1, LIKE defer_since BELOW AND EVERY OTHER STAMP
+    // IN THE TREE THAT IS DIFFERENCED AGAINST TimeState::seconds. The
+    // handoff wrote float. A float STAMP does not stall the way PLUMB_0's
+    // float ACCUMULATOR did, but it quantises: the ulp of a float at the
+    // wall clock's magnitude is 0.031 s at four days (PLUMB_0's own "not a
+    // hypothetical" horizon), 0.25 s at thirty, 1.0 s at six months and
+    // 4.0 s at 485 days — at which point a 5-second floor cannot be
+    // measured at all. The piece is permanently hosted. One word, and the
+    // law that already governs the member two lines down governs this one.
+    double last_capture_s = -1.0e9;
     float next_threshold = PhotographerCaptureConfig::TRIGGER_DISTANCE_MEAN;
     uint32_t pending_shots = 0;
     float prev_point_x = 0.0f;
@@ -1681,7 +1691,7 @@ inline void update_photographer(GalleryState& gs, GalleryDeps* c, wgpu::Queue& q
 
         gs.photographer.defer_since = -1.0f;
         capture_snapshot(gs, c, px, pz, queue);
-        gs.photographer.last_capture_s = (float)now;   // SHUTTER_0 — the floor measures from the fire
+        gs.photographer.last_capture_s = now;   // SHUTTER_0 — the floor measures from the fire (double: PLUMB_0 B1)
         gs.photographer.pending_shots--;
         gs.photographer.frame_cooldown = PhotographerCaptureConfig::BURST_COOLDOWN_FRAMES;
         return;
