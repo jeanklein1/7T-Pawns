@@ -634,6 +634,51 @@
     // visitor's own), a download where it has not. No server, no address
     // to abuse, nothing the site sends on anyone's behalf. `tag` names
     // the caller in the log line only.
+    // ═══ DARKROOM_1 — THE DARKROOM: a Worker develops paintings off the frame ═══
+    // The program hands a held JPEG's bytes here (T7_DARKROOM.submit, from
+    // pump_authored_valve); the worker decodes, pads and chains them in its
+    // own wasm (darkroom.js, the same core/develop.hpp the program compiles);
+    // the reply's bytes are copied into the program's heap and handed back
+    // through t7_darkroom_done. If the worker cannot open, isOpen() says so
+    // and the program develops on its own thread, as it did before.
+    window.T7_DARKROOM = (function () {
+      var worker = null, ready = false, queue = [];
+      var ARGS = ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'];
+      function post(job) { worker.postMessage(job, [job.bytes.buffer]); }
+      function done(m) {
+        var M = window.Module;
+        if (!m.ok) { M.ccall('t7_darkroom_done', null, ARGS, [m.layer, 0, 0, 0, 0, 0, 0, 0]); return; }
+        var l0 = new Uint8Array(m.level0), ch = new Uint8Array(m.chain);
+        var p0 = M._malloc(l0.length); M.HEAPU8.set(l0, p0);
+        var pc = M._malloc(ch.length); M.HEAPU8.set(ch, pc);
+        M.ccall('t7_darkroom_done', null, ARGS, [m.layer, m.w, m.h, m.dw, m.dh, p0, pc, m.ms]);
+      }
+      return {
+        open: function (build) {
+          if (typeof Worker === 'undefined') return;
+          try {
+            worker = new Worker('darkroom_worker.js' + (build ? '?v=' + build : ''));
+          } catch (e) { worker = null; return; }
+          worker.onmessage = function (e) {
+            var m = e.data;
+            if (m.ready) { ready = true; while (queue.length) post(queue.shift()); return; }
+            done(m);
+          };
+          worker.onerror = function (e) {
+            console.log('[Darkroom] worker failed: ' + (e && e.message ? e.message : 'unknown') + ' — developing on the main thread');
+            worker = null; ready = false; queue = [];
+          };
+        },
+        isOpen: function () { return worker !== null; },
+        submit: function (layer, ptr, len, res, levels, bgra) {
+          var bytes = new Uint8Array(len);
+          bytes.set(window.Module.HEAPU8.subarray(ptr, ptr + len));
+          var job = { layer: layer, bytes: bytes, res: res, levels: levels, bgra: !!bgra };
+          if (ready) post(job); else queue.push(job);
+        }
+      };
+    })();
+
     window.T7_KEEP = function (blob, name, type, tag) {
       var say = (typeof note === 'function') ? note : function (t) { console.log(t); };
       try {
@@ -2195,6 +2240,7 @@
       if (/wasm|WebAssembly|memory/i.test(m)) fallback('wasm failed: ' + m);
     });
 
+    window.T7_DARKROOM.open(BUILD);   // DARKROOM_1 — the worker starts loading beside the program
     var s = document.createElement('script');
     s.src = 'the_board.js?v=' + BUILD;
     s.async = true;
