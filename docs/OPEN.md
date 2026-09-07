@@ -1577,6 +1577,42 @@ look uses the same convention, so all three hands agree. The dt is
 `dtPending_`, settled four lines above the pump: the frame's dt as the
 GPU will see it, capped at 100 ms, so a stall cannot spin the camera.
 
+**FREECLIMB_0 — the slope law on trial.** The one call site bypasses
+`pawn_ground_resolve`; the law stands compiled, witnessed and defended
+(W4-2 green, its trigger set unchanged); every grade is a stair for the
+trial; the happy path drops from two paired terrain queries to one single.
+**Revert = `3edd467f`** — `git revert --no-edit 3edd467f`, rebuild, and the
+law resumes byte-identical; nothing else moved in that commit. Priced
+follow-ups if the trial convicts: the 5.67 value stamp (three anchors) or
+the full strike (twenty-six, tool estate included).
+
+**The order's draft claimed one thing that is not true, and the banner as
+landed says the true one instead.** "Driver and driven share
+`agent_settle`'s physics for the first time" — they do not. `agent_settle`
+snaps through POLICY_WALKER_AGENT (`query_ground_walker_agent`: the full
+GoL lift, the aura sampled externally at the body's own XZ). The trial
+gives the pawn POLICY_WALKER (`query_ground_walker`: GoL self-suppressed
+under `pawn_gol_suppression`, the aura its scalar peak — and
+`contrib_pawn_aura_at_self`'s banner says why the pawn must not sample the
+grid at its own XZ: the directional bias reads as bobbing). What the trial
+takes away is the SLOPE LAW that separated driver from driven, not the two
+contributors that still do. Jean's reading 4 stands as written — both climb
+any grade now — but the symmetry it asks about is of SHAPE (a snap, not a
+resolve), not of policy.
+
+**Nine comments now point at a law nobody calls, and not one was touched.**
+`world.wgsl` names `pawn_ground_resolve` in nine comments outside its own
+banner: the steering band above `STEER_GAIN`, the occupier row's ONE
+consumer, the occupier's inline branchless note, the two "Typical
+consumers" rows on POLICY_WALKER and POLICY_WALKER_TILT, the paired-query
+note, THE WIRE, the LEAP_0 air-clock banner ("on the ground Y is a lookup
+and the wall is a grade"), and the player kernel's roster. The order
+counted them and chose ONE probation notice on the resolve's own banner
+over nine edits, because nine edits are nine seams the revert must cross.
+That is the right trade, recorded here so the next reader need not
+rediscover it: for the duration those nine describe a law on probation, and
+the notice at the function says so.
+
 ## SKIRT_WELD_1/P — THE PERIMETER SKIRT HANGS FROM THE BASE BAND (landed; one seam held)
 
 Sibling of SKIRT_WELD_1 on 7T-Music, landed there at `be0eb28f`. The patch
