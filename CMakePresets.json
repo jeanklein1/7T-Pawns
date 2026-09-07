@@ -52,17 +52,17 @@
     {
       "name": "the-board-web",
       "configurePreset": "the-board-web",
-      "targets": [ "the_board" ]
+      "targets": [ "the_board", "the_board_darkroom" ]
     },
     {
       "name": "the-board-web-meter",
       "configurePreset": "the-board-web-meter",
-      "targets": [ "the_board" ]
+      "targets": [ "the_board", "the_board_darkroom" ]
     },
     {
       "name": "the-board-web-debug",
       "configurePreset": "the-board-web-debug",
-      "targets": [ "the_board" ]
+      "targets": [ "the_board", "the_board_darkroom" ]
     }
   ]
 }
