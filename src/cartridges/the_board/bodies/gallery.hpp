@@ -1097,6 +1097,26 @@ struct GalleryState {
         std::vector<unsigned char> bytes;
     };
     std::vector<AuthoredHeld> authored_held;
+    // DARKROOM_1 — what the worker holds (by staging layer: a layer is claimed
+    // until released, so it is the job's name) and what it has developed,
+    // waiting to be hung one per frame. The buffers are this heap's, malloc'd
+    // by the shell on the worker's reply; the hang frees them.
+    struct AuthoredInflight {
+        uint32_t disk_index = 0;
+        std::string url;
+        bool active = false;
+    };
+    AuthoredInflight authored_inflight[Dim::STAGING_LAYERS];
+    struct AuthoredDeveloped {
+        uint32_t staging_layer;
+        uint32_t disk_index;
+        std::string url;
+        uint32_t width, height, dst_w, dst_h;
+        uint8_t* level0;
+        uint8_t* chain;
+        double develop_ms;
+    };
+    std::vector<AuthoredDeveloped> authored_developed;
     // The manifest is requested once per session, at the earliest
     // instant a GalleryState exists (the cartridge constructor).
     //
@@ -3184,7 +3204,90 @@ inline void load_authored_image_to_staging(GalleryState& gs, uint32_t staging_la
 // queue, and the old call site carried a thirty-line comment explaining
 // why that was survivable. It is a frame now. The exemption is gone, not
 // argued.
+// DARKROOM_1 — THE DARKROOM'S DOOR. window.T7_DARKROOM (index.html) owns a
+// Worker running src/darkroom/'s wasm; this thread hands it the held bytes
+// and later receives level 0 and the chain, developed, as malloc'd buffers
+// in this heap (t7_darkroom_done, below). No worker: the main-thread arm.
+inline bool darkroom_open() {
+#ifdef __EMSCRIPTEN__
+    return EM_ASM_INT({ return (window.T7_DARKROOM && window.T7_DARKROOM.isOpen()) ? 1 : 0; }) != 0;
+#else
+    return false;
+#endif
+}
+inline GalleryState* g_darkroom_gs = nullptr;   // bound by the pump; the worker's reply has no other way in
+
+extern "C" {
+// The worker's reply (index.html copies the developed bytes into this heap
+// and calls here). width == 0 is a failed decode — the same road the
+// main-thread arm's failure takes.
+EMSCRIPTEN_KEEPALIVE inline void t7_darkroom_done(uint32_t layer, uint32_t width, uint32_t height,
+                                                  uint32_t dst_w, uint32_t dst_h,
+                                                  uint8_t* level0, uint8_t* chain, double develop_ms) {
+    GalleryState* gsp = g_darkroom_gs;
+    if (!gsp || layer >= Dim::STAGING_LAYERS) { std::free(level0); std::free(chain); return; }
+    GalleryState& gs = *gsp;
+    GalleryState::AuthoredInflight in = gs.authored_inflight[layer];
+    gs.authored_inflight[layer] = GalleryState::AuthoredInflight{};
+    if (!in.active) { std::free(level0); std::free(chain); return; }
+    if (width == 0 || !level0 || !chain) {
+        std::cerr << "[Authored] Failed to develop: " << in.url << "\n";
+        std::free(level0); std::free(chain);
+        authored_fetch_release_slot(gs, layer, 0);
+        pump_authored_fetches(gs);
+        recount_authored_staged(gs);
+        return;
+    }
+    gs.authored_developed.push_back(GalleryState::AuthoredDeveloped{
+        layer, in.disk_index, in.url, width, height, dst_w, dst_h, level0, chain, develop_ms });
+}
+}
+
 inline void pump_authored_valve(GalleryState& gs, GPUState& gpu, wgpu::Queue& queue) {
+    // DARKROOM_1 — THE PEN DEVELOPS IN THE WORKER; THIS THREAD ONLY HANGS.
+    // Every held file goes to the darkroom the frame it is held (the worker
+    // develops in arrival order, one at a time, off this thread). What comes
+    // back is hung ONE PER FRAME, after the world has been seen — AUBADE
+    // U5c's law, unchanged; only the decode, the pad and the chain left the
+    // frame. The unit this thread pays per painting is now the WriteTexture.
+    if (darkroom_open()) {
+        g_darkroom_gs = &gs;
+        while (!gs.authored_held.empty()) {
+            GalleryState::AuthoredHeld h = std::move(gs.authored_held.front());
+            gs.authored_held.erase(gs.authored_held.begin());
+            gs.authored_inflight[h.staging_layer] = GalleryState::AuthoredInflight{ h.disk_index, h.url, true };
+#ifdef __EMSCRIPTEN__
+            EM_ASM({ window.T7_DARKROOM.submit($0, $1, $2, $3, $4, $5); },
+                   (int)h.staging_layer, h.bytes.data(), (int)h.bytes.size(),
+                   (int)Dim::PAINTING_RESOLUTION, (int)Dim::PAINTING_MIP_LEVELS,
+                   gpu.exhibition_is_bgra() ? 1 : 0);
+#endif
+        }
+        if (gs.authored_developed.empty()) return;
+        if (!t7::aubade_presented()) return;
+        GalleryState::AuthoredDeveloped d = std::move(gs.authored_developed.front());
+        gs.authored_developed.erase(gs.authored_developed.begin());
+        const auto t_up0 = std::chrono::steady_clock::now();
+        gpu.upload_developed(queue, d.staging_layer, d.level0, d.chain);
+        std::free(d.level0);
+        std::free(d.chain);
+        const double up_ms = std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - t_up0).count();
+        std::cout << "[Authored] Developed: " << d.url
+            << " (" << d.width << "x" << d.height << ")  staging " << d.staging_layer << "\n";
+        if constexpr (t7::INSTRUMENTS.frame_meter) {
+            // THE ROW DARKROOM_0 ASKED FOR: the develop, measured in the
+            // worker, and the hang, measured here — the two halves of the
+            // unit this campaign moved.
+            std::cout << "[METER] darkroom  develop=" << d.develop_ms << " ms (worker)"
+                      << "  hang=" << up_ms << " ms (main)  staging " << d.staging_layer << "\n";
+        }
+        authored_record_staged(gs, d.staging_layer, d.disk_index, d.width, d.height, d.dst_w, d.dst_h, -1.0);
+        gs.authored_staging[d.staging_layer].pending = false;
+        recount_authored_staged(gs);
+        return;
+    }
+    // THE MAIN-THREAD ARM (no darkroom): AUBADE U5c's valve, verbatim.
     if (gs.authored_held.empty()) return;
     // FIRST PRESENT, and the flag is the same latch the waterfall reads
     // (core/aubade.hpp) — one fact about the boot, one home, no second
