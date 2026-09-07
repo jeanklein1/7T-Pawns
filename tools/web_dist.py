@@ -74,7 +74,8 @@ def preset_files():
 # index.html is SOURCE (tracked); the other three are build output
 # (.gitignore'd). All four ship — but index.html is the only one that is
 # TRANSFORMED on the way (BUILDID_0), not copied.
-ARTIFACTS = ["index.html", "organ_panel.js", "the_board.js", "the_board.wasm", "the_board.data"]
+ARTIFACTS = ["index.html", "organ_panel.js", "the_board.js", "the_board.wasm", "the_board.data",
+             "darkroom_worker.js", "darkroom.js", "darkroom.wasm"]   # DARKROOM_1 — the worker and its wasm
 
 # ── BUILDID_0 — THE STALE PAIR ───────────────────────────────────
 # The three build files always move together on disk, but their URLs
@@ -212,7 +213,8 @@ ever-expanding world that hangs Jean Klein's paintings.</p>
 # writer's banner argues for. Nor are paintings/ or music/, which are
 # named without a version and can change under a constant name.
 IMMUTABLE_PATHS = ["the_board.js", "the_board.wasm", "the_board.data",
-                   "organ_panel.js"]
+                   "organ_panel.js",
+                   "darkroom_worker.js", "darkroom.js", "darkroom.wasm"]   # DARKROOM_1
 IMMUTABLE_RULE = "public, max-age=31536000, immutable"
 
 # ── AUBADE U7/U8 (RUL-E) — THE MUSIC LAW IS A SIZE LAW ──────────────

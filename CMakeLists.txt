@@ -319,7 +319,8 @@ if(EMSCRIPTEN)
         # panel would find Module.cwrap undefined and wait forever. The
         # cost is a few hundred bytes of glue, on every build, so that an
         # instrument does not need its own build configuration.
-        "-sEXPORTED_RUNTIME_METHODS=['ccall','cwrap']"
+        "-sEXPORTED_RUNTIME_METHODS=['ccall','cwrap','HEAPU8']"   # DARKROOM_1 — the shell copies developed bytes into this heap
+        "-sEXPORTED_FUNCTIONS=['_main','_malloc','_free']"        # DARKROOM_1 — and allocates them here; KEEPALIVE exports ride alongside
         "-sALLOW_MEMORY_GROWTH=1"
         "-sSTACK_SIZE=4MB"
         "-sFETCH"
@@ -342,6 +343,36 @@ if(EMSCRIPTEN)
         SUFFIX ".js"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/web"
         LINK_DEPENDS "${T7_WEB_SHADER}"
+    )
+
+    # ═══ DARKROOM_1 — THE DARKROOM WORKER'S WASM ═══════════════════════════
+    # A second, tiny program: stb_image + core/develop.hpp, nothing else, built
+    # for a Worker (ENVIRONMENT=worker, MODULARIZE so the worker script owns
+    # its instance). No FETCH, no filesystem, no main. It develops a painting
+    # off the main thread; the main program hangs what comes back. The same
+    # develop.hpp compiles into both, which is the whole point.
+    add_executable(the_board_darkroom
+        src/darkroom/darkroom.cpp
+        src/external/stb_image.cpp
+    )
+    target_include_directories(the_board_darkroom PRIVATE ${CMAKE_SOURCE_DIR}/src)
+    target_compile_options(the_board_darkroom PRIVATE ${T7_WEB_OPT})
+    target_link_options(the_board_darkroom PRIVATE
+        "-sMODULARIZE=1"
+        "-sEXPORT_NAME=createDarkroom"
+        "-sENVIRONMENT=worker"
+        "-sEXPORTED_FUNCTIONS=['_t7_develop','_malloc','_free']"
+        "-sEXPORTED_RUNTIME_METHODS=['HEAPU8','HEAPU32']"
+        "-sALLOW_MEMORY_GROWTH=1"
+        "-sINITIAL_MEMORY=33554432"
+        "-sFILESYSTEM=0"
+        "--no-entry"
+        ${T7_WEB_OPT}
+    )
+    set_target_properties(the_board_darkroom PROPERTIES
+        OUTPUT_NAME "darkroom"
+        SUFFIX ".js"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/web"
     )
 endif()
 
