@@ -26,6 +26,7 @@ survive at the end of every build.
 | the two platform lists | `.pane[data-pane="controls"] dl.ctl` — **words are placeholders, THE FACTS ARE THE TREE'S**: `direction/input.hpp` and `console.hpp`. Change words, never facts |
 | the platform chips — *Mobile*, *Desktop* | the `.seg` markup. `CONTROLS_DEFAULT` pins which opens first |
 | the live row — *Take a photo*, *Fullscreen*, *Sound: on/off* | `#ctlPhoto` / `#ctlFull` / `#ctlSound` |
+| the postcard badge — *take this painting* / *take this photograph* (*· P* on a keyboard) | `window.T7_POSTCARD`'s `set`, in the first script. THE FACT (which picture, and when) is the tree's: `bodies/gallery.hpp` `pick_picture_before`. The *Postcard* row of each platform list is copy too |
 | door-out labels — *Open Gallery in a new tab →*, *Read on the website →*, *Home, on the website →* | each pane's `a[data-out]` |
 | *The writings did not answer.* / *The collection did not answer.* / *The website did not answer.* | `loadWritings()` / `loadPeek()` / `loadAbout()` catch arms |
 | *Sending…* / *Sent. Thank you.* / *It did not go through* | the `#mini` submit handler |
