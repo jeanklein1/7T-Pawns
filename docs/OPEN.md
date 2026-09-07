@@ -2,6 +2,48 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## PLATE_0 — THE WALL AT 1024 (on `claude/plate-0`; Jean's gates open)
+
+Every painting array doubles its edge: the constant that PORT_5b cut to fit an old
+laptop reverses on Jean's stamp — the laptop left the audience, the stub masters are
+being replaced at this size, and the postcard ships the wall, so the wall's
+resolution is the program's public face. One constant, one dist cap, comment truth
+everywhere the old number was written down; and the take badge's doorstep pulled in.
+
+| ruling | where it lives now |
+|---|---|
+| `PAINTING_RESOLUTION` 512 → 1024; PORT_5b's reason kept as history beside it | `state.hpp` (the constant's banner carries both stamps) |
+| +339 MiB (+318 at MSAA 1): Exhibition 160, each staging 128, offscreen 4/16/16 | the boot card's `[GPU Budget]` rows — the witness |
+| Residency's witness is the floor, not a laptop | Jean's gate rows: Pixel and iPhone boot beside open tabs |
+| `PAINTING_CAP` 1024, `PAINTING_QUALITY` 88 (the postcard re-encodes at 0.92; q82 would survive two generations) | `tools/web_dist.py`; the cap gate enforces it on what lands |
+| Masters never upscale: an under-1024 master occupies less of its layer | the loader's `scale > 1 → 1` clamp, unchanged |
+| The badge's doorstep: reach 1.6 ×/min 6 wu, slack 0.25 — contains the pilot's stand-off at every span | `bodies/gallery.hpp` `TAKE_*` |
+
+### Residuals — PLATE_0
+
+- **No mipmaps on the painting arrays** (`mipLevelCount` 1), so a far painting
+  shimmers, and at 1024 it shimmers harder than the 512 softness used to hide.
+  The priced fix: the loader builds the chain on the CPU inside the pad/scale
+  body it already runs (authored), and one blit pass builds it for a promoted
+  photograph. A round of its own; the far-wall look is its gate.
+- **The boot decode quadruples** (stb, main thread). The `authored6` aubade mark
+  is the gate: if it crosses the READY floor, the road is the web-native one —
+  `createImageBitmap` (off-thread, hardware) + `copyExternalImageToTexture`,
+  retiring stb, the swap and the CPU pad for authored work. Measure first.
+- **The capture quadruples** (~10 → ~40 ms once per ceiling). The `Photographer
+  Snapshot` METER row on the Pixel is the gate. The priced arm if it says so: a
+  512 capture into the 1024 layer — LoadOp::Clear on the full layer (the
+  partial-write law's price, see `promote_to_exhibition`), viewport 512,
+  `uv_scale 0.5`. The machinery exists; no new mechanism until the row asks.
+- **If a floor phone refuses residency**, the levers in order: staging rings
+  32 → 28 (the `WALL_ART` assert's floor; saves 32 MiB — weak), the two-walls
+  split (photographs stay at 512 in their own array; returns 224 MiB of the
+  delta and the capture cost with it; prerequisite for compression), and
+  compressed textures (KTX2/Basis → BC7/ASTC; 1024 at ~1 MiB a layer). None
+  built until a phone speaks.
+- **`dist/paintings` grows ~4×** on re-encode; paintings stream progressively as
+  before, so the boot wire pays only for what hangs. No action.
+
 ## POSTCARD_0 — A PICTURE LEAVES THE WALL (on `claude/postcard-0`; Jean's gates open)
 
 The visitor before a picture takes it — a key, or a tap on the words the glass
@@ -23,10 +65,11 @@ because Jean asked; the roll's miniatures now have their machine.
 ### Residuals — POSTCARD_0
 
 - **The four `TAKE_*` numbers are control-panel material**, enrolled nowhere until a
-  measurement asks (the pilot's rule). The reach (2.2 × the larger side, min 8 wu)
-  was chosen to contain the pilot's standing point (1.4 ×, min 4) with margin; the
-  cone (45°) to hold a third-person eye that looks down at the pawn and past it.
-  Jean's eye may move any of them; each is one number.
+  measurement asks (the pilot's rule). PLATE_0 moved three on Jean's eye — reach
+  1.6 × the larger side, min 6 wu; slack 0.25 — keeping the invariant: the reach
+  contains the pilot's standing point (1.4 ×, min 4) at every span, so a walk
+  ends inside the zone. The cone (45°) holds a third-person eye that looks down
+  at the pawn and past it. Each is still one number.
 - **The badge's siting is top-centre**, on the argument that the ride face's spot is
   where thumbs land and fall through by charter. A visual row for Jean on both
   platforms; the idiom (inline `cssText`, built on first use) is T7_RIDE's.
@@ -39,9 +82,9 @@ because Jean asked; the roll's miniatures now have their machine.
   in `T7_POSTCARD.deliver`, not in the engine.
 - **P does nothing while the sandwich is open** — DOORS_2's guard withholds keydown
   inside the open menu; the badge's click is outside `#menu` and still works.
-- **A larger postcard for authored work is a dist decision**, not a mechanism: the
-  exhibition ships at `PAINTING_CAP` 512 (the Gallery ships 640/1280 for its sets).
-  The postcard is the wall's copy, second-generation JPEG. Parked at Jean's gate.
+- **A larger postcard for authored work — RESOLVED at PLATE_0**: the wall itself is
+  1024 (`PAINTING_CAP` 1024, q88), and the postcard ships the wall. The road past
+  1024 is compressed textures, registered under PLATE_0's residuals.
 - **The roll's miniatures** (DOORS_2's other reader of this readback) would be one
   more door with a slot parameter through the same machine and the same `deliver`;
   the roll is parked (DOORS_3), so they are not built.

@@ -5,18 +5,18 @@ Read-only: a census of the program's pass and submit surface.
 
 ## Provenance
 
-Last commit touching any scanned file: `5ff1ba512b8d7ae321933e263df223b357d868fd`
-(POSTCARD_0 U2 — the postcard machine: the wall gains CopySrc, the staging buffer and its estate row, the face seam, copy at R11, map at R1, the take face watcher)
+Last commit touching any scanned file: `83d8a6599ec93b62c78f35c118f08b376566167e`
+(PLATE_0 U3 — the badge's doorstep pulled in: reach 1.6x/min 6 wu (contains the pilot's 1.4x/4 at every span), slack 0.25 (before, not beside))
 
 | file scanned | sha256 |
 |---|---|
 | `src/cartridges/the_board/realization/render_passes.hpp` | `sha256:e4d6b62cb1d1936d57322d2c4ef4372bbc27dd1404a29117d9431938e9c84149` |
 | `src/cartridges/the_board/realization/renderer.hpp` | `sha256:bbcaedbb3b05fdc8fdc455f502591ff4ad7142c55fd3cea313a4806d9bf209a7` |
-| `src/cartridges/the_board/cartridge.hpp` | `sha256:4dcec800b0c3bb5586cb1d10b1a49170bac703b87e664a26a3388b3adda83f9b` |
+| `src/cartridges/the_board/cartridge.hpp` | `sha256:ddb81679cbcff0bd2e6ee7618ab1fab445b5ef13f043cfd0990d84346f854571` |
 | `src/cartridges/the_board/surface/patch_system.hpp` | `sha256:1be3569e8b942fccc6a5ad003a6f227b2c413897b33a947bdcfa986947653b3c` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:1946676d19b94cef38995eae403a307e3cecbb62eca3aa393c1b13815ef56504` |
 | `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
-| `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:2365f58bdb1bd5c8b15c6fcc6b65410a1bd8aec4fd7087313ff7595e6b6faded` |
+| `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:439c02137df0156b8e1c833874c3179606642d71e3a077c91aaae821cab3977c` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:9891302e1bf20ec4a71b8866d420725dc4405b8f99473ca04308465444a7a61d` |
 | `src/the_board.cpp` | `sha256:50142a5f4d5e5d7b73664b2e99c4fc9020182d56b5cba5ec2b7ae777ca8d66a0` |
 | `src/console/console.hpp` | `sha256:5d8cd68b06d1408fd080e48f5e5949301a6d682f85e4a81acaea170e3678b1f6` |
