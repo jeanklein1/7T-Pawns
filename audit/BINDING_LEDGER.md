@@ -30,10 +30,10 @@ only — `draw_orbs` is called from `bodies/orbs.hpp`, not from
 
 | caller file scanned | sha256 |
 |---|---|
-| `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:f71cc24c97f2e996a61c390bab0609fb91677e95d9ade4ff0c3c7be3f1240595` |
+| `src/cartridges/the_board/bodies/gallery.hpp` | `sha256:b7e3f694c6daca12980d91f654c750f5b6f25763735b668ca8aeb07f652f148f` |
 | `src/cartridges/the_board/bodies/gol_zones.hpp` | `sha256:1946676d19b94cef38995eae403a307e3cecbb62eca3aa393c1b13815ef56504` |
 | `src/cartridges/the_board/bodies/orbs.hpp` | `sha256:9891302e1bf20ec4a71b8866d420725dc4405b8f99473ca04308465444a7a61d` |
-| `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:bac566779a35e46048585b51426d4bfe7b971093ea5e38e9b0219150774b3fbf` |
+| `src/cartridges/the_board/bodies/pawn.hpp` | `sha256:1e6eaf0ca1eb8c73fb04febfa2f9292324235ce3fec6f57340c43b892f9fe782` |
 | `src/cartridges/the_board/cartridge.hpp` | `sha256:ddb81679cbcff0bd2e6ee7618ab1fab445b5ef13f043cfd0990d84346f854571` |
 | `src/cartridges/the_board/contracts/spine_state.hpp` | `sha256:4c787e487112a3fad549ccc25ef7b419fa2d53f11617c7ca4b9385606f5a0894` |
 | `src/cartridges/the_board/direction/mood.hpp` | `sha256:59ae34bcedba17d046538834a3d5be381b2ad971222a5f2bbb63ae85c48796cb` |
