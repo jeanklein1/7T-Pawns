@@ -2,6 +2,58 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## SKYGLASS_0 — A PORTAL WEARS ITS DESTINATION'S SKY (landed on master; Jean's gates open)
+
+The portal palette in `contracts/mood_constants.hpp` stops being seven authored
+hues and becomes, for the open worlds, a value-stamp of the sky behind the door.
+Outdoor rows carry their mood's drawn-regime `clear_color` CENTRE with the
+provenance named in-row; the two rooms are authored olives (no sky to wear); the
+atrium keeps white — the way home, not an open world; the back-portal goes blue
+to cement.
+
+| row | value | where it came from |
+|---|---|---|
+| mood 0 open_sunset | `0.95, 0.70, 0.45` | `ATMOS_SUNSET.regime[0].clear_color` |
+| mood 1 indoor_flat | `0.42, 0.44, 0.16` | authored olive |
+| mood 2 indoor_vault | `0.56, 0.53, 0.11` | authored olive, yellow forward |
+| mood 3 finite_outdoor | `0.85, 0.78, 0.72` | `ATMOS_FINITE_DAY.regime[0].clear_color` |
+| mood 4 open_night | `0.02, 0.03, 0.06` | `ATMOS_NIGHT.regime[0].clear_color` (the drawn row) |
+| mood 5 open_noon | `0.45, 0.68, 0.95` | `ATMOS_NOON.regime[0].clear_color` (the drawn row) |
+| mood 6 atrium | `1.00, 1.00, 1.00` | ATRIUM_1, kept |
+| back-portal | `0.62, 0.61, 0.57` | cement (was blue) |
+
+**All four stamps were checked against `contracts/spine_state.hpp`, not taken.**
+Each of the four outdoor values equals its `ATMOS_*.regime[0].clear_color` triple
+exactly, and the named flip for the night door — the fog centre
+`{0.11, 0.12, 0.15}` — is `ATMOS_NIGHT.regime[0].fog_color`, also exact. No
+`static_assert` in `spine_state.hpp` pins the palette (the drift asserts there
+pin mood ids and Atmosphere columns), so nothing but this register and the
+in-row provenance holds the twins together.
+
+**The stamp is a centre; two of the four skies draw around it.** Night's
+`clear_color_spread` is 0.25 and noon's is 0.08, so the sky a visitor stands
+under is a per-seed draw about the value the door wears. Sunset and
+finite_outdoor have spread 0 and match exactly. This is what "a twin by stamp"
+buys and what it does not: the door names the mood's sky, not the seed's.
+
+**Deriving is not merely forbidden — it is a cycle.** The banner says an
+include edge this header's own banner forbids. Stronger: `spine_state.hpp`
+already `#include`s `mood_constants.hpp` (for `MOOD_COUNT`, the ids and
+`PortalDestination`), so the reverse edge would be circular. The stamp is the
+only shape available, which is why the re-stamp instruction sits in the row.
+
+### Residuals — SKYGLASS_0
+- **Jean's eye is the gate.** The night portal at `0.02, 0.03, 0.06` against
+  night ground is the judgment call; the lift to the fog centre is one line, and
+  the row names it.
+- **If a sky moves, re-stamp its row.** Nothing enforces this. If it wants
+  enforcing, the cheapest witness is a row in the console gate comparing the four
+  triples to `MOOD_TABLE[...].atmos.regime[0].clear_color` — a `static_assert` in
+  `spine_state.hpp`, where both are already in scope, would cost one line and
+  close the gap. Not built: it is a gate, and a gate needs a row in CLAUDE.md and
+  a shown perturbation.
+
+
 ## DARKROOM_1 — THE DARKROOM WORKER (landed on master; Jean's gates open)
 
 A painting's develop — decode, pad, swap, chain — left the frame: a Web Worker runs a
