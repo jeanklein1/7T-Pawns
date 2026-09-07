@@ -10,6 +10,8 @@
 #include "cartridges/the_board/primitives/seed_utils.hpp"       // select_weighted (PhotographerState::sample_shot_type)
 #include "cartridges/the_board/contracts/wgpu_fwd.hpp"   // wgpu handle fwds (lockstep insurance)
 #include "external/stb_image.h"                                // stbi_load/stbi_image_free — authored painting loader (dependency named here)
+#include "core/develop.hpp"                                    // DARKROOM_1 — the one home for developing a painting
+#include <cstdlib>                                                // std::free — the darkroom's buffers
 #include "cartridges/the_board/contracts/entity_types.hpp"     // GallerySelection/GalleryPlacement (the boundary DTOs) + queue types
 
 // ─── gallery.hpp (HEADER: vocabulary + configs + state + decls) ──
@@ -2690,81 +2692,14 @@ inline void postcard_stem(const GalleryState& gs, uint32_t slot, char* out, size
 // second place for the frame's shape to disagree with its texture.
 // The caller owns `data` and frees it; the caller also prints the
 // "[Authored] Loaded:" line, because only the caller knows the name.
-inline void authored_stage_decoded_image(GalleryState& gs, GPUState& gpu, wgpu::Queue& queue,
-    uint32_t staging_layer, uint32_t disk_index,
-    const unsigned char* data, int width, int height) {
-    // AUBADE U1 — the decode window opens here. The stb decode itself
-    // happened in the caller; what this body costs is the SCALE and the
-    // PAD, which is main-thread pixel work by any name and belongs in the
-    // same number.
-    const auto t_decode0 = std::chrono::steady_clock::now();
+// DARKROOM_1 — the record, written when a staging layer becomes valid, by
+// whichever arm developed it. `stb_ms` is the main-thread decode's time
+// for AUBADE's accumulator (negative when the darkroom developed it: no
+// main-thread decode happened, and the accumulator is a main-thread fact).
+inline void authored_record_staged(GalleryState& gs, uint32_t staging_layer, uint32_t disk_index,
+                                   uint32_t width, uint32_t height, uint32_t dst_w, uint32_t dst_h,
+                                   double stb_ms) {
     constexpr uint32_t RES = Dim::PAINTING_RESOLUTION;
-    float scale = std::min((float)RES / width, (float)RES / height);
-    if (scale > 1.0f) scale = 1.0f;
-    uint32_t dst_w = std::min((uint32_t)(width * scale + 0.5f), RES);
-    uint32_t dst_h = std::min((uint32_t)(height * scale + 0.5f), RES);
-
-    std::vector<uint8_t> padded(RES * RES * 4, 0);
-    // DARKROOM_0 — AT SCALE 1 THE BILINEAR IS A COPY, BYTE FOR BYTE. Since
-    // PLATE_0 the dist caps every shipped painting at RES on its long side
-    // and this loader never scales UP, so `scale` is exactly 1.0 for every
-    // file that can reach here: src_xf == dx and src_yf == dy exactly, the
-    // fractions are exact zeros, v == data[i00] exactly, and (uint8_t)(v +
-    // 0.5f) is data[i00] again for every value 0..255. The four-tap float
-    // loop below was therefore computing a memcpy at ~1M texels x 4
-    // channels x 4 taps, on the main thread, once per painting, inside the
-    // frame — the largest single share of the arrival stall after the
-    // decode itself. The arm below it stays for the one case that can
-    // still need it: a master past the cap that reached dist by hand.
-    if (scale >= 1.0f) {
-        for (uint32_t dy = 0; dy < dst_h; ++dy)
-            std::memcpy(&padded[(size_t)dy * RES * 4],
-                        &data[(size_t)dy * (size_t)width * 4],
-                        (size_t)dst_w * 4);
-    } else {
-    for (uint32_t dy = 0; dy < dst_h; ++dy) {
-        float src_yf = (float)dy / scale;
-        uint32_t sy0 = (uint32_t)src_yf;
-        uint32_t sy1 = std::min(sy0 + 1, (uint32_t)(height - 1));
-        float fy = src_yf - sy0;
-        for (uint32_t dx = 0; dx < dst_w; ++dx) {
-            float src_xf = (float)dx / scale;
-            uint32_t sx0 = (uint32_t)src_xf;
-            uint32_t sx1 = std::min(sx0 + 1, (uint32_t)(width - 1));
-            float fx = src_xf - sx0;
-            uint32_t i00 = (sy0 * width + sx0) * 4;
-            uint32_t i10 = (sy0 * width + sx1) * 4;
-            uint32_t i01 = (sy1 * width + sx0) * 4;
-            uint32_t i11 = (sy1 * width + sx1) * 4;
-            uint32_t di = (dy * RES + dx) * 4;
-            for (int c = 0; c < 4; ++c) {
-                float v = (1 - fx) * (1 - fy) * data[i00 + c] + fx * (1 - fy) * data[i10 + c]
-                    + (1 - fx) * fy * data[i01 + c] + fx * fy * data[i11 + c];
-                padded[di + c] = (uint8_t)(v + 0.5f);
-            }
-        }
-    }
-    }   // DARKROOM_0 — the scale < 1 arm ends here
-
-    // MIP_0 — THE PAD IS THE EDGE, REPLICATED. The square beyond dst_w x
-    // dst_h was zero (transparent black). A chain averages 2x2 blocks, so
-    // at every coarser level the picture's border texels would blend with
-    // the pad and a dark rim would grow with distance. Replicating the last
-    // column and the last row across the pad makes every level's border
-    // blend with itself. The quads never sample the pad directly (uv runs 0
-    // to uv_scale) and the postcard crops it away (crop_w / crop_h), so
-    // nothing else moves.
-    if (dst_w > 0 && dst_h > 0) {
-        for (uint32_t dy = 0; dy < dst_h; ++dy) {
-            const uint8_t* edge = &padded[((size_t)dy * RES + (dst_w - 1)) * 4];
-            for (uint32_t dx = dst_w; dx < RES; ++dx)
-                std::memcpy(&padded[((size_t)dy * RES + dx) * 4], edge, 4);
-        }
-        for (uint32_t dy = dst_h; dy < RES; ++dy)
-            std::memcpy(&padded[(size_t)dy * RES * 4], &padded[(size_t)(dst_h - 1) * RES * 4], (size_t)RES * 4);
-    }
-    gpu.upload_authored_painting(queue, staging_layer, padded.data(), RES, RES);
-
     auto& rec = gs.authored_staging[staging_layer];
     rec.disk_index = disk_index;
     rec.aspect_ratio = (height > 0) ? (float)width / (float)height : 1.0f;
@@ -2798,9 +2733,8 @@ inline void authored_stage_decoded_image(GalleryState& gs, GPUState& gpu, wgpu::
     // the number that separates "the paintings did it" from a device-side
     // wait. Summed only before first present; after it, the question has
     // been answered and the add stops.
-    if (!t7::aubade_presented()) {
-        t7::aubade_stb() += std::chrono::duration<double, std::milli>(
-            std::chrono::steady_clock::now() - t_decode0).count();
+    if (!t7::aubade_presented() && stb_ms >= 0.0) {
+        t7::aubade_stb() += stb_ms;
     }
 
     // AUBADE U1 — THE SIXTH IS THE ONE THAT MATTERS. Six staged images is
@@ -2814,6 +2748,25 @@ inline void authored_stage_decoded_image(GalleryState& gs, GPUState& gpu, wgpu::
     std::cout << "[Authored] Scaled → " << dst_w << "x" << dst_h
         << " (aspect " << rec.aspect_ratio << ")\n";
 }
+inline void authored_stage_decoded_image(GalleryState& gs, GPUState& gpu, wgpu::Queue& queue,
+    uint32_t staging_layer, uint32_t disk_index,
+    const unsigned char* data, int width, int height) {
+    // DARKROOM_1 — THE MAIN-THREAD ARM. The fit, the pad (DARKROOM_0's copy,
+    // MIP_0's replicated edge), the swap and the chain moved to
+    // core/develop.hpp, the one home the darkroom worker compiles too; this
+    // arm runs only when no worker could be opened. Byte-identical to the
+    // loader it replaces — the handoff's native harness is the witness.
+    const auto t_decode0 = std::chrono::steady_clock::now();
+    constexpr uint32_t RES = Dim::PAINTING_RESOLUTION;
+    const t7::develop::Fit f = t7::develop::fit((uint32_t)width, (uint32_t)height, RES);
+    std::vector<uint8_t> padded;
+    t7::develop::pad(data, (uint32_t)width, (uint32_t)height, RES, f, padded);
+    gpu.upload_authored_painting(queue, staging_layer, padded.data(), RES, RES);
+    const double ms = std::chrono::duration<double, std::milli>(
+        std::chrono::steady_clock::now() - t_decode0).count();
+    authored_record_staged(gs, staging_layer, disk_index, (uint32_t)width, (uint32_t)height, f.dst_w, f.dst_h, ms);
+}
+
 
 
 // ═══ THE EXHIBITION ARRIVES OVER THE NETWORK ═════════════════════

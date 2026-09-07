@@ -29,6 +29,7 @@
 
 #include "core/instruments.hpp"                  // THE INSTRUMENTS DIAL: INSTRUMENTS.frame_meter gates the GPU half's creation + arming (compile-time, T7_INSTRUMENTS; default off)
 #include "core/boot_params.hpp"                  // DOMESDAY_2 B10: effective_msaa — boot-read sample count for the snapshot targets
+#include "core/develop.hpp"                  // DARKROOM_1 — the one home for developing a painting (the chain, the swap)
 #include "cartridges/the_board/demos/demo.hpp"   // ROSTER via the selected sentence (GPUState::init gates creation)
 #include "cartridges/the_board/realization/binding_registry.hpp"  // C6: bind::g0::* / bind::g1::* — the single source of truth for binding NUMBERS (the layout+group pair references one named const)
 #include "cartridges/the_board/surface/terrain_looks.hpp"          // THE TERRAIN_LOOKS PANEL (C++ room): palette quartet REST + motion/mode rest pins — boot init reads the panel
@@ -3193,71 +3194,56 @@ namespace t7 {
 
             // Upload an authored image into the unified painting texture array.
             // Handles R↔B swap if the array is in BGRA format (Windows/Dawn).
-            void upload_authored_painting(wgpu::Queue& queue, uint32_t layer,
-                const uint8_t* rgba_data, uint32_t width, uint32_t height)
+            // DARKROOM_1 — THE UPLOADER IS ONE FUNCTION: level 0 and the chain,
+            // already in the texel order the exhibition wants, arrive as bytes
+            // and go up as WriteTextures (level 0 then every chain level at
+            // develop::chain_offset). Whoever developed them — the darkroom
+            // worker (src/darkroom/) or this thread (upload_authored_painting,
+            // below: boot's solid fill and the no-worker fallback) — the bytes
+            // came out of core/develop.hpp, so the wall cannot depend on which.
+            void upload_developed(wgpu::Queue& queue, uint32_t layer,
+                const uint8_t* level0, const uint8_t* chain)
             {
-                bool need_swap = exhibition_is_bgra();   // POSTCARD_0 — one home for the texel order
-                std::vector<uint8_t> swapped;
-                const uint8_t* src = rgba_data;
-
-                if (need_swap) {
-                    uint32_t n = width * height * 4;
-                    swapped.resize(n);
-                    for (uint32_t i = 0; i < width * height; ++i) {
-                        swapped[i * 4 + 0] = rgba_data[i * 4 + 2]; // B
-                        swapped[i * 4 + 1] = rgba_data[i * 4 + 1]; // G
-                        swapped[i * 4 + 2] = rgba_data[i * 4 + 0]; // R
-                        swapped[i * 4 + 3] = rgba_data[i * 4 + 3]; // A
-                    }
-                    src = swapped.data();
-                }
-
+                constexpr uint32_t RES = Dim::PAINTING_RESOLUTION;
                 wgpu::TexelCopyTextureInfo dest{};
                 dest.texture = authoredStagingTexture_;
                 dest.mipLevel = 0;
                 dest.origin = { 0, 0, layer };
                 dest.aspect = wgpu::TextureAspect::All;
-
                 wgpu::TexelCopyBufferLayout layout{};
                 layout.offset = 0;
-                layout.bytesPerRow = width * 4;
-                layout.rowsPerImage = height;
-
-                wgpu::Extent3D extent = { width, height, 1 };
-                queue.WriteTexture(&dest, src, width * height * 4, &layout, &extent);
-
-                // MIP_0 — THE CHAIN, built here so every authored upload has
-                // one (the loader's padded square and the boot's solid fill
-                // alike): each level is the 2x2 box mean of the level above,
-                // in the texel order already chosen. WriteTexture's row pitch
-                // has no 256-byte law (that is the buffer copies'), so the
-                // small levels write as they are. The loader replicates the
-                // picture's edge across the pad before calling here, so no
-                // level's border blends with black (gallery.hpp).
-                std::vector<uint8_t> prev(src, src + (size_t)width * height * 4);
-                uint32_t w = width, h = height;
-                for (uint32_t level = 1; level < Dim::PAINTING_MIP_LEVELS && w > 1 && h > 1; ++level) {
-                    const uint32_t nw = w / 2, nh = h / 2;
-                    std::vector<uint8_t> next((size_t)nw * nh * 4);
-                    for (uint32_t y = 0; y < nh; ++y) {
-                        for (uint32_t x = 0; x < nw; ++x) {
-                            const size_t a = ((size_t)(2 * y) * w + 2 * x) * 4;
-                            const size_t b = a + (size_t)w * 4;
-                            for (uint32_t ch = 0; ch < 4; ++ch) {
-                                const uint32_t sum = prev[a + ch] + prev[a + 4 + ch] + prev[b + ch] + prev[b + 4 + ch];
-                                next[((size_t)y * nw + x) * 4 + ch] = (uint8_t)((sum + 2u) / 4u);
-                            }
-                        }
-                    }
+                layout.bytesPerRow = RES * 4;
+                layout.rowsPerImage = RES;
+                wgpu::Extent3D extent = { RES, RES, 1 };
+                queue.WriteTexture(&dest, level0, (size_t)RES * RES * 4, &layout, &extent);
+                // MIP_0's chain: WriteTexture's row pitch has no 256-byte law
+                // (that is the buffer copies'), so the small levels write as
+                // they are.
+                for (uint32_t level = 1; level < Dim::PAINTING_MIP_LEVELS; ++level) {
+                    const uint32_t side = t7::develop::level_side(RES, level);
+                    if (side == 0) break;
                     dest.mipLevel = level;
-                    layout.bytesPerRow = nw * 4;
-                    layout.rowsPerImage = nh;
-                    wgpu::Extent3D e = { nw, nh, 1 };
-                    queue.WriteTexture(&dest, next.data(), (size_t)nw * nh * 4, &layout, &e);
-                    prev.swap(next); w = nw; h = nh;
+                    layout.bytesPerRow = side * 4;
+                    layout.rowsPerImage = side;
+                    wgpu::Extent3D e = { side, side, 1 };
+                    queue.WriteTexture(&dest, chain + t7::develop::chain_offset(RES, level),
+                                       t7::develop::level_bytes(RES, level), &layout, &e);
                 }
             }
-
+            // The main-thread arm: swap and chain here (core/develop.hpp), then
+            // upload. Boot's solid fill and the no-worker fallback use it.
+            void upload_authored_painting(wgpu::Queue& queue, uint32_t layer,
+                const uint8_t* rgba_data, uint32_t width, uint32_t height)
+            {
+                constexpr uint32_t RES = Dim::PAINTING_RESOLUTION;
+                (void)width; (void)height;   // every caller hands a RES x RES square (the pad, the fill)
+                std::vector<uint8_t> level0(rgba_data, rgba_data + (size_t)RES * RES * 4);
+                if (exhibition_is_bgra())   // POSTCARD_0 — one home for the texel order
+                    t7::develop::swap_rb(level0.data(), (size_t)RES * RES);
+                std::vector<uint8_t> chain(t7::develop::chain_bytes(RES, Dim::PAINTING_MIP_LEVELS));
+                t7::develop::chain(level0.data(), RES, Dim::PAINTING_MIP_LEVELS, chain.data());
+                upload_developed(queue, layer, level0.data(), chain.data());
+            }
             void fill_painting_layer_solid(wgpu::Queue& queue, uint32_t layer,
                 uint8_t r, uint8_t g, uint8_t b)
             {
