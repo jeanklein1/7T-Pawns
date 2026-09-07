@@ -161,10 +161,11 @@ def write_box_html(base, indent="  "):
 
 
 def follow_html(indent="    "):
-    """Follow the work — the website's bottom menu, one home (web/follow.json).
+    """Follow the work — the five external links, one home (web/follow.json).
     External links, so the collection gate exempts them (https:).
-    ONE READER since DOORS_4: the engine's Follow pane. web_dist injects
-    it; about_dist and collection_dist no longer do."""
+    It WAS the website's bottom menu (DOORS_3); since DOORS_4 ruling 3 it
+    has ONE reader, the engine's Follow pane. web_dist injects it;
+    about_dist and collection_dist no longer do."""
     with open(FOLLOW, encoding="utf-8") as fh:
         links = json.load(fh)
     items = []

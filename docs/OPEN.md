@@ -235,12 +235,12 @@ became the site itself: seven items, seven panes, one door out of each.
 |---|---|
 | The veil says two names and nothing else | `#enter` is *The Board*, the anchor is *About*; the sentence, `details` and the veil's log pane are gone |
 | No GPU talk anywhere a visitor reads before choosing | the noscript paragraph, and `classify()`'s status line (*Waking your device*) |
-| The fallback speaks Jean's words, and the card's door follows them | `fallback()`'s *Welcome.*; the static door goes to `/collection/` |
+| The fallback speaks Jean's words, and the card's door follows them | `fallback()`'s *Welcome.*; the static door went to `/collection/` *(DOORS_4 U6 moved it to `/about/` and the button reads **Click here**)* |
 | Every item on the menu opens a pane | `web/routes.json` — seven engine panes; the `website` route died |
 | Controls is its own pane, two platforms, one shown | `.pane[data-pane="controls"]`, `showPlatform()`, `CONTROLS_DEFAULT` |
 | Follow the work has one home and two readers | `web/follow.json` → `routes.follow_html()` *(one reader since DOORS_4: the engine's Follow pane; the site footers went with ruling 3)* |
 | Text is its own page | *(superseded at DOORS_4: `/text/` became `/writings/`, plural, and retired by 301)* |
-| The world door says *Navigate the world* and nothing under it | `web/about/index.html`'s first door |
+| The world door says *Navigate the world* and nothing under it | `web/about/index.html`'s first door *(DOORS_4 U5 put Jean's picture under it — no words, still)* |
 | Authors and elsewhere leave | the two bands, `build_authors`, `build_links` and their CSS are gone |
 
 **The six controls rows are the tree's, read at U0** — and two had moved
@@ -302,10 +302,9 @@ was run end to end into a scratch dist against stubbed hero images.
   100%), 1fr))` already takes a third door without a rule change. Three
   columns where the width allows, wrapping below. **A visual row for
   Jean.**
-- **The footer nav takes `flex: 0 0 100%`**, not `width` alone: the footer
-  is a wrapping flex row with `justify-content: space-between`, and
-  flex-shrink would otherwise claw the width back. **A visual row for
-  Jean.**
+- ~~The footer nav takes `flex: 0 0 100%`~~ — **CLOSED at DOORS_4**:
+  ruling 3 took the follow nav off every site footer, and the
+  `footer .follow` block went with its last reader.
 - **`.statement h1` matches nothing today.** The statement Jean's
   placeholder leaves is a single `<p>`. The rule was renamed from
   `.doctrine` rather than deleted, because whether the slot grows a
@@ -322,9 +321,13 @@ was run end to end into a scratch dist against stubbed hero images.
   DOORS_4**: the rule followed the page to `/writings/`.
 - **The engine menu has no plain link out any more** *(and since DOORS_4
   neither Follow nor Write has a door to the site either)*. The `website`
-  route died by ruling, and every remaining engine route is a pane; each
-  pane carries its own `a[data-out]`. Deliberate, and named here because
-  it is the kind of thing a later round would otherwise read as a loss.
+  route died by ruling, and every remaining engine route is a pane. Each
+  pane carried its own `a[data-out]` when this was written; since DOORS_4
+  three do — Gallery, Writings, About — and four do not: The Board and
+  Controls never had a page to point at, and Follow and Write me lost
+  theirs when the sections they named were deleted. Deliberate, and named
+  here because it is the kind of thing a later round would otherwise read
+  as a loss.
 
 ### One discipline gap, closed here
 
