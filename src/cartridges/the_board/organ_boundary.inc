@@ -70,6 +70,20 @@
                 // window's charter): the pane reads whether a walk is on.
                 t7::organ::set_visit_view(pilot_.active, pilot_.slot);
 
+                // THE TAKE DOOR (POSTCARD_0) — one door, two mouths, both spent
+                // here: the P key's intent (request_take -> take_pending) and the
+                // badge's bit (gallery_take -> the registry). Spent HERE because
+                // "which picture" is a question about the world — the wall, the
+                // point and the eye are all in hand at the boundary and in no
+                // input door. Both mouths are consumed whether or not a picture
+                // answers, so a press before an empty wall cannot fire later.
+                {
+                    const bool by_key = inputState_.take_pending;
+                    inputState_.take_pending = false;
+                    const bool by_glass = t7::organ::take_take();
+                    if (by_key || by_glass) request_postcard();
+                }
+
                 uint32_t def_mood = 0;
                 if (t7::organ::take_definition_dirty(def_mood)
                     && def_mood == mood_state_.active) {

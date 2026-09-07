@@ -692,6 +692,20 @@ inline bool take_visit(uint32_t& slot) {
     return true;
 }
 
+// ─── THE TAKE DOOR (POSTCARD_0) ───────────────────────────────────
+// A door WITHOUT a parameter, the visit door's shape otherwise: the
+// badge (web T7_POSTCARD) asks for the picture before the visitor; the
+// frame boundary decides which one that is, refuses in words, or arms
+// the postcard machine. One pending bit, last press wins, taken once.
+// The P key is the same door's other mouth (input.hpp, request_take),
+// so the boundary folds two mouths and no press is privileged.
+inline bool g_take_pending = false;
+inline bool take_take() {
+    const bool p = g_take_pending;
+    g_take_pending = false;
+    return p;
+}
+
 // THE VISIT WINDOW — a copy the boundary writes once a frame (the rule
 // window's charter): whether a walk is on, and to which slot. Packed:
 // bit 31 active, bits 0..30 the slot.
@@ -1051,6 +1065,13 @@ EMSCRIPTEN_KEEPALIVE inline void gallery_visit(uint32_t slot) {
 EMSCRIPTEN_KEEPALIVE inline int gallery_visiting(void) {
     using namespace t7::organ;
     return (g_visit_view & 0x80000000u) ? (int)(g_visit_view & 0x7FFFFFFFu) : -1;
+}
+
+// POSTCARD_0 — the badge's mouth: ask for the picture before the
+// visitor. No parameter: the program knows which one, the shell does not.
+EMSCRIPTEN_KEEPALIVE inline void gallery_take(void) {
+    using namespace t7::organ;
+    g_take_pending = true;
 }
 
 // The names, positional by id: a JSON array the shell builds its mood

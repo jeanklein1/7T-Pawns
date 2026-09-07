@@ -107,6 +107,11 @@ struct KeyState {
     // tick and hold the live card's writer awake for as long as a thumb
     // rested on the bar.
     bool pulse_held = false;
+    // POSTCARD_0 — P's held flag, pulse_held's reason exactly: the console
+    // raises KeyDown on GLFW_REPEAT, and a take is a STRIKE. Under
+    // autorepeat an unguarded down would ask for a postcard every repeat
+    // tick, and the machine would refuse each one in words.
+    bool take_held = false;
 };
 
 // Mouse drag state — on_mouse_move reads these to decide which
@@ -209,6 +214,7 @@ void on_touch_tap_fpv(InputDeps* c);       // FPV_TAP_0 — the left pair (CTRL'
 void on_touch_tap_right(InputDeps* c);
 void request_radial_pulse(InputDeps* c);   // the pulse's owner door (SPACE + the lone RIGHT tap): the ring and the body's own verb
 void request_pulse_swap(InputDeps* c);     // LEAP_1 — the hand's other word (CAPS_LOCK + the right PAIR tap): the ring and the reach for a body
+void request_take(InputDeps* c);           // POSTCARD_0 — the take's key mouth (P): raises the intent; the door at the boundary answers it
 void on_touch_tap_pulse(InputDeps* c);
 void on_mouse_button(InputDeps* c, int button, bool pressed);
 void on_scroll(InputDeps* c, float delta);
@@ -338,6 +344,15 @@ inline void on_key_down(InputDeps* c, int key,
         toggle_fpv_mode(c);
         break;
     case GLFW_KEY_CAPS_LOCK:  request_pulse_swap(c);                             break;
+
+    // ── The postcard (POSTCARD_0) ────────────────────────────────
+    // Down edge only, pulse_held's grammar: a take is a strike.
+    case GLFW_KEY_P:
+        if (!c->keys_.take_held) {
+            c->keys_.take_held = true;
+            request_take(c);   // one door, two mouths — the badge's is the other (gallery_take)
+        }
+        break;
     }
     update_movement_intent(c);
 }
@@ -349,6 +364,7 @@ inline void on_key_up(InputDeps* c, int key) {
     case GLFW_KEY_A: c->keys_.left = false;     break;
     case GLFW_KEY_D: c->keys_.right = false;    break;
     case GLFW_KEY_SPACE: c->keys_.pulse_held = false; break;
+    case GLFW_KEY_P:     c->keys_.take_held  = false; break;   // POSTCARD_0
     }
     update_movement_intent(c);
 }
@@ -493,6 +509,16 @@ inline void request_pulse_swap(InputDeps* c) {
     }
     c->inputState_.pulse_pending = true;
     c->inputState_.swap_pending  = true;
+}
+
+// POSTCARD_0 — THE TAKE'S KEY MOUTH. It raises an intent and asks
+// nothing: whether a picture is before the visitor is the wall's, the
+// point's and the eye's business, and the door at the frame boundary
+// (organ_boundary.inc, THE TAKE DOOR) reads all three, refuses in words,
+// or arms the postcard machine. The badge's tap is the same door's other
+// mouth (organ_registry.hpp, gallery_take), so no press is privileged.
+inline void request_take(InputDeps* c) {
+    c->inputState_.take_pending = true;
 }
 
 // RIGHT HALF, one finger, clean tap — the leap (SPACE's twin mouth).

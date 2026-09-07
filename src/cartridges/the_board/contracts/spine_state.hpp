@@ -199,6 +199,13 @@ struct InputState {
     // point and the population are both in hand — the arming is a question
     // about the world, which no input door may ask.
     bool  swap_pending = false;
+    // POSTCARD_0 — THE TAKE. Raised by the P key (request_take); spent
+    // exactly once at the frame boundary's take door (organ_boundary.inc),
+    // beside the badge's own mouth, and NOT cleared by clear_input_deltas.
+    // Which picture is taken is a question about the world — the wall, the
+    // point and the eye — which no input door may ask (swap_pending's rule,
+    // above); the door answers it where all three are in hand.
+    bool  take_pending = false;
 };
 
 
