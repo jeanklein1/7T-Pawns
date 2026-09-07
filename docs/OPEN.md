@@ -68,10 +68,13 @@ because Jean asked; the roll's miniatures now have their machine.
 
 ### What the round found — POSTCARD_0
 
-Six things the handoff stated that the tree does not back, or states for the wrong
-reason. None is a HALT class (no file unreachable, no blob stale), so all of U1–U5
-was applied verbatim and every one is registered here instead. The gate table is
-green at the tip either way.
+Five things the handoff stated that the tree does not back, or states for the wrong
+reason, plus two caveats for whoever edits the seam next. None is a HALT class (no
+file unreachable, no blob stale), so all of U1–U5 was applied verbatim and every one
+is registered here instead. The gate table is green at the tip either way. A sixth
+was raised and then REFUTED by the round's own adversarial pass; it is kept below,
+struck, because a register that records only the findings that survived teaches the
+next round nothing about the ones that did not.
 
 - **`note()` IS NOT GLOBAL, so all three of the new shell guards are dead — and the
   visitor's camera lost a diagnostic.** `web/index.html` has two inline `<script>`
@@ -82,16 +85,24 @@ green at the tip either way.
   in the new code (T7_KEEP's `say`, the badge's click fallback, `deliver`'s `say`) —
   is ALWAYS false, and every postcard diagnostic reaches `console.log` and never
   `record()` or the `#t7card` panel. Confirmed by reading and again under node.
-  The consequence is not only cosmetic: **U4.2 is a narrow regression.** Before the
-  hoist, a `navigator.share` rejection or a throw in the download arm was reported
-  by `note(...)` from inside block 1, where it was in scope, and reached the field
-  diagnostic set (IOS_5's own permanent section, above). After the hoist those same
-  two paths run inside T7_KEEP in block 0 and reach only the console — which on the
-  phone, where the share sheet actually lives, is the one place nobody can read.
-  `#ctlPhoto`'s other two arms (`toBlob` null, the outer `catch`) still call `note`
-  directly and are unaffected. THE FIX IS ONE LINE, and it is Jean's to take: add
-  `window.note = note;` beside the declaration in block 1, after which all three
-  guards start telling the truth and the regression closes with them.
+  **U4.2's delta, stated in both directions** (the first draft of this line got it
+  one-sided, and named the wrong panel; the round's own refuters caught both).
+  `note()` reaches the on-device pane through `record()`, which paints `#log2`
+  behind the `logToggle2` *details* button — NOT `#t7card`, which is a separate
+  identity block fed by `window.t7card`. Against that sink, U4.2 LOSES one branch
+  and GAINS another. Lost: a non-`AbortError` `navigator.share` rejection was
+  reported by `note(...)` from inside block 1, where it was in scope, and reached
+  `#log2`; it now runs inside T7_KEEP in block 0 and reaches only the console —
+  which on the phone, where the share sheet actually lives, is the one place nobody
+  can read. Gained: in the base tree the handler's outer `try` wrapped only the
+  `canvasEl.toBlob(...)` CALL, so a throw from `new File`, `URL.createObjectURL` or
+  the anchor append — all inside the async callback — was uncaught and reached
+  nothing at all; T7_KEEP's own `try/catch` now catches those. `#ctlPhoto`'s other
+  two arms (`toBlob` null, the outer `catch`) still call `note` directly and are
+  unaffected. So: a wash on robustness, a loss on one diagnostic branch.
+  THE FIX IS ONE LINE, and it is Jean's to take: add `window.note = note;` beside
+  the declaration in block 1, after which all three guards start telling the truth
+  and the lost branch comes back with them.
 - **The estate census's `.buffer =` arm is inert, and its perturbation does not
   reproduce** — the long entry in the residuals above.
 - **P arrives untranslated, but not for the reason the MECHANISM AUDIT gives.** It
@@ -116,13 +127,47 @@ green at the tip either way.
   but it is a new idiom in this shell rather than the established one, and its
   failure mode is the printed note the handoff wrote for it. The P key is unaffected
   either way — that is what two independent mouths buy.
-- **`camera_pose_` is ONE FRAME STALE, by the tree's own banner.** U2.12 reads "the
-  pose R1 just harvested"; `contracts/spine_state.hpp` says of `CameraPose`: "ONE
-  FRAME STALE ... the copy is encoded at R11 and mapped at R1 of the following
-  frame." Both the badge and `request_postcard` read it, so the picture named at the
-  press is chosen from a pose one frame old. The handoff already prices this
-  ("the badge and the take can never disagree by more than a frame"); the banner's
-  phrasing is what overstates. No consequence at frame rate.
+- ~~**U2.12 overstates `camera_pose_`'s freshness.**~~ **RAISED AND REFUTED.** The
+  charge was that "the pose R1 just harvested" reads as fresh while
+  `contracts/spine_state.hpp` brands `CameraPose` "ONE FRAME STALE ... encoded at
+  R11 and mapped at R1 of the following frame". The refutation stands on three
+  things. **"Already home" is the tree's own idiom** for CPU-resident / no new
+  readback, used verbatim six lines above in the REACH_1 V2 ride watcher — which
+  reads `point_.host` and `point_.bubble`, members the tree brands one frame stale
+  in the same breath. It never claimed synchrony. **The lag is common-mode and
+  cancels:** the badge watcher and `request_postcard` call the one
+  `pick_picture_before` with the same `camera_pose_`, so U2.12's actual claim —
+  "the badge and the take can never disagree by more than a frame" — is a
+  badge-vs-take claim and is exactly true. **And the staleness is declared at the
+  member already.** The fact is real; it is not a fault of this handoff, and the
+  picture named at the press is chosen from a pose one frame old with no
+  consequence at frame rate.
+- **The seam's `$` map is consistent, and it is not the obvious one.** For the
+  record, because a reviewer checking it against the prose will otherwise chase a
+  phantom: the argument list is `}, bytes, res, bgra, crop_w, crop_h, aspect, kind,
+  name)`, so `$5` is the DOUBLE (`aspect`) and `$6` is `kind` — not the other way
+  round. The C++ signature, the EM_ASM body's `deliver(rgba, $1, $3, $4, $5, $6, s)`,
+  the shell's `deliver: function (rgba, res, cw, ch, aspect, kind, stem)` and
+  `cartridge.hpp`'s caller all agree. Mixing a double among integers is precedented:
+  `core/aubade.hpp`'s `aubade_probe` already does it, and `console.hpp` already
+  passes eight arguments.
+- **`HEAPU8.subarray` is safe here only because the body never re-enters wasm.**
+  CMakeLists links `-sALLOW_MEMORY_GROWTH=1`, under which a wasm memory growth
+  reassigns `HEAPU8` and DETACHES any outstanding view. Between
+  `var src = HEAPU8.subarray(p, p + n);` and the last read of `src`, `postcard_deliver`
+  does only JS-side work — one `Uint8ClampedArray` allocation and two copy loops — so
+  no growth can occur and the view cannot detach. Correct as written; the safety rests
+  on that property, not on `subarray` being durable. Anyone adding a call back into
+  wasm inside that block breaks it silently.
+- **The new file's banner asserts a rule the tree does not keep.** It says "no runtime
+  string helper is exported (console.hpp's rule — ccall/cwrap only), so nothing here
+  calls one" — true of itself, and it does read the stem byte-by-byte through `HEAPU8`.
+  But `core/aubade.hpp` calls `UTF8ToString` in two EM_ASM bodies and `core/boot_card.hpp`
+  in three, against a link line that exports only `['ccall','cwrap']`. Five shipping
+  sites bet the other way. Nothing in POSTCARD_0 is affected — it is the conservative
+  one — but a future seam author who cites those files as counter-precedent will reach
+  for a helper on the strength of a rule this banner states more broadly than the tree
+  honours.
 - **`bodies/gallery.hpp` cannot see `CameraPose` on its own.** Its transitive include
   closure is twenty files and does not reach `contracts/spine_state.hpp`; the only
   `CameraPose` it names for itself is the forward declaration in
