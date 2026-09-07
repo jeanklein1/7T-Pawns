@@ -15,8 +15,8 @@ carry those facts, or leave them in place and patch around them.
 
 | field | value |
 |---|---|
-| source commit | `e4968a9cc0b7bb8ae4331d1457cb913a96dd39cd` |
-| | DARKROOM_1 U1 — the one home: core/develop.hpp (fit, pad, swap, chain, the chain's geometry), upload_developed, and the loader's main-thread arm through it |
+| source commit | `d84785b40fcc3d0424c5908695c9aa8dbb60a0ab` |
+| | DARKROOM_1 U5 — ledgers regenerated (state/gallery pins); OPEN.md: DARKROOM_1 open on master, byte identity witnessed twice, the buffers' lifetime traced, the FILESYSTEM=0 flag flagged |
 | `src/cartridges/the_board/realization/binding_registry.hpp` | `sha256:1b6c778da104527645a2d5813ef47909859a49fe708d63bc89da7d5a367abc9d` |
 | `src/cartridges/the_board/realization/world.wgsl` | `sha256:ae3ea6da686ea31d30996560b1955795732f7089757733f0f3b5c99e8cb69ee4` |
 | `src/cartridges/the_board/realization/state.hpp` | `sha256:006cd63866e2a08f44686e5acb62f5e37b656091cd00275c1a1f5ec6f0fffcd0` |
