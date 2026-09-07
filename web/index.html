@@ -1080,13 +1080,20 @@
         <button type="button" role="tab" data-platform="desktop">Desktop</button>
       </div>
       <dl class="ctl" data-platform="phone" hidden>
-        <dt>Directions</dt><dd>drag the left half of the screen</dd>
-        <dt>Rotation</dt><dd>drag the right half · two fingers to zoom</dd>
-        <dt>Pulse</dt><dd>two fingers, one clean tap on the right half — on a summit it boards the ribbon, and lands it again</dd>
-        <dt>Aura</dt><dd>a second finger on the left half</dd>
-        <dt>Leap</dt><dd>one clean tap on the right half</dd>
-        <dt>FPV</dt><dd>two fingers on the left half, landing together and lifting as one</dd>
-        <dt>Postcard</dt><dd>before a picture, tap the words that appear — it is yours to keep or send</dd>
+          <dt>Directions</dt>
+          <dd>drag the left half of the screen</dd>
+          <dt>Rotation</dt>
+          <dd>drag the right half · two fingers to zoom</dd>
+          <dt>Pulse</dt>
+          <dd>two fingers tap on the right half</dd>
+          <dt>Aura</dt>
+          <dd>a second finger on the left half</dd>
+          <dt>Leap</dt>
+          <dd>one tap on the right half</dd>
+          <dt>FPV</dt>
+          <dd>two fingers tap on the left half</dd>
+          <dt>Postcard</dt>
+          <!--<dd>before a picture, tap the words that appear — it is yours to keep or send</dd>-->
       </dl>
       <dl class="ctl" data-platform="desktop" hidden>
         <dt>Directions</dt><dd>W A S D</dd>
@@ -1117,15 +1124,15 @@
          the same function the site opens (functions/api/message.js takes
          JSON). Words are placeholders; the address is site.json's. -->
     <div class="pane" data-pane="writings" hidden>
-      <button type="button" class="back" data-back>← menu</button>
-      <p class="pane-head">Writings</p>
-      <ol class="wlist" id="wList"></ol>
-      <div class="wread" id="wRead" hidden>
-        <button type="button" class="back" id="wBack">← writings</button>
-        <h2 class="wtitle" id="wTitle"></h2>
-        <div class="text" id="wBody"></div>
-      </div>
-      <a class="out" data-out target="_blank" rel="opener" href="writings/">Read on the website →</a>
+        <button type="button" class="back" data-back>← menu</button>
+        <p class="pane-head">Writings</p>
+        <ol class="wlist" id="wList"></ol>
+        <div class="wread" id="wRead" hidden>
+            <button type="button" class="back" id="wBack">← writings</button>
+            <h2 class="wtitle" id="wTitle"></h2>
+            <div class="text" id="wBody"></div>
+        </div>
+        <!-- <a class="out" data-out target="_blank" rel="opener" href="writings/">Read on the website →</a> ### SAVING JUST IN CASE-->
     </div>
     <div class="pane" data-pane="write" hidden>
       <button type="button" class="back" data-back>← menu</button>
@@ -1142,9 +1149,9 @@
       <button type="button" class="back" data-back>← menu</button>
       <p class="pane-head">Home</p>
       <!-- the day's painting, as the about page picks it, and the statement -->
-      <a class="mini-hero" id="miniHero" target="_blank" rel="opener" href="collection/"></a>
-      <div class="text" id="miniStatement"></div>
-      <a class="out" data-out target="_blank" rel="opener" href="about/">Home, on the website →</a>
+        <a class="mini-hero" id="miniHero" target="_blank" rel="opener" href="collection/"></a>
+        <div class="text" id="miniStatement"></div>
+        <a class="out" data-out target="_blank" rel="opener" href="about/">Home →</a>
     </div>
     <div class="pane" data-pane="follow" hidden>
       <button type="button" class="back" data-back>← menu</button>

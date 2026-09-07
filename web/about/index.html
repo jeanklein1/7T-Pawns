@@ -102,73 +102,74 @@
 </head>
 <body>
 
-<div class="top">
-  <!-- DOORS_0 — THE SANDWICH. A native <details>: it opens with no
-       script, so this page keeps working with JavaScript off. The links
-       are rendered by tools/routes.py from web/routes.json — the one
-       home the engine shell and collection/ also read. -->
-  <details class="menu">
-    <summary aria-label="menu"><span class="bars" aria-hidden="true"></span></summary>
-    <nav>
-      <!-- __ROUTES__ -->
-    </nav>
-  </details>
-</div>
-
-<a class="hero" id="hero" href="../collection/">
-  <!-- __HERO__ -->
-</a>
-<div class="hero-plate">
-  <span id="hero-title">&nbsp;</span>
-  <a href="../collection/">the collection →</a>
-</div>
-
-<!-- PLACEHOLDER COPY — Jean's statement. The doctrine moved to /text/ at
-     DOORS_3; what stands here says what this is, in his voice. -->
-<header class="statement" id="statement">
-  <p>Paintings, and a world that hangs them.</p>
-</header>
-
-<div class="doors">
-  <a class="door" href="../">
-    <h2><span class="go">Navigate the world</span></h2>
-    <!-- __WORLD__ -->
-  </a>
-  <a class="door" href="../collection/">
-    <h2><span class="go">the collection</span></h2>
-    <p>Oils, watercolours and pen, in sets. Every work, one page.</p>
-    <div class="strip">
-      <!-- __STRIP__ -->
+    <div class="top">
+        <!-- DOORS_0 — THE SANDWICH. A native <details>: it opens with no
+             script, so this page keeps working with JavaScript off. The links
+             are rendered by tools/routes.py from web/routes.json — the one
+             home the engine shell and collection/ also read. -->
+        <details class="menu">
+            <summary aria-label="menu"><span class="bars" aria-hidden="true"></span></summary>
+            <nav>
+                <!-- __ROUTES__ -->
+            </nav>
+        </details>
     </div>
-  </a>
-  <a class="door" href="../writings/">
-    <h2><span class="go">writings</span></h2>
-    <!-- PLACEHOLDER: one line -->
-    <p>The pawn is a vessel for projected intent.</p>
-  </a>
-</div>
 
-<footer>
-  <span>set in Newsreader · no trackers</span>
-</footer>
+    <a class="hero" id="hero" href="../collection/">
+        <!-- __HERO__ -->
+    </a>
+    <div class="hero-plate">
+        <span id="hero-title">&nbsp;</span>
+        <a href="../collection/">the collection →</a>
+    </div>
 
-<script>
-/* ── the hero rotates daily; without JavaScript, today is the first ── */
-const HERO = /* __HERO_DATA__ */ null;
-if (HERO && HERO.wide.length) {
-  const day = Math.floor(Date.now() / 864e5);
-  const wide = HERO.wide[day % HERO.wide.length];
-  const tall = HERO.tall.length ? HERO.tall[day % HERO.tall.length] : wide;
-  const pick = matchMedia("(max-aspect-ratio: 4/5)").matches ? tall : wide;
-  const img = document.querySelector("#hero img");
-  const cur = new URL(img.currentSrc || img.src, location.href).pathname;
-  if (!cur.endsWith(pick.src)) {
-    img.src = pick.src;
-    img.width = pick.w; img.height = pick.h;
-  }
-  document.getElementById("hero").href = "../collection/#w" + pick.n;
-  document.getElementById("hero-title").textContent = "no. " + pick.n;
-}
-</script>
+    <!-- PLACEHOLDER COPY — Jean's statement. The doctrine moved to /text/ at
+         DOORS_3; what stands here says what this is, in his voice. -->
+    <header class="statement" id="statement">
+        DOORS_3; what stands here says what this is, in his voice. -->
+        <!--  <p>Paintings, and a world that hangs them.</p> -->
+    </header>
+
+    <div class="doors">
+        <a class="door" href="../">
+            <h2><span class="go">Navigate the world</span></h2>
+            <!-- __WORLD__ -->
+        </a>
+        <a class="door" href="../collection/">
+            <h2><span class="go">the collection</span></h2>
+            <p>Oils, watercolours and pen, in sets. Every work, one page.</p>
+            <div class="strip">
+                <!-- __STRIP__ -->
+            </div>
+        </a>
+        <a class="door" href="../writings/">
+            <h2><span class="go">writings</span></h2>
+            <!-- PLACEHOLDER: one line -->
+            <p>The pawn is a vessel for projected intent.</p>
+        </a>
+    </div>
+
+    <!--   <footer>
+            <span>set in Newsreader · no trackers</span>
+        </footer>-->
+
+    <script>
+        /* ── the hero rotates daily; without JavaScript, today is the first ── */
+        const HERO = /* __HERO_DATA__ */ null;
+        if (HERO && HERO.wide.length) {
+        const day = Math.floor(Date.now() / 864e5);
+        const wide = HERO.wide[day % HERO.wide.length];
+        const tall = HERO.tall.length ? HERO.tall[day % HERO.tall.length] : wide;
+        const pick = matchMedia("(max-aspect-ratio: 4/5)").matches ? tall : wide;
+        const img = document.querySelector("#hero img");
+        const cur = new URL(img.currentSrc || img.src, location.href).pathname;
+        if (!cur.endsWith(pick.src)) {
+        img.src = pick.src;
+        img.width = pick.w; img.height = pick.h;
+        }
+        document.getElementById("hero").href = "../collection/#w" + pick.n;
+        document.getElementById("hero-title").textContent = "no. " + pick.n;
+        }
+    </script>
 </body>
-</html>
+    </html>
