@@ -118,6 +118,14 @@ struct KeyState {
     // flicker the aura for as long as the little finger rested. (Key 3 had
     // this wart too; nobody holds 3, so nobody met it.)
     bool aura_held = false;
+    // ARROWS_0 — the arrows' held flags. The look is a RATE, not a strike:
+    // these are WASD's grammar (held bools, pumped per frame), not
+    // SPACE's. The pump is apply_arrow_look, called once per frame by the
+    // cartridge before the signal fill spends the deltas.
+    bool look_left  = false;
+    bool look_right = false;
+    bool look_up    = false;
+    bool look_down  = false;
 };
 
 // Mouse drag state — on_mouse_move reads these to decide which
@@ -295,6 +303,18 @@ void nudge_look_sensitivity(InputDeps* c, bool up);   // KP_+ / KP_- — multipl
 #ifndef GLFW_KEY_RIGHT_SHIFT
 #define GLFW_KEY_RIGHT_SHIFT  344
 #endif
+#ifndef GLFW_KEY_RIGHT
+#define GLFW_KEY_RIGHT  262
+#endif
+#ifndef GLFW_KEY_LEFT
+#define GLFW_KEY_LEFT   263
+#endif
+#ifndef GLFW_KEY_DOWN
+#define GLFW_KEY_DOWN   264
+#endif
+#ifndef GLFW_KEY_UP
+#define GLFW_KEY_UP     265
+#endif
 
 
 // ═══ KEY DISPATCH ════════════════════════════════════════════════
@@ -316,6 +336,13 @@ inline void on_key_down(InputDeps* c, int key,
     case GLFW_KEY_S: c->keys_.backward = true; break;
     case GLFW_KEY_A: c->keys_.left = true;     break;
     case GLFW_KEY_D: c->keys_.right = true;    break;
+    // ARROWS_0 — the arrows rotate the camera: a requested redundancy
+    // beside the mouse, which stays. Held flags only; the rotation is
+    // authored per frame by apply_arrow_look.
+    case GLFW_KEY_LEFT:  c->keys_.look_left  = true; break;
+    case GLFW_KEY_RIGHT: c->keys_.look_right = true; break;
+    case GLFW_KEY_UP:    c->keys_.look_up    = true; break;
+    case GLFW_KEY_DOWN:  c->keys_.look_down  = true; break;
 
     // ── World / aura toggles ─────────────────────────────────────
     case GLFW_KEY_2: toggle_aura_height(pawn_state, &pawn_deps);  break;  // pawn command door
@@ -387,6 +414,10 @@ inline void on_key_up(InputDeps* c, int key) {
     case GLFW_KEY_S: c->keys_.backward = false; break;
     case GLFW_KEY_A: c->keys_.left = false;     break;
     case GLFW_KEY_D: c->keys_.right = false;    break;
+    case GLFW_KEY_LEFT:  c->keys_.look_left  = false; break;   // ARROWS_0
+    case GLFW_KEY_RIGHT: c->keys_.look_right = false; break;
+    case GLFW_KEY_UP:    c->keys_.look_up    = false; break;
+    case GLFW_KEY_DOWN:  c->keys_.look_down  = false; break;
     case GLFW_KEY_SPACE: c->keys_.pulse_held = false; break;
     case GLFW_KEY_P:     c->keys_.take_held  = false; break;   // POSTCARD_0
     case GLFW_KEY_LEFT_SHIFT:                                  // SHIFT_0
@@ -428,6 +459,28 @@ inline void on_touch_move(InputDeps* c, float x, float z) {
     c->touch_.x = x;
     c->touch_.z = z;
     update_movement_intent(c);
+}
+
+// ARROWS_0 — THE ARROWS' LOOK. A rate, not a delta: radians per second
+// while held, landing on the SAME two accumulators the mouse and the
+// thumb land on, so the camera cannot tell which hand moved it and every
+// downstream consumer (the kernel's ease, the pilot's hands-win rule,
+// FPV) treats it as the one look channel it already is. Signs match the
+// mouse exactly: right arrow turns the way a rightward drag turns, up
+// looks up. The speed is a shape, not a dial — the mouse keeps the
+// sensitivity dial, and this door is the requested redundancy beside it.
+inline constexpr float ARROW_LOOK_SPEED = 1.6f;   // rad/s — a quarter turn in under a second
+
+inline void apply_arrow_look(InputDeps* c, float dt) {
+    float az = 0.0f;
+    float el = 0.0f;
+    if (c->keys_.look_left)  az += 1.0f;
+    if (c->keys_.look_right) az -= 1.0f;
+    if (c->keys_.look_up)    el -= 1.0f;
+    if (c->keys_.look_down)  el += 1.0f;
+    if (az == 0.0f && el == 0.0f) return;
+    c->inputState_.look_az_delta += az * ARROW_LOOK_SPEED * dt;
+    c->inputState_.look_el_delta += el * ARROW_LOOK_SPEED * dt;
 }
 
 // The thumb's look. Lands on the SAME two deltas the mouse drag lands

@@ -1101,6 +1101,11 @@ namespace t7 {
 
                 gpuSignal.move_x = inputState_.move_x;
                 gpuSignal.move_z = inputState_.move_z;
+                // ARROWS_0 — the arrows speak last, at the one site the
+                // deltas are spent, so a held arrow contributes exactly
+                // one frame's rotation per frame regardless of the
+                // browser's key-repeat cadence.
+                apply_arrow_look(&input_deps_, dtPending_);
                 gpuSignal.look_az_delta = inputState_.look_az_delta;
                 gpuSignal.look_el_delta = inputState_.look_el_delta;
                 gpuSignal.zoom_delta = inputState_.zoom_delta;
