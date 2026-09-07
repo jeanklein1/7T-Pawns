@@ -180,6 +180,17 @@ struct PhotographerCaptureConfig {
     // gallery, which is worse than the hitch.
     static constexpr uint32_t PHOTO_HEADROOM_K = 1u;
     static constexpr float    PHOTO_DEFER_MAX_S = 4.0f;
+    // SHUTTER_0 — THE SPACING FLOOR, wall-clock seconds between CAPTURES
+    // (not triggers). The trigger is distance — "the travelogue", and that
+    // stays: a walk crosses 50 wu in ~8 s and never meets this floor, a
+    // ride crosses it in ~1-2 s and a burst of four fired inside a second.
+    // Nobody watches a photograph being taken; everybody feels four
+    // dropped frames in a row. The floor spreads what distance requests:
+    // same shots, same places wanted, a calmer clock. It composes with
+    // PURSE_0's headroom gate above (spacing first, then headroom), and
+    // the defer ceiling starts counting only once spacing is satisfied,
+    // so bounded starvation still means what it meant. Jean's number.
+    static constexpr float    MIN_CAPTURE_SPACING_S = 5.0f;
 
     // Clamps: hard floors on sampled camera parameters
     static constexpr float DISTANCE_FLOOR = 0.5f;
@@ -699,6 +710,10 @@ struct WallPaintingProp {
 
 struct PhotographerState {
     float cumulative_distance = 0.0f;
+    // SHUTTER_0 — when the last capture FIRED, in TimeState seconds; the
+    // spacing floor measures from here. Very negative: the first shot of a
+    // session owes no spacing.
+    float last_capture_s = -1.0e9f;
     float next_threshold = PhotographerCaptureConfig::TRIGGER_DISTANCE_MEAN;
     uint32_t pending_shots = 0;
     float prev_point_x = 0.0f;
@@ -1652,6 +1667,12 @@ inline void update_photographer(GalleryState& gs, GalleryDeps* c, wgpu::Queue& q
         // What it buys is that the pass lands on frames that can afford
         // it, and that the ones that cannot are not made worse.
         const double now = c->time_state_.seconds;
+        // SHUTTER_0 — the spacing floor, BEFORE the defer clock arms: a
+        // shot still inside the floor is not "waiting for headroom", it is
+        // not due yet, so the ceiling cannot be starved into overriding
+        // the floor. Distance keeps accruing; nothing else advances.
+        if (now - gs.photographer.last_capture_s
+            < PhotographerCaptureConfig::MIN_CAPTURE_SPACING_S) return;
         if (gs.photographer.defer_since < 0.0f) gs.photographer.defer_since = now;
         const bool headroom = (t7::g_served_k == PhotographerCaptureConfig::PHOTO_HEADROOM_K);
         const bool ceiling  = (now - gs.photographer.defer_since)
@@ -1660,6 +1681,7 @@ inline void update_photographer(GalleryState& gs, GalleryDeps* c, wgpu::Queue& q
 
         gs.photographer.defer_since = -1.0f;
         capture_snapshot(gs, c, px, pz, queue);
+        gs.photographer.last_capture_s = (float)now;   // SHUTTER_0 — the floor measures from the fire
         gs.photographer.pending_shots--;
         gs.photographer.frame_cooldown = PhotographerCaptureConfig::BURST_COOLDOWN_FRAMES;
         return;
