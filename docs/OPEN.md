@@ -2,6 +2,64 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## GATHER_0 — THE GATE BEFORE THE TAPS; NINE GATHERS (landed on master; Jean's gates open)
+
+The spot shadow is sampled only where attenuation × cone × facing is non-zero (it
+always multiplied the result); both 4×4 PCF kernels read their 6×6 window through nine
+gathers instead of sixteen bilinear taps, exact in the model. No pixel leaves.
+
+| ruling | where it lives now |
+|---|---|
+| The gate before the taps (0 × shadow) | `world.wgsl` `calc_spot_light` |
+| A sample under a per-fragment branch takes its level explicitly | `sample_spot_shadow_pcf` (U1), then the gathers (U2) |
+| Nine gathers reconstruct sixteen taps: separable tent weights on texel corners | `pcf_window`, `pcf_quad`, both kernels |
+| The 4-tap arm stays: nothing to save there | `sample_shadow_pcf`, the `shadow_pcf_taps == 4` arm |
+| The Tint arm is the shader gate from now on | `tools/wgsl_gate.py` + `T7_TINT` → the Dawn checkout's tint |
+
+### Residuals — GATHER_0
+- **The penumbra may differ by under 1/256** from the fixed-point bilinear the hardware
+  used to blend — under one 8-bit step of the lit color. The screenshot diff at a shadow
+  edge is the witness; a visible difference is a finding, not a tolerance.
+- **The sun's gate could tighten** (e.g. skip the kernel where the receiver is beyond the
+  map's fade) now that no implicit derivative is left in it; not built — the meter's
+  outdoor window decides whether the fade band is worth a branch.
+- **The shadow pass encodes its draws each frame** (the main pass is a recorded bundle;
+  the shadow pass is not) — a CPU/JS-bridge cost, not a GPU one. Priced: the sun arm as one
+  bundle, the atlas arm as one bundle per tile between its scissors (bundles inherit
+  scissor state and may not set it). Worth building only if `[PRESENT]` ever names the
+  CPU; the machinery is BUNDLE_1's.
+- **The orbs run two compute passes a frame** (copy_prev, dynamics); a ping-pong would
+  retire the copy and one pass boundary. Small everywhere; measurable only on glass.
+- **THE TINT ARM IS LIT, AND IT IS PORTABLE — this round's finding.** Ruling 6 points at
+  a Dawn checkout on Jean's machine. It does not need one: **Chromium already contains
+  Dawn and Tint**, and a WebGPU `createShaderModule` + `getCompilationInfo()` is Tint's
+  own verdict on the real module. The arm was lit here against Chromium 141 on
+  SwiftShader (`--enable-unsafe-swiftshader`, driven over CDP, the page on a `file://`
+  origin so `navigator.gpu` is present — on `about:blank` it is not, which costs an hour
+  if unknown), wrapped in a two-line shell script that satisfies `T7_TINT`'s contract
+  (exit 0 and print no "error" substring when accepted). `python3 tools/wgsl_gate.py`
+  then reads `[gate] tint arm PASS` instead of DORMANT.
+- **AND IT LOSES WHERE naga CANNOT SEE — twice, proven.** Ruling 2 is not precautionary,
+  it is required: with the new gate and the OLD implicit-derivative sample, Tint rejects —
+  *"'textureSampleCompare' must only be called from uniform control flow"*, chained
+  `sample_spot_shadow_pcf` → `calc_spot_light` → `shade_lit`; with the explicit level it
+  accepts. naga passes both. **MIP_0's open question is also closed by the same arm:**
+  perturbing `sample_exhibition` so its derivatives sit inside the non-uniform branch,
+  Tint rejects with *"'dpdx' must only be called from uniform control flow"* and names
+  `parameter 'kind' of 'sample_exhibition'` — while naga prints "Validation successful"
+  on the identical file. MIP_0's ruling 3 was load-bearing, and MIP_0 as landed is
+  correct. The arm accepts the shipped module.
+- **The gather kernels clear Tint too**: `textureGatherCompare` on the depth textures and
+  the dynamic indexing of `win.wx`/`win.wy` are accepted, so U2's HALT condition did not
+  fire. The model reproduces exactly — max |pcf16 − pcf9| = 3.3306690738754696e-16 over
+  the handoff's 20,000 positions, and 0.0 over an adversarial grid of exact texel centres,
+  corners, half-texels and far-beyond-edge positions.
+- **The wrapper is not in the tree.** A gate tool is a mechanism, and this round's
+  authority table has `tools/wgsl_gate.py` as read-only, so nothing was added; the recipe
+  above is the whole of it. Landing it as `tools/gates/tint_arm/` would make ruling 6
+  runnable by CC on any machine with a Chromium, not only where a Dawn checkout lives —
+  Jean's call.
+
 ## MIP_0 — THE EXHIBITION'S CHAIN (landed on master; Jean's gates open)
 
 Paintings sample through an eleven-level chain the CPU builds at upload; photographs
@@ -28,7 +86,13 @@ pass, pipeline or binding. +96 MiB where the chain lives.
   record retains (same bytes, moved from GPU to heap).
 - **The CPU decode grows by a third** (the box means); the `authored6` mark is still the
   witness, and the browser-decode road registered at PLATE_0 still answers it.
-- **The WGSL gate cannot witness ruling 3, and that is this round's finding.** MIP_0
+- **The WGSL gate cannot witness ruling 3, and that is this round's finding. — CLOSED at
+  GATHER_0**, which lit the Tint arm and got the verdict this entry could not: perturbed so
+  the derivatives sit inside the non-uniform branch, Tint rejects with *"'dpdx' must only be
+  called from uniform control flow"*, naming `parameter 'kind' of 'sample_exhibition'`,
+  while naga prints "Validation successful" on the identical file. So ruling 3 was
+  load-bearing rather than merely careful, and MIP_0 as landed is correct — the arm accepts
+  the shipped module. The finding below stands as written, and this is how it ended.** MIP_0
   hands CC the gate as the round's own and rests the uniformity ruling on it. Run both
   ways on naga-cli 30.0.1 — as written, and PERTURBED with the derivatives moved INSIDE
   the non-uniform branch — the gate reads PASS both times. Calibrated with a textbook
