@@ -2059,8 +2059,8 @@
     // Hidden RELEASES the media unconditionally (ATMOS_1: a paused piece
     // is still the phone's to resume); visible re-attaches it and resumes
     // ONLY if it was playing, so silence chosen (or never granted) stays
-    // chosen. The
-    // wake lock is re-asked here because the browser drops it on hide —
+    // chosen. The wake lock is re-asked here because the browser drops it
+    // on hide —
     // and only if the visitor ever entered, so a backgrounded LOADING
     // tab does not quietly hold the screen awake.
     document.addEventListener('visibilitychange', function () {
@@ -2234,8 +2234,9 @@
 
     // ── BUILDID_0 — A NAME THAT CHANGES WHEN THE PROGRAM CHANGES ──
     //
-    // THIS FILE IS A SOURCE FILE AND IT DOES NOT BOOT. The three build
-    // artifacts always move together on disk, but their URLs were
+    // THIS FILE IS A SOURCE FILE AND IT DOES NOT BOOT. The build
+    // artifacts (three then, five since DARKROOM_1) move together on
+    // disk, but their URLs were
     // constant across every deploy — so a browser holding one from a
     // previous visit could pair it with a fresh sibling: old glue
     // against new wasm, imports landing undefined. Cloudflare's

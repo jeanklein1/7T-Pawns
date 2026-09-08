@@ -71,8 +71,8 @@ def preset_files():
         return []
     return sorted(f for f in os.listdir(SRC_PRESETS) if f.endswith(".json"))
 
-# index.html is SOURCE (tracked); the other three are build output
-# (.gitignore'd). All four ship — but index.html is the only one that is
+# index.html is SOURCE (tracked); the rest are build output (.gitignore'd)
+# or the darkroom's worker script (tracked). All ship — but index.html is the only one that is
 # TRANSFORMED on the way (BUILDID_0), not copied.
 ARTIFACTS = ["index.html", "organ_panel.js", "the_board.js", "the_board.wasm", "the_board.data",
              "darkroom_worker.js", "darkroom.js", "darkroom.wasm"]   # DARKROOM_1 — the worker and its wasm
@@ -235,15 +235,17 @@ AUDIO_CEILING = 20 * 1024 * 1024
 # ── AUBADE U7 — THE BOOT SET, NAMED ─────────────────────────────────
 #
 # What a visitor fetches before the world is on screen: the page, the
-# program's products, the darkroom's, the veil's poster, and the exhibition
-# manifest. Nothing sized O(catalogue) and nothing sized O(library) is in
-# it. PRODUCTS_0 R1: this list has a READER now — the first-visit number
-# printed below sums it (it used to sum ARTIFACTS, which carries the ORGAN
-# panel nobody fetches at boot and omits the poster and the manifest) — and
-# the two checks beside that sum are the asserts this banner used to
-# promise: every entry exists in dist, none lives under the exhibition or
-# the collection. The products gate witnesses every build product in here.
-BOOT_SET = ["index.html", "the_board.js", "the_board.wasm", "the_board.data",
+# program's products, the darkroom's, the ORGAN panel's script (appended
+# to the page on every boot, whether or not ?organ=1 ever shows it), the
+# veil's poster, and the exhibition manifest. Nothing sized O(catalogue)
+# and nothing sized O(library) is in it. This list has one READER — the
+# first-visit number printed at the end of a run sums it from dist/ as
+# written — and two checks beside that sum, which are the asserts this
+# banner once promised without keeping. The products gate witnesses every
+# build product in here. (SETTLE_1: the reader moved to where dist exists,
+# and the panel's 73 KB, which SETTLE_0's banner wrongly excused, counts.)
+BOOT_SET = ["index.html", "organ_panel.js",
+            "the_board.js", "the_board.wasm", "the_board.data",
             "darkroom_worker.js", "darkroom.js", "darkroom.wasm",   # PRODUCTS_0 — the darkroom opens beside the program (DARKROOM_1); a first-visit cost, recorded
             "veil_poster.jpg", EXHIBITION_JSON]
 # A build product that is NOT fetched at boot is excused here, by name, and
@@ -822,18 +824,10 @@ def main():
     print("  wasm + js        %d bytes  (%.2f MiB)" % (
         sizes["the_board.wasm"] + sizes["the_board.js"],
         mib(sizes["the_board.wasm"] + sizes["the_board.js"])))
-    # PRODUCTS_0 R1 — the boot set's reader, and its two checks.
-    boot_total = 0
-    for name in BOOT_SET:
-        p = os.path.join(DIST, name)
-        if not os.path.exists(p):
-            print("  BOOT_SET names %s, and dist has no such file — the list is stale, fix the list" % name)
-            return 2
-        if name.startswith(("paintings/", "collection/")):
-            print("  BOOT_SET must never carry the exhibition or the collection: %s" % name)
-            return 2
-        boot_total += os.path.getsize(p)
-    print("  first visit      %d bytes  (%.2f MiB) uncompressed  (the boot set: %d files)" % (boot_total, mib(boot_total), len(BOOT_SET)))
+    # SETTLE_1 — the first-visit number is printed at the END of this run,
+    # from dist/ as written (the boot set's reader), not here: here dist/
+    # does not exist yet, and SETTLE_0's reader refused every fresh clone
+    # before the tool could create the thing it was checking for.
     print("  exhibition       %d bytes  (%.2f MiB) source, fetched AFTER first paint"
           % (paintings_src_bytes + music_src_bytes, mib(paintings_src_bytes + music_src_bytes)))
     print("  Both hosts serve br/gzip for js/html; .wasm and .data compress well over the")
@@ -1467,6 +1461,28 @@ def main():
             print("     costs a copy and not a compile.")
             return 3
 
+    # SETTLE_1 — THE BOOT SET, READ FROM WHAT THIS RUN WROTE. dist/ is
+    # complete here: the products copied, index.html transformed, the poster
+    # baked, the manifest written. The two checks are post-write assertions
+    # now — the exhibition/collection test first (a forbidden entry is the
+    # worse finding, and a missing forbidden entry must not masquerade as
+    # merely missing), then existence: an entry this run did not write is
+    # the LIST being wrong, and says so. The sum is the number SHIP_0 U4
+    # asked to have recorded; it describes THIS deploy, not the last one.
+    boot_total = 0
+    for name in BOOT_SET:
+        if name.startswith(("paintings/", "collection/")):
+            print("  BOOT_SET must never carry the exhibition or the collection: %s" % name)
+            return 2
+        p = os.path.join(DIST, name)
+        if not os.path.exists(p):
+            print("  BOOT_SET names %s, but this run wrote no such file — the list is wrong, fix the list" % name)
+            return 2
+        boot_total += os.path.getsize(p)
+    print("")
+    print("FIRST VISIT (the boot set, as written)")
+    print("  %d bytes  (%.2f MiB) uncompressed, %d files — recorded, not optimized (SHIP_0 U4)"
+          % (boot_total, mib(boot_total), len(BOOT_SET)))
     print("")
     print("WROTE %s  (%d files)" % (DIST, file_count))
     # REPEAT_0a U0b — the promise, kept, said out loud. The negative is the
