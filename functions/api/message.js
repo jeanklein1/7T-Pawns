@@ -73,7 +73,7 @@ async function sendViaResend(env, { subject, text, replyTo }) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: env.MESSAGE_FROM || "the board <onboarding@resend.dev>",
+      from: env.MESSAGE_FROM || "the board <jean@everexpandingboard.com>",
       to: env.MESSAGE_TO,
       subject,
       text,

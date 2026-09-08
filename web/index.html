@@ -1911,11 +1911,40 @@
       // never withheld at all: the engine LATCHES key state (on_key_up
       // clears keys_.forward), so one swallowed release leaves the pawn
       // walking for ever. Measured, both of them.
+        
+      // THE GUARD IS THE OPEN MENU'S, AND ONLY THE OPEN MENU'S. As first
+      // written it withheld keys whenever focus sat anywhere inside #menu —
+      // and <summary> KEEPS focus after the menu closes, so W/A/S/D never
+      // reached the world again and the visitor could not move. `keyup` is
+      // never withheld at all: the engine LATCHES key state (on_key_up
+      // clears keys_.forward), so one swallowed release leaves the pawn
+      // walking for ever. Measured, both of them.
+      //
+      // WRITE ME IS THE EXCEPTION. contrib.glfw3 listens on document and
+      // does stringToNewUTF8(e.key) / e.code with no null check. Autofill
+      // (phone especially) fires a synthetic keyup with both missing, and
+      // that is the [js] TypeError on `.length`. While an input or
+      // textarea holds focus, every key — keyup included — stays here.
+      // Releasing W over a button still reaches the world.
       ['keydown', 'keyup', 'keypress'].forEach(function (t) {
         menu.addEventListener(t, function (e) {
-          if (menu.open && t !== 'keyup' && e.key !== 'Escape') e.stopPropagation();
+          if (!menu.open || e.key === 'Escape') return;            var typing = e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
+           if (typing || t !== 'keyup') e.stopPropagation();
         });
       });
+
+        // contrib.glfw3 registers keydown/keyup on document at wasm init, later
+        // than this. Same node, same phase: we run first. A fill that never
+        // touched the input (Chrome/Safari autofill) still dies here instead
+        // of inside stringToNewUTF8. stopImmediatePropagation, not
+        // stopPropagation: the input already got the event on the way up.
+        function glfwBadKey(e) { return e.key == null || e.code == null; }
+        ['keydown', 'keyup'].forEach(function (t) {
+          document.addEventListener(t, function (e) {
+            if (glfwBadKey(e)) e.stopImmediatePropagation();
+          });
+        });
+
       // THE TWO LIVE CONTROLS — the tiny features.
       var ctlFull = document.getElementById('ctlFull');
       var ctlSound = document.getElementById('ctlSound');
