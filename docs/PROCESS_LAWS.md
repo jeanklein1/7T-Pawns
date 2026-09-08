@@ -390,8 +390,11 @@ with the only copy of the work, and the stop hook is right to fear that. The
 answer is not to choose between the two risks. **The work is pushed to a
 scratch ref** — `wip/<branch>` — the moment the hook asks; the campaign branch
 itself waits for the verdict, and the scratch ref is deleted when the real
-push lands. Work safe, history clean, the hook's nagging is the price, and it
-is said out loud in the report rather than reasoned around.
+push lands — by whoever holds the permission: the agent if the remote lets
+it, else Jean at the merge (CLOSE_0: the agent's surface could push but not
+delete). Until it is gone, the report names it as outstanding. Work safe,
+history clean, the hook's nagging is the price, and it is said out loud in
+the report rather than reasoned around.
 
 ## SCHEDULING RECORD
 
