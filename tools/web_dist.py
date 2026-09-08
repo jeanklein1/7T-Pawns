@@ -12,8 +12,9 @@
 #   python tools/web_dist.py            # inventory + verdict + write dist/
 #   python tools/web_dist.py --check    # inventory + verdict only
 #
-# EXHIBIT_0 U1 — THE EXHIBITION LEAVES THE BUNDLE. The four build files
-# above are THE PROGRAM: rebuilt only when the program changes. The
+# EXHIBIT_0 U1 — THE EXHIBITION LEAVES THE BUNDLE. The build files
+# above (the program's and the darkroom's) are THE PROGRAM: rebuilt only
+# when the program changes. The
 # paintings, the soundtrack, and exhibition.json are THE EXHIBITION:
 # plain files beside the program, deployed alone when the exhibition
 # changes. Daily curation must never wake the compiler — which is why
@@ -71,8 +72,8 @@ def preset_files():
         return []
     return sorted(f for f in os.listdir(SRC_PRESETS) if f.endswith(".json"))
 
-# index.html is SOURCE (tracked); the rest are build output (.gitignore'd)
-# or the darkroom's worker script (tracked). All ship — but index.html is the only one that is
+# index.html, organ_panel.js and darkroom_worker.js are SOURCE (tracked);
+# the rest are build output (.gitignore'd). All ship — but index.html is the only one that is
 # TRANSFORMED on the way (BUILDID_0), not copied.
 ARTIFACTS = ["index.html", "organ_panel.js", "the_board.js", "the_board.wasm", "the_board.data",
              "darkroom_worker.js", "darkroom.js", "darkroom.wasm"]   # DARKROOM_1 — the worker and its wasm
@@ -316,7 +317,7 @@ def jpeg_dimensions(path):
     """(width, height) from a JPEG's SOFn marker, or None if unreadable.
 
     The walk: SOI, then a chain of length-prefixed segments. Any SOFn
-    except the four that are not frame headers (DHT C4, JPG C8, DAC CC)
+    except the three that are not frame headers (DHT C4, JPG C8, DAC CC)
     carries height and width as big-endian u16 at offsets 3 and 5 of its
     payload. Entropy-coded data begins at SOS (DA) and no SOF follows it."""
     try:
@@ -780,7 +781,7 @@ def main():
     print("  %-18s %14d  %9.2f" % ("TOTAL", total, mib(total)))
 
     # THE EXHIBITION, COUNTED SEPARATELY BECAUSE IT SHIPS SEPARATELY.
-    # These bytes are not in the four files above and never will be
+    # These bytes are not in the program's files above and never will be
     # again — they are fetched by URL at runtime. Source sizes here;
     # the re-encoded dist figures print after the write.
     paintings = list_paintings()
@@ -1305,14 +1306,16 @@ def main():
     #
     # The rule above ADDS; it does not move. The index keeps `no-cache`
     # verbatim, for exactly the reason its own banner gives — a fresh
-    # index always names fresh keys — and the four versioned artifacts
-    # gain `immutable` beneath it.
+    # index always names fresh keys — and the versioned artifacts
+    # (IMMUTABLE_PATHS) gain `immutable` beneath it.
     #
     # WHY THIS IS SAFE, and it is the one thing worth checking before
     # believing it: the HTTP cache is keyed on the FULL URL, query string
-    # included. Every one of these four is fetched as `<path>?v=<build
-    # id>` (index.html's script tags for the two .js, Module.locateFile
-    # for the .wasm and the .data), and the build id is
+    # included. Every one of these is fetched as `<path>?v=<build
+    # id>` (index.html's script tags for the program's .js and the
+    # panel's, Module.locateFile for the .wasm and the .data, the worker's
+    # URL, importScripts and locateFile for the darkroom's three), and the
+    # build id is
     # sha256(wasm + world.wgsl)[:12] — both halves, since BUILDID_1. A
     # change to either is a new key, so `immutable` can never pin a
     # stale artifact: it pins a URL that will never be asked for again.
