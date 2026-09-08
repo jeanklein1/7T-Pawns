@@ -12,8 +12,9 @@
 #   python tools/web_dist.py            # inventory + verdict + write dist/
 #   python tools/web_dist.py --check    # inventory + verdict only
 #
-# EXHIBIT_0 U1 — THE EXHIBITION LEAVES THE BUNDLE. The four build files
-# above are THE PROGRAM: rebuilt only when the program changes. The
+# EXHIBIT_0 U1 — THE EXHIBITION LEAVES THE BUNDLE. The build files
+# above (the program's and the darkroom's) are THE PROGRAM: rebuilt only
+# when the program changes. The
 # paintings, the soundtrack, and exhibition.json are THE EXHIBITION:
 # plain files beside the program, deployed alone when the exhibition
 # changes. Daily curation must never wake the compiler — which is why
@@ -71,14 +72,15 @@ def preset_files():
         return []
     return sorted(f for f in os.listdir(SRC_PRESETS) if f.endswith(".json"))
 
-# index.html is SOURCE (tracked); the other three are build output
-# (.gitignore'd). All four ship — but index.html is the only one that is
+# index.html, organ_panel.js and darkroom_worker.js are SOURCE (tracked);
+# the rest are build output (.gitignore'd). All ship — but index.html is the only one that is
 # TRANSFORMED on the way (BUILDID_0), not copied.
 ARTIFACTS = ["index.html", "organ_panel.js", "the_board.js", "the_board.wasm", "the_board.data",
              "darkroom_worker.js", "darkroom.js", "darkroom.wasm"]   # DARKROOM_1 — the worker and its wasm
 
 # ── BUILDID_0 — THE STALE PAIR ───────────────────────────────────
-# The three build files always move together on disk, but their URLs
+# The build files always move together on disk (three then; five since
+# DARKROOM_1), but their URLs
 # were constant across every deploy. A browser holding one from a
 # previous visit could therefore pair it with a fresh sibling — old glue
 # against new wasm, imports landing undefined. Cloudflare's
@@ -234,12 +236,23 @@ AUDIO_CEILING = 20 * 1024 * 1024
 # ── AUBADE U7 — THE BOOT SET, NAMED ─────────────────────────────────
 #
 # What a visitor fetches before the world is on screen: the page, the
-# glue, the wasm, the package, the veil's poster, and the exhibition
-# manifest. Nothing sized O(catalogue) and nothing sized O(library) is in
-# it, and the asserts below are what keep it that way — a claim nobody
-# checks is a claim that stops being true on the commit that breaks it.
-BOOT_SET = ["index.html", "the_board.js", "the_board.wasm", "the_board.data",
+# program's products, the darkroom's, the ORGAN panel's script (appended
+# to the page on every boot, whether or not ?organ=1 ever shows it), the
+# veil's poster, and the exhibition manifest. Nothing sized O(catalogue)
+# and nothing sized O(library) is in it. This list has one READER — the
+# first-visit number printed at the end of a run sums it from dist/ as
+# written — and two checks beside that sum, which are the asserts this
+# banner once promised without keeping. The products gate witnesses every
+# build product in here. (SETTLE_1: the reader moved to where dist exists,
+# and the panel's 73 KB, which SETTLE_0's banner wrongly excused, counts.)
+BOOT_SET = ["index.html", "organ_panel.js",
+            "the_board.js", "the_board.wasm", "the_board.data",
+            "darkroom_worker.js", "darkroom.js", "darkroom.wasm",   # PRODUCTS_0 — the darkroom opens beside the program (DARKROOM_1); a first-visit cost, recorded
             "veil_poster.jpg", EXHIBITION_JSON]
+# A build product that is NOT fetched at boot is excused here, by name, and
+# nowhere else (the products gate reads this list). Empty: every product the
+# build makes today is a boot fetch.
+NOT_AT_BOOT = []
 
 CF_LIMIT = 25 * 1024 * 1024        # Cloudflare Pages per-file
 GH_LIMIT = 100 * 1024 * 1024       # GitHub Pages per-file (soft, ~100 MiB)
@@ -304,7 +317,7 @@ def jpeg_dimensions(path):
     """(width, height) from a JPEG's SOFn marker, or None if unreadable.
 
     The walk: SOI, then a chain of length-prefixed segments. Any SOFn
-    except the four that are not frame headers (DHT C4, JPG C8, DAC CC)
+    except the three that are not frame headers (DHT C4, JPG C8, DAC CC)
     carries height and width as big-endian u16 at offsets 3 and 5 of its
     payload. Entropy-coded data begins at SOS (DA) and no SOF follows it."""
     try:
@@ -768,7 +781,7 @@ def main():
     print("  %-18s %14d  %9.2f" % ("TOTAL", total, mib(total)))
 
     # THE EXHIBITION, COUNTED SEPARATELY BECAUSE IT SHIPS SEPARATELY.
-    # These bytes are not in the four files above and never will be
+    # These bytes are not in the program's files above and never will be
     # again — they are fetched by URL at runtime. Source sizes here;
     # the re-encoded dist figures print after the write.
     paintings = list_paintings()
@@ -798,7 +811,7 @@ def main():
         print("")
         print("BUILD FIRST — %d artifact(s) absent." % len(missing))
         print("  cmake --preset the-board-web && cmake --build --preset the-board-web")
-        print("(the three build outputs land in web/ beside the tracked index.html;")
+        print("(the build outputs land in web/ beside the tracked index.html;")
         print(" .gitignore keeps them out of the tree on purpose.)")
         return 2
 
@@ -812,7 +825,10 @@ def main():
     print("  wasm + js        %d bytes  (%.2f MiB)" % (
         sizes["the_board.wasm"] + sizes["the_board.js"],
         mib(sizes["the_board.wasm"] + sizes["the_board.js"])))
-    print("  first visit      %d bytes  (%.2f MiB) uncompressed" % (total, mib(total)))
+    # SETTLE_1 — the first-visit number is printed at the END of this run,
+    # from dist/ as written (the boot set's reader), not here: here dist/
+    # does not exist yet, and SETTLE_0's reader refused every fresh clone
+    # before the tool could create the thing it was checking for.
     print("  exhibition       %d bytes  (%.2f MiB) source, fetched AFTER first paint"
           % (paintings_src_bytes + music_src_bytes, mib(paintings_src_bytes + music_src_bytes)))
     print("  Both hosts serve br/gzip for js/html; .wasm and .data compress well over the")
@@ -1161,9 +1177,9 @@ def main():
               % abs(packed_is - glue_says))
         print("  build ever made, failing SEAL2 on every device, with no cache")
         print("  involved (PAIR_0, 5 Sep 2026).")
-        print("  web/ holds outputs from two different links. Delete the three")
-        print("  build files and build again, and READ THE BUILD'S OUTPUT:")
-        print("    del web\\the_board.js web\\the_board.wasm web\\the_board.data")
+        print("  web/ holds outputs from two different links. Delete the build")
+        print("  files and build again, and READ THE BUILD'S OUTPUT:")
+        print("    del web\\the_board.js web\\the_board.wasm web\\the_board.data web\\darkroom.js web\\darkroom.wasm")
         print("    cmake --build --preset the-board-web")
         print("  dist/ is part-written and NOT deployable.")
         return 7
@@ -1290,14 +1306,16 @@ def main():
     #
     # The rule above ADDS; it does not move. The index keeps `no-cache`
     # verbatim, for exactly the reason its own banner gives — a fresh
-    # index always names fresh keys — and the four versioned artifacts
-    # gain `immutable` beneath it.
+    # index always names fresh keys — and the versioned artifacts
+    # (IMMUTABLE_PATHS) gain `immutable` beneath it.
     #
     # WHY THIS IS SAFE, and it is the one thing worth checking before
     # believing it: the HTTP cache is keyed on the FULL URL, query string
-    # included. Every one of these four is fetched as `<path>?v=<build
-    # id>` (index.html's script tags for the two .js, Module.locateFile
-    # for the .wasm and the .data), and the build id is
+    # included. Every one of these is fetched as `<path>?v=<build
+    # id>` (index.html's script tags for the program's .js and the
+    # panel's, Module.locateFile for the .wasm and the .data, the worker's
+    # URL, importScripts and locateFile for the darkroom's three), and the
+    # build id is
     # sha256(wasm + world.wgsl)[:12] — both halves, since BUILDID_1. A
     # change to either is a new key, so `immutable` can never pin a
     # stale artifact: it pins a URL that will never be asked for again.
@@ -1446,6 +1464,28 @@ def main():
             print("     costs a copy and not a compile.")
             return 3
 
+    # SETTLE_1 — THE BOOT SET, READ FROM WHAT THIS RUN WROTE. dist/ is
+    # complete here: the products copied, index.html transformed, the poster
+    # baked, the manifest written. The two checks are post-write assertions
+    # now — the exhibition/collection test first (a forbidden entry is the
+    # worse finding, and a missing forbidden entry must not masquerade as
+    # merely missing), then existence: an entry this run did not write is
+    # the LIST being wrong, and says so. The sum is the number SHIP_0 U4
+    # asked to have recorded; it describes THIS deploy, not the last one.
+    boot_total = 0
+    for name in BOOT_SET:
+        if name.startswith(("paintings/", "collection/")):
+            print("  BOOT_SET must never carry the exhibition or the collection: %s" % name)
+            return 2
+        p = os.path.join(DIST, name)
+        if not os.path.exists(p):
+            print("  BOOT_SET names %s, but this run wrote no such file — the list is wrong, fix the list" % name)
+            return 2
+        boot_total += os.path.getsize(p)
+    print("")
+    print("FIRST VISIT (the boot set, as written)")
+    print("  %d bytes  (%.2f MiB) uncompressed, %d files — recorded, not optimized (SHIP_0 U4)"
+          % (boot_total, mib(boot_total), len(BOOT_SET)))
     print("")
     print("WROTE %s  (%d files)" % (DIST, file_count))
     # REPEAT_0a U0b — the promise, kept, said out loud. The negative is the

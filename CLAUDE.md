@@ -59,6 +59,8 @@ python3 and clang++ do.
 | G-LAW 2 | `python3 tools/gates/glaw2/run.py` | no dangling name, no structural break in `world.wgsl` | GREEN |
 | TU gate | `python3 tools/gates/console_gate/run.py` | `cartridge.hpp` and `console.hpp` type-check with zero diagnostics | PASS |
 | shell gate | `python3 tools/gates/shell_gate/run.py` | the seam between `organ_registry.hpp` and `web/organ_panel.js` agrees | GREEN |
+| products gate | `python3 tools/gates/products_gate/run.py` | every home that names a build product — `.gitignore`, the build presets, `web_dist.py`, `collection_gate.py` — agrees with `CMakeLists.txt` | GREEN |
+| dist gate | `python3 tools/gates/dist_gate/run.py` | `web_dist.py` runs end to end on a scratch copy of the tree that has never run it (no `dist/`, fabricated products): exit 0, WROTE, the first-visit block above it; `--check` writes nothing | GREEN |
 | collection gate | `python3 tools/gates/collection_gate.py` | no engine artifact reaches the collection's closure, and every local ref its page names exists on disk | PASS |
 | sha256 gate | `python3 tools/gates/sha256_gate/run.py` | `src/core/sha256.hpp` agrees with hashlib, `world.wgsl` included | PASS |
 | score census | `python3 tools/gates/score/run.py` | roster ↔ frame-spine bijection | GREEN |

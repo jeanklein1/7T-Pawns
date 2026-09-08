@@ -98,6 +98,47 @@ did not, close replaces the state and shows the grid.
   four links still name the four rooms correctly. A route added later must
   be added there by hand — DOORS_4's note stands.
 
+## CLOSE_0 — THE CAMPAIGN CLOSES ON A WITNESS (on `claude/important-handoffs-9v1wus`)
+
+The dist gate runs web_dist.py end to end on a fresh scratch tree every cascade — the
+check three campaigns' witnesses never ran. The last counts retire; P19 names who deletes
+the scratch ref (Jean, at the merge: `wip/important-handoffs-9v1wus` is outstanding).
+
+The performance campaign (POSTCARD_0, PLATE_0, RAZOR_0, MIP_0, GATHER_0, SHUTTER_0,
+DARKROOM_0/1, RIG_0, PRODUCTS_0, ATMOS_1, SETTLE_0/1, CLOSE_0) is closed. What it leaves
+open, priced, in their own entries: the scrolling shadow cache, instance culling for the
+table, the two-walls split and compressed textures, the browser-decode road (CLOSED in the
+program's own language — no external-image copy in the vendored surface), the meter's
+three windows on the laptop, and the hang's split if the [METER] darkroom row asks.
+
+## PRODUCTS_0 — THE PRODUCTS GATE (on `claude/important-handoffs-9v1wus`; Jean's gates open)
+
+The build's web products are read from CMakeLists.txt and witnessed in .gitignore, the
+build presets, web_dist.py (ARTIFACTS, IMMUTABLE_PATHS, BOOT_SET or NOT_AT_BOOT) and
+collection_gate.py. Found RED on the base with the four homes DARKROOM_1 had not visited;
+GREEN after. Joins the cascade.
+
+| ruling | where it lives now |
+|---|---|
+| The build is the authority for its products | `tools/gates/products_gate/run.py` |
+| Four homes are witnesses, not authors | the gate's rows |
+| Laziness is named once | `NOT_AT_BOOT` in `web_dist.py` (empty today) |
+
+SETTLE_0: BOOT_SET is read by the first-visit sum and checked; NOT_AT_BOOT
+exists, empty.
+SETTLE_1: U1.7 read dist before dist existed (blocker, CC's audit, proven by
+running both tools); the reader now sits before WROTE; organ_panel.js is a boot
+fetch and counts; P19 written.
+
+## ATMOS_1 — THE PIECE LEAVES THE PHONE'S HANDS (on `claude/important-handoffs-9v1wus`; Jean's gates open)
+
+Hidden releases the soundtrack's media instead of pausing it, so a headphone button
+cannot resume it with the page shut; visible re-attaches and seeks. ATMOS_0's grammar
+stands; ATMOS_0 R's gesture fallback covers a refusal on return.
+
+SETTLE_0: `attachMusic()` is the one home (three callers); the re-attach is
+unconditional after entry; the seek survives a double-hide.
+
 ## ZOOM_0 — THE COLLECTION PAGE LEARNS THE PINCH (landed on master; Jean's gates open)
 
 Five seams of the lightbox the page already had. One transform on `#big` —

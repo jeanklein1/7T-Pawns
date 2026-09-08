@@ -378,6 +378,24 @@ surviving `.bak` is a failed witness.
 GATES_2c witness 3 (entered one round after ratifying the hazard, saved by
 the gate). Twice is mechanism's turn.
 
+## P19 — THE PUSH WAITS FOR THE VERDICT
+
+A held branch is pushed only after the verification workflow has returned.
+Two campaigns in one day landed with a blocker already on the remote because
+the push went first — reversible, since Jean holds merge and deploy, but a
+follow-up commit where a clean history was available.
+
+The squeeze that broke it is real: an ephemeral container can be reclaimed
+with the only copy of the work, and the stop hook is right to fear that. The
+answer is not to choose between the two risks. **The work is pushed to a
+scratch ref** — `wip/<branch>` — the moment the hook asks; the campaign branch
+itself waits for the verdict, and the scratch ref is deleted when the real
+push lands — by whoever holds the permission: the agent if the remote lets
+it, else Jean at the merge (CLOSE_0: the agent's surface could push but not
+delete). Until it is gone, the report names it as outstanding. Work safe,
+history clean, the hook's nagging is the price, and it is said out loud in
+the report rather than reasoned around.
+
 ## SCHEDULING RECORD
 
 > DRIFT NOTE (RECENSION_3, 2026-08-18; L28): the DAWN RELEASE BUILD entry
