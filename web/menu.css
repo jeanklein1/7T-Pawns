@@ -88,6 +88,7 @@
 
 /* ── DOORS_3 — Controls' two platforms; the About pane's hero; Follow ── */
 .pane .seg { display: flex; gap: 6px; margin: 0 0 10px; }
+.pane .row + .seg { margin-top: 10px; }   /* the Controls row sits above the platform tabs now; the pane's own rhythm */
 .pane .seg button { font: inherit; color: var(--dim); background: none; border: 1px solid #33323c; border-radius: 2px; padding: 6px 12px; cursor: pointer; }
 .pane .seg button[aria-selected="true"] { color: var(--ink); border-color: var(--dim); }
 .pane .mini-hero { display: block; margin: 0 0 10px; background: var(--mat, #16120d); }
