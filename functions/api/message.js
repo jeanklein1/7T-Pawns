@@ -4,14 +4,21 @@
 // the repo-root functions/ directory and serves it at /api/message —
 // the only dynamic surface on the whole site, and it stays this small.
 //
-// Configuration (Pages → Settings → Environment variables):
+// Configuration (Pages → Settings → Environment variables, Production;
+// a change takes effect on the NEXT deploy):
 //   RESEND_API_KEY   an api key from resend.com (free tier is plenty)
 //   MESSAGE_TO       the inbox that receives the box's messages
+//   MESSAGE_FROM     optional — the sender, "the board <board@everexpandingboard.com>"
+//                    once the domain is verified in Resend. Absent, the
+//                    default below: Resend's unverified sender, which
+//                    delivers ONLY to the Resend account's own address, so
+//                    MESSAGE_TO must be that address until the domain is.
 //
-// Unconfigured, it answers 501 and the page falls back to showing the
-// direct address — the box never silently eats a message. The sender
-// service is deliberately swappable: everything provider-specific is
-// inside sendViaResend, and nothing else knows it exists.
+// Unconfigured, it answers 501 — the box never silently eats a message
+// (HOUSE_0 read exactly that from the live site: 501 "unconfigured", the
+// two variables unset). The sender service is deliberately swappable:
+// everything provider-specific is inside sendViaResend, and nothing
+// else knows it exists.
 
 const MAX_LEN = 8000;
 
@@ -66,7 +73,7 @@ async function sendViaResend(env, { subject, text, replyTo }) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "the board <onboarding@resend.dev>",
+      from: env.MESSAGE_FROM || "the board <onboarding@resend.dev>",
       to: env.MESSAGE_TO,
       subject,
       text,
