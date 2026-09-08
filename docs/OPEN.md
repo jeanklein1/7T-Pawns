@@ -2,6 +2,19 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## CLOSE_0 — THE CAMPAIGN CLOSES ON A WITNESS (on `claude/important-handoffs-9v1wus`)
+
+The dist gate runs web_dist.py end to end on a fresh scratch tree every cascade — the
+check three campaigns' witnesses never ran. The last counts retire; P19 names who deletes
+the scratch ref (Jean, at the merge: `wip/important-handoffs-9v1wus` is outstanding).
+
+The performance campaign (POSTCARD_0, PLATE_0, RAZOR_0, MIP_0, GATHER_0, SHUTTER_0,
+DARKROOM_0/1, RIG_0, PRODUCTS_0, ATMOS_1, SETTLE_0/1, CLOSE_0) is closed. What it leaves
+open, priced, in their own entries: the scrolling shadow cache, instance culling for the
+table, the two-walls split and compressed textures, the browser-decode road (CLOSED in the
+program's own language — no external-image copy in the vendored surface), the meter's
+three windows on the laptop, and the hang's split if the [METER] darkroom row asks.
+
 ## PRODUCTS_0 — THE PRODUCTS GATE (on `claude/important-handoffs-9v1wus`; Jean's gates open)
 
 The build's web products are read from CMakeLists.txt and witnessed in .gitignore, the
