@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>collection — the ever expanding board</title>
-<meta name="description" content="Paintings and sketches from the ever expanding board. The pawn is a vessel for projected intent.">
-<meta property="og:title" content="collection — the ever expanding board">
+<title>gallery — the ever expanding board</title>
+<meta name="description" content="Jean Klein's paintings and sketches — the gallery of the ever expanding board.">
+<meta property="og:title" content="gallery — the ever expanding board">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23e8e6e0' d='M16 4a5 5 0 0 0-2.6 9.3c-.5 2.9-1.6 5.2-3.4 7.2h12c-1.8-2-2.9-4.3-3.4-7.2A5 5 0 0 0 16 4zM8 23h16v2.6c0 .8-.6 1.4-1.4 1.4H9.4C8.6 27 8 26.4 8 25.6z'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="../shared.css">
@@ -69,11 +69,6 @@
     font-size: clamp(20px, 1.9vw, 26px);
     font-weight: 400;
     letter-spacing: 0.02em;
-  }
-  .set-head .count {
-    font-size: 14px;
-    font-style: italic;
-    color: var(--faint);
   }
   .set-head .note {
     font-size: 14px;
@@ -154,8 +149,8 @@
   /* the wall takes a breath of the painting's own colour */
   .view { background: color-mix(in srgb, var(--tone, var(--bg)) 9%, var(--bg)); }
   .view[open] { transition: background 800ms ease; }
-  .stage, .plate, .zone, .shut { position: relative; z-index: 1; }
-  .zone, .shut { position: absolute; }
+  .stage, .plate, .shut { position: relative; z-index: 1; }
+  .shut { position: absolute; }
   .stage img { transition: opacity 260ms ease; }
   .stage img.out { opacity: 0; transition-duration: 140ms; }
   .fly {
@@ -181,26 +176,30 @@
     object-fit: contain;
   }
 
+  /* HOUSE_0 — THE PLATE SAYS NOTHING UNTIL ASKED. No number, no count:
+     the picture stands alone. `info` shows only for a work that has an
+     info line (the PAINTING_<n>.txt beside its master), and opens it. */
   .plate {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
     gap: 24px;
+    min-height: 1.6em;
     padding: 0 var(--edge) calc(var(--edge) * 0.6);
     font-size: 14px;
     color: var(--dim);
     font-variant-numeric: oldstyle-nums;
   }
-  .plate b { font-weight: 430; color: var(--ink); }
-  .plate .pos { color: var(--faint); }
-
-  /* Not buttons. A transparent <button> earns a focus ring the moment
-     the arrow keys convince the browser you are a keyboard user, and
-     paints a rectangle across a control meant to be invisible. Keyboard
-     users get arrows and Escape from the document handler instead. */
-  .zone { position: absolute; top: 0; width: 34%; height: 100%; }
-  .zone.prev { left: 0; cursor: w-resize; }
-  .zone.next { right: 0; cursor: e-resize; }
+  .plate .info { color: var(--ink); }
+  .plate .more {
+    margin-left: auto;
+    border: 0; padding: 0; background: transparent;
+    color: var(--dim); font: inherit; cursor: pointer;
+  }
+  .plate .more:hover, .plate .more[aria-expanded="true"] { color: var(--ink); }
+  .plate .more:focus-visible { outline: 1px solid var(--ink); outline-offset: 4px; }
+  /* hidden means hidden, whatever display a rule above gives (DOORS_4's lesson) */
+  .view [hidden] { display: none !important; }
 
   .shut {
     position: absolute;
@@ -259,17 +258,17 @@
     /* ZOOM_0 — the picture under the fingers. The transform is authored
        by the script below; touch-action none hands the stage's gestures
        to it (the page cannot scroll while the overlay is open anyway). */
+    .view[open] { touch-action: none; }         /* ZOOM_1 — nor may a pinch that begins on the plate zoom the page */
     .stage { touch-action: none; overflow: hidden; }
     #big { transform-origin: 0 0; will-change: transform; }
-    .view[data-zoomed] .zone { display: none; }   /* edges pan, not step, while zoomed */
-    .view[data-zoomed] .stage { cursor: grab; }
+    .stage[data-side="prev"] { cursor: w-resize; }   /* ZOOM_1 — the outer thirds step */
+    .stage[data-side="next"] { cursor: e-resize; }
+    .view[data-zoomed] .stage { cursor: grab; }      /* ...and pan while zoomed */
   </style>
   <div class="plate">
-    <span><b id="plate-title"></b> <span id="plate-meta"></span></span>
-    <span class="pos" id="plate-pos"></span>
+    <span class="info" id="plate-info" hidden></span>
+    <button class="more" id="plate-more" type="button" aria-expanded="false" aria-controls="plate-info" hidden>info</button>
   </div>
-  <div class="zone prev" aria-hidden="true"></div>
-  <div class="zone next" aria-hidden="true"></div>
   <button class="shut" id="shut">close</button>
 </div>
 
@@ -383,12 +382,16 @@ tiles.forEach(t => {
 
 const view = document.getElementById('view');
 const big = document.getElementById('big');
-const pTitle = document.getElementById('plate-title');
-const pMeta = document.getElementById('plate-meta');
-const pPos = document.getElementById('plate-pos');
+const plateInfo = document.getElementById('plate-info');
+const plateMore = document.getElementById('plate-more');
+let infoOpen = false;   /* HOUSE_0 — the visitor's choice; it survives a step */
 
 let current = -1;   /* index into tiles */
 let opener = null;
+let pushed = false; /* HOUSE_0 — did THIS opening push a history entry? A work opened
+                       from its own address (#w<n> on arrival — the home page's hero
+                       lands here) did not, and closing it must not history.back()
+                       out of the gallery altogether: it closes onto the grid. */
 
 function bigSrc(t) {
   const w = innerWidth * devicePixelRatio;
@@ -458,13 +461,10 @@ function show(i, push) {
   }
   if (opening) fly(t);
   big.alt = t.getAttribute('aria-label') || '';
-  pTitle.textContent = t.dataset.title;
-  pMeta.textContent = t.dataset.metaText ? '· ' + t.dataset.metaText : '';
-  const sibs = bySet.get(t.dataset.set);
-  pPos.textContent = (sibs.indexOf(t) + 1) + ' / ' + sibs.length;
+  plate(t);
 
-  if (push) history.pushState({ w: t.dataset.n }, '', '#w' + t.dataset.n);
-  else history.replaceState({ w: t.dataset.n }, '', '#w' + t.dataset.n);
+  if (push) { history.pushState({ w: t.dataset.n }, '', '#w' + t.dataset.n); pushed = true; }
+  else { history.replaceState({ w: t.dataset.n }, '', '#w' + t.dataset.n); if (opening) pushed = false; }
 
   /* the neighbours are next; have them ready */
   [step_i(1), step_i(-1)].forEach(j => {
@@ -479,25 +479,77 @@ function step_i(d) {
   return tiles.indexOf(sibs[j]);
 }
 
-/* ── ZOOM_0 — wheel, pinch, drag, double-tap ─────────────────────────
-   One transform on #big: translate(x,y) scale(s), origin 0 0, anchored
-   so the point under the cursor (or the pinch midpoint) stays put.
-   s=1 is the lightbox exactly as it was — zones step, arrows step; any
-   s>1 hides the zones (they would steal the pan) and the drag pans.
-   THE ARROWS ALWAYS STEP, zoomed or not, and every show() resets, so an
-   arrow out of a zoom lands on the neighbour unzoomed. shut() resets too.
-   No library, no state beyond {s,x,y}.
+/* ── HOUSE_0 — the plate: nothing until asked ─────────────────────── */
+
+function plate(t) {
+  const info = t.dataset.info || '';
+  plateInfo.textContent = info;
+  plateMore.hidden = !info;
+  plateInfo.hidden = !(info && infoOpen);
+  plateMore.setAttribute('aria-expanded', infoOpen ? 'true' : 'false');
+}
+plateMore.addEventListener('click', () => {
+  infoOpen = !infoOpen;
+  if (current >= 0) plate(tiles[current]);
+});
+
+/* ── ZOOM_1 — the stage owns every gesture ───────────────────────────
+   ZOOM_0's two step zones sat OVER the stage as siblings, 34% of the
+   width each side, so a finger landing on either never reached the
+   stage's pointer handlers: the pinch worked in the middle third only,
+   and outside it the browser zoomed the page. The zones are gone. One
+   element, one transform on #big — translate(x,y) scale(s), origin 0 0,
+   anchored so the point under the cursor or the pinch midpoint stays put
+   — and every gesture is read here:
+     a tap in an outer third, at s=1     step (a tap is one pointer that
+                                          lifts within TAP_MS and TAP_PX)
+     two pointers                        pinch about their midpoint
+     one pointer moving, s>1             pan
+     wheel                               zoom about the cursor
+     double-click, middle third (mouse)  1 <-> 2.5
+     ArrowLeft / ArrowRight              step, always — every show() resets
+     Escape                              peel the zoom first, then close
+   A double-TAP is deliberately not a zoom: on glass the pinch is the
+   zoom, and a double-tap's first tap has already stepped. THE PAN IS
+   CLAMPED TO THE PICTURE — the contained rect inside #big, not the
+   element's box, which carries the letterbox — so nothing is ever dragged
+   off the stage (ZOOM_0's priced residual). Ceiling 6x. No library, no
+   state beyond {s,x,y} and the pointers.
 
    `stage` is bound ABOVE (restRect reads it) and reused here. A second
    top-level `const stage` is a SyntaxError, and a SyntaxError in this one
    <script> takes the grid and the filters down with the lightbox. */
 const zoom = { s: 1, x: 0, y: 0 };
 const Z_MAX = 6;
+const TAP_MS = 350, TAP_PX = 10;
+const SIDE = 0.34;                            /* the outer thirds step */
 function zoomApply() {
   big.style.transform = zoom.s === 1 ? '' :
     'translate(' + zoom.x + 'px,' + zoom.y + 'px) scale(' + zoom.s + ')';
   if (zoom.s > 1) view.setAttribute('data-zoomed', '');
   else view.removeAttribute('data-zoomed');
+}
+/* the picture's own rect inside #big at s=1: object-fit: contain keeps
+   the ratio, so the letterbox is on one axis only */
+function pictureRect() {
+  const W = big.offsetWidth, H = big.offsetHeight;
+  const r = (big.naturalWidth && big.naturalHeight) ? big.naturalWidth / big.naturalHeight : W / H;
+  let w = W, h = W / r;
+  if (h > H) { h = H; w = H * r; }
+  return { x: (W - w) / 2, y: (H - h) / 2, w, h };
+}
+/* one axis: a picture smaller than the stage is centred; a larger one
+   may not show the stage past either edge */
+function clampAxis(cur, stageN, off, corner, extent) {
+  const base = off + corner * zoom.s;        /* the picture's edge, before the translate */
+  if (extent <= stageN) return (stageN - extent) / 2 - base;
+  return Math.min(-base, Math.max(stageN - extent - base, cur));
+}
+function zoomClamp() {
+  if (zoom.s === 1) { zoom.x = 0; zoom.y = 0; return; }
+  const p = pictureRect();
+  zoom.x = clampAxis(zoom.x, stage.clientWidth,  big.offsetLeft, p.x, p.w * zoom.s);
+  zoom.y = clampAxis(zoom.y, stage.clientHeight, big.offsetTop,  p.y, p.h * zoom.s);
 }
 function zoomReset() { zoom.s = 1; zoom.x = 0; zoom.y = 0; zoomApply(); }
 function zoomTo(s2, cx, cy) {                  /* keep (cx,cy) fixed on screen */
@@ -511,50 +563,69 @@ function zoomTo(s2, cx, cy) {                  /* keep (cx,cy) fixed on screen *
   zoom.x = px - ox - ix * s2;
   zoom.y = py - oy - iy * s2;
   zoom.s = s2;
-  if (zoom.s === 1) { zoom.x = 0; zoom.y = 0; }
+  zoomClamp();
   zoomApply();
+}
+function sideOf(clientX) {                     /* which third of the stage a point is in */
+  const r = stage.getBoundingClientRect();
+  const fx = (clientX - r.left) / r.width;
+  return fx < SIDE ? 'prev' : fx > 1 - SIDE ? 'next' : '';
 }
 stage.addEventListener('wheel', e => {
   if (current < 0) return;
   e.preventDefault();
   zoomTo(zoom.s * (e.deltaY < 0 ? 1.2 : 1 / 1.2), e.clientX, e.clientY);
 }, { passive: false });
-stage.addEventListener('dblclick', e => {
-  e.preventDefault();
-  zoomTo(zoom.s > 1 ? 1 : 2.5, e.clientX, e.clientY);
-});
-const pts = new Map();
-let pinch0 = 0, pinchS = 1;
+const pts = new Map();                         /* pointerId -> the pointer's own record */
+let pinch0 = 0, pinchS = 1, lastType = 'mouse';
 stage.addEventListener('pointerdown', e => {
   if (current < 0) return;
-  pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  lastType = e.pointerType;
+  pts.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY,
+                         t0: e.timeStamp, moved: false, paired: false });
   stage.setPointerCapture(e.pointerId);
   if (pts.size === 2) {
     const [a, b] = [...pts.values()];
+    a.paired = b.paired = true;                /* a pair never taps: two fingers down is not a step */
     pinch0 = Math.hypot(a.x - b.x, a.y - b.y);
     pinchS = zoom.s;
   }
 });
 stage.addEventListener('pointermove', e => {
+  if (e.pointerType === 'mouse') stage.dataset.side = sideOf(e.clientX);   /* the cursor says what a click does */
   const p = pts.get(e.pointerId);
   if (!p) return;
+  if (!p.moved && Math.hypot(e.clientX - p.x0, e.clientY - p.y0) > TAP_PX) p.moved = true;
   if (pts.size === 2) {
-    const q = { x: e.clientX, y: e.clientY };
-    pts.set(e.pointerId, q);
+    p.x = e.clientX; p.y = e.clientY;
     const [a, b] = [...pts.values()];
     const d = Math.hypot(a.x - b.x, a.y - b.y);
     if (pinch0 > 0) zoomTo(pinchS * d / pinch0, (a.x + b.x) / 2, (a.y + b.y) / 2);
   } else if (zoom.s > 1) {
     zoom.x += e.clientX - p.x;
     zoom.y += e.clientY - p.y;
-    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    p.x = e.clientX; p.y = e.clientY;
+    zoomClamp();
     zoomApply();
   }
 });
 ['pointerup', 'pointercancel'].forEach(t => stage.addEventListener(t, e => {
+  const p = pts.get(e.pointerId);
   pts.delete(e.pointerId);
   if (pts.size < 2) pinch0 = 0;
+  if (!p || t !== 'pointerup' || p.moved || p.paired || pts.size) return;
+  if (e.timeStamp - p.t0 > TAP_MS || zoom.s !== 1) return;
+  const side = sideOf(e.clientX);              /* a tap: the outer thirds step, the middle is quiet */
+  if (side === 'prev') show(step_i(-1), false);
+  else if (side === 'next') show(step_i(1), false);
 }));
+stage.addEventListener('dblclick', e => {
+  e.preventDefault();
+  /* a mouse, in the middle third: the outer thirds have just stepped
+     twice, and on glass the pinch is the zoom */
+  if (lastType !== 'mouse' || sideOf(e.clientX)) return;
+  zoomTo(zoom.s > 1 ? 1 : 2.5, e.clientX, e.clientY);
+});
 
 function shut(back) {
   if (current < 0) return;
@@ -563,7 +634,7 @@ function shut(back) {
   big.removeAttribute('src');
   zoomReset();                                  /* ZOOM_0 */
   current = -1;
-  if (back) history.back();
+  if (back && pushed) history.back();
   else history.replaceState(null, '', location.pathname);
   if (opener) opener.focus();
 }
@@ -574,8 +645,6 @@ tiles.forEach((t, i) => t.addEventListener('click', e => {
   show(i, true);
 }));
 
-view.querySelector('.zone.prev').addEventListener('click', () => { if (zoom.s === 1) show(step_i(-1), false); });
-view.querySelector('.zone.next').addEventListener('click', () => { if (zoom.s === 1) show(step_i(1), false); });
 document.getElementById('shut').addEventListener('click', () => shut(true));
 
 addEventListener('keydown', e => {

@@ -14,18 +14,23 @@
 # THE SOURCE OF TRUTH is a folder tree:
 #
 #   assets/collection/<folder>/PAINTING_<n>.jpg   the works
+#   assets/collection/<folder>/PAINTING_<n>.txt   optional: ONE LINE, the
+#       work's info as Jean writes it — "oil on canvas · 80 × 60 cm · 2024".
+#       Shown behind the lightbox's `info` word, nowhere else. It sits
+#       beside its master and moves with it (HOUSE_0); the masters are
+#       gitignored and these are not, so the info is versioned.
 #   assets/collection/<folder>/set.json           optional, all fields optional:
-#       { "label": "…", "note": "…", "paper": true,
-#         "featured": [90, 112],
-#         "works": { "107": { "title": "…", "meta": "oil on canvas · 2024" } } }
+#       { "label": "…", "note": "…", "paper": true, "featured": [90, 112] }
 #
 # "featured" works break the grid and take the full width alone — the
 # page's pacing is authored here, one list per set, not derived.
 #
 # Folders sort by name; works sort by the number in the filename — the
-# same key gallery.hpp uses, restated here. A work with no metadata
-# still ships, titled "no. <n>": a missing field must never be able to
-# drop a painting.
+# same key gallery.hpp uses, restated here. A work with no info still
+# ships; a missing sidecar must never be able to drop a painting. THE
+# FOLDER IS THE TRUTH: a removed master leaves the page, and anything
+# that still names it — a sidecar, a featured number — is a WARNING
+# line, never a refused build (HOUSE_0). No number is shown on the page.
 #
 # THE PAGE IS WRITTEN, NOT FETCHED. web/collection/index.html is source
 # with two placeholder regions; this script fills them with static
@@ -151,14 +156,34 @@ def load_sets():
                 sys.exit(1)
             seen[n] = f
 
+        # HOUSE_0 — THE INFO SIDECARS. PAINTING_<n>.txt beside PAINTING_<n>.jpg:
+        # one line, read by stem, so a sidecar always finds its own master and
+        # only that one. A sidecar with no master is a warning, not a refusal.
+        info = {}
+        stems = set(os.path.splitext(f)[0] for f in files)
+        for f in sorted(os.listdir(path)):
+            if not (f.startswith("PAINTING_") and f.lower().endswith(".txt")):
+                continue
+            stem = os.path.splitext(f)[0]
+            with open(os.path.join(path, f), encoding="utf-8-sig") as fh:
+                line = " ".join(fh.read().split())
+            if stem not in stems:
+                say("  warning  %s/%s names no master here — the line is not shown" % (folder, f))
+            elif line:
+                info[stem] = line
+
+        featured = set(int(x) for x in (meta.get("featured") or []))
+        for n in sorted(featured - set(seen)):
+            say("  warning  %s: set.json features %d and no PAINTING_%d is here" % (folder, n, n))
+
         sets.append({
             "folder": folder,
             "slug": slugify(meta.get("label", folder)),
             "label": meta.get("label", folder),
             "note": meta.get("note", ""),
             "paper": bool(meta.get("paper", False)),
-            "work_meta": meta.get("works", {}) or {},
-            "featured": set(int(x) for x in (meta.get("featured") or [])),
+            "info": info,
+            "featured": featured,
             "files": files,
         })
 
@@ -208,10 +233,8 @@ def build_work(im, src_path, out_dir, n, write):
     }
 
 
-def tile_markup(set_slug, rec, meta, featured=False):
+def tile_markup(set_slug, rec, info, featured=False):
     n = rec["n"]
-    title = meta.get("title") or ("no. %d" % n)
-    meta_text = meta.get("meta", "")
     base = "%s/" % set_slug
 
     jpg_set = ", ".join("%s%s %dw" % (base, jn, sw)
@@ -222,12 +245,14 @@ def tile_markup(set_slug, rec, meta, featured=False):
     mid = next((v for v in rec["variants"] if v[0] >= 1280), rec["variants"][-1])
     first = rec["variants"][0]
 
-    alt = title if not title.startswith("no. ") else "Painting %d" % n
+    # The number lives in aria-label, alt and the #w<n> address — wiring
+    # and accessibility — and on no visible surface (HOUSE_0).
+    alt = "Painting %d" % n
 
     return (
         '<a class="work%(cls)s" href="%(full)s" style="--r:%(r).4f;--tone:%(tone)s"\n'
         '   data-n="%(n)d" data-set="%(set)s" data-w="%(w)d" data-h="%(h)d"\n'
-        '   data-title="%(title)s" data-meta-text="%(meta)s"\n'
+        '   data-info="%(info)s"\n'
         '   data-mid="%(mid)s" data-full="%(full)s" aria-label="%(alt)s">\n'
         '  <div class="fill"></div>\n'
         '  <picture>\n'
@@ -242,27 +267,24 @@ def tile_markup(set_slug, rec, meta, featured=False):
         "full": base + full_jpg, "mid": base + mid[2],
         "r": rec["w"] / rec["h"], "tone": rec["tone"],
         "n": n, "set": set_slug, "w": rec["w"], "h": rec["h"],
-        "title": esc(title), "meta": esc(meta_text), "alt": esc(alt),
+        "info": esc(info), "alt": esc(alt),
         "avfset": esc(avf_set), "jpgset": esc(jpg_set),
         "src": base + first[2], "sizes": SIZES,
     }
 
 
 def section_markup(s, tiles):
-    count = len(tiles)
     note = ('\n    <span class="note">%s</span>' % esc(s["note"])) if s["note"] else ""
     return (
         '<section id="s-%(slug)s" class="set%(paper)s">\n'
         '  <div class="set-head">\n'
-        '    <h2>%(label)s</h2>\n'
-        '    <span class="count">%(count)d work%(pl)s</span>%(note)s\n'
+        '    <h2>%(label)s</h2>%(note)s\n'
         '  </div>\n'
         '  <div class="rows">\n%(tiles)s\n  </div>\n'
         '</section>'
     ) % {
         "slug": s["slug"], "paper": " paper" if s["paper"] else "",
-        "label": esc(s["label"]), "count": count,
-        "pl": "" if count == 1 else "s", "note": note,
+        "label": esc(s["label"]), "note": note,
         "tiles": "\n".join(tiles),
     }
 
@@ -272,16 +294,16 @@ def index_markup(sets):
     return '<span>·</span>'.join(links)
 
 
-def peek_entry(s, rec, meta, featured=False):
-    """One work as the engine's menu sees it: the 640 rung, the tone, the
-    title and the page address of the full work. Absolute paths, because
+def peek_entry(s, rec, featured=False):
+    """One work as the engine's menu sees it: the 640 rung, the tone, an
+    alt and the page address of the full work. Absolute paths, because
     the engine page lives at the root."""
     first = rec["variants"][0]
     return {
         # DOORS_4 — setLabel left with the sets line that was its only
         # reader (`set` and `featured` still have server-side ones).
         "n": rec["n"], "set": s["slug"],
-        "title": meta.get("title") or ("no. %d" % rec["n"]),
+        "title": "Painting %d" % rec["n"],     # the pane tile's alt; no visible surface (HOUSE_0)
         "tone": rec["tone"], "r": round(rec["w"] / rec["h"], 4),
         "src": "/collection/%s/%s" % (s["slug"], first[2]),
         "href": "/collection/#w%d" % rec["n"],
@@ -342,14 +364,13 @@ def font_uri(path):
         return "data:font/woff2;base64," + base64.b64encode(fh.read()).decode()
 
 
-def preview_tile(set_slug, rec, meta, uri, featured=False):
+def preview_tile(set_slug, rec, info, uri, featured=False):
     n = rec["n"]
-    title = meta.get("title") or ("no. %d" % n)
-    alt = title if not title.startswith("no. ") else "Painting %d" % n
+    alt = "Painting %d" % n
     return (
         '<a class="work%(cls)s" href="#w%(n)d" style="--r:%(r).4f;--tone:%(tone)s"\n'
         '   data-n="%(n)d" data-set="%(set)s" data-w="%(w)d" data-h="%(h)d"\n'
-        '   data-title="%(title)s" data-meta-text="%(meta)s"\n'
+        '   data-info="%(info)s"\n'
         '   data-mid="%(uri)s" aria-label="%(alt)s">\n'
         '  <div class="fill"></div>\n'
         '  <img src="%(uri)s" loading="lazy" decoding="async" alt="%(alt)s"\n'
@@ -359,8 +380,7 @@ def preview_tile(set_slug, rec, meta, uri, featured=False):
         "cls": " full" if featured else "",
         "n": n, "r": rec["w"] / rec["h"], "tone": rec["tone"],
         "set": set_slug, "w": rec["w"], "h": rec["h"],
-        "title": esc(title), "meta": esc(meta.get("meta", "")),
-        "alt": esc(alt), "uri": uri,
+        "info": esc(info), "alt": esc(alt), "uri": uri,
     }
 
 
@@ -408,20 +428,18 @@ def main():
         for f in s["files"]:
             n = extract_number(f)
             src_path = os.path.join(SRC, s["folder"], f)
+            info = s["info"].get(os.path.splitext(f)[0], "")
             with Image.open(src_path) as im:
                 if preview:
                     rec = build_work(im, src_path, "", n, write=False)
                     uri = data_uri(im, PREVIEW_EDGE, PREVIEW_Q)
                     tiles.append(preview_tile(
-                        s["slug"], rec, s["work_meta"].get(str(n), {}), uri,
-                        featured=n in s["featured"]))
+                        s["slug"], rec, info, uri, featured=n in s["featured"]))
                 else:
                     rec = build_work(im, src_path, out_dir, n, write=True)
                     tiles.append(tile_markup(
-                        s["slug"], rec, s["work_meta"].get(str(n), {}),
-                        featured=n in s["featured"]))
-                    peek.append(peek_entry(s, rec, s["work_meta"].get(str(n), {}),
-                                           featured=n in s["featured"]))
+                        s["slug"], rec, info, featured=n in s["featured"]))
+                    peek.append(peek_entry(s, rec, featured=n in s["featured"]))
                     for (_, _, jn, an) in rec["variants"]:
                         bytes_jpg += os.path.getsize(os.path.join(out_dir, jn))
                         bytes_avf += os.path.getsize(os.path.join(out_dir, an))
