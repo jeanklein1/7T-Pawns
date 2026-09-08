@@ -78,7 +78,8 @@ ARTIFACTS = ["index.html", "organ_panel.js", "the_board.js", "the_board.wasm", "
              "darkroom_worker.js", "darkroom.js", "darkroom.wasm"]   # DARKROOM_1 — the worker and its wasm
 
 # ── BUILDID_0 — THE STALE PAIR ───────────────────────────────────
-# The three build files always move together on disk, but their URLs
+# The build files always move together on disk (three then; five since
+# DARKROOM_1), but their URLs
 # were constant across every deploy. A browser holding one from a
 # previous visit could therefore pair it with a fresh sibling — old glue
 # against new wasm, imports landing undefined. Cloudflare's
@@ -234,13 +235,21 @@ AUDIO_CEILING = 20 * 1024 * 1024
 # ── AUBADE U7 — THE BOOT SET, NAMED ─────────────────────────────────
 #
 # What a visitor fetches before the world is on screen: the page, the
-# glue, the wasm, the package, the veil's poster, and the exhibition
+# program's products, the darkroom's, the veil's poster, and the exhibition
 # manifest. Nothing sized O(catalogue) and nothing sized O(library) is in
-# it, and the asserts below are what keep it that way — a claim nobody
-# checks is a claim that stops being true on the commit that breaks it.
+# it. PRODUCTS_0 R1: this list has a READER now — the first-visit number
+# printed below sums it (it used to sum ARTIFACTS, which carries the ORGAN
+# panel nobody fetches at boot and omits the poster and the manifest) — and
+# the two checks beside that sum are the asserts this banner used to
+# promise: every entry exists in dist, none lives under the exhibition or
+# the collection. The products gate witnesses every build product in here.
 BOOT_SET = ["index.html", "the_board.js", "the_board.wasm", "the_board.data",
             "darkroom_worker.js", "darkroom.js", "darkroom.wasm",   # PRODUCTS_0 — the darkroom opens beside the program (DARKROOM_1); a first-visit cost, recorded
             "veil_poster.jpg", EXHIBITION_JSON]
+# A build product that is NOT fetched at boot is excused here, by name, and
+# nowhere else (the products gate reads this list). Empty: every product the
+# build makes today is a boot fetch.
+NOT_AT_BOOT = []
 
 CF_LIMIT = 25 * 1024 * 1024        # Cloudflare Pages per-file
 GH_LIMIT = 100 * 1024 * 1024       # GitHub Pages per-file (soft, ~100 MiB)
@@ -799,7 +808,7 @@ def main():
         print("")
         print("BUILD FIRST — %d artifact(s) absent." % len(missing))
         print("  cmake --preset the-board-web && cmake --build --preset the-board-web")
-        print("(the three build outputs land in web/ beside the tracked index.html;")
+        print("(the build outputs land in web/ beside the tracked index.html;")
         print(" .gitignore keeps them out of the tree on purpose.)")
         return 2
 
@@ -813,7 +822,18 @@ def main():
     print("  wasm + js        %d bytes  (%.2f MiB)" % (
         sizes["the_board.wasm"] + sizes["the_board.js"],
         mib(sizes["the_board.wasm"] + sizes["the_board.js"])))
-    print("  first visit      %d bytes  (%.2f MiB) uncompressed" % (total, mib(total)))
+    # PRODUCTS_0 R1 — the boot set's reader, and its two checks.
+    boot_total = 0
+    for name in BOOT_SET:
+        p = os.path.join(DIST, name)
+        if not os.path.exists(p):
+            print("  BOOT_SET names %s, and dist has no such file — the list is stale, fix the list" % name)
+            return 2
+        if name.startswith(("paintings/", "collection/")):
+            print("  BOOT_SET must never carry the exhibition or the collection: %s" % name)
+            return 2
+        boot_total += os.path.getsize(p)
+    print("  first visit      %d bytes  (%.2f MiB) uncompressed  (the boot set: %d files)" % (boot_total, mib(boot_total), len(BOOT_SET)))
     print("  exhibition       %d bytes  (%.2f MiB) source, fetched AFTER first paint"
           % (paintings_src_bytes + music_src_bytes, mib(paintings_src_bytes + music_src_bytes)))
     print("  Both hosts serve br/gzip for js/html; .wasm and .data compress well over the")
@@ -1162,8 +1182,8 @@ def main():
               % abs(packed_is - glue_says))
         print("  build ever made, failing SEAL2 on every device, with no cache")
         print("  involved (PAIR_0, 5 Sep 2026).")
-        print("  web/ holds outputs from two different links. Delete the three")
-        print("  build files and build again, and READ THE BUILD'S OUTPUT:")
+        print("  web/ holds outputs from two different links. Delete the build")
+        print("  files and build again, and READ THE BUILD'S OUTPUT:")
         print("    del web\\the_board.js web\\the_board.wasm web\\the_board.data web\\darkroom.js web\\darkroom.wasm")
         print("    cmake --build --preset the-board-web")
         print("  dist/ is part-written and NOT deployable.")
