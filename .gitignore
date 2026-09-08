@@ -418,10 +418,10 @@ dist/
 .wrangler/
 out/
 
-# website assets — masters live outside version control. The json beside
-# them (site.json, set.json) stays tracked; the paintings do not.
-assets/about/*.jpg
-assets/about/*.jpeg
+# website assets — masters live outside version control. The json and the
+# one-line info sidecars beside them (set.json, PAINTING_<n>.txt) stay
+# tracked; the paintings do not. assets/about/ holds only site.json and the
+# doors' pictures, which are tracked.
 assets/collection/**/*.jpg
 assets/collection/**/*.jpeg
 assets/collection/**/*.png

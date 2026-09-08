@@ -985,7 +985,7 @@ def main():
 
     # ── WEBSITE_1 — THE ENGINE OWNS NAMES, NOT THE FOLDER ───────────
     # dist/ is shared ground: about/, collection/, fonts/ and shared.css
-    # are the site's, written by their own pipelines (MAIN/MERGE.md).
+    # are the site's, written by their own pipelines (tools/dist.py).
     # This script deletes exactly what it writes — the names below, every
     # one already a constant in this file — and treats anything else as a
     # tenant it does not know. That is the whole agnosticism: the site's
