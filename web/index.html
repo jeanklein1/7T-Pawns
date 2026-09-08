@@ -1112,7 +1112,6 @@
           <dd>Ctrl</dd>
       </dl>
       <div class="row">
-        <button type="button" id="ctlPhoto">Take a photo</button>
         <button type="button" id="ctlFull">Fullscreen</button>
         <button type="button" id="ctlSound">Sound: on</button>
       </div>
@@ -1941,6 +1940,9 @@
       // no readback, no address to abuse. HYPOTHESIS (P1): a WebGPU canvas
       // keeps its last presented image for toBlob; a black picture is the
       // gate row, and the fallback is registered.
+      // The button is WITHHELD for now (Jean, 8 Sep): the function stays whole
+      // and guarded below; giving it back is one <button id="ctlPhoto"> in the
+      // Controls pane's row beside Fullscreen and Sound.
       var ctlPhoto = document.getElementById('ctlPhoto');
       var canvasEl = document.getElementById('canvas');
       if (ctlPhoto && canvasEl) ctlPhoto.addEventListener('click', function () {
