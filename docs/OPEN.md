@@ -2,6 +2,102 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
+## HOUSE_0 — THE HOUSE THE BOARD STANDS IN (on `claude/house-0`; Jean's gates open)
+
+The website round after Jean's 7 Sep hand edits: every room connects, the
+letterbox opens, the walls answer *info*. Site-only — the shell loses
+three dead comments and nothing else; no `src/` file moves; `web_dist.py`
+changes one comment. Rehearsed end to end in a scratch dist and driven in
+headless Chromium (touch and mouse); the drives are in the handoff.
+
+| ruling | where it lives now |
+|---|---|
+| Home is the page's one name, on both shells | `web/routes.json` — the `about` row is back, no `side`; the engine's Home pane lives again |
+| The hero says nothing under it; it is a quiet door into its painting | `web/about/index.html` — `.hero-plate` and `#hero-title` are gone; the `<a>` stays |
+| The doors carry the menu's names in the page's voice: *the board · gallery · writings* | `.doors` |
+| The writings door takes a picture like the board's | `assets/about/writings.jpg` → `about_dist` `build_door_image(name)` (the old `build_world`, by name) |
+| No statement, no footer (Jean's edit, honoured) | the template; `about_dist` reads the statement only if a header is there |
+| Writings: a *Writings* menu on the left; the scroll and one page per text | `web/writings/index.html` (one template), `about_dist` `writing_slug` / `writings_menu_html` / `write_writings_page`; `web/menu.css` `.menu.left` |
+| A text's address is its filename after the number | `writing_slug`: `01_the_mirror_in_the_sand.txt` → `/writings/the-mirror-in-the-sand/` |
+| ZOOM_1 — the stage owns every gesture; the pan is clamped to the picture | `web/collection/index.html` — the two `.zone`s are gone; `pictureRect` / `clampAxis` / `zoomClamp` |
+| No number on the gallery page: not *no. N*, not *1 / 13*, not *13 works* | `collection_dist` `section_markup` / `tile_markup`; the plate |
+| *info* — a work's one line, behind a word, only where there is one | `assets/collection/<set>/PAINTING_<n>.txt` → `load_sets` → `data-info` → `plate()` |
+| Closing a work opened from its own address lands on the grid | `pushed` in `show()` / `shut()` |
+| The letterbox's sender is configuration | `functions/api/message.js` `MESSAGE_FROM` |
+| The folders are the truth: paintings by number, a missing one a warning | `site.json` `hero` / `strip` as numbers; `about_dist` `find_master`; `collection_dist` warns on an orphan sidecar or an orphan `featured` |
+| `assets/about/` holds `site.json` and the doors' pictures, nothing else | `.gitignore` (the two about lines gone), `README.txt` |
+| `site.json` requires what is read: `email`, `hero`; `strip` optional | `load_site` — `authors` and `links` are gone |
+| The gallery page's tab and share card say *gallery* | `<title>`, `og:title`, `description` |
+| The bootstrap and `MAIN/` are attic | tag `attic/house-0-main-setup`; `docs/COPY.md` carries what they said that is still true |
+
+**THE TWO DIAGNOSES, READ FROM THE LIVE SITE, NOT GUESSED.**
+
+- **Write me answered `501 {"error":"unconfigured"}`** to a real POST: the
+  function is deployed and `RESEND_API_KEY` / `MESSAGE_TO` are not set on
+  the Pages project. No code was wrong. Jean's dashboard work (below); the
+  page needs a redeploy after the variables land.
+- **The pinch was dead outside the middle third.** ZOOM_0's step zones
+  were absolutely-positioned SIBLINGS of the stage, 34% each side; a
+  finger landing on one never reached the stage's pointer handlers, and
+  on the zones the browser zoomed the page. Witnessed on the ZOOM_0 page
+  in Chromium at 390 px: a pinch starting at 15%/85% of the width →
+  `zoom.s = 1.000`; the same spread in the middle third → `1.500`; the
+  live zone was **125 px wide**. On the HOUSE_0 page the outer-third
+  pinch reads `1.286` (the spread's own ratio, 0.9/0.7).
+
+**THE ONE THING THE ROUND CORRECTED WITHOUT ASKING.** A work opened from
+its own `#w<n>` address — the home page's hero now lands exactly there —
+closed with `history.back()`, which left the gallery for whatever page
+came before. `pushed` records whether THIS opening pushed an entry; if it
+did not, close replaces the state and shows the grid.
+
+### What Jean does (in parallel; nothing in the tree waits on it)
+1. resend.com — an account and an API key. Signing up **with**
+   `jean@everexpandingboard.com` (Email Routing forwards the verification)
+   lets Resend's unverified sender deliver there with no domain work.
+   Otherwise verify the domain (three DNS records in Cloudflare; they do
+   not collide with Email Routing's MX) and set `MESSAGE_FROM` to
+   `the board <board@everexpandingboard.com>`.
+2. Pages → `7t` → Settings → Environment variables → Production:
+   `RESEND_API_KEY`, `MESSAGE_TO=jean@everexpandingboard.com` (and
+   `MESSAGE_FROM` if the domain is verified). Then a deploy.
+3. PowerShell: `Invoke-RestMethod -Method Post -Uri https://everexpandingboard.com/api/message -ContentType application/json -Body '{"message":"test"}'`
+   → `ok True` and a mail. 501 = variables missing; 502 = Resend refused
+   (the unverified sender only delivers to the account's own address).
+4. `assets\about\writings.jpg` — whenever; absence costs one build line.
+5. `del assets\about\PAINTING_*.jpeg` — the hero copies the retired
+   bootstrap placed; the heroes are found in the collection now.
+6. One line per painting he wants to say something about:
+   `assets\collection\<set>\PAINTING_<n>.txt`.
+
+### Residuals — HOUSE_0
+- **Jean's browser is the visual gate**, the phone the real one: the pinch
+  from anywhere on the picture; the tap in an outer third steps; the pan
+  stops at the picture's edge; *info* opens and follows a step; the
+  Writings menu on a phone; the doors' lowercase; the empty air where the
+  statement was.
+- **`/about/` is the address of the page called Home** (path, directory,
+  builder, route id, `about.json`). Priced: ~12 files, one 301, no visible
+  change; parked until the word is final. `/main` still forwards there.
+- **The doctrine sentence has four homes** — the first writing's title, the
+  gallery lede `h1`, the writings door blurb, one `<meta>` on the engine
+  page. Copy, Jean's; one home when he chooses it.
+- **The site never says his name** except in two `<meta>` descriptions.
+  Copy, Jean's.
+- **`00_text_page_doctrine.txt` lives at `/writings/text-page-doctrine/`.**
+  A rename of the words after `00_` moves it; his call.
+- **`/writings/<slug>/` pages carry no explicit `Cache-Control`** — Pages'
+  default revalidates them (ETag); `web_dist.py`'s writer rules `/writings/`
+  only. Untouched on purpose: that script is the engine's, and this branch
+  keeps out of it. One line (`/writings/*`) if the default ever bites.
+- **Two sets that hold the same number** would give `find_master` the first
+  by set order; `collection_dist` allows the collision across folders and
+  the hero would pick without saying which. Unlikely by construction
+  (numbers are the works' own); left as authored.
+- **The 404 page's menu is hand-kept** (`web_dist.py` `NOT_FOUND_PAGE`); its
+  four links still name the four rooms correctly. A route added later must
+  be added there by hand — DOORS_4's note stands.
+
 ## ZOOM_0 — THE COLLECTION PAGE LEARNS THE PINCH (landed on master; Jean's gates open)
 
 Five seams of the lightbox the page already had. One transform on `#big` —
