@@ -4,18 +4,27 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>writings — the ever expanding board</title>
+<title>__TITLE__ — the ever expanding board</title>
 <meta name="description" content="Writings from the ever expanding board.">
-<meta property="og:title" content="writings — the ever expanding board">
+<meta property="og:title" content="__TITLE__ — the ever expanding board">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23e8e6e0' d='M16 4a5 5 0 0 0-2.6 9.3c-.5 2.9-1.6 5.2-3.4 7.2h12c-1.8-2-2.9-4.3-3.4-7.2A5 5 0 0 0 16 4zM8 23h16v2.6c0 .8-.6 1.4-1.4 1.4H9.4C8.6 27 8 26.4 8 25.6z'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="../shared.css">
 <style>
   /* writings-page-only. Tokens, type, masthead and the spacing scale
      live in shared.css — never redefined here. The vertical rhythm uses
-     shared.css's own steps: no new clamp for spacing. This page has no
-     .site line and no footer (DOORS_4, ruling 8: the name appears once,
-     and its home is the engine's wordmark). */
+     shared.css's own steps: no new clamp for spacing. No .site line and
+     no footer (DOORS_4, ruling 8).
+
+     ONE TEMPLATE, N+1 PAGES (HOUSE_0). about_dist fills it once as the
+     scroll — every text, filename order — and once per text as that
+     text alone at /writings/<slug>/. The TITLE token is the page's own
+     name (the tab and the share card); the WMENU marker is the Writings
+     menu, whose list is the OTHER pages, never this one. Neither token
+     is spelled in full anywhere but its slot: fill() checks the OUTPUT
+     for survivors, and a comment that spelled one would be a survivor.
+     The stylesheet is the template's one ../ reference; a single page
+     sits one level deeper and about_dist rewrites it to ../../. */
 
   .writings { max-width: 34em; margin: var(--s5) auto; padding: 0 var(--edge); }
   .writings article { margin: 0 0 var(--s5); }
@@ -28,6 +37,16 @@
 <body>
 
 <div class="top">
+  <!-- HOUSE_0 — THE WRITINGS MENU, on the left, the sandwich's own idiom:
+       a native <details> that opens with no script. Its list is written
+       by tools/about_dist.py (build_writings) — the titles, and on a
+       single page the scroll first. -->
+  <details class="menu left">
+    <summary>Writings</summary>
+    <nav>
+      <!-- __WMENU__ -->
+    </nav>
+  </details>
   <!-- DOORS_0 — THE SANDWICH (see about/). -->
   <details class="menu">
     <summary aria-label="menu"><span class="bars" aria-hidden="true"></span></summary>

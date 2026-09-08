@@ -136,6 +136,15 @@
    does not double it up */
 .menu .followbox + .writebox { margin-top: 0; }
 
+/* ── HOUSE_0 — A SECOND MENU, ON THE LEFT: the writings' own ──────────
+   The same <details> idiom with a word for a summary instead of the bars.
+   shared.css keeps the sandwich on the right edge with `.top .menu
+   { margin-left: auto }` — a rule that reaches this menu too, and would
+   float it into the middle of the bar; this puts it back on the left and
+   drops its list from the left edge rather than the right. */
+.top .menu.left { margin-left: 0; }
+.menu.left > nav { left: 0; right: auto; }
+
 /* ── DOORS_4 — HIDDEN MEANS HIDDEN, EVERYWHERE IN THE SANDWICH ───────
    .pane dl sets display:grid, and an AUTHOR display beats the UA's
    [hidden]{display:none} at any specificity, because origin outranks
