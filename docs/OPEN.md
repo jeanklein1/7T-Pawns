@@ -13,13 +13,13 @@ headless Chromium (touch and mouse); the drives are in the handoff.
 | ruling | where it lives now |
 |---|---|
 | Home is the page's one name, on both shells | `web/routes.json` — the `about` row is back, no `side`; the engine's Home pane lives again |
-| The hero says nothing under it; it is a quiet door into its painting | `web/about/index.html` — `.hero-plate` and `#hero-title` are gone; the `<a>` stays |
+| The hero says nothing under it; it is a quiet door into its painting | `web/home/index.html` (NAMES_0; was `web/about/`) — `.hero-plate` and `#hero-title` are gone; the `<a>` stays |
 | The doors carry the menu's names in the page's voice: *the board · gallery · writings* | `.doors` |
 | The writings door takes a picture like the board's | `assets/about/writings.jpg` → `about_dist` `build_door_image(name)` (the old `build_world`, by name) |
 | No statement, no footer (Jean's edit, honoured) | the template; `about_dist` reads the statement only if a header is there |
 | Writings: a *Writings* menu on the left; the scroll and one page per text | `web/writings/index.html` (one template), `about_dist` `writing_slug` / `writings_menu_html` / `write_writings_page`; `web/menu.css` `.menu.left` |
 | A text's address is its filename after the number | `writing_slug`: `01_the_mirror_in_the_sand.txt` → `/writings/the-mirror-in-the-sand/` |
-| ZOOM_1 — the stage owns every gesture; the pan is clamped to the picture | `web/collection/index.html` — the two `.zone`s are gone; `pictureRect` / `clampAxis` / `zoomClamp` |
+| ZOOM_1 — the stage owns every gesture; the pan is clamped to the picture | `web/gallery/index.html` (NAMES_0; was `web/collection/`) — the two `.zone`s are gone; `pictureRect` / `clampAxis` / `zoomClamp` |
 | No number on the gallery page: not *no. N*, not *1 / 13*, not *13 works* | `collection_dist` `section_markup` / `tile_markup`; the plate |
 | *info* — a work's one line, behind a word, only where there is one | `assets/collection/<set>/PAINTING_<n>.txt` → `load_sets` → `data-info` → `plate()` |
 | Closing a work opened from its own address lands on the grid | `pushed` in `show()` / `shut()` |
@@ -76,9 +76,12 @@ did not, close replaces the state and shows the grid.
   stops at the picture's edge; *info* opens and follows a step; the
   Writings menu on a phone; the doors' lowercase; the empty air where the
   statement was.
-- **`/about/` is the address of the page called Home** (path, directory,
-  builder, route id, `about.json`). Priced: ~12 files, one 301, no visible
-  change; parked until the word is final. `/main` still forwards there.
+- **The addresses say the names** (NAMES_0, the word final): the page
+  called Home lives at `/home/`, the Gallery at `/gallery/` — path,
+  directory, route id, `home.json`. `/about/` and `/collection/` are 301s
+  (a `#w` address survives the redirect); `/main` forwards to `/home/`.
+  The builders' filenames and `assets/about/`, `assets/collection/` keep
+  their names — Jean's local pictures live in the latter.
 - **The doctrine sentence has four homes** — the first writing's title, the
   gallery lede `h1`, the writings door blurb, one `<meta>` on the engine
   page. Copy, Jean's; one home when he chooses it.
@@ -835,6 +838,13 @@ still the directory and `about_dist.py` still its builder. That is the
 precedent DOORS_4 set when the collection became Gallery: labels are
 words, ids are wiring, and a rename that touches the wiring breaks links
 that are already printed and already shared.
+
+*Superseded by NAMES_0 (8 Sep, Jean's word, no handoff): the path, the
+directory, the route id and the pane id now say the name too — `/home/`,
+`web/home/`, `home`; likewise `/gallery/` for the Gallery. The printed
+links this paragraph guarded survive as 301s in `web/_redirects`, `#w`
+addresses included. The builders' filenames and `assets/about/`,
+`assets/collection/` did not move.*
 
 **FOLLOW CAME BACK TO THE MENU, NOT TO THE FOOTERS.** Jean asked for it
 "on the menu", and that is where it went — a nested `<details>` beside

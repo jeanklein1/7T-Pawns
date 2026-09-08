@@ -7,7 +7,7 @@
 # nothing here may lean on that machinery or weaken it. Two pipelines,
 # one folder convention, zero coupling.
 #
-#   python tools/collection_dist.py               # build dist/collection/
+#   python tools/collection_dist.py               # build dist/gallery/
 #   python tools/collection_dist.py --check       # inventory only
 #   python tools/collection_dist.py --preview F   # one self-contained file
 #
@@ -32,14 +32,14 @@
 # that still names it — a sidecar, a featured number — is a WARNING
 # line, never a refused build (HOUSE_0). No number is shown on the page.
 #
-# THE PAGE IS WRITTEN, NOT FETCHED. web/collection/index.html is source
+# THE PAGE IS WRITTEN, NOT FETCHED. web/gallery/index.html is source
 # with two placeholder regions; this script fills them with static
-# markup and writes the result to dist/collection/index.html. No
+# markup and writes the result to dist/gallery/index.html. No
 # runtime manifest, no client templating: the HTML is the manifest,
 # which is also what lets the page work with JavaScript disabled.
 #
 # DERIVATIVE NAMES CARRY A CONTENT HASH. The _headers rule marks
-# /collection/* immutable for a year, which is only safe if replacing a
+# /gallery/* immutable for a year, which is only safe if replacing a
 # master changes the URL. Without the hash, re-exporting no. 107 would
 # leave every returning visitor looking at last year's scan.
 #
@@ -61,8 +61,8 @@ import routes   # DOORS_0 — the sandwich's one renderer
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 SRC = os.path.join(ROOT, "assets", "collection")
-TEMPLATE = os.path.join(ROOT, "web", "collection", "index.html")
-DIST = os.path.join(ROOT, "dist", "collection")
+TEMPLATE = os.path.join(ROOT, "web", "gallery", "index.html")
+DIST = os.path.join(ROOT, "dist", "gallery")
 
 WORK_EXTS = (".jpg", ".jpeg", ".png")
 
@@ -305,8 +305,8 @@ def peek_entry(s, rec, featured=False):
         "n": rec["n"], "set": s["slug"],
         "title": "Painting %d" % rec["n"],     # the pane tile's alt; no visible surface (HOUSE_0)
         "tone": rec["tone"], "r": round(rec["w"] / rec["h"], 4),
-        "src": "/collection/%s/%s" % (s["slug"], first[2]),
-        "href": "/collection/#w%d" % rec["n"],
+        "src": "/gallery/%s/%s" % (s["slug"], first[2]),
+        "href": "/gallery/#w%d" % rec["n"],
         "featured": bool(featured),
     }
 
@@ -341,8 +341,8 @@ def fill(template, index_html, works_html):
     out = out.replace("<!-- __WORKS__ -->", works_html)
     # DOORS_0 — the sandwich: links from web/routes.json, rules from
     # web/menu.css, through tools/routes.py — the renderer the engine
-    # shell and about/ also use.
-    out = out.replace("<!-- __ROUTES__ -->", routes.nav_html("site", "/collection/", indent="      "))
+    # shell and home/ also use.
+    out = out.replace("<!-- __ROUTES__ -->", routes.nav_html("site", "/gallery/", indent="      "))
     out = out.replace("/* __MENU_CSS__ */", routes.menu_css())
     for token in ("__INDEX__", "__WORKS__", "__ROUTES__", "__MENU_CSS__"):
         if token in out:
@@ -485,17 +485,17 @@ def main():
     # mistaken for the live file; web_dist.py's writer owns the merge.
     frag = os.path.join(DIST, "_headers.fragment")
     with open(frag, "w", encoding="utf-8") as fh:
-        fh.write("/collection/*\n"
+        fh.write("/gallery/*\n"
                  "  Cache-Control: public, max-age=31536000, immutable\n"
-                 "/collection/\n"
+                 "/gallery/\n"
                  "  Cache-Control: no-cache\n"
-                 "/collection/index.html\n"
+                 "/gallery/index.html\n"
                  "  Cache-Control: no-cache\n"
-                 "/collection/peek.json\n"
+                 "/gallery/peek.json\n"
                  "  Cache-Control: no-cache\n")
 
     files = sum(len(fs) for _, _, fs in os.walk(DIST))
-    say("\ndist/collection/  %d files" % files)
+    say("\ndist/gallery/  %d files" % files)
     say("  jpeg  %6.1f MiB" % (bytes_jpg / 2**20))
     say("  avif  %6.1f MiB" % (bytes_avf / 2**20))
     say("  merge %s into the root _headers at deploy" % os.path.basename(frag))

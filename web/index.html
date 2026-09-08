@@ -980,7 +980,7 @@
            labels are Jean's (DOORS_3). -->
       <div class="entry">
         <button id="enter" class="btn" type="button">The Board</button>
-        <a class="btn alt" href="/about/">Home</a>
+        <a class="btn alt" href="/home/">Home</a>
       </div>
     </div>
   </div>
@@ -1008,7 +1008,7 @@
            An anchor, so it works when nothing else does.
            RULING: a link, not a redirect — the log pane beside it is the
            diagnostic surface a redirect would take away. -->
-      <a class="btn alt" href="/about/" aria-label="Click here — our web page">Click here</a>
+      <a class="btn alt" href="/home/" aria-label="Click here — our web page">Click here</a>
       <button id="logToggle2" class="logToggle" type="button" aria-controls="log2" aria-expanded="false">details</button>
     </div>
     <pre id="log2" class="log" aria-live="off"></pre>
@@ -1025,8 +1025,8 @@
     <p style="position:fixed;left:12px;top:12px;z-index:20;max-width:34em;
       color:#8a8792;font:14px/1.5 system-ui,sans-serif;margin:0">
       The board needs JavaScript to begin. Meanwhile
-      <a style="color:#e8e6e0" href="/collection/">the collection</a> is right here,
-      and <a style="color:#e8e6e0" href="/about/">Home</a> says what this is.
+      <a style="color:#e8e6e0" href="/gallery/">the collection</a> is right here,
+      and <a style="color:#e8e6e0" href="/home/">Home</a> says what this is.
     </p>
   </noscript>
 
@@ -1117,16 +1117,16 @@
         <button type="button" id="ctlSound">Sound: on</button>
       </div>
     </div>
-    <div class="pane" data-pane="collection" hidden>
+    <div class="pane" data-pane="gallery" hidden>
       <button type="button" class="back" data-back>← menu</button>
       <p class="pane-head">Gallery</p>
       <div class="peek" id="peek" aria-live="polite"></div>
-      <a class="out" data-out target="_blank" rel="opener" href="collection/">Open Gallery in a new tab →</a>
+      <a class="out" data-out target="_blank" rel="opener" href="gallery/">Open Gallery in a new tab →</a>
     </div>
     <!-- DOORS_2/DOORS_4 — THE SITE IN MINIATURE. Four panes, two fetches,
          both at gesture time and never at boot: writings/writings.json
          feeds Writings (built from assets/writings, the same read the page
-         gets) and about/about.json feeds About and Write (the statement,
+         gets) and home/home.json feeds About and Write (the statement,
          the day's painting, and the address). The message door posts to
          the same function the site opens (functions/api/message.js takes
          JSON). Words are placeholders; the address is site.json's. -->
@@ -1151,13 +1151,13 @@
         <div class="row"><button type="submit" id="miniSend">Send</button><span class="said" id="miniSaid"></span></div>
       </form>
     </div>
-    <div class="pane" data-pane="about" hidden>
+    <div class="pane" data-pane="home" hidden>
       <button type="button" class="back" data-back>← menu</button>
       <p class="pane-head">Home</p>
       <!-- the day's painting, as the about page picks it, and the statement -->
-        <a class="mini-hero" id="miniHero" target="_blank" rel="opener" href="collection/"></a>
+        <a class="mini-hero" id="miniHero" target="_blank" rel="opener" href="gallery/"></a>
         <div class="text" id="miniStatement"></div>
-        <a class="out" data-out target="_blank" rel="opener" href="about/">Home →</a>
+        <a class="out" data-out target="_blank" rel="opener" href="home/">Home →</a>
     </div>
     <div class="pane" data-pane="follow" hidden>
       <button type="button" class="back" data-back>← menu</button>
@@ -1713,9 +1713,9 @@
       function showPane(id) {
         panes.forEach(function (p) { p.hidden = (p.dataset.pane !== id); });
         menu.classList.toggle('paned', !!id);
-        if (id === 'collection') loadPeek();
+        if (id === 'gallery') loadPeek();
         if (id === 'writings') loadWritings();               // DOORS_4 — the writings, browsed here
-        if (id === 'about' || id === 'write') loadAbout();   // DOORS_2/DOORS_3 — statement, hero, address
+        if (id === 'home' || id === 'write') loadAbout();   // DOORS_2/DOORS_3 — statement, hero, address
         if (id === 'controls') showPlatform(platform);       // DOORS_3
       }
       // DOORS_2/DOORS_3 — ONE FETCH FOR TWO PANES: the statement and the
@@ -1729,7 +1729,7 @@
       function loadAbout() {
         if (about || aboutLoading) return;
         aboutLoading = true;
-        fetch('about/about.json', { cache: 'no-cache' }).then(function (r) {
+        fetch('home/home.json', { cache: 'no-cache' }).then(function (r) {
           if (!r.ok) throw new Error('HTTP ' + r.status);
           return r.json();
         }).then(function (d) {
@@ -1738,8 +1738,8 @@
           // THE PANE MAKES THE PAGE'S OWN PICK. Same day index, same
           // tall/wide question — asked of the PANE's aspect, not the
           // page's. build_hero emits {n, src, w, h}: no title, and src is
-          // written relative to /about/, so the shell reaches it as
-          // 'about/' + src. The alt names the painting by its number,
+          // written relative to /home/, so the shell reaches it as
+          // 'home/' + src. The alt names the painting by its number,
           // which is the only name the work has here.
           var day = Math.floor(Date.now() / 864e5);
           var tall = window.matchMedia && window.matchMedia('(max-aspect-ratio: 4/5)').matches;
@@ -1749,13 +1749,13 @@
           if (pick && miniHero) {
             miniHero.innerHTML = '';
             var img = document.createElement('img');
-            img.src = 'about/' + pick.src;
+            img.src = 'home/' + pick.src;
             img.alt = pick.n !== undefined ? ('Painting ' + pick.n) : '';
             if (pick.w) img.width = pick.w;
             if (pick.h) img.height = pick.h;
             img.loading = 'lazy'; img.decoding = 'async';
             miniHero.appendChild(img);
-            if (pick.n !== undefined) miniHero.href = 'collection/#w' + pick.n;
+            if (pick.n !== undefined) miniHero.href = 'gallery/#w' + pick.n;
           }
         }).catch(function (err) {
           aboutLoading = false;                      // retry on the next opening
@@ -1833,7 +1833,7 @@
       function loadPeek() {
         if (peekLoaded || !peekEl) return;
         peekLoaded = true;
-        fetch('/collection/peek.json', { cache: 'no-cache' }).then(function (r) {
+        fetch('/gallery/peek.json', { cache: 'no-cache' }).then(function (r) {
           if (!r.ok) throw new Error('HTTP ' + r.status);
           return r.json();
         }).then(function (d) {

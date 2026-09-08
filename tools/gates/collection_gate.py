@@ -7,10 +7,10 @@
 # engine artifact can creep into the page's dependency closure, so the
 # rule is enforced here rather than remembered.
 #
-#   python tools/gates/collection_gate.py            # gates dist/collection
+#   python tools/gates/collection_gate.py            # gates dist/gallery
 #
 # Two checks:
-#   1. No text file under dist/collection mentions an engine artifact
+#   1. No text file under dist/gallery mentions an engine artifact
 #      or a WebGPU entry point.
 #   2. Every local src/href/srcset the page names exists on disk —
 #      a manifest that lies is the failure the exhibition path already
@@ -22,7 +22,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
-DIST = os.path.join(ROOT, "dist", "collection")
+DIST = os.path.join(ROOT, "dist", "gallery")
 
 FORBIDDEN = (
     "the_board.js", "the_board.wasm", "the_board.data",
@@ -78,7 +78,7 @@ def main():
         if not os.path.isfile(os.path.join(DIST, ref)):
             hint = ("  (a leading slash names the SITE root; this page speaks in ../ — "
                     "tools/routes.py rel())") if ref.startswith("/") else ""
-            bad.append("index.html names %s — no such file in dist/collection%s" % (ref, hint))
+            bad.append("index.html names %s — no such file in dist/gallery%s" % (ref, hint))
 
     if bad:
         fail(bad)

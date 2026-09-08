@@ -198,9 +198,9 @@ NOT_FOUND_PAGE = """<!DOCTYPE html>
 <p style="margin:0 0 14px">There is nothing at this address. The board is a living,
 ever-expanding world that hangs Jean Klein's paintings.</p>
 <p style="margin:0"><a style="color:#e8e6e0" href="/">world</a> &middot;
-<a style="color:#e8e6e0" href="/collection/">gallery</a> &middot;
+<a style="color:#e8e6e0" href="/gallery/">gallery</a> &middot;
 <a style="color:#e8e6e0" href="/writings/">writings</a> &middot;
-<a style="color:#e8e6e0" href="/about/">home</a></p>
+<a style="color:#e8e6e0" href="/home/">home</a></p>
 </div>
 </body>
 </html>
@@ -1000,7 +1000,7 @@ def main():
         return 5
 
     # ── WEBSITE_1 — THE ENGINE OWNS NAMES, NOT THE FOLDER ───────────
-    # dist/ is shared ground: about/, collection/, fonts/ and shared.css
+    # dist/ is shared ground: home/, gallery/, fonts/ and shared.css
     # are the site's, written by their own pipelines (tools/dist.py).
     # This script deletes exactly what it writes — the names below, every
     # one already a constant in this file — and treats anything else as a
@@ -1349,8 +1349,8 @@ def main():
         # constant name and must revalidate, exactly as / does.
         if os.path.isdir(os.path.join(DIST, "fonts")):
             fh.write("/fonts/*\n  Cache-Control: %s\n" % IMMUTABLE_RULE)
-        if os.path.isdir(os.path.join(DIST, "about")):
-            fh.write("/about/\n  Cache-Control: no-cache\n")
+        if os.path.isdir(os.path.join(DIST, "home")):
+            fh.write("/home/\n  Cache-Control: no-cache\n")
         # DOORS_3/DOORS_4 — the writings page is the about page's twin in
         # this respect: a constant name whose content changes, so it must
         # revalidate. The conditional is the same one, for the same reason.
@@ -1362,7 +1362,7 @@ def main():
         # its own output, folded here verbatim. Absent fragment, absent
         # rule. Run this script LAST on a full refresh — the fold and
         # the two conditionals above read what the site pipelines wrote.
-        frag = os.path.join(DIST, "collection", "_headers.fragment")
+        frag = os.path.join(DIST, "gallery", "_headers.fragment")
         if os.path.isfile(frag):
             with open(frag, "r", encoding="utf-8") as fr:
                 txt = fr.read()
@@ -1474,7 +1474,7 @@ def main():
     # asked to have recorded; it describes THIS deploy, not the last one.
     boot_total = 0
     for name in BOOT_SET:
-        if name.startswith(("paintings/", "collection/")):
+        if name.startswith(("paintings/", "gallery/")):
             print("  BOOT_SET must never carry the exhibition or the collection: %s" % name)
             return 2
         p = os.path.join(DIST, name)
@@ -1497,7 +1497,7 @@ def main():
     print("                     %d versioned path(s) immutable for a year — the second dawn is free"
           % len(IMMUTABLE_PATHS))
     if shipped_redirects:
-        print("  _redirects         /main -> /about/ and /world -> / ship as 302 aliases")
+        print("  _redirects         /main -> /home/ and /world -> / ship as 302 aliases")
     print("  404.html           SPA fallback is OFF — strangers get doors, not a broken boot")
 
     print("")

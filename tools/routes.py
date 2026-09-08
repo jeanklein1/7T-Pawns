@@ -2,14 +2,14 @@
 # ─── tools/routes.py ─────────────────────────────────────────────
 #
 # THE ROUTE LIST HAS ONE HOME: web/routes.json. Four pages carry the same
-# sandwich menu — the engine shell, about/, collection/, writings/ — and
+# sandwich menu — the engine shell, home/, gallery/, writings/ — and
 # this is the one renderer all the dist scripts call, so a route added to
 # the JSON appears on every page with no markup edit anywhere. The menu's
 # rules have one home too, web/menu.css, inlined by menu_css(). Neither
 # file ships; both are build-time only.
 #
 #   side    "site" | "engine" | absent (both)
-#   href    an ABSOLUTE site path ("/about/#text"). The renderer speaks it
+#   href    an ABSOLUTE site path ("/home/#text"). The renderer speaks it
 #           RELATIVE to the page it is rendering (rel, below): the site's
 #           own convention (../fonts/, ../shared.css) and the collection
 #           gate's jurisdiction line — a "../" reference is the site's, a
@@ -58,8 +58,8 @@ def load():
 
 def rel(href, base):
     """An absolute site path, spoken from a page at `base` (a directory,
-    "/collection/"). "/about/#text" is "../about/#text" from /collection/
-    and "#text" from /about/; a page's own address is "./"."""
+    "/gallery/"). "/home/#text" is "../home/#text" from /gallery/
+    and "#text" from /home/; a page's own address is "./"."""
     path, frag = (href.split("#", 1) + [""])[:2]
     frag = ("#" + frag) if frag else ""
     b = [seg for seg in base.split("/") if seg]
@@ -196,7 +196,7 @@ def follow_html(indent="    "):
 
 
 if __name__ == "__main__":
-    for base in ("/about/", "/collection/"):
+    for base in ("/home/", "/gallery/"):
         print("--- site @ %s" % base)
         print(nav_html("site", base))
     print("--- engine @ /")

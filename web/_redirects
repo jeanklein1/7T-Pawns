@@ -1,9 +1,9 @@
-# WEBSITE_1 — the speakable aliases. Canonical paths are /, /about/ and
-# /collection/; these exist to be said aloud and printed on a wall.
+# WEBSITE_1 — the speakable aliases. Canonical paths are /, /home/ and
+# /gallery/; these exist to be said aloud and printed on a wall.
 # 302, deliberately: a browser never burns an alias in, so an alias can
 # move the day the site does.
-/main    /about/   302
-/main/   /about/   302
+/main    /home/    302
+/main/   /home/    302
 /world   /         302
 /world/  /         302
 
@@ -11,3 +11,13 @@
 # above: this path is not moving again, and burning it in is the point.
 /text     /writings/   301
 /text/    /writings/   301
+
+# NAMES_0 — the addresses say the names: the page called Home lives at
+# /home/, the Gallery at /gallery/. The old paths burn in as 301s; a #w
+# address survives (the fragment rides the redirect).
+/about          /home/            301
+/about/         /home/            301
+/about/*        /home/:splat      301
+/collection     /gallery/         301
+/collection/    /gallery/         301
+/collection/*   /gallery/:splat   301

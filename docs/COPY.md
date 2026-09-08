@@ -69,13 +69,13 @@ and keeps its address; renaming the words after the number moves it.
 (`00_text_page_doctrine.txt` therefore lives at `/writings/text-page-doctrine/`
 — rename the file if the address should read otherwise.)
 
-## The home page — `web/about/index.html`
+## The home page — `web/home/index.html`
 *(the directory and the route id stay `about` — wiring; only the word a
 visitor reads became **Home**)*
 - the statement — none since HOUSE_0 (Jean took it off). To write one:
   `header.statement` and its rules, one block back from git
   (`git show 60c2fd3:web/about/index.html`); `about_dist` reads it into
-  `about.json` for the engine's Home pane when it is there.
+  `home.json` for the engine's Home pane when it is there.
 - the three door labels and blurbs — `.doors`: **the board · gallery ·
   writings**, lowercase, the menu's own names in the page's voice.
 - **the doors' pictures**: `assets\about\world.jpg` for the board's,
@@ -91,7 +91,7 @@ visitor reads became **Home**)*
   `wide` pool refuses. Curate by hand.
 - the site email — `assets/about/site.json` `email`
 
-## The gallery page — `web/collection/index.html`
+## The gallery page — `web/gallery/index.html`
 - the lede — `header.lede`'s `h1` and `p`. **STILL PLACEHOLDER COPY**: the
   `h1` is *The pawn is a vessel for projected intent.* — the doctrine that
   opened the about page until DOORS_3, moved to `/text/`, and deleted with

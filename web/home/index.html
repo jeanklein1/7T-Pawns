@@ -74,7 +74,7 @@
   <!-- DOORS_0 — THE SANDWICH. A native <details>: it opens with no
        script, so this page keeps working with JavaScript off. The links
        are rendered by tools/routes.py from web/routes.json — the one
-       home the engine shell and collection/ also read. -->
+       home the engine shell and gallery/ also read. -->
   <details class="menu">
     <summary aria-label="menu"><span class="bars" aria-hidden="true"></span></summary>
     <nav>
@@ -83,20 +83,20 @@
   </details>
 </div>
 
-<a class="hero" id="hero" href="../collection/">
+<a class="hero" id="hero" href="../gallery/">
   <!-- __HERO__ -->
 </a>
 
 <!-- HOUSE_0 — no statement and no footer: Jean took both out. When the
      statement is written it is one block (header.statement + its rules)
-     back from git; about_dist reads it into about.json if it is here. -->
+     back from git; about_dist reads it into home.json if it is here. -->
 
 <div class="doors">
   <a class="door" href="../">
     <h2><span class="go">the board</span></h2>
     <!-- __WORLD__ -->
   </a>
-  <a class="door" href="../collection/">
+  <a class="door" href="../gallery/">
     <h2><span class="go">gallery</span></h2>
     <p>Oils, watercolours and pen, in sets. Every work, one page.</p>
     <div class="strip">
@@ -125,7 +125,7 @@ if (HERO && HERO.wide.length) {
     img.src = pick.src;
     img.width = pick.w; img.height = pick.h;
   }
-  document.getElementById("hero").href = "../collection/#w" + pick.n;
+  document.getElementById("hero").href = "../gallery/#w" + pick.n;
 }
 </script>
 </body>

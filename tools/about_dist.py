@@ -3,11 +3,11 @@
 #
 # The home page's pipeline (the page a menu calls Home; `about` is its
 # wiring — the path, the id, this file). Third sibling: web_dist.py owns
-# the world AT THE ROOT, collection_dist.py owns /collection/, this owns
-# /about/ and /writings/. The engine keeps `/` — so this must never write
+# the world AT THE ROOT, collection_dist.py owns /gallery/, this owns
+# /home/ and /writings/. The engine keeps `/` — so this must never write
 # dist/index.html, or it would overwrite the engine's own shell.
 #
-#   python tools/about_dist.py                   # build into dist/about/ + dist/writings/
+#   python tools/about_dist.py                   # build into dist/home/ + dist/writings/
 #   python tools/about_dist.py --preview F       # one self-contained file
 #
 # Reads assets/about/site.json (HOUSE_0 — paintings are NUMBERS, and the
@@ -26,11 +26,11 @@
 # and assets/about/<door>.jpg (world, writings): the doors' pictures,
 # tracked; absent = a door without one.
 #
-# Writes dist/about/ (index.html, about.json, hero/*, the door pictures),
+# Writes dist/home/ (index.html, home.json, hero/*, the door pictures),
 # dist/writings/ (the scroll, one page per text, writings.json), dist/fonts/
 # and dist/shared.css (the fonts and the stylesheet live once, at the root;
 # the pages reach up to them). Never touches dist/index.html or
-# dist/collection. Build order is collection first, then this, so the strip
+# dist/gallery. Build order is collection first, then this, so the strip
 # can find its derivatives.
 
 import argparse
@@ -48,10 +48,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 SRC = os.path.join(ROOT, "assets", "about")
 WEB = os.path.join(ROOT, "web")
-TEMPLATE = os.path.join(WEB, "about", "index.html")
+TEMPLATE = os.path.join(WEB, "home", "index.html")
 FONTS = os.path.join(ROOT, "web", "fonts")
 DIST_ROOT = os.path.join(ROOT, "dist")
-DIST = os.path.join(DIST_ROOT, "about")
+DIST = os.path.join(DIST_ROOT, "home")
 
 HERO_EDGES = (1600, 800)
 DOOR_EDGE = 1600       # HOUSE_0 — a door's picture (world, writings): the hero's long edge
@@ -165,7 +165,7 @@ def build_hero(Image, site, preview):
 
 def build_strip(Image, site, preview):
     """The works under the gallery door, by number. Dist mode finds each
-    one's 640 rung in dist/collection/<any set>/ — the derivative names
+    one's 640 rung in dist/gallery/<any set>/ — the derivative names
     carry a content hash and the set's slug is the collection's business,
     so both are found, never guessed — and a number nobody built is a
     warning and a shorter strip, never a refused build (HOUSE_0)."""
@@ -180,14 +180,14 @@ def build_strip(Image, site, preview):
                 src = data_uri(im, 560, 62)
                 w, h = im.size
         else:
-            pattern = os.path.join(DIST_ROOT, "collection", "*", "%d-640.*.jpg" % n)
+            pattern = os.path.join(DIST_ROOT, "gallery", "*", "%d-640.*.jpg" % n)
             found = sorted(glob.glob(pattern))
             if not found:
-                say("  warning  strip names %d and dist/collection holds no %d-640 — skipped "
+                say("  warning  strip names %d and dist/gallery holds no %d-640 — skipped "
                     "(a number no set has, or the collection is not built)" % (n, n))
                 continue
             target = found[0]
-            src = "../collection/%s/%s" % (os.path.basename(os.path.dirname(target)),
+            src = "../gallery/%s/%s" % (os.path.basename(os.path.dirname(target)),
                                             os.path.basename(target))
             with Image.open(target) as im:
                 w, h = im.size
@@ -384,14 +384,14 @@ def main():
     w_pieces = build_writings()
     # HOUSE_0 — THE WRITER OWNS ITS FOLDER WHOLESALE (collection_dist's own
     # rule), and sweeps it before its first write: a hero taken out of
-    # site.json would otherwise stay in dist/about/hero/ under the tenant
+    # site.json would otherwise stay in dist/home/hero/ under the tenant
     # rule, uploaded and served by every deploy after.
     if not preview and os.path.isdir(DIST):
         shutil.rmtree(DIST)
     hero_tag, hero_data = build_hero(Image, site, preview)
 
     page = fill(template, {
-        "ROUTES": routes.nav_html("site", "/about/", indent="      "),   # DOORS_0 / DOORS_1: spoken from this page
+        "ROUTES": routes.nav_html("site", "/home/", indent="      "),   # DOORS_0 / DOORS_1: spoken from this page
         "MENU_CSS": routes.menu_css(),                        # DOORS_0
         "HERO": hero_tag,
         "STRIP": build_strip(Image, site, preview),
@@ -431,7 +431,7 @@ def main():
     # he writes one, the header comes back and this reads it again. An
     # absent header is an empty statement, not a refused build.
     m = re.search(r'<header class="statement" id="statement">(.*?)</header>', page, re.S)
-    with open(os.path.join(DIST, "about.json"), "w", encoding="utf-8") as fh:
+    with open(os.path.join(DIST, "home.json"), "w", encoding="utf-8") as fh:
         json.dump({"statement": m.group(1).strip() if m else "",
                    "hero": hero_data,          # what build_hero returned: the day-indexed list the page itself rotates
                    "email": site["email"]}, fh)
@@ -481,9 +481,9 @@ def main():
         say("")
         say("  %d PLACEHOLDER marker%s still in the page — copy is not final."
             % (holds, "" if holds == 1 else "s"))
-        say("  Search web/about/index.html.")
+        say("  Search web/home/index.html.")
         say("")
-    say("dist/about/index.html written; hero beside it, fonts at dist/fonts/")
+    say("dist/home/index.html written; hero beside it, fonts at dist/fonts/")
     say("build order: collection_dist, then this, then web_dist LAST —")
     say("since WEBSITE_1 it deletes only the engine's own names, and its")
     say("root _headers folds our fragment and rules only what exists.")
