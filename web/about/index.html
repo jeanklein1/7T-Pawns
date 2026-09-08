@@ -5,22 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>home — the ever expanding board</title>
-<meta name="description" content="The pawn is a vessel for projected intent. Paintings, sketches, and a procedurally generated world you can walk into.">
+<meta name="description" content="Jean Klein's paintings, writings, and a procedurally generated world you can walk into.">
 <meta property="og:title" content="the ever expanding board">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23e8e6e0' d='M16 4a5 5 0 0 0-2.6 9.3c-.5 2.9-1.6 5.2-3.4 7.2h12c-1.8-2-2.9-4.3-3.4-7.2A5 5 0 0 0 16 4zM8 23h16v2.6c0 .8-.6 1.4-1.4 1.4H9.4C8.6 27 8 26.4 8 25.6z'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="../shared.css">
 <style>
-  /* Everything here is about-page-only. Tokens, type, masthead, footer
-     and the spacing scale live in shared.css — never redefined here. */
-
-  html { scroll-behavior: smooth; }
-  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  /* Everything here is home-page-only. Tokens, type, masthead and the
+     spacing scale live in shared.css — never redefined here. */
 
   /* ── the hero ─────────────────────────────────────────────────────
      Capped so the door has one shape. Without the cap the front page
      was 506px tall or 985px tall depending on which work the daily
-     rotation happened to pick. */
+     rotation happened to pick. It is a quiet door: the picture opens
+     itself on the gallery page, and nothing is written under it
+     (HOUSE_0 — no number, no caption, no second link). */
   .hero { display: block; }
   .hero img {
     display: block;
@@ -30,43 +29,13 @@
     object-fit: cover;
     object-position: center;
   }
-  .hero-plate {
-    display: flex;
-    justify-content: space-between;
-    padding: var(--s2) var(--edge) 0;
-    font-size: 13.5px;
-    color: var(--faint);
-    font-variant-numeric: oldstyle-nums;
-  }
-  .hero-plate a { color: var(--faint); text-decoration: none; }
-  .hero-plate a:hover { color: var(--dim); }
 
-  /* ── the statement (DOORS_3 — the doctrine moved to /text/) ─────── */
-  .statement { padding: var(--s5) var(--edge) var(--s5); }
-  .statement h1 {
-    margin: 0;
-    max-width: 15em;
-    font-size: clamp(27px, 3.4vw, 44px);
-    font-weight: 400;
-    line-height: 1.14;
-    text-wrap: balance;
-  }
-  .statement p {
-    margin: var(--s3) 0 0;
-    max-width: 34em;
-    font-style: italic;
-    font-size: clamp(16.5px, 1.5vw, 19px);
-    line-height: 1.55;
-    color: var(--dim);
-    text-wrap: pretty;
-  }
-
-  /* ── the doors (three since DOORS_3) ──────────────────────────── */
+  /* ── the doors — three, lowercase, the menu's own names (HOUSE_0) ── */
   .doors {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
     gap: var(--s5);
-    padding: 0 var(--edge) var(--s6);
+    padding: var(--s5) var(--edge) var(--s6);
   }
   .door { text-decoration: none; display: block; }
   .door h2 {
@@ -81,7 +50,6 @@
   }
   .door:hover .go, .door:focus-visible .go { border-color: var(--ink); }
   .door p { margin: 0 0 var(--s2); color: var(--dim); max-width: 30em; }
-  .door small { display: block; margin-top: var(--s2); font-size: 13.5px; color: var(--faint); }
   .door .door-img { display: block; width: 100%; height: auto; margin-top: var(--s2); }
 
   /* wider than its column on a phone: scrolls inside itself rather
@@ -102,74 +70,63 @@
 </head>
 <body>
 
-    <div class="top">
-        <!-- DOORS_0 — THE SANDWICH. A native <details>: it opens with no
-             script, so this page keeps working with JavaScript off. The links
-             are rendered by tools/routes.py from web/routes.json — the one
-             home the engine shell and collection/ also read. -->
-        <details class="menu">
-            <summary aria-label="menu"><span class="bars" aria-hidden="true"></span></summary>
-            <nav>
-                <!-- __ROUTES__ -->
-            </nav>
-        </details>
+<div class="top">
+  <!-- DOORS_0 — THE SANDWICH. A native <details>: it opens with no
+       script, so this page keeps working with JavaScript off. The links
+       are rendered by tools/routes.py from web/routes.json — the one
+       home the engine shell and collection/ also read. -->
+  <details class="menu">
+    <summary aria-label="menu"><span class="bars" aria-hidden="true"></span></summary>
+    <nav>
+      <!-- __ROUTES__ -->
+    </nav>
+  </details>
+</div>
+
+<a class="hero" id="hero" href="../collection/">
+  <!-- __HERO__ -->
+</a>
+
+<!-- HOUSE_0 — no statement and no footer: Jean took both out. When the
+     statement is written it is one block (header.statement + its rules)
+     back from git; about_dist reads it into about.json if it is here. -->
+
+<div class="doors">
+  <a class="door" href="../">
+    <h2><span class="go">the board</span></h2>
+    <!-- __WORLD__ -->
+  </a>
+  <a class="door" href="../collection/">
+    <h2><span class="go">gallery</span></h2>
+    <p>Oils, watercolours and pen, in sets. Every work, one page.</p>
+    <div class="strip">
+      <!-- __STRIP__ -->
     </div>
+  </a>
+  <a class="door" href="../writings/">
+    <h2><span class="go">writings</span></h2>
+    <!-- PLACEHOLDER: one line -->
+    <p>The pawn is a vessel for projected intent.</p>
+    <!-- __WRITINGS_IMG__ -->
+  </a>
+</div>
 
-    <a class="hero" id="hero" href="../collection/">
-        <!-- __HERO__ -->
-    </a>
-    <div class="hero-plate">
-        <span id="hero-title">&nbsp;</span>
-        <a href="../collection/">the collection →</a>
-    </div>
-
-    <!-- PLACEHOLDER COPY — Jean's statement. The doctrine moved to /text/ at
-         DOORS_3; what stands here says what this is, in his voice. -->
-    <header class="statement" id="statement">
-        DOORS_3; what stands here says what this is, in his voice. -->
-        <!--  <p>Paintings, and a world that hangs them.</p> -->
-    </header>
-
-    <div class="doors">
-        <a class="door" href="../">
-            <h2><span class="go">Navigate the world</span></h2>
-            <!-- __WORLD__ -->
-        </a>
-        <a class="door" href="../collection/">
-            <h2><span class="go">the collection</span></h2>
-            <p>Oils, watercolours and pen, in sets. Every work, one page.</p>
-            <div class="strip">
-                <!-- __STRIP__ -->
-            </div>
-        </a>
-        <a class="door" href="../writings/">
-            <h2><span class="go">writings</span></h2>
-            <!-- PLACEHOLDER: one line -->
-            <p>The pawn is a vessel for projected intent.</p>
-        </a>
-    </div>
-
-    <!--   <footer>
-            <span>set in Newsreader · no trackers</span>
-        </footer>-->
-
-    <script>
-        /* ── the hero rotates daily; without JavaScript, today is the first ── */
-        const HERO = /* __HERO_DATA__ */ null;
-        if (HERO && HERO.wide.length) {
-        const day = Math.floor(Date.now() / 864e5);
-        const wide = HERO.wide[day % HERO.wide.length];
-        const tall = HERO.tall.length ? HERO.tall[day % HERO.tall.length] : wide;
-        const pick = matchMedia("(max-aspect-ratio: 4/5)").matches ? tall : wide;
-        const img = document.querySelector("#hero img");
-        const cur = new URL(img.currentSrc || img.src, location.href).pathname;
-        if (!cur.endsWith(pick.src)) {
-        img.src = pick.src;
-        img.width = pick.w; img.height = pick.h;
-        }
-        document.getElementById("hero").href = "../collection/#w" + pick.n;
-        document.getElementById("hero-title").textContent = "no. " + pick.n;
-        }
-    </script>
+<script>
+/* ── the hero rotates daily; without JavaScript, today is the first ── */
+const HERO = /* __HERO_DATA__ */ null;
+if (HERO && HERO.wide.length) {
+  const day = Math.floor(Date.now() / 864e5);
+  const wide = HERO.wide[day % HERO.wide.length];
+  const tall = HERO.tall.length ? HERO.tall[day % HERO.tall.length] : wide;
+  const pick = matchMedia("(max-aspect-ratio: 4/5)").matches ? tall : wide;
+  const img = document.querySelector("#hero img");
+  const cur = new URL(img.currentSrc || img.src, location.href).pathname;
+  if (!cur.endsWith(pick.src)) {
+    img.src = pick.src;
+    img.width = pick.w; img.height = pick.h;
+  }
+  document.getElementById("hero").href = "../collection/#w" + pick.n;
+}
+</script>
 </body>
-    </html>
+</html>

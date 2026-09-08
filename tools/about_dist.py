@@ -1,31 +1,37 @@
 #!/usr/bin/env python3
 # ─── tools/about_dist.py ─────────────────────────────────────────
 #
-# The about page's pipeline. Third sibling: web_dist.py owns the world
-# AT THE ROOT, collection_dist.py owns /collection/, this owns /about/.
-# The engine keeps `/` — so this must never write dist/index.html, or it
-# would overwrite the engine's own shell. Each section
-# reads its own assets root — assets/front/ here — per the convention
-# that sections never share a source folder.
+# The home page's pipeline (the page a menu calls Home; `about` is its
+# wiring — the path, the id, this file). Third sibling: web_dist.py owns
+# the world AT THE ROOT, collection_dist.py owns /collection/, this owns
+# /about/ and /writings/. The engine keeps `/` — so this must never write
+# dist/index.html, or it would overwrite the engine's own shell.
 #
-#   python tools/about_dist.py                   # build into dist/about/
+#   python tools/about_dist.py                   # build into dist/about/ + dist/writings/
 #   python tools/about_dist.py --preview F       # one self-contained file
 #
-# Reads assets/about/site.json:
-#   email    the address the message box falls back to
-#   hero     {"wide":[{"file","n"}…], "tall":[…]}  hand-curated pools —
+# Reads assets/about/site.json (HOUSE_0 — paintings are NUMBERS, and the
+# files live where the collection keeps them, assets/collection/<set>/):
+#   email    the address the engine's write pane falls back to
+#   hero     {"wide":[90, 92, 112], "tall":[50, 109]}  hand-curated pools —
 #            hand-curated is the rule; an automatic pick once nominated
-#            a photograph of a monkey as the front page of the universe
-#   strip    [{"n","dir","source"}…]  four works from the collection;
-#            dist mode points at collection derivatives, preview embeds
-#   authors  [{"name","lines":[…]}…]
-#   links    [{"label","url"}…]  entries whose url contains REPLACE are
-#            dropped at build rather than shipped as dead links
+#            a photograph of a monkey as the front page of the universe.
+#            A number with no master is a warning and leaves the pool; an
+#            empty wide pool is the one refusal, because the door would be
+#            a hole (POSTER_0's law).
+#   strip    [2, 5, 7, 11]  works from the collection under the gallery
+#            door; dist mode points at the collection's own derivatives,
+#            preview embeds. A number with no master is a warning and a
+#            shorter strip.
+# and assets/about/<door>.jpg (world, writings): the doors' pictures,
+# tracked; absent = a door without one.
 #
-# Writes dist/about/index.html, dist/about/hero/*, and dist/fonts/* (the
-# fonts live once at the root; both pages reach up to ../fonts/). Never
-# touches dist/index.html or dist/collection. Build order is collection
-# first, then this, so the strip can verify its targets exist.
+# Writes dist/about/ (index.html, about.json, hero/*, the door pictures),
+# dist/writings/ (the scroll, one page per text, writings.json), dist/fonts/
+# and dist/shared.css (the fonts and the stylesheet live once, at the root;
+# the pages reach up to them). Never touches dist/index.html or
+# dist/collection. Build order is collection first, then this, so the strip
+# can find its derivatives.
 
 import argparse
 import base64
@@ -48,8 +54,8 @@ DIST_ROOT = os.path.join(ROOT, "dist")
 DIST = os.path.join(DIST_ROOT, "about")
 
 HERO_EDGES = (1600, 800)
-WORLD_EDGE = 1600      # DOORS_4 — the world door's picture, the hero's long edge
-WORLD_JPEG_Q = 78
+DOOR_EDGE = 1600       # HOUSE_0 — a door's picture (world, writings): the hero's long edge
+DOOR_JPEG_Q = 78
 HERO_JPEG_Q = 82
 STRIP_H = 240          # strip images are small; one size is enough
 
@@ -70,14 +76,43 @@ def load_site():
         sys.exit(1)
     with open(path, encoding="utf-8") as fh:
         site = json.load(fh)
-    for key in ("email", "hero", "strip", "authors", "links"):
+    # HOUSE_0 — it requires what it reads and nothing else. `authors` and
+    # `links` were required and read by nothing since DOORS_4; gone.
+    for key in ("email", "hero"):
         if key not in site:
             say("REFUSE  site.json is missing %r" % key)
             sys.exit(1)
+    for kind in ("wide", "tall"):
+        pool = site["hero"].get(kind, [])
+        if not all(isinstance(n, int) for n in pool):
+            say("REFUSE  site.json hero.%s must be a list of painting numbers, e.g. [90, 92]" % kind)
+            sys.exit(1)
+    if not all(isinstance(n, int) for n in site.get("strip", [])):
+        say("REFUSE  site.json strip must be a list of painting numbers, e.g. [2, 5, 7]")
+        sys.exit(1)
     if not site["hero"].get("wide"):
         say("REFUSE  hero.wide is empty — the door needs at least one work")
         sys.exit(1)
     return site
+
+
+MASTER_EXTS = (".jpg", ".jpeg", ".png")
+
+
+def find_master(n):
+    """HOUSE_0 — the master of painting n, wherever the collection keeps it:
+    assets/collection/<any set>/PAINTING_<n>.<ext>. None if no set has it —
+    the caller warns and moves on. The first match by set order if two sets
+    hold the number (collection_dist allows that across folders)."""
+    root = os.path.join(ROOT, "assets", "collection")
+    if not os.path.isdir(root):
+        return None
+    for folder in sorted(os.listdir(root)):
+        for ext in MASTER_EXTS:
+            path = os.path.join(root, folder, "PAINTING_%d%s" % (n, ext))
+            if os.path.isfile(path):
+                return path
+    return None
 
 
 def data_uri(im, edge, q):
@@ -97,11 +132,11 @@ def build_hero(Image, site, preview):
 
     data = {"wide": [], "tall": []}
     for kind in ("wide", "tall"):
-        for entry in site["hero"].get(kind, []):
-            path = os.path.join(SRC, entry["file"])
-            if not os.path.isfile(path):
-                say("REFUSE  hero names %s — not in assets/about" % entry["file"])
-                sys.exit(1)
+        for n in site["hero"].get(kind, []):
+            path = find_master(n)
+            if path is None:
+                say("  warning  hero.%s names %d and no set holds PAINTING_%d — it leaves the pool" % (kind, n, n))
+                continue
             with Image.open(path) as im:
                 im = im.convert("RGB")
                 w, h = im.size
@@ -111,12 +146,15 @@ def build_hero(Image, site, preview):
                     edge = min(max(w, h), HERO_EDGES[0])
                     step = im.copy()
                     step.thumbnail((edge, edge))
-                    name = "%d-%d.jpg" % (entry["n"], step.size[0])
+                    name = "%d-%d.jpg" % (n, step.size[0])
                     step.save(os.path.join(out_dir, name), "JPEG",
                               quality=HERO_JPEG_Q, optimize=True, progressive=True)
                     src = "hero/" + name
                     w, h = step.size
-                data[kind].append({"n": entry["n"], "src": src, "w": w, "h": h})
+                data[kind].append({"n": n, "src": src, "w": w, "h": h})
+    if not data["wide"]:
+        say("REFUSE  every painting hero.wide names is missing — the door would be a hole; name one that exists")
+        sys.exit(1)
 
     first = data["wide"][0]
     tag = ('<img src="%s" alt="Painting %d" width="%d" height="%d" '
@@ -126,73 +164,89 @@ def build_hero(Image, site, preview):
 
 
 def build_strip(Image, site, preview):
+    """The works under the gallery door, by number. Dist mode finds each
+    one's 640 rung in dist/collection/<any set>/ — the derivative names
+    carry a content hash and the set's slug is the collection's business,
+    so both are found, never guessed — and a number nobody built is a
+    warning and a shorter strip, never a refused build (HOUSE_0)."""
     tags = []
-    for entry in site["strip"]:
+    for n in site.get("strip", []):
         if preview:
-            path = os.path.join(ROOT, entry["source"])
+            path = find_master(n)
+            if path is None:
+                say("  warning  strip names %d and no set holds PAINTING_%d — skipped" % (n, n))
+                continue
             with Image.open(path) as im:
                 src = data_uri(im, 560, 62)
                 w, h = im.size
         else:
-            # derivative names carry a content hash, so find rather than guess
-            pattern = os.path.join(DIST_ROOT, "collection", entry["dir"],
-                                   "%d-640.*.jpg" % entry["n"])
+            pattern = os.path.join(DIST_ROOT, "collection", "*", "%d-640.*.jpg" % n)
             found = sorted(glob.glob(pattern))
             if not found:
-                say("REFUSE  strip wants %s/%d — build the collection first"
-                    % (entry["dir"], entry["n"]))
-                sys.exit(1)
+                say("  warning  strip names %d and dist/collection holds no %d-640 — skipped "
+                    "(a number no set has, or the collection is not built)" % (n, n))
+                continue
             target = found[0]
-            src = "../collection/%s/%s" % (entry["dir"], os.path.basename(target))
+            src = "../collection/%s/%s" % (os.path.basename(os.path.dirname(target)),
+                                            os.path.basename(target))
             with Image.open(target) as im:
                 w, h = im.size
         tags.append('<img src="%s" alt="Painting %d" loading="lazy" '
                     'decoding="async" width="%d" height="%d">'
-                    % (src, entry["n"], w, h))
+                    % (src, n, w, h))
     return "\n      ".join(tags)
 
 
-def build_world(Image, preview):
-    """DOORS_4 — THE WORLD DOOR'S PICTURE. Jean drops the file at
-    assets/about/world.jpg (or .jpeg/.png); it is baked like the hero and
-    the door shows it. Absent = a warning and a door without a picture,
-    NEVER a refused build: the door must not hold the site hostage.
-    Shaped like build_hero and build_strip — embeds in preview mode,
-    writes a derivative in dist mode — so a preview stays self-contained."""
+def build_door_image(Image, preview, name):
+    """HOUSE_0 — A DOOR'S PICTURE, by name. Jean drops the file at
+    assets/about/<name>.jpg (or .jpeg/.png) — `world` for the board's door,
+    `writings` for the writings' — and the door shows it. Absent = one line
+    and a door without a picture, NEVER a refused build: a door must not hold
+    the site hostage (DOORS_4's ruling for the world door, now for both).
+    Shaped like build_hero and build_strip — embeds in preview mode, writes a
+    derivative in dist mode — so a preview stays self-contained."""
     for ext in ("jpg", "jpeg", "png"):
-        src = os.path.join(SRC, "world." + ext)
+        src = os.path.join(SRC, name + "." + ext)
         if not os.path.isfile(src):
             continue
         with Image.open(src) as im:
             if preview:
-                uri = data_uri(im, 1600, 66)
+                uri = data_uri(im, DOOR_EDGE, 66)
                 return ('<img class="door-img" src="%s" alt="" '
                         'loading="lazy" decoding="async">' % uri)
             step = im.convert("RGB")
-            # THE LONG EDGE, not the width. The constant says so, the
-            # docstring says "baked like the hero", and the preview arm's
-            # data_uri caps the long edge with thumbnail() — but this arm
-            # tested `width` alone, so a PORTRAIT world.jpg shipped
-            # unresized and the two arms showed different pictures.
-            # (DOORS_4 R5.) thumbnail() is the hero's own tool and it
-            # never upscales.
-            if max(step.size) > WORLD_EDGE:
-                step.thumbnail((WORLD_EDGE, WORLD_EDGE), Image.LANCZOS)
+            # THE LONG EDGE, not the width (DOORS_4 R5): thumbnail() caps it
+            # on both axes and never upscales, the hero's own tool.
+            if max(step.size) > DOOR_EDGE:
+                step.thumbnail((DOOR_EDGE, DOOR_EDGE), Image.LANCZOS)
             os.makedirs(DIST, exist_ok=True)
-            step.save(os.path.join(DIST, "world.jpg"), "JPEG",
-                      quality=WORLD_JPEG_Q, optimize=True, progressive=True)
-            return ('<img class="door-img" src="world.jpg" alt="" '
+            out = name + ".jpg"
+            step.save(os.path.join(DIST, out), "JPEG",
+                      quality=DOOR_JPEG_Q, optimize=True, progressive=True)
+            return ('<img class="door-img" src="%s" alt="" '
                     'width="%d" height="%d" loading="lazy" decoding="async">'
-                    % (step.size[0], step.size[1]))
-    say("  world door: assets/about/world.jpg not found — the door ships without its picture")
+                    % (out, step.size[0], step.size[1]))
+    say("  %s door: assets/about/%s.jpg not found — the door ships without its picture"
+        % (name, name))
     return ""
+
+
+def writing_slug(stem):
+    """The URL of a text, from its filename: the stem after the leading
+    NN_ (the order, which is not a name), lowercased, non-alphanumerics
+    to hyphens. `01_the_mirror_in_the_sand` -> `the-mirror-in-the-sand`.
+    Reordering a file (renumbering it) therefore never moves its page;
+    renaming the words after the number does, and is Jean's to do."""
+    body = re.sub(r"^\d+_", "", stem)
+    slug = re.sub(r"[^a-z0-9]+", "-", body.lower()).strip("-")
+    return slug
 
 
 def build_writings():
     """The writings, one home: assets/writings/NN_slug.txt. First line the
     title, then the body; blank lines break stanzas; line breaks inside a
     stanza are kept (white-space: pre-line on the page, <br> nowhere).
-    Filename order is page order. Returns (page_html, json_list)."""
+    Filename order is page order. Returns the pieces: slug, title, html."""
     src = os.path.join(ROOT, "assets", "writings")
     if not os.path.isdir(src):
         say("REFUSE  assets/writings is missing — the writings have one home and this is it")
@@ -214,29 +268,78 @@ def build_writings():
         if not title or not body:
             say("REFUSE  %s needs a title line and a body" % name)
             sys.exit(1)
-        stanzas = [s.strip("\n") for s in body.split("\n\n") if s.strip()]
-        html = "\n".join("<p>%s</p>" % esc(s) for s in stanzas)
-        slug = os.path.splitext(name)[0]
+        stanzas = [st.strip("\n") for st in body.split("\n\n") if st.strip()]
+        html = "\n".join("<p>%s</p>" % esc(st) for st in stanzas)
+        slug = writing_slug(os.path.splitext(name)[0])
+        if not slug:
+            say("REFUSE  %s has nothing after its number to make a URL from" % name)
+            sys.exit(1)
         pieces.append({"slug": slug, "title": title, "html": html})
     if not pieces:
         say("REFUSE  assets/writings holds no .txt — nothing to build")
         sys.exit(1)
-    # The slug is a FILENAME, and a filename can hold a quote. It is the
-    # one interpolation here that was not escaped; title and body always
-    # were. (DOORS_4 R2.)
-    page = "\n".join('<article id="%s">\n<h2>%s</h2>\n%s\n</article>'
-                     % (esc(p["slug"]), esc(p["title"]), p["html"]) for p in pieces)
-    return page, [{"title": p["title"], "html": p["html"]} for p in pieces]
+    # HOUSE_0 — a slug is a page: two files that share one would give one
+    # URL two texts, which is the refusal the collection makes for numbers.
+    seen = {}
+    for p in pieces:
+        if p["slug"] in seen:
+            say("REFUSE  writings %s and %s share the URL /writings/%s/" % (seen[p["slug"]], p["title"], p["slug"]))
+            sys.exit(1)
+        seen[p["slug"]] = p["title"]
+    return pieces
+
+
+def writing_article(p):
+    # The slug is a FILENAME, and a filename can hold a quote — escaped like
+    # the title and the body always were (DOORS_4 R2).
+    return '<article id="%s">\n<h2>%s</h2>\n%s\n</article>' % (esc(p["slug"]), esc(p["title"]), p["html"])
+
+
+def writings_menu_html(pieces, base, indent="      "):
+    """HOUSE_0 — THE WRITINGS MENU, spoken from the page at `base`. On the
+    scroll it lists the titles; on a single page the scroll comes first and
+    the page's own title is not there — routes.rel() answers "./" for the
+    page itself and that entry is dropped, the sandwich's own rule (DOORS_1)."""
+    items = [("scroll", "/writings/")] + [(p["title"], "/writings/%s/" % p["slug"]) for p in pieces]
+    out = []
+    for label, href in items:
+        rel = routes.rel(href, base)
+        if rel == "./":
+            continue
+        out.append('<a href="%s">%s</a>' % (esc(rel), esc(label)))
+    return ("\n" + indent).join(out)
+
+
+def write_writings_page(template, pieces, page_pieces, base, title, out_dir):
+    """One fill of web/writings/index.html: the scroll (every piece, base
+    /writings/) or one text alone (base /writings/<slug>/). The stylesheet
+    is the one ../ reference in the template; a page one level down reaches
+    it with one more."""
+    depth = base.count("/") - 1
+    page = fill(template, {
+        "TITLE": title,
+        "WMENU": writings_menu_html(pieces, base),
+        "ROUTES": routes.nav_html("site", base, indent="      "),
+        "MENU_CSS": routes.menu_css(),
+        "WRITINGS": "\n".join(writing_article(p) for p in page_pieces),
+    })
+    if depth == 2:
+        page = page.replace('href="../shared.css"', 'href="../../shared.css"')
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "index.html"), "w", encoding="utf-8") as fh:
+        fh.write(page)
 
 
 def fill(template, subs):
     out = template
     for key, val in subs.items():
-        marker = "<!-- __%s__ -->" % key if key not in ("HERO_DATA", "EMAIL", "MENU_CSS") else None
+        marker = "<!-- __%s__ -->" % key if key not in ("HERO_DATA", "EMAIL", "TITLE", "MENU_CSS") else None
         if key == "HERO_DATA":
             out = out.replace("/* __HERO_DATA__ */ null", json.dumps(val))
         elif key == "EMAIL":
             out = out.replace("__EMAIL__", val)
+        elif key == "TITLE":
+            out = out.replace("__TITLE__", esc(val))   # HOUSE_0 — inside <title>, a comment would be text
         elif key == "MENU_CSS":
             out = out.replace("/* __MENU_CSS__ */", val)   # DOORS_0 — the sandwich's rules, one home
         else:
@@ -245,8 +348,8 @@ def fill(template, subs):
     # token absent from a given template simply never appears and passes;
     # but a token PRESENT and unsubstituted ships silently unless it is
     # named here. __WRITINGS__ and __WORLD__ join for that reason.
-    for token in ("__HERO__", "__STRIP__", "__WRITINGS__", "__WORLD__",
-                  "__HERO_DATA__", "__EMAIL__", "__ROUTES__", "__MENU_CSS__"):
+    for token in ("__HERO__", "__STRIP__", "__WRITINGS__", "__WORLD__", "__WRITINGS_IMG__",
+                  "__WMENU__", "__TITLE__", "__HERO_DATA__", "__EMAIL__", "__ROUTES__", "__MENU_CSS__"):
         if token in out:
             say("REFUSE  template placeholder %s did not substitute" % token)
             sys.exit(1)
@@ -278,7 +381,13 @@ def main():
     # the chain, so that state is never deployed; but a guarantee that
     # depends on the order of the lines above it should not depend on it
     # silently. It is a pure read: it has no reason to be later.
-    w_page_html, w_json = build_writings()
+    w_pieces = build_writings()
+    # HOUSE_0 — THE WRITER OWNS ITS FOLDER WHOLESALE (collection_dist's own
+    # rule), and sweeps it before its first write: a hero taken out of
+    # site.json would otherwise stay in dist/about/hero/ under the tenant
+    # rule, uploaded and served by every deploy after.
+    if not preview and os.path.isdir(DIST):
+        shutil.rmtree(DIST)
     hero_tag, hero_data = build_hero(Image, site, preview)
 
     page = fill(template, {
@@ -286,7 +395,8 @@ def main():
         "MENU_CSS": routes.menu_css(),                        # DOORS_0
         "HERO": hero_tag,
         "STRIP": build_strip(Image, site, preview),
-        "WORLD": build_world(Image, preview),                # DOORS_4 — the world door's picture
+        "WORLD": build_door_image(Image, preview, "world"),          # DOORS_4 — the board's door
+        "WRITINGS_IMG": build_door_image(Image, preview, "writings"), # HOUSE_0 — the writings' door
         "HERO_DATA": hero_data,
         "EMAIL": site["email"],
     })
@@ -317,34 +427,36 @@ def main():
     # so the two cannot disagree (peek.json's law). The template stays the
     # statement's one home; the writings' is assets/writings/, and their
     # page is web/writings/index.html (DOORS_4).
+    # HOUSE_0 — THE STATEMENT IS OPTIONAL. Jean took it off the page; when
+    # he writes one, the header comes back and this reads it again. An
+    # absent header is an empty statement, not a refused build.
     m = re.search(r'<header class="statement" id="statement">(.*?)</header>', page, re.S)
-    if not m:
-        say("REFUSE  the statement header is not in the page — the engine's About pane would have nothing to show")
-        sys.exit(1)
     with open(os.path.join(DIST, "about.json"), "w", encoding="utf-8") as fh:
-        json.dump({"statement": m.group(1).strip(),
+        json.dump({"statement": m.group(1).strip() if m else "",
                    "hero": hero_data,          # what build_hero returned: the day-indexed list the page itself rotates
                    "email": site["email"]}, fh)
 
-    # DOORS_4 — THE WRITINGS PAGE, plural and growing. One home for the
-    # texts (assets/writings); this page and writings.json are built from
-    # the same read (taken above, before any dist write), so the engine's
-    # pane and the site can never disagree, and a new text is one new file
-    # plus a deploy.
+    # DOORS_4 — THE WRITINGS, plural and growing; HOUSE_0 — AND EACH ONE A
+    # PAGE. One home for the texts (assets/writings); one read (taken above,
+    # before any dist write) writes the scroll at /writings/, one page per
+    # text at /writings/<slug>/, and writings.json for the engine's pane, so
+    # none of the three can disagree. A new text is one new file plus a
+    # deploy. dist/writings/ is swept first: a text renamed or removed since
+    # the last build would otherwise leave its old page live under the
+    # tenant rule (web_dist deletes only the engine's own names).
     w_tpl = os.path.join(WEB, "writings", "index.html")
     with open(w_tpl, encoding="utf-8") as fh:
-        w_page = fill(fh.read(), {
-            "ROUTES": routes.nav_html("site", "/writings/", indent="      "),
-            "MENU_CSS": routes.menu_css(),
-            "WRITINGS": w_page_html,
-        })
+        w_template = fh.read()
     w_dist = os.path.join(DIST_ROOT, "writings")
-    os.makedirs(w_dist, exist_ok=True)
-    with open(os.path.join(w_dist, "index.html"), "w", encoding="utf-8") as fh:
-        fh.write(w_page)
+    if os.path.isdir(w_dist):
+        shutil.rmtree(w_dist)
+    write_writings_page(w_template, w_pieces, w_pieces, "/writings/", "writings", w_dist)
+    for p in w_pieces:
+        write_writings_page(w_template, w_pieces, [p], "/writings/%s/" % p["slug"], p["title"],
+                            os.path.join(w_dist, p["slug"]))
     with open(os.path.join(w_dist, "writings.json"), "w", encoding="utf-8") as fh:
-        json.dump(w_json, fh)
-    say("dist/writings/index.html written; writings.json beside it (%d piece(s))" % len(w_json))
+        json.dump([{"title": p["title"], "html": p["html"]} for p in w_pieces], fh)
+    say("dist/writings/: the scroll, %d page(s), writings.json" % len(w_pieces))
 
     # DOORS_4 — AND THE OLD PAGE IS SWEPT, because nothing else will.
     # DOORS_3 made this script the writer of dist/text/, and web_dist
@@ -369,7 +481,7 @@ def main():
         say("")
         say("  %d PLACEHOLDER marker%s still in the page — copy is not final."
             % (holds, "" if holds == 1 else "s"))
-        say("  Search web/about/index.html and assets/about/site.json.")
+        say("  Search web/about/index.html.")
         say("")
     say("dist/about/index.html written; hero beside it, fonts at dist/fonts/")
     say("build order: collection_dist, then this, then web_dist LAST —")
