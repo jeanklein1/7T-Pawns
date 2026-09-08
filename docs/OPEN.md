@@ -2,7 +2,7 @@
 One line per item: what · origin (sha or doc) · what unblocks it.
 This file is the ONLY home of open/parked state. When an item closes, its line dies.
 
-## HOUSE_0 — THE HOUSE THE BOARD STANDS IN (on `claude/house-0`; Jean's gates open)
+## HOUSE_0 — THE HOUSE THE BOARD STANDS IN (landed on master; Jean's gates open)
 
 The website round after Jean's 7 Sep hand edits: every room connects, the
 letterbox opens, the walls answer *info*. Site-only — the shell loses
