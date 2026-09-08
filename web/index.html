@@ -1478,10 +1478,34 @@
     // 1 — THE SOUNDTRACK. src is assigned HERE, not in the markup: with
     // preload="none" and no src the element costs nothing until this
     // moment, and this moment is the one iOS accepts.
+    // ATMOS_1 R1 — ONE HOME FOR ATTACHING THE PIECE. startMusic, every
+    // return from hidden, and the Sound toggle need the same thing: a
+    // source on the element, and the remembered position restored once the
+    // decoder knows the piece again (currentTime before metadata is
+    // ignored). Idempotent: an element that has its source is left alone.
+    // ATMOS_1 wrote the attach twice and the toggle not at all, and a
+    // visitor who chose silence before pocketing the phone came back to a
+    // source-less element under a label reading "Sound: on" (CC's audit,
+    // three refuters). One function, three callers, no second copy.
+    var musicSeek = null;          // the pending seek's listener, or null
+    function attachMusic() {
+      if (!music || music.getAttribute('src')) return;
+      music.setAttribute('src', music.dataset.src || '');
+      if (musicResumeAt > 0) {
+        var at = musicResumeAt;
+        musicSeek = function () {
+          music.removeEventListener('loadedmetadata', musicSeek);
+          musicSeek = null;
+          try { music.currentTime = at; } catch (err) { /* start over */ }
+        };
+        music.addEventListener('loadedmetadata', musicSeek);
+      }
+    }
+
     function startMusic() {
       if (!music) { note('[shell] audio: no element'); return; }
       try {
-        if (!music.getAttribute('src')) music.setAttribute('src', music.dataset.src || '');
+        attachMusic();
         // THE INTENT IS RECORDED SYNCHRONOUSLY, before the promise. A
         // visitor who taps and immediately pockets the phone would
         // otherwise be read as "was not playing" by the visibility
@@ -1906,6 +1930,7 @@
         if (!music) return;
         if (music.paused) {
           musicWasPlaying = true;                   // "sound is wanted" — the visibility handler's one input
+          attachMusic();                            // ATMOS_1 R1 — never play() a source-less element
           var p = music.play();
           if (p && p.catch) p.catch(function (err) { note('[shell] sound: ' + err); });
         } else {
@@ -2031,8 +2056,10 @@
     }
 
     // ── ATMOS_0 U2 — THE PIECE DOES NOT SING FROM A POCKET ────────
-    // Hidden pauses unconditionally; visible resumes ONLY if it was
-    // playing, so silence chosen (or never granted) stays chosen. The
+    // Hidden RELEASES the media unconditionally (ATMOS_1: a paused piece
+    // is still the phone's to resume); visible re-attaches it and resumes
+    // ONLY if it was playing, so silence chosen (or never granted) stays
+    // chosen. The
     // wake lock is re-asked here because the browser drops it on hide —
     // and only if the visitor ever entered, so a backgrounded LOADING
     // tab does not quietly hold the screen awake.
@@ -2050,7 +2077,17 @@
         // is the visitor's standing answer, set at the gesture.
         if (music) {
           try {
-            musicResumeAt = music.currentTime || 0;
+            // ATMOS_1 R1 — a second hide before the seek landed would
+            // remember 0 (the source is fresh, the piece not yet at its
+            // place); keep the position already remembered, and drop the
+            // seek that will never fire on an element about to lose its
+            // source.
+            if (musicSeek) {
+              music.removeEventListener('loadedmetadata', musicSeek);
+              musicSeek = null;
+            } else {
+              musicResumeAt = music.currentTime || 0;
+            }
             music.pause();
             music.removeAttribute('src');
             music.load();
@@ -2061,19 +2098,15 @@
         }
         return;
       }
+      // ATMOS_1 R1 — the element gets its source back on EVERY return after
+      // entry, wanted or not: the release above was unconditional, so the
+      // re-attach must be too, or silence chosen before hiding leaves a
+      // source-less element behind the Sound toggle. Attaching costs
+      // nothing until play (preload="none"); playing stays gated on the
+      // visitor's standing answer, as ATMOS_0 ruled.
+      if (entered) attachMusic();
       if (music && musicWasPlaying) {
         try {
-          // ATMOS_1 — the source comes back, and the position with it once
-          // the decoder knows the piece again (currentTime before metadata
-          // is ignored). Then the same resume as before.
-          if (!music.getAttribute('src')) {
-            music.setAttribute('src', music.dataset.src || '');
-            var at = musicResumeAt;
-            music.addEventListener('loadedmetadata', function seek() {
-              music.removeEventListener('loadedmetadata', seek);
-              try { music.currentTime = at; } catch (err) { /* start over */ }
-            });
-          }
           var p = music.play();
           if (p && p.catch) p.catch(function (err) {
             note('[shell] audio did not resume: ' + err);
