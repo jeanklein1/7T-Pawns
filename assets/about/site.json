@@ -1,5 +1,5 @@
 {
   "email": "jean@everexpandingboard.com",
-  "hero": { "wide": [90, 112], "tall": [1, 50, 104, 109,] },
+  "hero": { "wide": [90, 112], "tall": [1, 50, 104, 109] },
   "strip": [2, 5, 7, 72 ]
 }
