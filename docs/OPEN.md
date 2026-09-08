@@ -15,11 +15,17 @@ GREEN after. Joins the cascade.
 | Four homes are witnesses, not authors | the gate's rows |
 | Laziness is named once | `NOT_AT_BOOT` in `web_dist.py` (empty today) |
 
+SETTLE_0: BOOT_SET is read by the first-visit sum and checked; NOT_AT_BOOT
+exists, empty.
+
 ## ATMOS_1 — THE PIECE LEAVES THE PHONE'S HANDS (on `claude/important-handoffs-9v1wus`; Jean's gates open)
 
 Hidden releases the soundtrack's media instead of pausing it, so a headphone button
 cannot resume it with the page shut; visible re-attaches and seeks. ATMOS_0's grammar
 stands; ATMOS_0 R's gesture fallback covers a refusal on return.
+
+SETTLE_0: `attachMusic()` is the one home (three callers); the re-attach is
+unconditional after entry; the seek survives a double-hide.
 
 ## ZOOM_0 — THE COLLECTION PAGE LEARNS THE PINCH (landed on master; Jean's gates open)
 
