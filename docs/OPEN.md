@@ -17,6 +17,9 @@ GREEN after. Joins the cascade.
 
 SETTLE_0: BOOT_SET is read by the first-visit sum and checked; NOT_AT_BOOT
 exists, empty.
+SETTLE_1: U1.7 read dist before dist existed (blocker, CC's audit, proven by
+running both tools); the reader now sits before WROTE; organ_panel.js is a boot
+fetch and counts; P19 written.
 
 ## ATMOS_1 — THE PIECE LEAVES THE PHONE'S HANDS (on `claude/important-handoffs-9v1wus`; Jean's gates open)
 
