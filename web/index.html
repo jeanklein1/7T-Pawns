@@ -118,6 +118,20 @@
          the whole screen for the entire boot, so without this the boot
          is pinch-zoomable and every pixel of it is a GPU reallocation. */
       touch-action: none;
+      /* PHONE_0 — a short phone used to clip the door off the bottom of
+         a flex-centered column, with body overflow:hidden so it could
+         not be scrolled to. The layer itself scrolls. */
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    /* PHONE_0 — iOS does not synthesize click on an <a> inside an
+       ancestor whose effective touch-action is none (the values
+       INTERSECT, so a child cannot restore manipulation). The doors
+       are armed in JS with pointerup; this at least keeps the browser
+       from treating the hit as a pan. */
+    .layer a.btn, .layer button.btn, .layer .entry {
+      position: relative;
+      z-index: 2;
     }
     .layer[hidden] { display: none; }
     #veil.lifting { opacity: 0; pointer-events: none; transition: opacity 900ms ease; }
@@ -871,7 +885,8 @@
       device: null,
       offers: '',     // the adapter's feature spellings, comma-joined
       dropped: 0,     // WIT_2's count on the adopted path
-      lost: false
+      lost: false,
+      onSettled: null // PHONE_0 — the boot script waits here before wasm
     };
     (function () {
       var G = window.T7_GPU;
@@ -879,13 +894,31 @@
       try { q = new URLSearchParams(location.search); } catch (e) {}
       var off  = q && q.get('adopt') === '0';
       var fail = q && q.get('failboot') === '1';
+      var settled = false;
+      function settle(state, why) {
+        if (settled) return;
+        settled = true;
+        G.state = state;
+        if (why) G.why = why;
+        if (typeof G.onSettled === 'function') {
+          try { G.onSettled(state); } catch (err) {}
+        }
+      }
       if (off || fail) {
-        G.state = 'skipped';
-        G.why = off ? 'adopt=0' : 'failboot=1 wants the C++ request path';
+        settle('skipped', off ? 'adopt=0' : 'failboot=1 wants the C++ request path');
         return;
       }
-      if (!navigator.gpu) { G.state = 'failed'; G.why = 'navigator.gpu absent'; return; }
+      if (!navigator.gpu) { settle('failed', 'navigator.gpu absent'); return; }
       G.state = 'pending';
+      // PHONE_0 — Safari iOS 18 advertises navigator.gpu and then hangs
+      // or returns null. The old catch said "C++ will ask for its own",
+      // which fetched the wasm on a phone that cannot run it, froze the
+      // tab, and left the website doors untappable. Four seconds is
+      // longer than a working adapter ever takes and shorter than a
+      // hang that looks like "Waking the world" forever.
+      var timer = setTimeout(function () {
+        settle('failed', 'requestAdapter timed out — WebGPU present but not usable');
+      }, 4000);
       navigator.gpu.requestAdapter({ powerPreference: 'high-performance' })
         .then(function (adapter) {
           if (!adapter) throw new Error('requestAdapter returned null');
@@ -905,13 +938,17 @@
           });
         })
         .then(function (device) {
+          clearTimeout(timer);
+          if (settled) {
+            try { if (device && device.destroy) device.destroy(); } catch (err) {}
+            return;
+          }
           // THE MARK MOVES HERE, and that is the unit's whole claim. It
           // is idempotent and first-call-wins, so the C++ mark at the
           // census below is a no-op on this path and the real mark on
           // the fallback one. Neither side has to know which ran.
           window.T7_AUBADE.mark('device');
           G.device = device;
-          G.state  = 'ready';
           // Module may or may not exist yet: this callback is a
           // microtask and the block that builds Module is a later
           // script. Seeding it here and merging there (Object.assign)
@@ -935,12 +972,14 @@
             console.log('[Device] LOST reason=' + info.reason + ' : ' + info.message);
             if (window.t7err) window.t7err('lost', info.reason + ': ' + info.message);
           });
+          settle('ready');
         })
         .catch(function (e) {
-          G.state = 'failed';
-          G.why = (e && e.message) ? e.message : String(e);
-          console.log('[Device] pre-creation failed: ' + G.why
-                      + ' — the C++ path will ask for its own');
+          clearTimeout(timer);
+          var why = (e && e.message) ? e.message : String(e);
+          console.log('[Device] pre-creation failed: ' + why
+                      + ' — not fetching the wasm');
+          settle('failed', why);
         });
     })();
   </script>
@@ -1004,11 +1043,13 @@
       <button class="btn" id="reload" type="button" hidden>Open it again</button>
       <!-- DOORS_0 — THE WAY OUT IS STATIC. A card means no world, and
            the website is the whole piece this visitor receives, so
-           DOORS_4 sends the door where the welcome points: our web page.
+           DOORS_4 sends the door where the welcome points: Home.
            An anchor, so it works when nothing else does.
            RULING: a link, not a redirect — the log pane beside it is the
-           diagnostic surface a redirect would take away. -->
-      <a class="btn alt" href="/home/" aria-label="Click here — our web page">Click here</a>
+           diagnostic surface a redirect would take away.
+           One button. Home. Gallery is a room you reach from there;
+           it does not sit beside the way out. -->
+      <a class="btn" href="/home/">Home</a>
       <button id="logToggle2" class="logToggle" type="button" aria-controls="log2" aria-expanded="false">details</button>
     </div>
     <pre id="log2" class="log" aria-live="off"></pre>
@@ -1673,6 +1714,22 @@
     enterBtn.addEventListener('click',       onEntryGesture);
     enterBtn.addEventListener('click', function () { if (entered && !ready) enterBtn.classList.add('armed'); });
 
+    // PHONE_0 — THE WEBSITE DOOR ON A PHONE. #enter is a <button> with
+    // its own pointer listeners, so a thumb reaches it. The Home
+    // anchor lived inside .layer { touch-action: none }, whose
+    // effective value intersects descendants: iOS never synthesized a
+    // click, and the room that does not need a GPU did not open.
+    // pointerup is the same event the entry gesture already trusts on
+    // a finger. Mouse keeps the native click.
+    Array.prototype.forEach.call(document.querySelectorAll('#veil a[href], #card a[href]'), function (a) {
+      a.addEventListener('pointerup', function (e) {
+        if (e.pointerType === 'mouse') return;
+        if (e.button) return;
+        var href = a.href;
+        if (href) window.location.href = href;
+      });
+    });
+
     // ═══ DOORS_0 — THE SANDWICH'S BEHAVIOURS ═════════════════════════
     //
     // Three things: which pane a route button opens, the peek's one
@@ -2253,9 +2310,20 @@
     // property and hand back undefined (and a policy/permissions block
     // looks exactly like that). `in` returns true for both, and the
     // visitor would then pay for a wasm that can never start.
-    if (!navigator.gpu) {
-      fallback('navigator.gpu absent or undefined — checked before fetching the wasm');
-      return;
+    //
+    // PHONE_0 — navigator.gpu is not enough. Safari iOS 18 (and some
+    // Android Chromes) hand back an object whose requestAdapter hangs
+    // or returns null. The pre-creation block now settles failed in
+    // that case; we wait for it, and we do not fetch the wasm unless
+    // the adapter actually produced a device (or ?adopt=0 asked us
+    // to stand aside).
+    function bootAfterGpu(state) {
+      if (terminal) return;
+      if (state === 'failed') {
+        fallback(window.T7_GPU.why || 'WebGPU adapter/device request failed');
+        return;
+      }
+      startProgram();
     }
 
     // ── BUILDID_0 — A NAME THAT CHANGES WHEN THE PROGRAM CHANGES ──
@@ -2312,6 +2380,7 @@
     // depending on Emscripten's lifecycle.
     window.SHADER_SHA = SHADER_SHA;
 
+    function startProgram() {
     // AUBADE U1 — `wasm` is INSTANTIATION, not arrival. `net` above is the
     // arrival; the gap between them is the compile, and naming both is
     // what makes U6's warm-load claim checkable rather than asserted.
@@ -2399,6 +2468,16 @@
         true
       );
     }, 240000);
+    } // startProgram
+
+    var gpu = window.T7_GPU;
+    if (!gpu || gpu.state === 'failed' || !navigator.gpu) {
+      bootAfterGpu('failed');
+    } else if (gpu.state === 'ready' || gpu.state === 'skipped') {
+      bootAfterGpu(gpu.state);
+    } else {
+      gpu.onSettled = bootAfterGpu;
+    }
   })();
   </script>
 </body>

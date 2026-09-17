@@ -1073,27 +1073,17 @@ def main():
 
     # ── AUBADE U7 — FIRST LIGHT STARTS AT HTML PARSE ────────────────
     #
-    # The glue is appended to <body> by the inline boot script, and the
-    # wasm and the package are fetched by the glue after IT has parsed.
-    # So the browser's preload scanner — which runs ahead of the parser
-    # and exists precisely to start long fetches early — never saw any of
-    # them. Three <link rel=preload> in the head and it does.
+    # PHONE_0 — we used to inject three preloads (poster, glue, wasm).
+    # The scanner runs AHEAD of the gate, so an unsupported phone — and
+    # an iOS 18 phone whose navigator.gpu cannot actually produce a
+    # device — paid for the whole program before the shell could refuse
+    # it, and often died in the download. The glue and the wasm are
+    # fetched by startProgram() only after T7_GPU settles ready. The
+    # poster is still the one thing a visitor can SEE on first paint.
     #
-    # INJECTED HERE, NOT WRITTEN INTO web/index.html, and the reason is a
-    # law two blocks up: the build-id placeholder appears EXACTLY ONCE in
-    # the source page so the substitution has one target and the
-    # refusal-to-ship check has one thing to count. Two of these hrefs
-    # carry the id, so they cannot live in a file that holds the token
-    # once. (web/index.html does not boot anyway — it is a source file.)
-    #
-    # THE URLS MUST MATCH THE REAL REQUESTS EXACTLY, query included, or
-    # the browser warns and fetches twice. They are built from the same
-    # build_id the page is built with, in the same instant, which is the
-    # only way to be sure.
-    #
-    # THE VEIL'S POSTER IS FIRST because it is the only one of the three
-    # a visitor can SEE. It is unversioned (POSTER_0: the page names
-    # veil_poster.jpg and nothing else), so no id here.
+    # INJECTED HERE, NOT WRITTEN INTO web/index.html: the source page
+    # is not a deployable document, and this is the one place the
+    # generated head is assembled.
     #
     # THE PAGE IS READ WITH newline="" — no translation — so a CRLF
     # checkout arrives with CRLF and an injection hard-coded to \n would
@@ -1114,9 +1104,7 @@ def main():
         return 7
     eol = "\r\n" if shell_out[max(0, eol_at - 1)] == "\r" else "\n"
     preloads = (
-        '  <link rel="preload" as="image" href="veil_poster.jpg">' + eol +
-        '  <link rel="preload" as="script" href="the_board.js?v=%s">' % build_id + eol +
-        '  <link rel="preload" as="fetch" crossorigin href="the_board.wasm?v=%s">' % build_id + eol)
+        '  <link rel="preload" as="image" href="veil_poster.jpg">' + eol)
     shell_out = shell_out[:eol_at + 1] + preloads + shell_out[eol_at + 1:]
     with open(os.path.join(DIST, "index.html"), "w", encoding="utf-8", newline="") as fh:
         fh.write(shell_out)
