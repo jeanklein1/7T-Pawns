@@ -1043,17 +1043,13 @@
       <button class="btn" id="reload" type="button" hidden>Open it again</button>
       <!-- DOORS_0 — THE WAY OUT IS STATIC. A card means no world, and
            the website is the whole piece this visitor receives, so
-           DOORS_4 sends the door where the welcome points: our web page.
+           DOORS_4 sends the door where the welcome points: Home.
            An anchor, so it works when nothing else does.
            RULING: a link, not a redirect — the log pane beside it is the
            diagnostic surface a redirect would take away.
-           PHONE_0 — gallery sits beside it: that room never needed a GPU,
-           and a second hop through Home was the visit that was not
-           opening. Two anchors, same .entry the veil already speaks. -->
-      <div class="entry">
-        <a class="btn" href="/gallery/">Gallery</a>
-        <a class="btn alt" href="/home/" aria-label="Click here — our web page">Click here</a>
-      </div>
+           One button. Home. Gallery is a room you reach from there;
+           it does not sit beside the way out. -->
+      <a class="btn" href="/home/">Home</a>
       <button id="logToggle2" class="logToggle" type="button" aria-controls="log2" aria-expanded="false">details</button>
     </div>
     <pre id="log2" class="log" aria-live="off"></pre>
@@ -1718,13 +1714,13 @@
     enterBtn.addEventListener('click',       onEntryGesture);
     enterBtn.addEventListener('click', function () { if (entered && !ready) enterBtn.classList.add('armed'); });
 
-    // PHONE_0 — THE WEBSITE DOORS ON A PHONE. #enter is a <button> with
-    // its own pointer listeners, so a thumb reaches it. The Home /
-    // Gallery / Click here anchors lived inside .layer { touch-action:
-    // none }, whose effective value intersects descendants: iOS never
-    // synthesized a click, and the room that does not need a GPU did
-    // not open. pointerup is the same event the entry gesture already
-    // trusts on a finger. Mouse keeps the native click.
+    // PHONE_0 — THE WEBSITE DOOR ON A PHONE. #enter is a <button> with
+    // its own pointer listeners, so a thumb reaches it. The Home
+    // anchor lived inside .layer { touch-action: none }, whose
+    // effective value intersects descendants: iOS never synthesized a
+    // click, and the room that does not need a GPU did not open.
+    // pointerup is the same event the entry gesture already trusts on
+    // a finger. Mouse keeps the native click.
     Array.prototype.forEach.call(document.querySelectorAll('#veil a[href], #card a[href]'), function (a) {
       a.addEventListener('pointerup', function (e) {
         if (e.pointerType === 'mouse') return;
